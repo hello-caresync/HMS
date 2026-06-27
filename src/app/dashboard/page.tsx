@@ -2,6 +2,8 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/src/utils/supabase/server";
 
+export const runtime = 'edge';
+
 type Doctor = {
   id: string;
   full_name: string;
