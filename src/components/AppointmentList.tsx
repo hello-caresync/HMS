@@ -1,90 +1,95 @@
-"use client"; // Required for interactivity and useFormStatus
-
-import { useFormStatus } from "react-dom";
-import { scheduleAppointment } from "../app/actions"; // Correct import path
-
-type Doctor = {
+export type Appointment = {
   id: string;
-  full_name: string;
+  patient_name: string;
+  appointment_time: string;
+  status: string;
+  doctors: { full_name: string } | Array<{ full_name: string }> | null;
 };
 
-type ScheduleAppointmentFormProps = {
-  doctors: Doctor[];
+type AppointmentListProps = {
+  appointments: Appointment[];
 };
 
-const fieldClassName =
-  "rounded-xl border border-white/10 bg-black px-4 py-2.5 text-zinc-50 outline-none transition-colors placeholder:text-zinc-600 focus:border-white/20 focus:ring-2 focus:ring-white/10";
+function getDoctorName(doctors: Appointment["doctors"]): string {
+  if (!doctors) {
+    return "Unassigned";
+  }
 
-// Sub-component for the submit button to handle loading states
-function SubmitButton({ disabled }: { disabled: boolean }) {
-  const { pending } = useFormStatus();
+  if (Array.isArray(doctors)) {
+    return doctors[0]?.full_name ?? "Unassigned";
+  }
 
-  return (
-    <button
-      type="submit"
-      disabled={disabled || pending}
-      className="mt-2 rounded-full bg-zinc-50 px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      {pending ? "Scheduling..." : "Schedule Appointment"}
-    </button>
-  );
+  return doctors.full_name;
 }
 
-export function ScheduleAppointmentForm({ doctors }: ScheduleAppointmentFormProps) {
+function formatDateTime(isoDate: string) {
+  return new Date(isoDate).toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function statusStyles(status: string) {
+  const normalized = status.toLowerCase();
+
+  if (normalized === "confirmed") {
+    return "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20";
+  }
+
+  if (normalized === "cancelled") {
+    return "bg-red-500/10 text-red-400 ring-red-500/20";
+  }
+
+  return "bg-amber-500/10 text-amber-400 ring-amber-500/20";
+}
+
+export function AppointmentList({ appointments }: AppointmentListProps) {
   return (
-    <aside className="h-fit rounded-2xl border border-white/10 bg-zinc-950 p-6 shadow-2xl shadow-black/40">
-      <h2 className="text-lg font-semibold text-zinc-50">Schedule Appointment</h2>
-      <p className="mt-1 mb-6 text-sm text-zinc-500">
-        Book a new appointment with an available doctor.
-      </p>
+    <section className="rounded-2xl border border-white/10 bg-zinc-950 p-6 shadow-2xl shadow-black/40">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-zinc-50">Appointments</h2>
+        <p className="text-sm text-zinc-500">{appointments.length} scheduled</p>
+      </div>
 
-      <form action={scheduleAppointment} className="flex flex-col gap-4">
-        {/* Doctor Selection */}
-        <label className="flex flex-col gap-2 text-sm">
-          <span className="font-medium text-zinc-300">Doctor</span>
-          <select
-            name="doctor_id"
-            required
-            disabled={doctors.length === 0}
-            className={`${fieldClassName} disabled:cursor-not-allowed disabled:opacity-50`}
-            defaultValue=""
-          >
-            <option value="" disabled>
-              {doctors.length === 0 ? "No doctors available" : "Select a doctor"}
-            </option>
-            {doctors.map((doctor) => (
-              <option key={doctor.id} value={doctor.id}>
-                {doctor.full_name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {/* Patient Name Input */}
-        <label className="flex flex-col gap-2 text-sm">
-          <span className="font-medium text-zinc-300">Patient name</span>
-          <input
-            type="text"
-            name="patient_name"
-            required
-            className={fieldClassName}
-            placeholder="John Doe"
-          />
-        </label>
-
-        {/* Appointment Time Input */}
-        <label className="flex flex-col gap-2 text-sm">
-          <span className="font-medium text-zinc-300">Appointment time</span>
-          <input
-            type="datetime-local"
-            name="scheduled_at"
-            required
-            className={`${fieldClassName} [color-scheme:dark]`}
-          />
-        </label>
-
-        <SubmitButton disabled={doctors.length === 0} />
-      </form>
-    </aside>
+      {appointments.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-white/10 bg-black/40 px-6 py-12 text-center">
+          <p className="text-sm font-medium text-zinc-300">
+            No appointments scheduled
+          </p>
+          <p className="mt-1 text-sm text-zinc-500">
+            Appointments will appear here once they are booked.
+          </p>
+        </div>
+      ) : (
+        <ul className="divide-y divide-white/10">
+          {appointments.map((appointment) => (
+            <li
+              key={appointment.id}
+              className="flex flex-col gap-3 py-5 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <p className="font-medium text-zinc-50">
+                  {appointment.patient_name}
+                </p>
+                <p className="text-sm text-zinc-400">
+                  Dr. {getDoctorName(appointment.doctors)}
+                </p>
+                <p className="mt-1 text-sm text-zinc-500">
+                  {formatDateTime(appointment.appointment_time)}
+                </p>
+              </div>
+              <span
+                className={`w-fit rounded-full px-3 py-1 text-xs font-medium capitalize ring-1 ${statusStyles(appointment.status)}`}
+              >
+                {appointment.status}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
