@@ -1,9 +1,8 @@
 import { createClient } from "@/src/utils/supabase/server";
 import { DoctorList } from "@/src/components/DoctorList";
-import { AddDoctorForm } from "@/src/components/AddDoctorForm";
 import { AppointmentList } from "@/src/components/AppointmentList";
 import { DashboardHeader } from "@/src/components/DashboardHeader";
-import { ScheduleAppointmentForm } from "@/src/components/ScheduleAppointmentForm";
+import { DashboardActions } from "@/src/components/DashboardActions";
 
 export const runtime = "edge";
 
@@ -13,7 +12,7 @@ export default async function DashboardPage() {
   const [{ data: doctors }, { data: appointments }] = await Promise.all([
     supabase
       .from("doctors")
-      .select("id, full_name, specialty, email")
+      .select("id, full_name, specialty, email, availability")
       .order("full_name", { ascending: true }),
     supabase
       .from("appointments")
@@ -30,8 +29,7 @@ export default async function DashboardPage() {
           <AppointmentList appointments={appointments ?? []} />
         </div>
         <aside className="flex flex-col gap-8">
-          <AddDoctorForm />
-          <ScheduleAppointmentForm doctors={doctors ?? []} />
+          <DashboardActions doctors={doctors ?? []} />
         </aside>
       </main>
     </div>
