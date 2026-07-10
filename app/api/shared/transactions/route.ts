@@ -1,0 +1,52 @@
+import { NextResponse } from 'next/server';
+
+import {
+  createServiceContext,
+  processSharedTransaction,
+  type SharedTransactionInput,
+} from '@nexora/shared';
+import { createNextServerSupabaseClient } from '@nexora/shared/client';
+
+/**
+ * POST /api/shared/transactions
+ * Headless entry point for the cross-app automation pipeline.
+ */
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as SharedTransactionInput & {
+      actorUserId: string;
+      tenantId: string;
+      sourceApp: 'admin' | 'hospital' | 'vendor' | 'patient' | 'operations';
+    };
+
+    const { actorUserId, tenantId, sourceApp, ...transactionInput } = body;
+
+    if (!actorUserId || !tenantId || !sourceApp) {
+      return NextResponse.json(
+        { success: false, errors: ['actorUserId, tenantId, and sourceApp are required'] },
+        { status: 400 },
+      );
+    }
+
+    let supabase;
+    try {
+      supabase = await createNextServerSupabaseClient();
+    } catch {
+      supabase = undefined;
+    }
+
+    const ctx = createServiceContext({
+      actorUserId,
+      tenantId,
+      sourceApp,
+      supabase,
+    });
+
+    const result = await processSharedTransaction(transactionInput, ctx);
+
+    return NextResponse.json(result, { status: result.success ? 200 : 422 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ success: false, errors: [message] }, { status: 500 });
+  }
+}
