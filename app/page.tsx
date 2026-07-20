@@ -1,5 +1,8 @@
-import ErpExecutiveHome from './components/home/ErpExecutiveHome';
+import { redirect } from 'next/navigation';
 
+import { APP_ROUTES } from './lib/routes';
+
+/** Hospital operations entry — route all root visitors to the command dashboard. */
 export default function HomePage() {
-  return <ErpExecutiveHome />;
+  redirect(APP_ROUTES.hospitalDashboard);
 }

@@ -7,7 +7,7 @@ export function resolvePostLoginRoute(role: InternalStaffRole): string {
   switch (role) {
     case 'hospital_admin':
     case 'it_admin':
-      return APP_ROUTES.home;
+      return APP_ROUTES.hospitalDashboard;
     case 'receptionist':
     case 'front_office':
       return APP_ROUTES.appointmentsHub;
@@ -28,7 +28,7 @@ export function resolvePostLoginRoute(role: InternalStaffRole): string {
     case 'hr_team':
       return APP_ROUTES.hrHub;
     default:
-      return APP_ROUTES.home;
+      return APP_ROUTES.hospitalDashboard;
   }
 }
 

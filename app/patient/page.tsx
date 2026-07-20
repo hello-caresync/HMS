@@ -1,5 +1,5 @@
-import PatientCommandCenter from './components/PatientCommandCenter';
+import { redirect } from 'next/navigation';
 
-export default function PatientPage() {
-  return <PatientCommandCenter />;
+export default function PatientRootPage() {
+  redirect('/patient/dashboard');
 }

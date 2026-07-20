@@ -20,6 +20,7 @@ export const APP_ROUTES = {
   emergency: '/emergency',
   otCoordination: '/ot-coordination',
   emr: '/emr',
+  doctorDashboard: '/doctor',
   laboratoryHub: '/laboratory',
   radiologyHub: '/radiology',
   pharmacyHub: '/pharmacy',
@@ -43,6 +44,9 @@ export const APP_ROUTES = {
   /** Phase 1 foundation modules */
   settingsBedManagement: '/settings/bed-management',
   masterDataPharmacy: '/master-data/pharmacy',
+
+  /** Hospital command cockpit */
+  hospitalDashboard: '/hospital/dashboard',
 
   /** Legacy / admin aliases (still valid) */
   dashboard: '/dashboard',

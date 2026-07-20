@@ -8,8 +8,8 @@ import AuthShell, {
   AuthButton,
   AuthInput,
   AuthLink,
-} from '../../components/auth/AuthShell';
-import PasswordPolicyChecklist from '../../components/auth/PasswordPolicyChecklist';
+} from '@/components/auth/AuthShell';
+import PasswordPolicyChecklist from '@/components/auth/PasswordPolicyChecklist';
 import { APP_ROUTES } from '../../lib/routes';
 import { completePasswordReset, evaluatePasswordPolicy } from '../../lib/auth';
 

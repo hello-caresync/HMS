@@ -18,7 +18,7 @@ export const ERP_NAV_SECTIONS: ErpNavSection[] = [
     id: 'core',
     title: 'Core Operations',
     items: [
-      { label: 'Dashboard', href: APP_ROUTES.home, description: 'Executive command cockpit' },
+      { label: 'Dashboard', href: APP_ROUTES.hospitalDashboard, description: 'Executive command cockpit' },
       { label: 'Patients', href: APP_ROUTES.patientsRegister, description: 'Unified registration desk' },
       { label: 'Appointments', href: APP_ROUTES.appointmentsHub, description: 'Token queue & walk-in desk' },
       { label: 'Admissions', href: APP_ROUTES.admissionsAllocate, description: 'Bed matrix & allocation' },
@@ -29,6 +29,7 @@ export const ERP_NAV_SECTIONS: ErpNavSection[] = [
     id: 'clinical',
     title: 'Clinical Units',
     items: [
+      { label: 'Doctor Dashboard', href: APP_ROUTES.doctorDashboard, description: 'Clinical workspace & OPD queue' },
       { label: 'OPD', href: APP_ROUTES.opd, description: 'Outpatient operations' },
       { label: 'IPD', href: APP_ROUTES.ipdManagement, description: 'Nursing dashboard & MAR charting' },
       { label: 'Emergency', href: APP_ROUTES.emergency, description: 'Trauma triage monitor' },
@@ -72,7 +73,28 @@ export const ERP_MODULE_COUNT = ERP_NAV_SECTIONS.reduce(
 );
 
 /** Routes that render without the ERP sidebar (auth & external portals) */
-export const BARE_LAYOUT_PREFIXES = ['/login', '/vendor', '/patient', '/clinical'];
+export const BARE_LAYOUT_PREFIXES = [
+  '/login',
+  '/vendor',
+  '/patient',
+  '/hospital',
+  '/doctor',
+  '/clinical',
+  '/dashboard',
+  '/appointments',
+  '/consultation',
+  '/emr',
+  '/prescription',
+  '/laboratory',
+  '/radiology',
+  '/surgery',
+  '/telemedicine',
+  '/clinical-suite',
+  '/practice-hub',
+  '/settings',
+  '/messaging',
+  '/documents',
+];
 
 export function usesBareLayout(pathname: string): boolean {
   return BARE_LAYOUT_PREFIXES.some(

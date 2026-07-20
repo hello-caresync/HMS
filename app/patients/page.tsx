@@ -1,1 +1,3 @@
-export { default, metadata } from '../(dashboard)/patients/register/page';
+'use client';
+
+export { default } from './PatientView';

@@ -27,7 +27,7 @@ import ChatView from './components/ChatView';
 import ReturnsView from './components/ReturnsView';
 import AnalyticsView from './components/AnalyticsView';
 import VendorSidebar from './components/VendorSidebar';
-import RoleSelectorDropdown from '../../components/RoleSelectorDropdown';
+import RoleSelectorDropdown from '@/components/RoleSelectorDropdown';
 import { VENDOR_NAV_ITEMS, isHubActiveModule } from './navConfig';
 import { useRealtimeInventory } from '../../hooks/useRealtimeInventory';
 import { toVendorCatalogProducts } from '../../lib/inventoryBus';

@@ -90,7 +90,10 @@ export default function DashboardWidgets({ metrics = DASHBOARD_METRICS }: Dashbo
   } = metrics;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+    <section
+      aria-label="Operational dashboard widgets"
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+    >
       {/* Today's Patients */}
       <WidgetCard title="Today's Patients" icon={Users} iconClassName="text-sky-600">
         <p className="text-3xl font-bold tabular-nums tracking-tight text-slate-900">
@@ -317,6 +320,6 @@ export default function DashboardWidgets({ metrics = DASHBOARD_METRICS }: Dashbo
           ))}
         </ul>
       </WidgetCard>
-    </div>
+    </section>
   );
 }

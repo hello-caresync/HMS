@@ -7,7 +7,7 @@ export const INITIAL_NOTIFICATIONS: DashboardNotification[] = [
     message: 'Paracetamol 500mg below safety threshold — 142 units remaining (min 500).',
     severity: 'warning',
     module: 'Pharmacy',
-    timestamp: '2026-07-09T06:12:00Z',
+    timestamp: '2026-07-16T06:12:00Z',
     read: false,
   },
   {
@@ -16,7 +16,7 @@ export const INITIAL_NOTIFICATIONS: DashboardNotification[] = [
     message: 'Red Alert in ER — Trauma bay T-2, multi-vehicle collision, ETA 4 min.',
     severity: 'critical',
     module: 'Emergency',
-    timestamp: '2026-07-09T06:08:00Z',
+    timestamp: '2026-07-16T06:08:00Z',
     read: false,
   },
   {
@@ -25,7 +25,7 @@ export const INITIAL_NOTIFICATIONS: DashboardNotification[] = [
     message: 'ICU-4 — SpO₂ drop to 88%, rapid response team dispatched.',
     severity: 'critical',
     module: 'ICU',
-    timestamp: '2026-07-09T05:55:00Z',
+    timestamp: '2026-07-16T05:55:00Z',
     read: false,
   },
   {
@@ -34,7 +34,7 @@ export const INITIAL_NOTIFICATIONS: DashboardNotification[] = [
     message: 'Invoice INV-8842 (₹1,24,500) overdue by 12 days — vendor MedSupply Co.',
     severity: 'warning',
     module: 'Finance',
-    timestamp: '2026-07-09T05:30:00Z',
+    timestamp: '2026-07-16T05:30:00Z',
     read: true,
   },
   {
@@ -43,7 +43,7 @@ export const INITIAL_NOTIFICATIONS: DashboardNotification[] = [
     message: 'HL7/ADT feed synchronized — 47 patient records updated.',
     severity: 'info',
     module: 'Integration',
-    timestamp: '2026-07-09T05:00:00Z',
+    timestamp: '2026-07-16T05:00:00Z',
     read: true,
   },
 ];

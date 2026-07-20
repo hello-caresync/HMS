@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { APP_ROUTES } from '../../../lib/routes';
-import RoleSelectorDropdown from '../../../components/RoleSelectorDropdown';
+import RoleSelectorDropdown from '@/components/RoleSelectorDropdown';
 import POInboxDetail from '../components/POInboxDetail';
 import VendorSidebar from '../components/VendorSidebar';
 import { VENDOR_NAV_ITEMS } from '../navConfig';
