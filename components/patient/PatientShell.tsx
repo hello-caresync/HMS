@@ -23,12 +23,12 @@ export function PatientShell({ children }: PatientShellProps) {
   const mobileNav = patientMobilePrimaryNav();
 
   return (
-    <div className="flex min-h-screen w-full bg-[#faf6f7]">
+    <div className="min-h-screen w-full bg-[#faf6f7]">
       <aside
-        className="sticky top-0 hidden h-screen min-h-screen w-64 flex-shrink-0 flex-col overflow-hidden bg-[#f47c8c] shadow-lg md:flex"
+        className="fixed top-0 left-0 z-50 hidden h-screen w-64 flex-col overflow-hidden bg-[#f47c8c] shadow-lg md:flex"
         aria-label="Patient portal navigation"
       >
-        <div className="border-b border-white/15 px-3 py-3">
+        <div className="shrink-0 border-b border-white/15 px-4 pb-3 pt-6">
           <div className="flex items-center gap-2">
             <div className="rounded-lg bg-white/15 p-1.5 text-white">
               <BrandIcon className="h-5 w-5" aria-hidden />
@@ -50,7 +50,7 @@ export function PatientShell({ children }: PatientShellProps) {
           </div>
         </div>
 
-        <nav className="custom-scrollbar flex-1 overflow-y-auto px-3 py-3">
+        <nav className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-3">
           <ul className="space-y-1">
             {PATIENT_NAV_ITEMS.map(({ label, href, icon: Icon }) => {
               const active = isPatientNavActive(pathname, href);
@@ -78,7 +78,7 @@ export function PatientShell({ children }: PatientShellProps) {
         </nav>
       </aside>
 
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="flex min-h-screen min-w-0 flex-col md:ml-64">
         <header className="flex items-center justify-between border-b border-[#f0d8dc] bg-white px-4 py-3 md:hidden">
           <div className="flex items-center gap-2">
             <div className="rounded-lg bg-[#f47c8c] p-2 text-white">
