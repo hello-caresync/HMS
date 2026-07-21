@@ -2,6 +2,15 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
+/** Mock PACS queue metadata — prerendered at build time (no separate DB worker). */
+export async function GET() {
+  return NextResponse.json({
+    success: true,
+    status: 'READY',
+    pacs: 'PACS queue · preliminary read ETA 45 min (mock)',
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

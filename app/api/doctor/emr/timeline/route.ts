@@ -2,10 +2,11 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
+    const prisma = await getPrisma();
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
     if (!patientId) {

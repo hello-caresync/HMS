@@ -2,15 +2,18 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
-import { DischargeStatus } from '@prisma/client';
+import { DischargeStatus } from '@/lib/doctor/clinical-enums';
 
 import { apiError, resolveDoctorId } from '@/lib/doctor/server/api-helpers';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
+
+import type { DischargeStatus as PrismaDischargeStatus } from '@prisma/client';
 
 type SoapNote = { at: string; author: string; s: string; o: string; a: string; p: string };
 
 export async function GET(request: Request) {
   try {
+    const prisma = await getPrisma();
     const doctorId = await resolveDoctorId(request);
     const admissions = await prisma.ipdAdmission.findMany({
       where: { doctorId, status: DischargeStatus.ADMITTED },
@@ -29,6 +32,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const prisma = await getPrisma();
     const doctorId = await resolveDoctorId(request);
     const body = await request.json();
     const { admissionId, soap } = body as { admissionId: string; soap: Partial<SoapNote> };
@@ -79,6 +83,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const prisma = await getPrisma();
     const doctorId = await resolveDoctorId(request);
     const body = await request.json();
     const { admissionId, status, wardName, bedNumber } = body;
@@ -90,7 +95,7 @@ export async function PUT(request: Request) {
     const updated = await prisma.ipdAdmission.update({
       where: { id: admissionId, doctorId },
       data: {
-        ...(status ? { status: status as DischargeStatus } : {}),
+        ...(status ? { status: status as PrismaDischargeStatus } : {}),
         ...(wardName ? { wardName } : {}),
         ...(bedNumber ? { bedNumber } : {}),
       },

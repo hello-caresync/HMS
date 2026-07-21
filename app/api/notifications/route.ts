@@ -3,10 +3,11 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 
 import { apiError, resolveDoctorId } from '@/lib/doctor/server/api-helpers';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
+    const prisma = await getPrisma();
     await resolveDoctorId(request);
 
     const [alerts, statLabs] = await Promise.all([
@@ -52,6 +53,7 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    const prisma = await getPrisma();
     const { id, acknowledged } = await request.json();
     if (!id) return apiError('id required', 400);
 

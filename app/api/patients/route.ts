@@ -2,13 +2,14 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
-import { AppointmentStatus, DischargeStatus } from '@prisma/client';
+import { AppointmentStatus, DischargeStatus } from '@/lib/doctor/clinical-enums';
 
 import { apiError, parseJsonArray, resolveDoctorId } from '@/lib/doctor/server/api-helpers';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
+    const prisma = await getPrisma();
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim();
     const ward = searchParams.get('ward');
@@ -124,6 +125,7 @@ function mapPatient(p: {
 
 export async function POST(request: Request) {
   try {
+    const prisma = await getPrisma();
     const body = await request.json();
     const { mrn, fullName, age, gender, bloodGroup, allergies, chronicConditions } = body;
 

@@ -3,7 +3,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 
 import { apiError, resolveDoctorId } from '@/lib/doctor/server/api-helpers';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 const CHANNELS = [
   { id: 'ch-nurse', name: 'Nursing Station · Ward 3', role: 'Nursing' },
@@ -15,6 +15,7 @@ const CHANNELS = [
 
 export async function GET(request: Request) {
   try {
+    const prisma = await getPrisma();
     const { searchParams } = new URL(request.url);
     const channelId = searchParams.get('channelId') ?? 'ch-nurse';
     await resolveDoctorId(request);
@@ -64,6 +65,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const prisma = await getPrisma();
     const doctorId = await resolveDoctorId(request);
     const body = await request.json();
     const { channelId, body: text, stat } = body;

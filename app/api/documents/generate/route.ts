@@ -2,12 +2,12 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
-import { DocumentType } from '@prisma/client';
+import { DocumentType } from '@/lib/doctor/clinical-enums';
 
 import { apiError, resolveDoctorId } from '@/lib/doctor/server/api-helpers';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
-const TYPE_MAP: Record<string, DocumentType> = {
+const TYPE_MAP: Record<string, (typeof DocumentType)[keyof typeof DocumentType]> = {
   DISCHARGE_SUMMARY: DocumentType.DISCHARGE_SUMMARY,
   REFERRAL_LETTER: DocumentType.REFERRAL_LETTER,
   MEDICAL_FITNESS: DocumentType.FITNESS_CERTIFICATE,
@@ -17,6 +17,7 @@ const TYPE_MAP: Record<string, DocumentType> = {
 
 export async function POST(request: Request) {
   try {
+    const prisma = await getPrisma();
     const doctorId = await resolveDoctorId(request);
     const body = await request.json();
     const { patientId, documentType, content, dateFrom, dateTo, signed, digitalSignature } = body;

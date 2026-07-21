@@ -1,4 +1,3 @@
-import { SUPABASE_TABLES } from '../../client/supabase';
 import type { NexoraServiceContext } from '../../types/context';
 import type { SharedAuditFootprint } from '../../types/transaction';
 import type { ServiceResult } from '../../types/common';
@@ -54,7 +53,7 @@ export async function writeAuditLog(
   };
 
   if (ctx.supabase) {
-    const { error } = await ctx.supabase.from(SUPABASE_TABLES.auditLogs).insert({
+    const { error } = await ctx.supabase.from('audit_logs').insert({
       id: auditId,
       user_id: ctx.actorUserId,
       tenant_id: ctx.tenantId,

@@ -2,13 +2,14 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
-import { AppointmentStatus, EncounterStatus } from '@prisma/client';
+import { AppointmentStatus, EncounterStatus } from '@/lib/doctor/clinical-enums';
 
 import { apiError, resolveDoctorId } from '@/lib/doctor/server/api-helpers';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
+    const prisma = await getPrisma();
     const doctorId = await resolveDoctorId(request);
     const start = new Date();
     start.setHours(0, 0, 0, 0);
@@ -49,6 +50,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const prisma = await getPrisma();
     const doctorId = await resolveDoctorId(request);
     const body = await request.json();
     const {

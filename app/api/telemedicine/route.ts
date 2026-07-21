@@ -2,13 +2,14 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
-import { AppointmentType } from '@prisma/client';
+import { AppointmentType } from '@/lib/doctor/clinical-enums';
 
 import { apiError, parseJsonArray, resolveDoctorId } from '@/lib/doctor/server/api-helpers';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
+    const prisma = await getPrisma();
     const doctorId = await resolveDoctorId(request);
     const appointment = await prisma.appointment.findFirst({
       where: {

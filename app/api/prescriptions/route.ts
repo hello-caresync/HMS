@@ -2,13 +2,14 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
-import { ClinicalOrderStatus } from '@prisma/client';
+import { ClinicalOrderStatus } from '@/lib/doctor/clinical-enums';
 
 import { apiError, resolveDoctorId } from '@/lib/doctor/server/api-helpers';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
+    const prisma = await getPrisma();
     const doctorId = await resolveDoctorId(request);
     const body = await request.json();
     const { encounterId, patientId, medicines, digitalSignature, digitalSignatureApplied } = body;

@@ -2,13 +2,14 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
-import { ClinicalOrderStatus, EncounterStatus, LabUrgency } from '@prisma/client';
+import { ClinicalOrderStatus, EncounterStatus, LabUrgency } from '@/lib/doctor/clinical-enums';
 
 import { apiError, resolveDoctorId } from '@/lib/doctor/server/api-helpers';
-import prisma from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
+    const prisma = await getPrisma();
     const doctorId = await resolveDoctorId(request);
     const alerts = await prisma.emergencyAlert.findMany({
       where: { OR: [{ doctorId }, { doctorId: null }] },
@@ -43,6 +44,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const prisma = await getPrisma();
     const doctorId = await resolveDoctorId(request);
     const body = await request.json();
     const {

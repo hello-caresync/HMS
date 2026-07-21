@@ -2,12 +2,7 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
-import {
-  createServiceContext,
-  processSharedTransaction,
-  type SharedTransactionInput,
-} from '@nexora/shared';
-import { createNextServerSupabaseClient } from '@nexora/shared/client';
+import type { SharedTransactionInput } from '@/lib/shared/types/transaction';
 
 /**
  * POST /api/shared/transactions
@@ -29,6 +24,13 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    const [{ processSharedTransaction }, { createServiceContext }, { createNextServerSupabaseClient }] =
+      await Promise.all([
+        import('@/lib/shared/pipeline/processSharedTransaction'),
+        import('@/lib/shared/types/context'),
+        import('@/lib/shared/client/next-server'),
+      ]);
 
     let supabase;
     try {
