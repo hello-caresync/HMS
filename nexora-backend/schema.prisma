@@ -7,3 +7,37 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+
+model Doctor {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  fullName         String
+  specialization   String
+  licenseNumber    String   @unique
+  signatureUrl     String?
+  consultationFees Float
+  createdAt        DateTime @default(now())
+}
+
+model Patient {
+  id               String   @id @default(uuid())
+  mrn              String   @unique
+  fullName         String
+  age              Int
+  gender           String
+  bloodGroup       String
+  allergies        Json?
+  chronicConditions Json?
+  createdAt        DateTime @default(now())
+}
+
+model Prescription {
+  id                     String   @id @default(uuid())
+  encounterId            String
+  doctorId               String
+  patientId              String
+  medicines              Json
+  digitalSignatureApplied Boolean  @default(false)
+  status                 String   @default("PENDING")
+  createdAt              DateTime @default(now())
+}

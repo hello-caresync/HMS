@@ -1,8 +1,11 @@
-import { defineConfig } from "prisma/config";
+generator client {
+  provider = "prisma-client-js"
+}
 
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  datasource: {
-    url: "postgresql://postgres.anmhgtekjfiknvoxkbmv:supabase@database#2@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
-  }
-});
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// PASTE YOUR TABLES HERE (doctors, patients, encounters, prescriptions, etc.)

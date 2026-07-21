@@ -39,6 +39,7 @@
     "nexora-erp",
     "nexora",
     "packages",
-    ".next"
+    ".next",
+    "prisma/seed.ts"
   ]
 }

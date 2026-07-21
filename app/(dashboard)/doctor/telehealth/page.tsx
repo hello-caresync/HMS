@@ -1,1 +1,1 @@
-export { default } from '../../../dashboard/telemedicine/page';
+export { default } from '../telemedicine/page';

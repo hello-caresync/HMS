@@ -63,7 +63,7 @@ type QuickAction = {
 };
 
 const METRIC_TILE_CLASS =
-  'flex items-center justify-between rounded-xl border border-slate-200/60 border-t-4 border-t-[#00758C] bg-white p-4 shadow-sm';
+  'flex items-center justify-between rounded-xl border border-slate-200/60 border-t-4 border-t-[#0F172A] bg-white p-4 shadow-sm';
 
 const PANEL_CLASS = 'rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm';
 
@@ -245,6 +245,8 @@ function formatLiveTimestamp(): string {
   });
 }
 
+import DoctorDashboardWorkflowBar from '@/components/doctor/DoctorDashboardWorkflowBar';
+
 function ClientMounted({
   children,
   fallback,
@@ -269,7 +271,7 @@ function DashboardLoadingShell() {
   return (
     <div className="min-h-screen w-full space-y-6 bg-slate-50/50 p-6 font-sans text-slate-950">
       <header>
-        <h1 className="text-2xl font-black text-[#00758C]">Clinical Command Dashboard</h1>
+        <h1 className="text-2xl font-black text-[#0F172A]">Clinical Command Dashboard</h1>
         <p className="mt-1 text-sm font-medium text-slate-600">Loading clinical workspace…</p>
       </header>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -328,19 +330,19 @@ function DoctorDashboardContent() {
       {/* Command station header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#00758C]">Clinical Command Dashboard</h1>
+          <h1 className="text-2xl font-black text-[#0F172A]">Clinical Command Dashboard</h1>
           <p className="mt-1 text-sm font-medium text-slate-600">
             Dr. Aishwarya D S, MD · OPD Block A · Nexora Clinical · sandbox workspace
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-xl border border-[#008588]/20 bg-white px-4 py-2.5 shadow-sm">
-          <Clock className="h-4 w-4 text-[#008588]" aria-hidden />
-          <span className="text-xs font-bold text-[#00758C]">{liveTime}</span>
+        <div className="inline-flex items-center gap-2 rounded-xl border border-[#0D9488]/20 bg-white px-4 py-2.5 shadow-sm">
+          <Clock className="h-4 w-4 text-[#0D9488]" aria-hidden />
+          <span className="text-xs font-bold text-[#0F172A]">{liveTime}</span>
         </div>
       </header>
 
       {actionNotice ? (
-        <p className="rounded-xl border border-[#008588]/20 bg-[#008588]/5 px-4 py-2 text-sm font-bold text-[#008588]">
+        <p className="rounded-xl border border-[#0D9488]/20 bg-[#0D9488]/5 px-4 py-2 text-sm font-bold text-[#0D9488]">
           {actionNotice}
         </p>
       ) : null}
@@ -375,18 +377,18 @@ function DoctorDashboardContent() {
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Patients Seen Today
             </p>
-            <p className="mt-1 text-2xl font-black tabular-nums text-[#00758C]">
+            <p className="mt-1 text-2xl font-black tabular-nums text-[#0F172A]">
               {metrics.patientsSeen}
             </p>
           </div>
-          <Users className="h-5 w-5 text-[#008588]" aria-hidden />
+          <Users className="h-5 w-5 text-[#0D9488]" aria-hidden />
         </div>
         <div className={METRIC_TILE_CLASS}>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Active Queue Count
             </p>
-            <p className="mt-1 text-2xl font-black tabular-nums text-[#008588]">
+            <p className="mt-1 text-2xl font-black tabular-nums text-[#0D9488]">
               {metrics.activeQueue}
             </p>
           </div>
@@ -423,29 +425,29 @@ function DoctorDashboardContent() {
           {/* Live consultation queue */}
           <section aria-label="Live consultation queue" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Stethoscope className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-lg font-black text-[#00758C]">Live Consultation Queue</h2>
+              <Stethoscope className="h-5 w-5 text-[#0D9488]" aria-hidden />
+              <h2 className="text-lg font-black text-[#0F172A]">Live Consultation Queue</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-slate-200/80 bg-slate-50/80">
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#0F172A]">
                       Token
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#0F172A]">
                       Patient
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#0F172A]">
                       Arrival
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#0F172A]">
                       Priority
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#0F172A]">
                       Complaint
                     </th>
-                    <th className="px-3 py-2 text-right text-[10px] font-black uppercase text-[#00758C]">
+                    <th className="px-3 py-2 text-right text-[10px] font-black uppercase text-[#0F172A]">
                       Action
                     </th>
                   </tr>
@@ -453,7 +455,7 @@ function DoctorDashboardContent() {
                 <tbody>
                   {queue.map((entry) => (
                     <tr key={entry.id} className="border-b border-slate-200/60">
-                      <td className="px-3 py-3 font-mono text-xs font-black text-[#008588]">
+                      <td className="px-3 py-3 font-mono text-xs font-black text-[#0D9488]">
                         {entry.token}
                       </td>
                       <td className="px-3 py-3 text-xs font-bold text-slate-900">
@@ -474,7 +476,7 @@ function DoctorDashboardContent() {
                         <button
                           type="button"
                           onClick={() => handleInitiateEncounter(entry)}
-                          className="rounded-lg bg-[#00758C] px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#008588]"
+                          className="rounded-lg bg-[#0F172A] px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#0D9488]"
                         >
                           Initiate Encounter
                         </button>
@@ -492,15 +494,15 @@ function DoctorDashboardContent() {
           {/* Today's appointments & surgeries matrix */}
           <section aria-label="Appointments and surgeries" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <ClipboardList className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-lg font-black text-[#00758C]">
+              <ClipboardList className="h-5 w-5 text-[#0D9488]" aria-hidden />
+              <h2 className="text-lg font-black text-[#0F172A]">
                 Today&apos;s Appointments &amp; Surgeries Matrix
               </h2>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <div>
-                <h3 className="mb-3 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#008588]">
+                <h3 className="mb-3 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#0D9488]">
                   <Clock className="h-3.5 w-3.5" aria-hidden />
                   Scheduled Check-ups
                 </h3>
@@ -511,7 +513,7 @@ function DoctorDashboardContent() {
                       className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-3"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-xs font-black text-[#00758C]">{apt.time}</span>
+                        <span className="font-mono text-xs font-black text-[#0F172A]">{apt.time}</span>
                         <span className="rounded-md border border-[#00A481]/20 bg-[#00A481]/10 px-2 py-0.5 text-[10px] font-bold text-[#00A481]">
                           {apt.type}
                         </span>
@@ -524,7 +526,7 @@ function DoctorDashboardContent() {
               </div>
 
               <div>
-                <h3 className="mb-3 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#008588]">
+                <h3 className="mb-3 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#0D9488]">
                   <Scissors className="h-3.5 w-3.5" aria-hidden />
                   Upcoming Surgeries
                 </h3>
@@ -535,10 +537,10 @@ function DoctorDashboardContent() {
                       className="rounded-xl border border-[#5EC283]/30 bg-[#5EC283]/10 p-3"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-xs font-black text-[#00758C]">
+                        <span className="font-mono text-xs font-black text-[#0F172A]">
                           {surgery.time}
                         </span>
-                        <span className="text-[10px] font-bold text-[#008588]">{surgery.room}</span>
+                        <span className="text-[10px] font-bold text-[#0D9488]">{surgery.room}</span>
                       </div>
                       <p className="mt-1 text-sm font-bold text-slate-900">{surgery.procedure}</p>
                       <p className="text-xs font-medium text-slate-600">{surgery.patientRef}</p>
@@ -554,8 +556,8 @@ function DoctorDashboardContent() {
         <aside className="space-y-6">
           <section aria-label="Doctor quick actions" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Zap className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-base font-black text-[#00758C]">Doctor Quick Actions</h2>
+              <Zap className="h-5 w-5 text-[#0D9488]" aria-hidden />
+              <h2 className="text-base font-black text-[#0F172A]">Doctor Quick Actions</h2>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {QUICK_ACTIONS.map((action) => {
@@ -567,7 +569,7 @@ function DoctorDashboardContent() {
                     onClick={() => handleQuickAction(action)}
                     className="flex cursor-pointer flex-col gap-2 rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-slate-50 p-4 text-left text-xs font-bold text-slate-700 transition-all hover:-translate-y-0.5"
                   >
-                    <Icon className="h-4 w-4 text-[#008588]" aria-hidden />
+                    <Icon className="h-4 w-4 text-[#0D9488]" aria-hidden />
                     {action.label}
                   </button>
                 );
@@ -577,8 +579,8 @@ function DoctorDashboardContent() {
 
           <section aria-label="Pending follow-ups" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Activity className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-base font-black text-[#00758C]">Pending Follow-ups Desk</h2>
+              <Activity className="h-5 w-5 text-[#0D9488]" aria-hidden />
+              <h2 className="text-base font-black text-[#0F172A]">Pending Follow-ups Desk</h2>
             </div>
             <ul className="space-y-3">
               {PENDING_FOLLOWUPS.map((item) => (
@@ -586,7 +588,7 @@ function DoctorDashboardContent() {
                   key={item.id}
                   className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4"
                 >
-                  <p className="text-sm font-black text-[#00758C]">{item.patientRef}</p>
+                  <p className="text-sm font-black text-[#0F172A]">{item.patientRef}</p>
                   <p className="mt-1 text-xs font-medium text-slate-700">{item.task}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-500">Due {item.dueBy}</span>
@@ -615,6 +617,7 @@ function DoctorDashboardContent() {
 export default function DoctorDashboardPage() {
   return (
     <ClientMounted fallback={<DashboardLoadingShell />}>
+      <DoctorDashboardWorkflowBar />
       <DoctorDashboardContent />
     </ClientMounted>
   );
