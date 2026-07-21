@@ -238,9 +238,9 @@ const VITALS_HISTORY: VitalsHistoryPoint[] = [
   { id: 'vh-4', date: '15 May 2026', bp: '122/80', glucose: '110', spo2: '98', bmi: '24.4' },
 ];
 
-const PANEL_CLASS = 'rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm';
+const PANEL_CLASS = 'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
 
-const CARD_CLASS = 'rounded-xl border border-slate-200/60 bg-white p-5 shadow-sm';
+const CARD_CLASS = 'rounded-xl border border-[#f0d8dc] bg-white p-5 shadow-sm';
 
 export default function PatientHealthPage() {
   const [activeTab, setActiveTab] = useState<HealthTab>('profile');
@@ -261,10 +261,10 @@ export default function PatientHealthPage() {
   const severeAllergies = ALLERGIES.filter((a) => a.severity === 'Severe/Anaphylaxis');
 
   return (
-    <div className="min-h-screen w-full space-y-6 bg-slate-50/70 p-6 font-sans text-slate-950">
+    <div className="min-h-screen w-full space-y-6 bg-[#faf6f7] p-6 font-sans text-slate-950">
       {/* Logistical hub header */}
       <header>
-        <h1 className="text-2xl font-black text-[#00758C]">
+        <h1 className="text-2xl font-black text-[#8c2b39]">
           Personal Electronic Health Record &amp; Vitals Console
         </h1>
         <p className="mt-1 text-sm font-medium text-slate-600">
@@ -282,8 +282,8 @@ export default function PatientHealthPage() {
             onClick={() => setActiveTab(id)}
             className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
               activeTab === id
-                ? 'bg-[#00758C] text-white shadow-sm'
-                : 'border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50/80 hover:text-[#00758C]'
+                ? 'bg-[#f47c8c] text-white shadow-sm'
+                : 'border border-[#f0d8dc] bg-white text-slate-600 hover:bg-slate-50/80 hover:text-[#8c2b39]'
             }`}
           >
             <Icon className="h-4 w-4" aria-hidden />
@@ -293,7 +293,7 @@ export default function PatientHealthPage() {
       </nav>
 
       {actionNotice ? (
-        <p className="rounded-xl border border-[#008588]/20 bg-[#008588]/5 px-4 py-2 text-sm font-bold text-[#008588]">
+        <p className="rounded-xl border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2 text-sm font-bold text-[#f47c8c]">
           {actionNotice}
         </p>
       ) : null}
@@ -304,19 +304,19 @@ export default function PatientHealthPage() {
           {CURRENT_VITALS.map(({ label, value, unit, status, icon: Icon }) => (
             <div
               key={label}
-              className="flex flex-col rounded-xl border border-slate-200/60 border-t-4 border-t-[#00A481] bg-white p-4 shadow-sm"
+              className="flex flex-col rounded-xl border border-[#f0d8dc] border-t-4 border-t-[#f47c8c] bg-white p-4 shadow-sm"
             >
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   {label}
                 </p>
-                <Icon className="h-4 w-4 text-[#00A481]" aria-hidden />
+                <Icon className="h-4 w-4 text-[#f47c8c]" aria-hidden />
               </div>
-              <p className="text-xl font-black tabular-nums text-[#00758C]">
+              <p className="text-xl font-black tabular-nums text-[#8c2b39]">
                 {value}
                 <span className="text-xs font-medium text-slate-500"> {unit}</span>
               </p>
-              <p className="mt-1 text-[10px] font-bold text-[#5EC283]">{status}</p>
+              <p className="mt-1 text-[10px] font-bold text-[#8c2b39]">{status}</p>
             </div>
           ))}
         </div>
@@ -346,18 +346,18 @@ export default function PatientHealthPage() {
           {activeTab === 'profile' || activeTab === 'timeline' ? (
             <section aria-label="Medical and history registry" className={PANEL_CLASS}>
               <div className="mb-4 flex items-center gap-2">
-                <Stethoscope className="h-5 w-5 text-[#008588]" aria-hidden />
-                <h2 className="text-lg font-black text-[#00758C]">Medical &amp; History Registry</h2>
+                <Stethoscope className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+                <h2 className="text-lg font-black text-[#8c2b39]">Medical &amp; History Registry</h2>
               </div>
 
               <div className="space-y-4">
                 <div className={CARD_CLASS}>
-                  <h3 className="text-sm font-bold text-[#008588]">Chronic Diseases</h3>
+                  <h3 className="text-sm font-bold text-[#f47c8c]">Chronic Diseases</h3>
                   <ul className="mt-3 space-y-2">
                     {CHRONIC_CONDITIONS.map((item) => (
                       <li
                         key={item.id}
-                        className="rounded-lg border border-slate-200/80 bg-slate-50/50 px-3 py-2"
+                        className="rounded-lg border border-[#f0d8dc] bg-slate-50/50 px-3 py-2"
                       >
                         <p className="text-sm font-black text-slate-900">{item.condition}</p>
                         <p className="text-xs font-medium text-slate-600">
@@ -369,7 +369,7 @@ export default function PatientHealthPage() {
                 </div>
 
                 <div className={CARD_CLASS}>
-                  <h3 className="flex items-center gap-1.5 text-sm font-bold text-[#008588]">
+                  <h3 className="flex items-center gap-1.5 text-sm font-bold text-[#f47c8c]">
                     <Syringe className="h-4 w-4" aria-hidden />
                     Vaccinations
                   </h3>
@@ -377,27 +377,27 @@ export default function PatientHealthPage() {
                     {VACCINATIONS.map((vac) => (
                       <li
                         key={vac.id}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-[#00A481]/20 bg-[#00A481]/5 px-3 py-2"
+                        className="flex items-center justify-between gap-2 rounded-lg border border-[#f0d8dc] bg-[#fde8eb] px-3 py-2"
                       >
                         <div>
                           <p className="text-sm font-bold text-slate-900">{vac.vaccine}</p>
                           <p className="text-xs font-medium text-slate-600">{vac.dose}</p>
                         </div>
-                        <span className="text-xs font-black text-[#00A481]">{vac.date}</span>
+                        <span className="text-xs font-black text-[#f47c8c]">{vac.date}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
                 <div className={CARD_CLASS}>
-                  <h3 className="flex items-center gap-1.5 text-sm font-bold text-[#008588]">
+                  <h3 className="flex items-center gap-1.5 text-sm font-bold text-[#f47c8c]">
                     <Users className="h-4 w-4" aria-hidden />
                     Family History
                   </h3>
                   <ul className="mt-3 space-y-2">
                     {FAMILY_HISTORY.map((fh) => (
                       <li key={fh.id} className="text-sm">
-                        <span className="font-black text-[#00758C]">{fh.relation}</span>
+                        <span className="font-black text-[#8c2b39]">{fh.relation}</span>
                         <span className="font-medium text-slate-700"> · {fh.condition}</span>
                       </li>
                     ))}
@@ -410,40 +410,40 @@ export default function PatientHealthPage() {
           {activeTab === 'vitals' ? (
             <section aria-label="Vitals dashboard" className={PANEL_CLASS}>
               <div className="mb-4 flex items-center gap-2">
-                <Activity className="h-5 w-5 text-[#008588]" aria-hidden />
-                <h2 className="text-lg font-black text-[#00758C]">Vitals Ledger · Longitudinal</h2>
+                <Activity className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+                <h2 className="text-lg font-black text-[#8c2b39]">Vitals Ledger · Longitudinal</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200/80 bg-slate-50/80">
-                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                    <tr className="border-b border-[#f0d8dc] bg-slate-50/80">
+                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                         Date
                       </th>
-                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                         BP
                       </th>
-                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                         Glucose
                       </th>
-                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                         SpO2
                       </th>
-                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                         BMI
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {VITALS_HISTORY.map((row) => (
-                      <tr key={row.id} className="border-b border-slate-200/60">
+                      <tr key={row.id} className="border-b border-[#f0d8dc]">
                         <td className="px-3 py-2.5 font-bold text-slate-800">{row.date}</td>
-                        <td className="px-3 py-2.5 font-black text-[#008588]">{row.bp}</td>
-                        <td className="px-3 py-2.5 font-black text-[#008588]">
+                        <td className="px-3 py-2.5 font-black text-[#f47c8c]">{row.bp}</td>
+                        <td className="px-3 py-2.5 font-black text-[#f47c8c]">
                           {row.glucose} mg/dL
                         </td>
-                        <td className="px-3 py-2.5 font-black text-[#00A481]">{row.spo2}%</td>
-                        <td className="px-3 py-2.5 font-black text-[#5EC283]">{row.bmi}</td>
+                        <td className="px-3 py-2.5 font-black text-[#f47c8c]">{row.spo2}%</td>
+                        <td className="px-3 py-2.5 font-black text-[#8c2b39]">{row.bmi}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -455,33 +455,33 @@ export default function PatientHealthPage() {
           {(activeTab === 'timeline' || activeTab === 'profile') && (
             <section aria-label="Admission and surgery logs" className={PANEL_CLASS}>
               <div className="mb-4 flex items-center gap-2">
-                <BedDouble className="h-5 w-5 text-[#008588]" aria-hidden />
-                <h2 className="text-lg font-black text-[#00758C]">Admission &amp; Surgery Logs</h2>
+                <BedDouble className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+                <h2 className="text-lg font-black text-[#8c2b39]">Admission &amp; Surgery Logs</h2>
               </div>
 
-              <h3 className="mb-2 text-sm font-bold text-[#008588]">Previous Visits</h3>
+              <h3 className="mb-2 text-sm font-bold text-[#f47c8c]">Previous Visits</h3>
               <div className="mb-5 overflow-x-auto">
                 <table className="w-full min-w-[480px] border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200/80 bg-slate-50/80">
-                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                    <tr className="border-b border-[#f0d8dc] bg-slate-50/80">
+                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                         Date
                       </th>
-                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                         Doctor
                       </th>
-                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                         Department
                       </th>
-                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                      <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                         Reason
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {PREVIOUS_VISITS.map((visit) => (
-                      <tr key={visit.id} className="border-b border-slate-200/60">
-                        <td className="px-3 py-2.5 font-bold text-[#008588]">{visit.date}</td>
+                      <tr key={visit.id} className="border-b border-[#f0d8dc]">
+                        <td className="px-3 py-2.5 font-bold text-[#f47c8c]">{visit.date}</td>
                         <td className="px-3 py-2.5 font-bold text-slate-900">{visit.doctor}</td>
                         <td className="px-3 py-2.5 text-slate-700">{visit.department}</td>
                         <td className="px-3 py-2.5 text-xs font-medium text-slate-600">
@@ -493,12 +493,12 @@ export default function PatientHealthPage() {
                 </table>
               </div>
 
-              <h3 className="mb-2 text-sm font-bold text-[#008588]">Admission History</h3>
+              <h3 className="mb-2 text-sm font-bold text-[#f47c8c]">Admission History</h3>
               <ul className="mb-5 space-y-2">
                 {ADMISSIONS.map((adm) => (
                   <li key={adm.id} className={CARD_CLASS}>
                     <p className="text-sm font-black text-slate-900">{adm.diagnosis}</p>
-                    <p className="mt-1 text-xs font-bold text-[#008588]">
+                    <p className="mt-1 text-xs font-bold text-[#f47c8c]">
                       {adm.admitDate} → {adm.dischargeDate} · {adm.ward}
                     </p>
                     <p className="mt-1 text-xs font-medium text-slate-600">{adm.recoveryNotes}</p>
@@ -506,12 +506,12 @@ export default function PatientHealthPage() {
                 ))}
               </ul>
 
-              <h3 className="mb-2 text-sm font-bold text-[#008588]">Surgery History</h3>
+              <h3 className="mb-2 text-sm font-bold text-[#f47c8c]">Surgery History</h3>
               <ul className="space-y-2">
                 {SURGERIES.map((surgery) => (
                   <li key={surgery.id} className={CARD_CLASS}>
                     <p className="text-sm font-black text-slate-900">{surgery.procedure}</p>
-                    <p className="mt-1 text-xs font-bold text-[#008588]">
+                    <p className="mt-1 text-xs font-bold text-[#f47c8c]">
                       {surgery.date} · {surgery.surgeon}
                     </p>
                     <p className="mt-1 text-xs font-medium text-slate-600">
@@ -527,26 +527,26 @@ export default function PatientHealthPage() {
         {/* Right column — health timeline spine (40%) */}
         <aside aria-label="Health timeline" className={PANEL_CLASS}>
           <div className="mb-5 flex items-center gap-2">
-            <History className="h-5 w-5 text-[#008588]" aria-hidden />
-            <h2 className="text-lg font-black text-[#00758C]">Interactive Health Timeline</h2>
+            <History className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+            <h2 className="text-lg font-black text-[#8c2b39]">Interactive Health Timeline</h2>
           </div>
 
           <div className="relative pl-6">
             <div
-              className="absolute left-3 top-2 h-[calc(100%-0.5rem)] border-l-2 border-[#5EC283]/40"
+              className="absolute left-3 top-2 h-[calc(100%-0.5rem)] border-l-2 border-[#f0d8dc]"
               aria-hidden
             />
             <ol className="space-y-5">
               {TIMELINE_MILESTONES.map((milestone) => (
                 <li key={milestone.id} className="relative">
                   <span
-                    className="absolute -left-[1.15rem] top-2 h-3 w-3 rounded-full border-2 border-white bg-[#5EC283] shadow-sm"
+                    className="absolute -left-[1.15rem] top-2 h-3 w-3 rounded-full border-2 border-white bg-[#f47c8c] shadow-sm"
                     aria-hidden
                   />
-                  <div className="rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm">
+                  <div className="rounded-xl border border-[#f0d8dc] bg-white p-4 shadow-sm">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-xs font-black text-[#00758C]">{milestone.date}</p>
-                      <span className="inline-flex rounded-md border border-[#008588]/20 bg-[#008588]/5 px-2 py-0.5 text-[10px] font-bold uppercase text-[#008588]">
+                      <p className="text-xs font-black text-[#8c2b39]">{milestone.date}</p>
+                      <span className="inline-flex rounded-md border border-[#f0d8dc] bg-[#fde8eb] px-2 py-0.5 text-[10px] font-bold uppercase text-[#f47c8c]">
                         {milestone.category}
                       </span>
                     </div>
@@ -557,7 +557,7 @@ export default function PatientHealthPage() {
                     <button
                       type="button"
                       onClick={() => handleRequestSummary(milestone)}
-                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#008588] hover:underline"
+                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#f47c8c] hover:underline"
                     >
                       <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden />
                       Request Summary Copy
@@ -569,8 +569,8 @@ export default function PatientHealthPage() {
           </div>
 
           {/* Moderate allergies secondary list */}
-          <div className="mt-6 rounded-xl border border-slate-200/80 bg-slate-50/80 p-4">
-            <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#00758C]">
+          <div className="mt-6 rounded-xl border border-[#f0d8dc] bg-slate-50/80 p-4">
+            <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#8c2b39]">
               <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
               Full Allergy Register
             </p>

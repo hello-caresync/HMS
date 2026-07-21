@@ -40,6 +40,17 @@ const config: Config = {
           panel: '#1E293B',
         },
         obsidian: '#0F172A',
+        /** Nexora Patient App — Rose Coral */
+        patient: {
+          primary: '#f47c8c',
+          'primary-hover': '#e06373',
+          light: '#fde8eb',
+          border: '#f0d8dc',
+          heading: '#8c2b39',
+          muted: '#736366',
+          canvas: '#faf6f7',
+          emergency: '#e63946',
+        },
       },
       boxShadow: {
         '3xs': '0 1px 2px 0 rgb(15 23 42 / 0.04)',

@@ -50,6 +50,15 @@
   --color-sidebar-panel: #1e293b;
   --color-obsidian: #0b0f19;
 
+  --color-patient-primary: #f47c8c;
+  --color-patient-primary-hover: #e06373;
+  --color-patient-light: #fde8eb;
+  --color-patient-border: #f0d8dc;
+  --color-patient-heading: #8c2b39;
+  --color-patient-muted: #736366;
+  --color-patient-canvas: #faf6f7;
+  --color-patient-emergency: #e63946;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 

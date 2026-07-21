@@ -11,6 +11,9 @@ import {
   TestTubeDiagonal,
 } from 'lucide-react';
 
+import { PatientStatusBanner } from '@/components/patient/PatientStatusBanner';
+import { formatRadiologyStatus, patientToastCopy } from '@/lib/patient/status-copy';
+
 type RecordsTab = 'emr' | 'prescription' | 'diagnostic';
 
 type DiagnosisRecord = {
@@ -57,7 +60,7 @@ type RadiologyRecord = {
 };
 
 const CARD_CLASS =
-  'rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm';
+  'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
 
 const TAB_OPTIONS: { id: RecordsTab; label: string; icon: typeof FileText }[] = [
   { id: 'emr', label: 'EMR Clinical Profile', icon: HeartPulse },
@@ -168,7 +171,7 @@ export default function PatientRecordsPage() {
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
 
   const handleDownloadPdf = () => {
-    setDownloadNotice('Complete health record PDF queued · sandbox export preview');
+    setDownloadNotice(patientToastCopy.healthRecordGenerated);
     window.setTimeout(() => setDownloadNotice(null), 4000);
   };
 
@@ -176,13 +179,13 @@ export default function PatientRecordsPage() {
     <div className="min-h-full w-full space-y-6 font-sans text-slate-950">
       {/* Suite header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-black text-[#00758C]">
+        <h1 className="text-xl font-black text-[#8c2b39]">
           Personal Health Chart &amp; Diagnostic Records
         </h1>
         <button
           type="button"
           onClick={handleDownloadPdf}
-          className="inline-flex items-center gap-2 rounded-xl border border-[#008588]/20 bg-[#008588]/5 px-4 py-2.5 text-sm font-bold text-[#008588] transition-all hover:bg-[#008588]/10"
+          className="inline-flex items-center gap-2 rounded-xl border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2.5 text-sm font-bold text-[#f47c8c] transition-all hover:bg-[#e06373]/10"
         >
           <Download className="h-4 w-4" aria-hidden />
           Download Complete Health Record PDF
@@ -190,9 +193,7 @@ export default function PatientRecordsPage() {
       </header>
 
       {downloadNotice ? (
-        <p className="rounded-xl border border-[#00A481]/20 bg-[#00A481]/10 px-4 py-2 text-sm font-bold text-[#00A481]">
-          {downloadNotice}
-        </p>
+        <PatientStatusBanner message={downloadNotice} variant="success" />
       ) : null}
 
       {/* Tab navigation */}
@@ -204,8 +205,8 @@ export default function PatientRecordsPage() {
             onClick={() => setActiveTab(id)}
             className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
               activeTab === id
-                ? 'bg-[#00758C] text-white shadow-sm'
-                : 'border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50/80 hover:text-[#00758C]'
+                ? 'bg-[#f47c8c] text-white shadow-sm'
+                : 'border border-[#f0d8dc] bg-white text-slate-600 hover:bg-slate-50/80 hover:text-[#8c2b39]'
             }`}
           >
             <Icon className="h-4 w-4" aria-hidden />
@@ -219,14 +220,14 @@ export default function PatientRecordsPage() {
         <section aria-label="EMR clinical profile" className={`space-y-4 ${CARD_CLASS}`}>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div>
-              <h2 className="mb-3 text-sm font-black uppercase tracking-wider text-[#00758C]">
+              <h2 className="mb-3 text-sm font-black uppercase tracking-wider text-[#8c2b39]">
                 Diagnoses
               </h2>
               <ul className="space-y-2">
                 {DIAGNOSES.map((item) => (
                   <li
                     key={item.id}
-                    className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3"
+                    className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-3"
                   >
                     <p className="font-bold text-slate-900">{item.condition}</p>
                     <p className="mt-1 text-xs font-medium text-slate-600">
@@ -238,7 +239,7 @@ export default function PatientRecordsPage() {
             </div>
 
             <div>
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[#00758C]">
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[#8c2b39]">
                 <AlertTriangle className="h-4 w-4 text-rose-600" aria-hidden />
                 Allergies
               </h2>
@@ -260,16 +261,16 @@ export default function PatientRecordsPage() {
           </div>
 
           <div>
-            <h2 className="mb-3 text-sm font-black uppercase tracking-wider text-[#00758C]">
+            <h2 className="mb-3 text-sm font-black uppercase tracking-wider text-[#8c2b39]">
               Family History Summary
             </h2>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {FAMILY_HISTORY.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-sm"
+                  className="rounded-xl border border-[#f0d8dc] bg-white p-3 shadow-sm"
                 >
-                  <p className="text-xs font-black uppercase tracking-wider text-[#008588]">
+                  <p className="text-xs font-black uppercase tracking-wider text-[#f47c8c]">
                     {item.relation}
                   </p>
                   <p className="mt-1 text-sm font-bold text-slate-900">{item.condition}</p>
@@ -283,14 +284,14 @@ export default function PatientRecordsPage() {
       {/* Prescription Companion */}
       {activeTab === 'prescription' ? (
         <section aria-label="Prescription companion" className={CARD_CLASS}>
-          <h2 className="mb-4 text-sm font-black uppercase tracking-wider text-[#00758C]">
+          <h2 className="mb-4 text-sm font-black uppercase tracking-wider text-[#8c2b39]">
             Active Daily Medicines
           </h2>
           <ul className="space-y-4">
             {PRESCRIPTIONS.map((rx) => (
               <li
                 key={rx.id}
-                className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4"
+                className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
@@ -298,13 +299,13 @@ export default function PatientRecordsPage() {
                     <p className="mt-1 text-sm font-bold text-slate-700">
                       {rx.dosage} · {rx.frequency}
                     </p>
-                    <span className="mt-2 inline-flex rounded-full border border-[#008588]/20 bg-[#008588]/5 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#008588]">
+                    <span className="mt-2 inline-flex rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#f47c8c]">
                       {rx.reminderLabel}
                     </span>
                   </div>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 text-sm font-bold text-[#008588] hover:underline"
+                    className="inline-flex items-center gap-1 text-sm font-bold text-[#f47c8c] hover:underline"
                   >
                     <Download className="h-4 w-4" aria-hidden />
                     Download Rx PDF
@@ -321,8 +322,8 @@ export default function PatientRecordsPage() {
         <section aria-label="Diagnostic test vault" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <TestTubeDiagonal className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-sm font-black uppercase tracking-wider text-[#00758C]">
+              <TestTubeDiagonal className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-sm font-black uppercase tracking-wider text-[#8c2b39]">
                 Laboratory Blood Counts
               </h2>
             </div>
@@ -339,11 +340,11 @@ export default function PatientRecordsPage() {
                         <span className="w-8 text-[10px] font-bold text-slate-500">{point.month}</span>
                         <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
                           <div
-                            className="h-full rounded-full bg-[#008588] transition-all"
+                            className="h-full rounded-full bg-[#f47c8c] transition-all"
                             style={{ width: `${Math.round((point.value / point.max) * 100)}%` }}
                           />
                         </div>
-                        <span className="w-12 text-right text-xs font-black tabular-nums text-[#008588]">
+                        <span className="w-12 text-right text-xs font-black tabular-nums text-[#f47c8c]">
                           {point.value}
                         </span>
                       </div>
@@ -356,8 +357,8 @@ export default function PatientRecordsPage() {
 
           <div className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <ScanLine className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-sm font-black uppercase tracking-wider text-[#00758C]">
+              <ScanLine className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-sm font-black uppercase tracking-wider text-[#8c2b39]">
                 Radiology Data Sheets
               </h2>
             </div>
@@ -365,20 +366,20 @@ export default function PatientRecordsPage() {
               {RADIOLOGY_LOGS.map((study) => (
                 <li
                   key={study.id}
-                  className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4"
+                  className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4"
                 >
                   <p className="font-black text-slate-900">{study.modality}</p>
                   <p className="mt-1 text-xs font-bold text-slate-600">
                     {study.studyDate} · {study.facility}
                   </p>
                   <span
-                    className={`mt-2 inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                    className={`mt-2 ${
                       study.status === 'REPORT_READY_VERIFIED'
-                        ? 'border border-[#00A481]/20 bg-[#00A481]/10 text-[#00A481]'
-                        : 'border border-amber-500/20 bg-amber-500/10 text-amber-800'
+                        ? 'inline-flex rounded-full border border-[#f47c8c]/40 bg-[#fde8eb] px-3 py-1 text-xs font-semibold tracking-wide text-[#15803d]'
+                        : 'inline-flex rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-semibold tracking-wide text-amber-800'
                     }`}
                   >
-                    {study.status}
+                    {formatRadiologyStatus(study.status)}
                   </span>
                 </li>
               ))}

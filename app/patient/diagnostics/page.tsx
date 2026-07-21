@@ -13,6 +13,13 @@ import {
   TestTubeDiagonal,
 } from 'lucide-react';
 
+import {
+  PatientHeaderBadge,
+  PatientStatusBanner,
+  patientVerifiedChipClass,
+} from '@/components/patient/PatientStatusBanner';
+import { formatHeaderBadge, formatRadiologyStatus, patientToastCopy } from '@/lib/patient/status-copy';
+
 type LabReportStatus = 'Verified' | 'Pending Review';
 
 type LabMetric = {
@@ -61,13 +68,10 @@ type TimelineEntry = {
   detail: string;
 };
 
-const VERIFIED_CHIP =
-  'bg-[#00A481]/10 text-[#00A481] border border-[#00A481]/20 font-bold px-3 py-1 rounded-full text-[11px] tracking-wide';
-
-const PANEL_CLASS = 'rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm';
+const PANEL_CLASS = 'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
 
 const RADIOLOGY_CARD_CLASS =
-  'rounded-xl border border-slate-200/60 bg-white p-5 shadow-sm transition-all hover:border-[#008588]/30';
+  'rounded-xl border border-[#f0d8dc] bg-white p-5 shadow-sm transition-all hover:border-[#f0d8dc]';
 
 const BIOMARKER_OPTIONS: BiomarkerKey[] = [
   'HbA1c',
@@ -275,42 +279,39 @@ export default function PatientDiagnosticsPage() {
   }, []);
 
   const handleDownload = useCallback(
-    (title: string, key: string) => {
-      showNotice(`${title} · verified PDF export queued · ${key}`);
+    (title: string) => {
+      showNotice(patientToastCopy.labReportExport(title));
     },
     [showNotice],
   );
 
   return (
-    <div className="min-h-screen w-full space-y-6 bg-slate-50/70 p-6 font-sans text-slate-950">
+    <div className="min-h-screen w-full space-y-6 bg-[#faf6f7] p-6 font-sans text-slate-950">
       {/* Logistical hub header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#00758C]">
-            Diagnostic Diagnostics Vault &amp; Imaging Suite
+          <h1 className="text-2xl font-black text-[#8c2b39]">
+            Diagnostics Vault &amp; Imaging Suite
           </h1>
           <p className="mt-1 text-sm font-medium text-slate-600">
             Secure signature clearances active · pathology &amp; radiology vault linked · integrity
             seal NX-DIAG-2026 · 14 Jul 2026
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#00A481]/20 bg-[#00A481]/10 px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#00A481]">
-          <ShieldCheck className="h-4 w-4" aria-hidden />
-          SIGNATURE_CLEARANCE_OK
-        </div>
+        <PatientHeaderBadge
+          label={formatHeaderBadge('SIGNATURE_CLEARANCE_OK')}
+          tone="verified"
+          icon={ShieldCheck}
+        />
       </header>
 
-      {actionNotice ? (
-        <p className="rounded-xl border border-[#008588]/20 bg-[#008588]/5 px-4 py-2 text-sm font-bold text-[#008588]">
-          {actionNotice}
-        </p>
-      ) : null}
+      {actionNotice ? <PatientStatusBanner message={actionNotice} variant="success" /> : null}
 
       {/* Top metric panel — compare engine */}
       <section aria-label="Report comparison engine" className={PANEL_CLASS}>
         <div className="mb-4 flex items-center gap-2">
-          <GitCompare className="h-5 w-5 text-[#008588]" aria-hidden />
-          <h2 className="text-lg font-black text-[#00758C]">Interactive Report Comparison Engine</h2>
+          <GitCompare className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+          <h2 className="text-lg font-black text-[#8c2b39]">Interactive Report Comparison Engine</h2>
         </div>
 
         <div className="mb-4 flex flex-wrap gap-2">
@@ -321,8 +322,8 @@ export default function PatientDiagnosticsPage() {
               onClick={() => setCompareBiomarker(marker)}
               className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
                 compareBiomarker === marker
-                  ? 'bg-[#00758C] text-white shadow-sm'
-                  : 'bg-[#008588]/5 text-[#008588] hover:bg-[#008588]/10'
+                  ? 'bg-[#f47c8c] text-white shadow-sm'
+                  : 'bg-[#fde8eb] text-[#f47c8c] hover:bg-[#e06373]/10'
               }`}
             >
               {marker}
@@ -341,8 +342,8 @@ export default function PatientDiagnosticsPage() {
               onClick={() => toggleCompareSelection(snap.period)}
               className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
                 compareSelections.includes(snap.period)
-                  ? 'border-[#5EC283]/40 bg-[#5EC283]/10 text-[#00758C]'
-                  : 'border-slate-200/80 bg-white text-slate-600 hover:border-[#008588]/30'
+                  ? 'border-[#f0d8dc] bg-[#fde8eb] text-[#8c2b39]'
+                  : 'border-[#f0d8dc] bg-white text-slate-600 hover:border-[#f0d8dc]'
               }`}
             >
               {snap.period}
@@ -355,7 +356,7 @@ export default function PatientDiagnosticsPage() {
             {[comparisonBars.a, comparisonBars.b].map((snap) => (
               <div
                 key={snap.period}
-                className="flex items-center justify-between rounded-xl border border-[#5EC283]/40 bg-[#5EC283]/20 p-4 text-[#00758C]"
+                className="flex items-center justify-between rounded-xl border border-[#f0d8dc] bg-[#f47c8c]/20 p-4 text-[#8c2b39]"
               >
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider opacity-80">{snap.period}</p>
@@ -366,13 +367,13 @@ export default function PatientDiagnosticsPage() {
                 </div>
                 <div className="h-3 w-32 overflow-hidden rounded-full bg-white/60 sm:w-48">
                   <div
-                    className="h-full rounded-full bg-[#5EC283] transition-all"
+                    className="h-full rounded-full bg-[#f47c8c] transition-all"
                     style={{ width: `${Math.round((snap.value / comparisonBars.maxVal) * 100)}%` }}
                   />
                 </div>
               </div>
             ))}
-            <p className="text-sm font-bold text-[#008588]">
+            <p className="text-sm font-bold text-[#f47c8c]">
               {compareBiomarker} shift: {comparisonBars.delta > 0 ? '+' : ''}
               {comparisonBars.delta} {comparisonBars.a.unit} ({comparisonBars.pctChange > 0 ? '+' : ''}
               {comparisonBars.pctChange}% vs prior period)
@@ -387,38 +388,38 @@ export default function PatientDiagnosticsPage() {
         <div className="space-y-6">
           <section aria-label="Blood reports and ECG" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <FlaskConical className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-lg font-black text-[#00758C]">Blood Reports &amp; ECG Deck</h2>
+              <FlaskConical className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-lg font-black text-[#8c2b39]">Blood Reports &amp; ECG Deck</h2>
             </div>
             <ul className="space-y-4">
               {LAB_REPORTS.map((report) => (
                 <li
                   key={report.id}
-                  className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm"
+                  className="rounded-xl border border-[#f0d8dc] bg-white p-4 shadow-sm"
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-sm font-black text-slate-900">{report.panelName}</h3>
-                    <span className="inline-flex rounded-md border border-[#00758C]/20 bg-[#00758C]/5 px-2 py-0.5 text-[10px] font-bold uppercase text-[#00758C]">
+                    <span className="inline-flex rounded-md border border-[#f47c8c]/20 bg-[#f47c8c]/5 px-2 py-0.5 text-[10px] font-bold uppercase text-[#8c2b39]">
                       {report.category}
                     </span>
                     {report.status === 'Verified' ? (
-                      <span className={`inline-flex uppercase ${VERIFIED_CHIP}`}>Verified</span>
+                      <span className={patientVerifiedChipClass}>✓ Verified</span>
                     ) : (
                       <span className="inline-flex rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-[10px] font-bold text-amber-800">
                         Pending Review
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 font-mono text-[10px] font-bold text-[#008588]">
+                  <p className="mt-1 font-mono text-[10px] font-bold text-[#f47c8c]">
                     {report.verificationKey} · {report.collectedDate}
                   </p>
                   <div className="mt-3 overflow-x-auto">
                     <table className="w-full min-w-[300px] border-collapse text-sm">
                       <tbody>
                         {report.metrics.map((metric) => (
-                          <tr key={metric.label} className="border-b border-slate-200/60">
+                          <tr key={metric.label} className="border-b border-[#f0d8dc]">
                             <td className="py-2 pr-3 font-bold text-slate-800">{metric.label}</td>
-                            <td className="py-2 pr-3 font-black tabular-nums text-[#008588]">
+                            <td className="py-2 pr-3 font-black tabular-nums text-[#f47c8c]">
                               {metric.value} {metric.unit}
                             </td>
                             <td className="py-2 text-xs font-medium text-slate-500">
@@ -436,8 +437,8 @@ export default function PatientDiagnosticsPage() {
 
           <section aria-label="Radiology suite" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <ScanLine className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-lg font-black text-[#00758C]">Radiology Suite</h2>
+              <ScanLine className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-lg font-black text-[#8c2b39]">Radiology Suite</h2>
             </div>
             <ul className="space-y-4">
               {RADIOLOGY_REPORTS.map((study) => {
@@ -445,16 +446,18 @@ export default function PatientDiagnosticsPage() {
                 return (
                   <li key={study.id} className={RADIOLOGY_CARD_CLASS}>
                     <div className="flex items-start gap-3">
-                      <div className="rounded-lg border border-[#5EC283]/20 bg-[#5EC283]/10 p-2.5 text-[#5EC283]">
+                      <div className="rounded-lg border border-[#f0d8dc] bg-[#fde8eb] p-2.5 text-[#8c2b39]">
                         <ModalityIcon className="h-5 w-5" aria-hidden />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-[#00758C]">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-[#8c2b39]">
                             {study.modality}
                           </span>
                           {study.status === 'REPORT_READY_VERIFIED' ? (
-                            <span className={`inline-flex uppercase ${VERIFIED_CHIP}`}>Verified</span>
+                            <span className={patientVerifiedChipClass}>
+                              {formatRadiologyStatus(study.status)}
+                            </span>
                           ) : null}
                         </div>
                         <h3 className="mt-1 text-sm font-black text-slate-900">{study.studyName}</h3>
@@ -466,8 +469,8 @@ export default function PatientDiagnosticsPage() {
                         </p>
                         <button
                           type="button"
-                          onClick={() => handleDownload(study.studyName, study.id)}
-                          className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#008588] hover:underline"
+                          onClick={() => handleDownload(study.studyName)}
+                          className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#f47c8c] hover:underline"
                         >
                           <Download className="h-3.5 w-3.5" aria-hidden />
                           Download Verified Report PDF
@@ -484,32 +487,32 @@ export default function PatientDiagnosticsPage() {
         {/* Right column — timeline spine (40%) */}
         <aside aria-label="Diagnostic timeline" className={PANEL_CLASS}>
           <div className="mb-5 flex items-center gap-2">
-            <History className="h-5 w-5 text-[#008588]" aria-hidden />
-            <h2 className="text-lg font-black text-[#00758C]">Longitudinal Report Timeline</h2>
+            <History className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+            <h2 className="text-lg font-black text-[#8c2b39]">Longitudinal Report Timeline</h2>
           </div>
 
           <div className="relative pl-6">
             <div
-              className="absolute left-3 top-2 h-[calc(100%-0.5rem)] border-l-2 border-[#5EC283]/40"
+              className="absolute left-3 top-2 h-[calc(100%-0.5rem)] border-l-2 border-[#f0d8dc]"
               aria-hidden
             />
             <ol className="space-y-5">
               {TIMELINE_ENTRIES.map((entry) => (
                 <li key={entry.id} className="relative">
                   <span
-                    className="absolute -left-[1.15rem] top-2 h-3 w-3 rounded-full border-2 border-white bg-[#5EC283] shadow-sm"
+                    className="absolute -left-[1.15rem] top-2 h-3 w-3 rounded-full border-2 border-white bg-[#f47c8c] shadow-sm"
                     aria-hidden
                   />
-                  <div className="rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm">
+                  <div className="rounded-xl border border-[#f0d8dc] bg-white p-4 shadow-sm">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-xs font-black text-[#00758C]">{entry.date}</p>
+                      <p className="text-xs font-black text-[#8c2b39]">{entry.date}</p>
                       <span
                         className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${
                           entry.type === 'Pathology'
-                            ? 'bg-[#008588]/5 text-[#008588]'
+                            ? 'bg-[#fde8eb] text-[#f47c8c]'
                             : entry.type === 'ECG'
-                              ? 'bg-[#00758C]/5 text-[#00758C]'
-                              : 'bg-[#00A481]/10 text-[#00A481]'
+                              ? 'bg-[#f47c8c]/5 text-[#8c2b39]'
+                              : 'bg-[#fde8eb] text-[#f47c8c]'
                         }`}
                       >
                         {entry.type}
@@ -523,8 +526,8 @@ export default function PatientDiagnosticsPage() {
             </ol>
           </div>
 
-          <div className="mt-6 rounded-xl border border-[#008588]/20 bg-[#008588]/5 p-4">
-            <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#00758C]">
+          <div className="mt-6 rounded-xl border border-[#f0d8dc] bg-[#fde8eb] p-4">
+            <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#8c2b39]">
               <Activity className="h-3.5 w-3.5" aria-hidden />
               Compare Engine Active
             </p>

@@ -64,9 +64,9 @@ type ConsultationRecord = {
 };
 
 const MINT_CHIP =
-  'bg-[#00A481]/10 text-[#00A481] border border-[#00A481]/20 font-bold px-3 py-1 rounded-full text-[11px] tracking-wide';
+  'bg-[#fde8eb] text-[#f47c8c] border border-[#f0d8dc] font-bold px-3 py-1 rounded-full text-[11px] tracking-wide';
 
-const PANEL_CLASS = 'rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm';
+const PANEL_CLASS = 'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
 
 const DOCTOR_MESSAGES: ChatMessage[] = [
   {
@@ -219,9 +219,9 @@ const CONSULTATION_HISTORY: ConsultationRecord[] = [
 ];
 
 const CATEGORY_CHIP: Record<NotificationCategory, string> = {
-  Appointment: 'border border-[#008588]/20 bg-[#008588]/5 text-[#008588]',
+  Appointment: 'border border-[#f0d8dc] bg-[#fde8eb] text-[#f47c8c]',
   Lab: MINT_CHIP,
-  Medicine: 'border border-[#5EC283]/30 bg-[#5EC283]/10 text-[#00758C]',
+  Medicine: 'border border-[#f47c8c]/30 bg-[#fde8eb] text-[#8c2b39]',
 };
 
 function formatTime(): string {
@@ -323,26 +323,26 @@ export default function PatientCommunicationPage() {
   }, []);
 
   return (
-    <div className="min-h-screen w-full space-y-6 bg-slate-50/70 p-6 font-sans text-slate-950">
+    <div className="min-h-screen w-full space-y-6 bg-[#faf6f7] p-6 font-sans text-slate-950">
       {/* Central HUD control header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#00758C]">
+          <h1 className="text-2xl font-black text-[#8c2b39]">
             Care Telehealth Center &amp; Communication Hub
           </h1>
           <p className="mt-1 text-sm font-medium text-slate-600">
             End-to-end AES-256 encryption · TLS 1.3 clinical bridge · remote connectivity{' '}
-            <span className="font-bold text-[#00A481]">{streamMode}</span> · 14 Jul 2026
+            <span className="font-bold text-[#f47c8c]">{streamMode}</span> · 14 Jul 2026
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#00A481]/20 bg-[#00A481]/10 px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#00A481]">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#f47c8c]">
           <ShieldCheck className="h-4 w-4" aria-hidden />
           E2E_ENCRYPTED_CHANNEL_OK
         </div>
       </header>
 
       {actionNotice ? (
-        <p className="rounded-xl border border-[#008588]/20 bg-[#008588]/5 px-4 py-2 text-sm font-bold text-[#008588]">
+        <p className="rounded-xl border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2 text-sm font-bold text-[#f47c8c]">
           {actionNotice}
         </p>
       ) : null}
@@ -355,9 +355,9 @@ export default function PatientCommunicationPage() {
             <div className="relative flex aspect-video flex-col items-center justify-center rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-md">
               <div className="text-center">
                 {streamMode === 'Video Consultation Mode' && cameraOn ? (
-                  <Video className="mx-auto h-12 w-12 text-[#008588]" aria-hidden />
+                  <Video className="mx-auto h-12 w-12 text-[#f47c8c]" aria-hidden />
                 ) : streamMode === 'Audio Call Mode' ? (
-                  <Phone className="mx-auto h-12 w-12 text-[#5EC283]" aria-hidden />
+                  <Phone className="mx-auto h-12 w-12 text-[#8c2b39]" aria-hidden />
                 ) : (
                   <VideoOff className="mx-auto h-12 w-12 text-slate-500" aria-hidden />
                 )}
@@ -390,14 +390,14 @@ export default function PatientCommunicationPage() {
                 <button
                   type="button"
                   onClick={cycleStreamMode}
-                  className="rounded-lg px-3 py-2 text-xs font-bold text-[#5EC283] hover:bg-slate-700"
+                  className="rounded-lg px-3 py-2 text-xs font-bold text-[#8c2b39] hover:bg-slate-700"
                 >
                   Switch Mode
                 </button>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1 rounded-lg bg-[#00758C] px-3 py-2 text-xs font-bold text-white hover:bg-[#008588]"
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#f47c8c] px-3 py-2 text-xs font-bold text-white hover:bg-[#e06373]"
                 >
                   <FileUp className="h-4 w-4" aria-hidden />
                   Upload Documents
@@ -417,8 +417,8 @@ export default function PatientCommunicationPage() {
           <section aria-label="Secure chat channels" className={PANEL_CLASS}>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-[#008588]" aria-hidden />
-                <h2 className="text-lg font-black text-[#00758C]">Secure Chat Channels</h2>
+                <MessageSquare className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+                <h2 className="text-lg font-black text-[#8c2b39]">Secure Chat Channels</h2>
               </div>
               <div className="flex gap-2">
                 <button
@@ -426,8 +426,8 @@ export default function PatientCommunicationPage() {
                   onClick={() => setActiveChannel('doctor')}
                   className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${
                     activeChannel === 'doctor'
-                      ? 'bg-[#00758C] text-white'
-                      : 'border border-slate-200/80 bg-white text-slate-600 hover:border-[#008588]/30'
+                      ? 'bg-[#f47c8c] text-white'
+                      : 'border border-[#f0d8dc] bg-white text-slate-600 hover:border-[#f0d8dc]'
                   }`}
                 >
                   Doctor Messages
@@ -437,8 +437,8 @@ export default function PatientCommunicationPage() {
                   onClick={() => setActiveChannel('hospital')}
                   className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${
                     activeChannel === 'hospital'
-                      ? 'bg-rose-600 text-white'
-                      : 'border border-slate-200/80 bg-white text-slate-600 hover:border-rose-300'
+                      ? 'bg-[#e63946] text-white'
+                      : 'border border-[#f0d8dc] bg-white text-slate-600 hover:border-rose-300'
                   }`}
                 >
                   Hospital Alerts
@@ -451,11 +451,11 @@ export default function PatientCommunicationPage() {
               <div
                 className={`rounded-xl border p-3 ${
                   activeChannel === 'doctor'
-                    ? 'border-[#008588]/30 bg-[#008588]/5 ring-1 ring-[#008588]/20'
-                    : 'border-slate-200/60 bg-slate-50/50'
+                    ? 'border-[#f0d8dc] bg-[#fde8eb] ring-1 ring-[#f47c8c]/20'
+                    : 'border-[#f0d8dc] bg-slate-50/50'
                 }`}
               >
-                <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-[#008588]">
+                <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-[#f47c8c]">
                   Doctor Channel
                 </p>
                 <div className="max-h-40 space-y-2 overflow-y-auto">
@@ -464,8 +464,8 @@ export default function PatientCommunicationPage() {
                       key={msg.id}
                       className={`rounded-xl px-3 py-2 text-xs font-medium ${
                         msg.sender === 'doctor'
-                          ? 'border border-[#008588]/20 bg-[#008588]/10 text-[#00758C]'
-                          : 'ml-4 bg-[#00758C] text-white'
+                          ? 'border border-[#f0d8dc] bg-[#fde8eb] text-[#8c2b39]'
+                          : 'ml-4 bg-[#f47c8c] text-white'
                       }`}
                     >
                       <p>{msg.text}</p>
@@ -480,7 +480,7 @@ export default function PatientCommunicationPage() {
                 className={`rounded-xl border p-3 ${
                   activeChannel === 'hospital'
                     ? 'border-rose-400/40 bg-rose-500/5 ring-1 ring-rose-400/20'
-                    : 'border-slate-200/60 bg-slate-50/50'
+                    : 'border-[#f0d8dc] bg-slate-50/50'
                 }`}
               >
                 <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-rose-700">
@@ -507,7 +507,7 @@ export default function PatientCommunicationPage() {
             </div>
 
             {/* Active chat composer */}
-            <div className="mt-4 max-h-56 space-y-3 overflow-y-auto rounded-xl border border-slate-200/80 bg-slate-50/80 p-3">
+            <div className="mt-4 max-h-56 space-y-3 overflow-y-auto rounded-xl border border-[#f0d8dc] bg-slate-50/80 p-3">
               {activeMessages.map((msg) => (
                 <div
                   key={msg.id}
@@ -516,9 +516,9 @@ export default function PatientCommunicationPage() {
                   <div
                     className={`max-w-[85%] rounded-xl px-3 py-2 text-sm font-medium ${
                       msg.sender === 'patient'
-                        ? 'bg-[#00758C] text-white'
+                        ? 'bg-[#f47c8c] text-white'
                         : msg.sender === 'doctor'
-                          ? 'border border-[#008588]/20 bg-[#008588]/10 text-[#00758C]'
+                          ? 'border border-[#f0d8dc] bg-[#fde8eb] text-[#8c2b39]'
                           : msg.urgent
                             ? 'border border-rose-500/40 bg-rose-500/15 font-bold text-rose-800'
                             : 'border border-amber-500/30 bg-amber-500/10 text-amber-900'
@@ -552,12 +552,12 @@ export default function PatientCommunicationPage() {
                     : 'Reply to hospital administrative desk…'
                 }
                 aria-label="Chat message input"
-                className="flex-1 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium focus:border-[#008588]/30 focus:outline-none focus:ring-2 focus:ring-[#008588]/20"
+                className="flex-1 rounded-xl border border-[#f0d8dc] bg-white px-4 py-2.5 text-sm font-medium focus:border-[#f0d8dc] focus:outline-none focus:ring-2 focus:ring-[#f47c8c]/20"
               />
               <button
                 type="button"
                 onClick={sendMessage}
-                className="rounded-xl bg-[#00758C] px-4 py-2.5 text-white transition-all hover:bg-[#008588]"
+                className="rounded-xl bg-[#f47c8c] px-4 py-2.5 text-white transition-all hover:bg-[#e06373]"
                 aria-label="Send message"
               >
                 <Send className="h-4 w-4" aria-hidden />
@@ -568,18 +568,18 @@ export default function PatientCommunicationPage() {
           {/* Document upload ledger */}
           <section aria-label="Document upload ledger" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Upload className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-lg font-black text-[#00758C]">Document Upload Ledger</h2>
+              <Upload className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-lg font-black text-[#8c2b39]">Document Upload Ledger</h2>
             </div>
             <ul className="space-y-3">
               {documents.map((doc) => (
                 <li
                   key={doc.id}
-                  className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-200/60 bg-slate-50/50 p-4"
+                  className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4"
                 >
                   <div>
                     <p className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                      <FileText className="h-4 w-4 text-[#008588]" aria-hidden />
+                      <FileText className="h-4 w-4 text-[#f47c8c]" aria-hidden />
                       {doc.fileName}
                     </p>
                     <p className="mt-1 text-xs font-medium text-slate-600">
@@ -604,8 +604,8 @@ export default function PatientCommunicationPage() {
           <section aria-label="Real-time notifications" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-[#008588]" aria-hidden />
-                <h2 className="text-base font-black text-[#00758C]">Notification Engine</h2>
+                <Bell className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+                <h2 className="text-base font-black text-[#8c2b39]">Notification Engine</h2>
               </div>
               {unreadCount > 0 ? (
                 <span className={`inline-flex uppercase ${MINT_CHIP}`}>{unreadCount} unread</span>
@@ -617,8 +617,8 @@ export default function PatientCommunicationPage() {
                   key={entry.id}
                   className={`rounded-xl border p-4 transition-all ${
                     entry.read
-                      ? 'border-slate-200/60 bg-white opacity-80'
-                      : 'border-[#00A481]/30 bg-[#00A481]/5 ring-1 ring-[#00A481]/10'
+                      ? 'border-[#f0d8dc] bg-white opacity-80'
+                      : 'border-[#f47c8c]/30 bg-[#fde8eb] ring-1 ring-[#f47c8c]/10'
                   }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -631,7 +631,7 @@ export default function PatientCommunicationPage() {
                       <button
                         type="button"
                         onClick={() => markNotificationRead(entry.id)}
-                        className="text-[10px] font-bold text-[#008588] hover:underline"
+                        className="text-[10px] font-bold text-[#f47c8c] hover:underline"
                       >
                         Mark read
                       </button>
@@ -647,17 +647,17 @@ export default function PatientCommunicationPage() {
 
           <section aria-label="Consultation history" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <History className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-base font-black text-[#00758C]">Historical Encounters Log</h2>
+              <History className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-base font-black text-[#8c2b39]">Historical Encounters Log</h2>
             </div>
             <ul className="space-y-4">
               {CONSULTATION_HISTORY.map((record) => (
                 <li
                   key={record.id}
-                  className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4"
+                  className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4"
                 >
-                  <p className="text-sm font-black text-[#00758C]">{record.doctor}</p>
-                  <p className="text-xs font-bold text-[#008588]">
+                  <p className="text-sm font-black text-[#8c2b39]">{record.doctor}</p>
+                  <p className="text-xs font-bold text-[#f47c8c]">
                     {record.specialty} · {record.mode} · {record.duration}
                   </p>
                   <p className="mt-1 text-xs font-medium text-slate-600">{record.date}</p>
@@ -667,7 +667,7 @@ export default function PatientCommunicationPage() {
                   <button
                     type="button"
                     onClick={() => handleRequestSummary(record)}
-                    className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#008588] hover:underline"
+                    className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#f47c8c] hover:underline"
                   >
                     <FileClock className="h-3.5 w-3.5" aria-hidden />
                     Request Session Record Summary

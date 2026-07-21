@@ -13,6 +13,13 @@ import {
   Wallet,
 } from 'lucide-react';
 
+import {
+  PatientHeaderBadge,
+  PatientStatusBanner,
+  patientVerifiedChipClass,
+} from '@/components/patient/PatientStatusBanner';
+import { formatHeaderBadge, patientToastCopy } from '@/lib/patient/status-copy';
+
 type InvoiceStatus = 'Paid' | 'Pending' | 'Overdue';
 
 type LineItem = {
@@ -75,13 +82,10 @@ type RefundRecord = {
   initiatedDate: string;
 };
 
-const VERIFIED_CHIP =
-  'bg-[#00A481]/10 text-[#00A481] border border-[#00A481]/20 font-bold px-3 py-1 rounded-full text-[11px] tracking-wide';
-
-const PANEL_CLASS = 'rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm';
+const PANEL_CLASS = 'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
 
 const SUMMARY_CARD_CLASS =
-  'flex flex-col justify-between rounded-xl border border-slate-200/60 border-t-4 border-t-[#008588] bg-white p-4 shadow-sm';
+  'flex flex-col justify-between rounded-xl border border-[#f0d8dc] border-t-4 border-t-[#f47c8c] bg-white p-4 shadow-sm';
 
 const INVOICES: InvoiceRecord[] = [
   {
@@ -223,15 +227,15 @@ const REFUND_RECORD: RefundRecord = {
 };
 
 const INVOICE_STATUS_STYLES: Record<InvoiceStatus, string> = {
-  Paid: VERIFIED_CHIP,
+  Paid: patientVerifiedChipClass,
   Pending: 'border border-amber-500/20 bg-amber-500/10 text-amber-800 font-bold px-3 py-1 rounded-full text-[11px] tracking-wide',
   Overdue: 'border border-rose-500/20 bg-rose-500/10 text-rose-700 font-black px-3 py-1 rounded-full text-[11px] tracking-wide',
 };
 
 const CLAIM_STATUS_STYLES: Record<ClaimStatus, string> = {
-  'Under Review': 'border border-[#008588]/20 bg-[#008588]/5 text-[#008588] font-bold px-3 py-1 rounded-full text-[11px] tracking-wide',
-  Approved: VERIFIED_CHIP,
-  Settled: VERIFIED_CHIP,
+  'Under Review': 'border border-[#f47c8c]/40 bg-[#fde8eb] text-[#8c2b39] font-semibold px-3 py-1 rounded-full text-xs tracking-wide',
+  Approved: patientVerifiedChipClass,
+  Settled: patientVerifiedChipClass,
   Rejected: 'border border-rose-500/20 bg-rose-500/10 text-rose-700 font-bold px-3 py-1 rounded-full text-[11px] tracking-wide',
 };
 
@@ -261,16 +265,14 @@ export default function PatientBillingPage() {
 
   const handlePayment = useCallback(
     (invoice: InvoiceRecord) => {
-      showNotice(
-        `Secure payment gateway · ${invoice.invoiceNumber} · ${invoice.amount} · sandbox redirect`,
-      );
+      showNotice(patientToastCopy.paymentInitiated(invoice.invoiceNumber, invoice.amount));
     },
     [showNotice],
   );
 
   const handleDownloadReceipt = useCallback(
     (entry: PaymentHistoryEntry) => {
-      showNotice(`Receipt PDF · ${entry.transactionId} · sandbox download queued`);
+      showNotice(patientToastCopy.receiptReady(entry.transactionId));
     },
     [showNotice],
   );
@@ -278,34 +280,31 @@ export default function PatientBillingPage() {
   const handleAdvanceRefund = useCallback(() => {
     if (refundStatus === 'Processing by Bank') {
       setRefundStatus('Settled to Account');
-      showNotice('Refund settled to registered bank account · sandbox confirmation');
+      showNotice(patientToastCopy.refundSettled);
     }
   }, [refundStatus, showNotice]);
 
   return (
-    <div className="min-h-screen w-full space-y-6 bg-slate-50/70 p-6 font-sans text-slate-950">
+    <div className="min-h-screen w-full space-y-6 bg-[#faf6f7] p-6 font-sans text-slate-950">
       {/* Central HUD financial header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#00758C]">
+          <h1 className="text-2xl font-black text-[#8c2b39]">
             Financial Statements &amp; Insurance Claims Ledger
           </h1>
           <p className="mt-1 text-sm font-medium text-slate-600">
-            Secure transactional portal · verified payment gateway · PCI-DSS sandbox · claims
-            processing hub · 14 Jul 2026
+            Secure transactional portal · verified payment gateway · claims processing hub · 14 Jul
+            2026
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#00A481]/20 bg-[#00A481]/10 px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#00A481]">
-          <ShieldCheck className="h-4 w-4" aria-hidden />
-          PAYMENT_GATEWAY_VERIFIED
-        </div>
+        <PatientHeaderBadge
+          label={formatHeaderBadge('PAYMENT_GATEWAY_VERIFIED')}
+          tone="verified"
+          icon={ShieldCheck}
+        />
       </header>
 
-      {actionNotice ? (
-        <p className="rounded-xl border border-[#008588]/20 bg-[#008588]/5 px-4 py-2 text-sm font-bold text-[#008588]">
-          {actionNotice}
-        </p>
-      ) : null}
+      {actionNotice ? <PatientStatusBanner message={actionNotice} variant="info" /> : null}
 
       {/* Top highlight bar — financial summary */}
       <section
@@ -316,27 +315,27 @@ export default function PatientBillingPage() {
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
             Total Outstanding Balance
           </p>
-          <p className="mt-2 text-2xl font-black tabular-nums text-[#00758C]">
+          <p className="mt-2 text-2xl font-black tabular-nums text-[#8c2b39]">
             ₹{metrics.outstanding.toLocaleString('en-IN')}
           </p>
-          <Wallet className="mt-2 h-4 w-4 text-[#008588]" aria-hidden />
+          <Wallet className="mt-2 h-4 w-4 text-[#f47c8c]" aria-hidden />
         </div>
         <div className={SUMMARY_CARD_CLASS}>
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
             Active Claims Pending
           </p>
-          <p className="mt-2 text-2xl font-black tabular-nums text-[#00A481]">
+          <p className="mt-2 text-2xl font-black tabular-nums text-[#f47c8c]">
             {metrics.pendingClaims}
           </p>
-          <FileText className="mt-2 h-4 w-4 text-[#00A481]" aria-hidden />
+          <FileText className="mt-2 h-4 w-4 text-[#f47c8c]" aria-hidden />
         </div>
         <div className={SUMMARY_CARD_CLASS}>
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
             Last Processed Refund
           </p>
-          <p className="mt-2 text-lg font-black text-[#5EC283]">{refundStatus}</p>
+          <p className="mt-2 text-lg font-black text-[#8c2b39]">{refundStatus}</p>
           <p className="mt-0.5 text-xs font-bold text-slate-600">{REFUND_RECORD.amount}</p>
-          <RefreshCw className="mt-2 h-4 w-4 text-[#5EC283]" aria-hidden />
+          <RefreshCw className="mt-2 h-4 w-4 text-[#8c2b39]" aria-hidden />
         </div>
       </section>
 
@@ -346,8 +345,8 @@ export default function PatientBillingPage() {
         <div className="space-y-6">
           <section aria-label="Active bills and invoices" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-lg font-black text-[#00758C]">Active Bills &amp; Invoices</h2>
+              <Receipt className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-lg font-black text-[#8c2b39]">Active Bills &amp; Invoices</h2>
             </div>
 
             <ul className="space-y-4">
@@ -361,12 +360,12 @@ export default function PatientBillingPage() {
                     className={`rounded-xl border p-5 shadow-sm ${
                       isOverdue
                         ? 'border-rose-500/30 bg-rose-500/5 ring-1 ring-rose-500/20'
-                        : 'border-slate-200/60 bg-white'
+                        : 'border-[#f0d8dc] bg-white'
                     }`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <p className="font-mono text-xs font-black text-[#008588]">
+                        <p className="font-mono text-xs font-black text-[#f47c8c]">
                           {invoice.invoiceNumber}
                         </p>
                         <p className="mt-1 text-sm font-black text-slate-900">
@@ -375,7 +374,7 @@ export default function PatientBillingPage() {
                         <p className="text-xs font-medium text-slate-600">{invoice.description}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xl font-black text-[#00758C]">{invoice.amount}</p>
+                        <p className="text-xl font-black text-[#8c2b39]">{invoice.amount}</p>
                         <span className={`mt-1 inline-flex uppercase ${INVOICE_STATUS_STYLES[invoice.status]}`}>
                           {invoice.status}
                         </span>
@@ -389,7 +388,7 @@ export default function PatientBillingPage() {
                       </p>
                     ) : null}
 
-                    <ul className="mt-3 space-y-1 border-t border-slate-200/60 pt-3">
+                    <ul className="mt-3 space-y-1 border-t border-[#f0d8dc] pt-3">
                       {invoice.lineItems.map((item) => (
                         <li
                           key={item.label}
@@ -405,13 +404,13 @@ export default function PatientBillingPage() {
                       <button
                         type="button"
                         onClick={() => handlePayment(invoice)}
-                        className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#00758C] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#008588]"
+                        className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#f47c8c] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#e06373]"
                       >
                         <CreditCard className="h-4 w-4" aria-hidden />
                         Proceed to Online Payment
                       </button>
                     ) : (
-                      <p className="mt-3 flex items-center gap-1 text-xs font-bold text-[#00A481]">
+                      <p className="mt-3 flex items-center gap-1 text-xs font-bold text-[#f47c8c]">
                         <Wallet className="h-3.5 w-3.5" aria-hidden />
                         Settled · {invoice.issueDate}
                       </p>
@@ -424,44 +423,44 @@ export default function PatientBillingPage() {
 
           <section aria-label="Payment history" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <History className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-lg font-black text-[#00758C]">Payment History Archive</h2>
+              <History className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-lg font-black text-[#8c2b39]">Payment History Archive</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[480px] border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200/80 bg-slate-50/80">
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                  <tr className="border-b border-[#f0d8dc] bg-slate-50/80">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                       Date
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                       Description
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                       Amount
                     </th>
-                    <th className="px-3 py-2 text-right text-[10px] font-black uppercase text-[#00758C]">
+                    <th className="px-3 py-2 text-right text-[10px] font-black uppercase text-[#8c2b39]">
                       Receipt
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {PAYMENT_HISTORY.map((entry) => (
-                    <tr key={entry.id} className="border-b border-slate-200/60">
-                      <td className="px-3 py-3 text-xs font-bold text-[#008588]">{entry.date}</td>
+                    <tr key={entry.id} className="border-b border-[#f0d8dc]">
+                      <td className="px-3 py-3 text-xs font-bold text-[#f47c8c]">{entry.date}</td>
                       <td className="px-3 py-3">
                         <p className="text-xs font-bold text-slate-900">{entry.description}</p>
                         <p className="font-mono text-[10px] text-slate-500">{entry.transactionId}</p>
                         <p className="text-[10px] text-slate-500">{entry.method}</p>
                       </td>
-                      <td className="px-3 py-3 font-black tabular-nums text-[#00758C]">
+                      <td className="px-3 py-3 font-black tabular-nums text-[#8c2b39]">
                         {entry.amount}
                       </td>
                       <td className="px-3 py-3 text-right">
                         <button
                           type="button"
                           onClick={() => handleDownloadReceipt(entry)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-[#008588] hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[#f47c8c] hover:underline"
                         >
                           <Download className="h-3.5 w-3.5" aria-hidden />
                           Download Receipt PDF
@@ -479,11 +478,11 @@ export default function PatientBillingPage() {
         <aside className="space-y-6">
           <section
             aria-label="Insurance coverage profile"
-            className="rounded-xl border border-slate-200/60 bg-white p-5 shadow-sm"
+            className="rounded-xl border border-[#f0d8dc] bg-white p-5 shadow-sm"
           >
             <div className="mb-4 flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-base font-black text-[#00758C]">Insurance Coverage Profile</h2>
+              <ShieldCheck className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-base font-black text-[#8c2b39]">Insurance Coverage Profile</h2>
             </div>
             <dl className="space-y-3 text-sm">
               <div>
@@ -496,7 +495,7 @@ export default function PatientBillingPage() {
                 <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Policy ID
                 </dt>
-                <dd className="font-mono font-black text-[#008588]">{INSURANCE.policyId}</dd>
+                <dd className="font-mono font-black text-[#f47c8c]">{INSURANCE.policyId}</dd>
               </div>
               <div>
                 <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -520,7 +519,7 @@ export default function PatientBillingPage() {
                 <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Valid Until
                 </dt>
-                <dd className="font-bold text-[#5EC283]">{INSURANCE.validUntil}</dd>
+                <dd className="font-bold text-[#8c2b39]">{INSURANCE.validUntil}</dd>
               </div>
               <div>
                 <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -529,22 +528,20 @@ export default function PatientBillingPage() {
                 <dd className="text-xs font-medium text-slate-700">{INSURANCE.networkHospitals}</dd>
               </div>
             </dl>
-            <span className={`mt-4 inline-flex uppercase ${VERIFIED_CHIP}`}>
-              {INSURANCE.coverageStatus}
-            </span>
+            <span className={`mt-4 ${patientVerifiedChipClass}`}>✓ {INSURANCE.coverageStatus}</span>
           </section>
 
           <section aria-label="Claims and refunds tracker" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <FileText className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-base font-black text-[#00758C]">Claims Status &amp; Refunds</h2>
+              <FileText className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-base font-black text-[#8c2b39]">Claims Status &amp; Refunds</h2>
             </div>
 
             <ul className="space-y-4">
               {INSURANCE_CLAIMS.map((claim) => (
-                <li key={claim.id} className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4">
+                <li key={claim.id} className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-mono text-[10px] font-black text-[#008588]">{claim.claimRef}</p>
+                    <p className="font-mono text-[10px] font-black text-[#f47c8c]">{claim.claimRef}</p>
                     <span className={`inline-flex uppercase ${CLAIM_STATUS_STYLES[claim.status]}`}>
                       {claim.status}
                     </span>
@@ -559,7 +556,7 @@ export default function PatientBillingPage() {
                         key={step}
                         className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
                           index === claim.timeline.length - 1
-                            ? 'bg-[#00A481]/10 text-[#00A481]'
+                            ? 'bg-[#fde8eb] text-[#f47c8c]'
                             : 'bg-slate-200/80 text-slate-600'
                         }`}
                       >
@@ -571,7 +568,7 @@ export default function PatientBillingPage() {
               ))}
             </ul>
 
-            <div className="mt-5 rounded-lg border border-[#5EC283]/30 bg-[#5EC283]/10 p-3 text-[#00758C]">
+            <div className="mt-5 rounded-lg border border-[#f47c8c]/30 bg-[#fde8eb] p-3 text-[#8c2b39]">
               <p className="text-xs font-black uppercase tracking-wider">Refund Tracker</p>
               <p className="mt-1 text-sm font-bold">{REFUND_RECORD.reference}</p>
               <p className="text-xs font-medium">{REFUND_RECORD.reason}</p>
@@ -582,7 +579,7 @@ export default function PatientBillingPage() {
                 <button
                   type="button"
                   onClick={handleAdvanceRefund}
-                  className="mt-3 text-xs font-bold text-[#008588] hover:underline"
+                  className="mt-3 text-xs font-bold text-[#f47c8c] hover:underline"
                 >
                   Simulate settlement update
                 </button>

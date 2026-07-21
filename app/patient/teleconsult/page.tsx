@@ -33,7 +33,7 @@ type ChatMessage = {
 };
 
 const CARD_CLASS =
-  'rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm';
+  'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
 
 const INVOICES: InvoiceRecord[] = [
   {
@@ -63,7 +63,7 @@ const INVOICES: InvoiceRecord[] = [
 ];
 
 const STATUS_STYLES: Record<PaymentStatus, string> = {
-  Paid: 'border border-[#00A481]/20 bg-[#00A481]/10 text-[#00A481]',
+  Paid: 'border border-[#f0d8dc] bg-[#fde8eb] text-[#f47c8c]',
   Pending: 'border border-amber-500/20 bg-amber-500/10 text-amber-800',
   Overdue: 'border border-rose-500/20 bg-rose-500/10 text-rose-700 font-black',
 };
@@ -122,17 +122,17 @@ export default function PatientTeleconsultPage() {
     <div className="min-h-full w-full space-y-6 font-sans text-slate-950">
       {/* HUD header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-black text-[#00758C]">
+        <h1 className="text-xl font-black text-[#8c2b39]">
           Virtual Encounter Desk &amp; Financial Workspace
         </h1>
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#00A481]/20 bg-[#00A481]/10 px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#00A481]">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#f47c8c]">
           <ShieldCheck className="h-4 w-4" aria-hidden />
           SECURE_PATIENT_ENDPOINT_OK
         </div>
       </header>
 
       {paymentNotice ? (
-        <p className="rounded-xl border border-[#008588]/20 bg-[#008588]/5 px-4 py-2 text-sm font-bold text-[#008588]">
+        <p className="rounded-xl border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2 text-sm font-bold text-[#f47c8c]">
           {paymentNotice}
         </p>
       ) : null}
@@ -143,7 +143,7 @@ export default function PatientTeleconsultPage() {
           <div className={`${CARD_CLASS} !p-0 overflow-hidden`}>
             <div className="relative flex aspect-video items-center justify-center rounded-2xl border border-slate-800 bg-slate-900">
               <div className="text-center">
-                <Video className="mx-auto h-12 w-12 text-[#008588]" aria-hidden />
+                <Video className="mx-auto h-12 w-12 text-[#f47c8c]" aria-hidden />
                 <p className="mt-3 text-sm font-bold text-slate-300">
                   {cameraOn ? 'Live session · Dr. Meera Nair connected' : 'Camera paused'}
                 </p>
@@ -171,7 +171,7 @@ export default function PatientTeleconsultPage() {
                 </button>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 rounded-lg bg-[#00758C] px-3 py-2 text-xs font-bold text-white hover:bg-[#008588]"
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#f47c8c] px-3 py-2 text-xs font-bold text-white hover:bg-[#e06373]"
                 >
                   <FileUp className="h-4 w-4" aria-hidden />
                   Upload Reports
@@ -184,13 +184,13 @@ export default function PatientTeleconsultPage() {
           <div className={CARD_CLASS}>
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-[#008588]" aria-hidden />
-                <h2 className="text-sm font-black text-[#00758C]">Live Patient-Doctor Chat Channel</h2>
+                <MessageSquare className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+                <h2 className="text-sm font-black text-[#8c2b39]">Live Patient-Doctor Chat Channel</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setChatOpen((prev) => !prev)}
-                className="text-xs font-bold text-[#008588] hover:underline"
+                className="text-xs font-bold text-[#f47c8c] hover:underline"
               >
                 {chatOpen ? 'Minimize Chat' : 'Expand Chat'}
               </button>
@@ -198,7 +198,7 @@ export default function PatientTeleconsultPage() {
 
             {chatOpen ? (
               <>
-                <div className="custom-scrollbar max-h-56 space-y-3 overflow-y-auto rounded-xl border border-slate-200/80 bg-slate-50/80 p-3">
+                <div className="custom-scrollbar max-h-56 space-y-3 overflow-y-auto rounded-xl border border-[#f0d8dc] bg-slate-50/80 p-3">
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
@@ -207,8 +207,8 @@ export default function PatientTeleconsultPage() {
                       <div
                         className={`max-w-[85%] rounded-xl px-3 py-2 text-sm font-medium ${
                           msg.sender === 'patient'
-                            ? 'bg-[#00758C] text-white'
-                            : 'border border-slate-200/80 bg-white text-slate-800'
+                            ? 'bg-[#f47c8c] text-white'
+                            : 'border border-[#f0d8dc] bg-white text-slate-800'
                         }`}
                       >
                         <p>{msg.text}</p>
@@ -233,12 +233,12 @@ export default function PatientTeleconsultPage() {
                     }}
                     placeholder="Type a message to the medical station…"
                     aria-label="Chat message input"
-                    className="flex-1 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium focus:border-[#008588]/30 focus:outline-none focus:ring-2 focus:ring-[#008588]/20"
+                    className="flex-1 rounded-xl border border-[#f0d8dc] bg-white px-4 py-2.5 text-sm font-medium focus:border-[#f0d8dc] focus:outline-none focus:ring-2 focus:ring-[#f47c8c]/20"
                   />
                   <button
                     type="button"
                     onClick={sendMessage}
-                    className="rounded-xl bg-[#00758C] px-4 py-2.5 text-white transition-all hover:bg-[#008588]"
+                    className="rounded-xl bg-[#f47c8c] px-4 py-2.5 text-white transition-all hover:bg-[#e06373]"
                     aria-label="Send message"
                   >
                     <Send className="h-4 w-4" aria-hidden />
@@ -253,8 +253,8 @@ export default function PatientTeleconsultPage() {
         <aside aria-label="Billing and policy profile" className="space-y-4">
           <div className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-sm font-black text-[#00758C]">Billing Ledger</h2>
+              <CreditCard className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-sm font-black text-[#8c2b39]">Billing Ledger</h2>
             </div>
             <ul className="space-y-3">
               {INVOICES.map((invoice) => (
@@ -263,11 +263,11 @@ export default function PatientTeleconsultPage() {
                   className={`rounded-xl border p-4 ${
                     invoice.status === 'Overdue'
                       ? 'border-rose-500/30 bg-rose-500/10 ring-1 ring-rose-500/20'
-                      : 'border-slate-200/80 bg-slate-50/50'
+                      : 'border-[#f0d8dc] bg-slate-50/50'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-mono text-xs font-black text-[#008588]">{invoice.reference}</p>
+                    <p className="font-mono text-xs font-black text-[#f47c8c]">{invoice.reference}</p>
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_STYLES[invoice.status]}`}
                     >
@@ -285,14 +285,14 @@ export default function PatientTeleconsultPage() {
             <button
               type="button"
               onClick={handlePayment}
-              className="mt-4 w-full rounded-xl bg-[#00758C] py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#008588]"
+              className="mt-4 w-full rounded-xl bg-[#f47c8c] py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#e06373]"
             >
               Proceed to Online Payment
             </button>
           </div>
 
           <div className={CARD_CLASS}>
-            <h2 className="mb-4 text-sm font-black uppercase tracking-wider text-[#00758C]">
+            <h2 className="mb-4 text-sm font-black uppercase tracking-wider text-[#8c2b39]">
               Account &amp; Policy Profile
             </h2>
             <dl className="space-y-4 text-sm">

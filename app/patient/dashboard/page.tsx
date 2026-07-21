@@ -18,6 +18,9 @@ import {
   Zap,
 } from 'lucide-react';
 
+import { PatientStatusBanner } from '@/components/patient/PatientStatusBanner';
+import { patientToastCopy } from '@/lib/patient/status-copy';
+
 type HealthSummary = {
   steps: number;
   stepsGoal: number;
@@ -148,10 +151,10 @@ const QUICK_ACTIONS = [
   { label: 'Upload Vitals', href: '/patient/health', icon: Upload },
 ] as const;
 
-const CARD_CLASS = 'rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm';
+const CARD_CLASS = 'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
 
 const VITAL_CARD_CLASS =
-  'flex items-center justify-between rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm';
+  'flex items-center justify-between rounded-xl border border-[#f0d8dc] bg-white p-4 shadow-sm';
 
 export default function PatientDashboardPage() {
   const [medicines, setMedicines] = useState<MedicineIntake[]>(INITIAL_MEDICINES);
@@ -185,29 +188,32 @@ export default function PatientDashboardPage() {
   }, []);
 
   const handleEmergency = useCallback(() => {
-    showNotice('Emergency dispatch initiated · Nexora ER hotline connecting · sandbox mode');
+    showNotice(patientToastCopy.emergencyDispatchNotified);
   }, [showNotice]);
 
   const handlePaySecurely = useCallback(() => {
-    showNotice('Secure payment gateway · outstanding balance · sandbox redirect');
+    showNotice(patientToastCopy.paymentSessionActive);
   }, [showNotice]);
 
-  const handleViewPdf = useCallback((title: string) => {
-    showNotice(`${title} · PDF viewer · sandbox preview`);
-  }, [showNotice]);
+  const handleViewPdf = useCallback(
+    (title: string) => {
+      showNotice(patientToastCopy.labReportExport(title));
+    },
+    [showNotice],
+  );
 
   return (
-    <div className="min-h-screen w-full space-y-6 bg-slate-50/70 p-6 font-sans text-slate-950">
+    <div className="w-full max-w-full space-y-6 font-sans text-slate-950">
       {/* Interactive header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#00758C]">Aishwarya D S</h1>
-          <p className="mt-1 text-sm font-medium text-slate-600">{TODAY_LABEL}</p>
+          <h1 className="text-2xl font-black text-[#8c2b39]">Aishwarya D S</h1>
+          <p className="mt-1 text-sm font-medium text-[#736366]">{TODAY_LABEL}</p>
         </div>
         <button
           type="button"
           onClick={handleEmergency}
-          className="flex cursor-pointer items-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 font-extrabold text-white shadow-md transition-all animate-pulse hover:bg-rose-700"
+          className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#e63946] px-5 py-2.5 font-extrabold text-white shadow-md transition-all animate-pulse hover:bg-[#d62839]"
         >
           <ShieldAlert className="h-5 w-5" aria-hidden />
           Emergency
@@ -227,57 +233,53 @@ export default function PatientDashboardPage() {
         </ul>
       </div>
 
-      {actionNotice ? (
-        <p className="rounded-xl border border-[#008588]/20 bg-[#008588]/5 px-4 py-2 text-sm font-bold text-[#008588]">
-          {actionNotice}
-        </p>
-      ) : null}
+      {actionNotice ? <PatientStatusBanner message={actionNotice} variant="success" /> : null}
 
       {/* Top metric bar — health summary */}
       <section aria-label="Health summary" className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className={VITAL_CARD_CLASS}>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#736366]">
               Daily Steps
             </p>
-            <p className="mt-2 text-2xl font-black tabular-nums text-[#00758C]">
+            <p className="mt-2 text-2xl font-black tabular-nums text-[#8c2b39]">
               {HEALTH_SUMMARY.steps.toLocaleString('en-IN')}
             </p>
-            <p className="mt-0.5 text-xs font-bold text-[#5EC283]">{stepsProgress}% of goal</p>
+            <p className="mt-0.5 text-xs font-bold text-[#8c2b39]">{stepsProgress}% of goal</p>
           </div>
-          <div className="rounded-lg border border-[#008588]/20 bg-[#008588]/5 p-2.5 text-[#008588]">
+          <div className="rounded-lg border border-[#f0d8dc] bg-[#fde8eb] p-2.5 text-[#f47c8c]">
             <Footprints className="h-5 w-5" aria-hidden />
           </div>
         </div>
 
         <div className={VITAL_CARD_CLASS}>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#736366]">
               Heart Rate
             </p>
-            <p className="mt-2 text-2xl font-black tabular-nums text-[#008588]">
+            <p className="mt-2 text-2xl font-black tabular-nums text-[#f47c8c]">
               {HEALTH_SUMMARY.heartRateBpm}
               <span className="text-sm font-medium text-slate-500"> BPM</span>
             </p>
-            <p className="mt-0.5 text-xs font-bold text-[#00A481]">Resting · normal range</p>
+            <p className="mt-0.5 text-xs font-bold text-[#f47c8c]">Resting · normal range</p>
           </div>
-          <div className="rounded-lg border border-[#00A481]/20 bg-[#00A481]/10 p-2.5 text-[#00A481]">
+          <div className="rounded-lg border border-[#f0d8dc] bg-[#fde8eb] p-2.5 text-[#f47c8c]">
             <Activity className="h-5 w-5" aria-hidden />
           </div>
         </div>
 
         <div className={VITAL_CARD_CLASS}>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#736366]">
               Sleep Index
             </p>
-            <p className="mt-2 text-2xl font-black tabular-nums text-[#5EC283]">
+            <p className="mt-2 text-2xl font-black tabular-nums text-[#8c2b39]">
               {HEALTH_SUMMARY.sleepHours}
               <span className="text-sm font-medium text-slate-500"> hrs</span>
             </p>
-            <p className="mt-0.5 text-xs font-bold text-slate-600">{HEALTH_SUMMARY.sleepQuality}</p>
+            <p className="mt-0.5 text-xs font-bold text-[#736366]">{HEALTH_SUMMARY.sleepQuality}</p>
           </div>
-          <div className="rounded-lg border border-[#5EC283]/20 bg-[#5EC283]/10 p-2.5 text-[#5EC283]">
+          <div className="rounded-lg border border-[#f0d8dc] bg-[#fde8eb] p-2.5 text-[#f47c8c]">
             <Moon className="h-5 w-5" aria-hidden />
           </div>
         </div>
@@ -290,25 +292,25 @@ export default function PatientDashboardPage() {
           {/* Upcoming appointment widget */}
           <section aria-label="Upcoming appointment" className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <CalendarClock className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-lg font-black text-[#00758C]">Upcoming Appointment</h2>
+              <CalendarClock className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-lg font-black text-[#8c2b39]">Upcoming Appointment</h2>
             </div>
-            <div className="rounded-xl border border-[#008588]/20 bg-gradient-to-r from-[#008588]/5 to-transparent p-5">
+            <div className="rounded-xl border border-[#f0d8dc] bg-gradient-to-r from-[#fde8eb] to-transparent p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-lg font-black text-slate-900">
                     {UPCOMING_APPOINTMENT.doctorName}
                   </p>
-                  <p className="mt-1 text-sm font-bold text-[#008588]">
+                  <p className="mt-1 text-sm font-bold text-[#f47c8c]">
                     {UPCOMING_APPOINTMENT.specialization}
                   </p>
                   <p className="mt-2 text-xs font-medium text-slate-600">
                     {UPCOMING_APPOINTMENT.department}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-3 text-sm">
-                    <span className="font-black text-[#00758C]">{UPCOMING_APPOINTMENT.date}</span>
-                    <span className="font-black text-[#008588]">{UPCOMING_APPOINTMENT.slotTime}</span>
-                    <span className="inline-flex rounded-full border border-[#00A481]/20 bg-[#00A481]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#00A481]">
+                    <span className="font-black text-[#8c2b39]">{UPCOMING_APPOINTMENT.date}</span>
+                    <span className="font-black text-[#f47c8c]">{UPCOMING_APPOINTMENT.slotTime}</span>
+                    <span className="inline-flex rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#f47c8c]">
                       {UPCOMING_APPOINTMENT.status}
                     </span>
                   </div>
@@ -316,13 +318,13 @@ export default function PatientDashboardPage() {
                 <div className="flex shrink-0 flex-col gap-2">
                   <Link
                     href="/patient/appointments"
-                    className="rounded-lg border border-[#008588]/20 bg-white px-4 py-2 text-center text-xs font-bold text-[#008588] transition-all hover:bg-[#008588]/10"
+                    className="rounded-lg border border-[#f0d8dc] bg-white px-4 py-2 text-center text-xs font-bold text-[#f47c8c] transition-all hover:bg-[#fde8eb]"
                   >
                     View All Bookings
                   </Link>
                   <Link
                     href="/patient/communication"
-                    className="rounded-lg bg-[#00758C] px-4 py-2 text-center text-xs font-bold text-white transition-all hover:bg-[#008588]"
+                    className="rounded-lg bg-[#f47c8c] px-4 py-2 text-center text-xs font-bold text-white transition-all hover:bg-[#e06373]"
                   >
                     Message Doctor
                   </Link>
@@ -334,20 +336,20 @@ export default function PatientDashboardPage() {
           {/* Today's medicines tracker */}
           <section aria-label="Today's medicines" className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Pill className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-lg font-black text-[#00758C]">Today&apos;s Medicines</h2>
+              <Pill className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-lg font-black text-[#8c2b39]">Today&apos;s Medicines</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200/80 bg-slate-50/80">
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase tracking-wider text-[#00758C]">
+                  <tr className="border-b border-[#f0d8dc] bg-slate-50/80">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase tracking-wider text-[#8c2b39]">
                       Medicine
                     </th>
-                    <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-wider text-[#00758C]">
+                    <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-wider text-[#8c2b39]">
                       Morning
                     </th>
-                    <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-wider text-[#00758C]">
+                    <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-wider text-[#8c2b39]">
                       Evening
                     </th>
                   </tr>
@@ -356,7 +358,7 @@ export default function PatientDashboardPage() {
                   {medicines.map((med) => {
                     const complete = isMedicineComplete(med);
                     return (
-                      <tr key={med.id} className="border-b border-slate-200/60">
+                      <tr key={med.id} className="border-b border-[#f0d8dc]">
                         <td className="px-3 py-3">
                           <p
                             className={`font-bold text-slate-900 ${complete ? 'line-through opacity-60' : ''}`}
@@ -378,7 +380,7 @@ export default function PatientDashboardPage() {
                               checked={med.morning}
                               onChange={() => toggleIntake(med.id, 'morning')}
                               aria-label={`Mark ${med.name} morning dose taken`}
-                              className="h-4 w-4 rounded border-slate-300 text-[#008588] focus:ring-[#008588]/30"
+                              className="h-4 w-4 cursor-pointer rounded border-[#f0d8dc] accent-[#f47c8c] text-[#f47c8c] focus:ring-2 focus:ring-[#f47c8c]/30 focus:ring-offset-0"
                             />
                           )}
                         </td>
@@ -391,7 +393,7 @@ export default function PatientDashboardPage() {
                               checked={med.evening}
                               onChange={() => toggleIntake(med.id, 'evening')}
                               aria-label={`Mark ${med.name} evening dose taken`}
-                              className="h-4 w-4 rounded border-slate-300 text-[#008588] focus:ring-[#008588]/30"
+                              className="h-4 w-4 cursor-pointer rounded border-[#f0d8dc] accent-[#f47c8c] text-[#f47c8c] focus:ring-2 focus:ring-[#f47c8c]/30 focus:ring-offset-0"
                             />
                           )}
                         </td>
@@ -406,20 +408,20 @@ export default function PatientDashboardPage() {
           {/* Latest reports module */}
           <section aria-label="Latest reports" className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <FileText className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-lg font-black text-[#00758C]">Latest Reports</h2>
+              <FileText className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-lg font-black text-[#8c2b39]">Latest Reports</h2>
             </div>
             <ul className="space-y-3">
               {LATEST_REPORTS.map((report) => (
                 <li
                   key={report.id}
-                  className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-black text-slate-900">{report.title}</p>
                       {report.verified ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-[#00A481]/20 bg-[#00A481]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#00A481]">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#f47c8c]">
                           <Zap className="h-3 w-3" aria-hidden />
                           Verified
                         </span>
@@ -428,14 +430,14 @@ export default function PatientDashboardPage() {
                     <p className="mt-1 text-xs font-bold text-slate-600">
                       {report.type} · {report.date}
                     </p>
-                    <p className="mt-0.5 font-mono text-[10px] font-bold text-[#008588]">
+                    <p className="mt-0.5 font-mono text-[10px] font-bold text-[#f47c8c]">
                       {report.verificationKey}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleViewPdf(report.title)}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#008588]/20 bg-white px-3 py-2 text-xs font-bold text-[#008588] transition-all hover:bg-[#008588]/10"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#f0d8dc] bg-white px-3 py-2 text-xs font-bold text-[#f47c8c] transition-all hover:bg-[#fde8eb]"
                   >
                     <FileText className="h-3.5 w-3.5" aria-hidden />
                     View PDF
@@ -451,17 +453,17 @@ export default function PatientDashboardPage() {
           {/* Quick actions hub */}
           <section aria-label="Quick actions" className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Zap className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-base font-black text-[#00758C]">Quick Actions</h2>
+              <Zap className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-base font-black text-[#8c2b39]">Quick Actions</h2>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {QUICK_ACTIONS.map(({ label, href, icon: Icon }) => (
                 <Link
                   key={label}
                   href={href}
-                  className="flex flex-col items-start gap-2 rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-slate-50 p-4 transition-all hover:-translate-y-0.5 hover:border-[#008588]/30"
+                  className="flex flex-col items-start gap-2 rounded-xl border border-[#f0d8dc] bg-gradient-to-br from-white to-slate-50 p-4 transition-all hover:-translate-y-0.5 hover:border-[#f0d8dc]"
                 >
-                  <div className="rounded-lg border border-[#008588]/20 bg-[#008588]/5 p-2 text-[#008588]">
+                  <div className="rounded-lg border border-[#f0d8dc] bg-[#fde8eb] p-2 text-[#f47c8c]">
                     <Icon className="h-4 w-4" aria-hidden />
                   </div>
                   <span className="text-xs font-bold leading-snug text-slate-800">{label}</span>
@@ -473,21 +475,21 @@ export default function PatientDashboardPage() {
           {/* Pending bills ledger */}
           <section aria-label="Pending bills" className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-base font-black text-[#00758C]">Pending Bills</h2>
+              <CreditCard className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-base font-black text-[#8c2b39]">Pending Bills</h2>
             </div>
             <ul className="space-y-3">
               {PENDING_BILLS.map((bill) => (
                 <li
                   key={bill.id}
-                  className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3"
+                  className="rounded-xl border border-[#f0d8dc] bg-[#fde8eb]/50 p-3"
                 >
-                  <p className="font-mono text-[10px] font-black text-[#008588]">
+                  <p className="font-mono text-[10px] font-black text-[#f47c8c]">
                     {bill.transactionCode}
                   </p>
                   <p className="mt-1 text-sm font-bold text-slate-900">{bill.description}</p>
                   <div className="mt-2 flex items-baseline justify-between">
-                    <p className="text-lg font-black text-[#00758C]">{bill.amount}</p>
+                    <p className="text-lg font-black text-[#8c2b39]">{bill.amount}</p>
                     <p className="text-[10px] font-bold text-slate-500">Due {bill.dueDate}</p>
                   </div>
                 </li>
@@ -496,7 +498,7 @@ export default function PatientDashboardPage() {
             <button
               type="button"
               onClick={handlePaySecurely}
-              className="mt-4 block w-full rounded-lg bg-[#00758C] py-2 text-center text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#008588]"
+              className="mt-4 block w-full rounded-lg bg-[#f47c8c] py-2 text-center text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#e06373]"
             >
               Pay Statement Securely
             </button>

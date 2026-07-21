@@ -15,6 +15,9 @@ import {
   Users,
 } from 'lucide-react';
 
+import { PatientHeaderBadge, PatientStatusBanner } from '@/components/patient/PatientStatusBanner';
+import { formatSosHeaderBadge, patientToastCopy } from '@/lib/patient/status-copy';
+
 type SosStatus = 'SOS Idle' | 'SOS Triggered - Dispatching Alert' | 'Ambulance Requested';
 
 type FamilyRelation = 'Parent' | 'Spouse' | 'Child' | 'Self';
@@ -48,15 +51,15 @@ type FamilyOperationalItem = {
 };
 
 const VERIFIED_TAG =
-  'bg-[#00A481]/10 text-[#00A481] border border-[#00A481]/20 font-bold px-2.5 py-0.5 rounded-full text-[10px]';
+  'inline-flex rounded-full border border-[#f47c8c]/40 bg-[#fde8eb] px-2.5 py-0.5 text-xs font-semibold tracking-wide text-[#15803d]';
 
-const PANEL_CLASS = 'rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm';
+const PANEL_CLASS = 'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
 
 const FAMILY_CARD_CLASS =
-  'rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm transition-all hover:border-[#008588]/30';
+  'rounded-2xl border border-[#f0d8dc] bg-white p-5 shadow-sm transition-all hover:border-[#f0d8dc]';
 
 const SWITCH_PROFILE_CLASS =
-  'mt-3 block w-full rounded-lg border border-[#008588]/10 bg-[#008588]/5 px-3 py-1.5 text-center text-xs font-bold text-[#008588] transition-colors hover:bg-[#008588]/10';
+  'mt-3 block w-full rounded-lg border border-[#f47c8c]/10 bg-[#fde8eb] px-3 py-1.5 text-center text-xs font-bold text-[#f47c8c] transition-colors hover:bg-[#e06373]/10';
 
 const PRIMARY_SELF: FamilyMemberProfile = {
   id: 'self',
@@ -169,12 +172,6 @@ const FAMILY_OPERATIONAL: FamilyOperationalItem[] = [
   },
 ];
 
-const SOS_STATUS_STYLES: Record<SosStatus, string> = {
-  'SOS Idle': 'border-slate-200/60 bg-white text-slate-700',
-  'SOS Triggered - Dispatching Alert': 'border-rose-500/40 bg-rose-500/10 text-rose-800',
-  'Ambulance Requested': 'border-amber-500/30 bg-amber-500/10 text-amber-900',
-};
-
 export default function PatientEmergencyPage() {
   const [sosStatus, setSosStatus] = useState<SosStatus>('SOS Idle');
   const [shareLiveLocation, setShareLiveLocation] = useState(false);
@@ -196,34 +193,32 @@ export default function PatientEmergencyPage() {
   const handleSosTrigger = useCallback(() => {
     setSosStatus('SOS Triggered - Dispatching Alert');
     setShareLiveLocation(true);
-    showNotice(
-      'SOS alert dispatched · emergency desk notified · live location ping activated · sandbox mode',
-    );
+    showNotice(patientToastCopy.emergencyDispatchNotified);
   }, [showNotice]);
 
   const handleAmbulanceRequest = useCallback(() => {
     setSosStatus('Ambulance Requested');
     setShareLiveLocation(true);
-    showNotice('Ambulance dispatch requested · ETA tracking queued · sandbox coordination');
+    showNotice(patientToastCopy.ambulanceRequested);
   }, [showNotice]);
 
   const handleResetSos = useCallback(() => {
     setSosStatus('SOS Idle');
-    showNotice('Crisis console reset · SOS standing down · sandbox confirmation');
+    showNotice(patientToastCopy.sosReset);
   }, [showNotice]);
 
   const handleSwitchProfile = useCallback(
     (memberId: string) => {
       setActiveProfileId(memberId);
       const member = FAMILY_MEMBERS.find((m) => m.id === memberId);
-      showNotice(`Profile context switched · ${member?.name ?? 'Member'} · sandbox dashboard view`);
+      showNotice(patientToastCopy.profileSwitched(member?.name ?? 'Member'));
     },
     [showNotice],
   );
 
   const handleCallContact = useCallback(
     (contact: EmergencyContact) => {
-      showNotice(`Dialing ${contact.name} · ${contact.phone} · sandbox telephony bridge`);
+      showNotice(patientToastCopy.contactDialing(contact.name));
     },
     [showNotice],
   );
@@ -233,15 +228,17 @@ export default function PatientEmergencyPage() {
     if (!name) return;
     setShowAddMember(false);
     setNewMemberName('');
-    showNotice(`Family member invite queued · ${name} · pending guardian verification`);
+    showNotice(patientToastCopy.familyInviteQueued(name));
   }, [newMemberName, showNotice]);
 
+  const sosHeaderBadge = useMemo(() => formatSosHeaderBadge(sosStatus), [sosStatus]);
+
   return (
-    <div className="min-h-screen w-full space-y-6 bg-slate-50/70 p-6 font-sans text-slate-950">
+    <div className="min-h-screen w-full space-y-6 bg-[#faf6f7] p-6 font-sans text-slate-950">
       {/* Logistical hub header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#00758C]">
+          <h1 className="text-2xl font-black text-[#8c2b39]">
             Emergency Dispatch Center &amp; Family Circle
           </h1>
           <p className="mt-1 text-sm font-medium text-slate-600">
@@ -249,35 +246,35 @@ export default function PatientEmergencyPage() {
             network sync · 14 Jul 2026
           </p>
         </div>
-        <div
-          className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide ${SOS_STATUS_STYLES[sosStatus]}`}
-        >
-          <Siren className="h-4 w-4" aria-hidden />
-          {sosStatus}
-        </div>
+        <PatientHeaderBadge
+          label={sosHeaderBadge.label}
+          tone={sosHeaderBadge.tone}
+          icon={Siren}
+        />
       </header>
 
       {actionNotice ? (
-        <p className="rounded-xl border border-[#008588]/20 bg-[#008588]/5 px-4 py-2 text-sm font-bold text-[#008588]">
-          {actionNotice}
-        </p>
+        <PatientStatusBanner
+          message={actionNotice}
+          variant={sosStatus === 'SOS Idle' ? 'info' : 'warning'}
+        />
       ) : null}
 
       {/* Top high-alert interaction bar — SOS console */}
       <section
         aria-label="SOS emergency console"
-        className="rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm"
+        className="rounded-2xl border border-[#f0d8dc] bg-white p-5 shadow-sm"
       >
         <div className="mb-4 flex items-center gap-2">
           <ShieldAlert className="h-5 w-5 text-rose-600" aria-hidden />
-          <h2 className="text-base font-black text-[#00758C]">Crisis Response Console</h2>
+          <h2 className="text-base font-black text-[#8c2b39]">Crisis Response Console</h2>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-[auto_1fr_auto] md:items-center">
           <button
             type="button"
             onClick={handleSosTrigger}
-            className="flex w-full animate-pulse cursor-pointer items-center justify-center gap-3 rounded-2xl bg-rose-600 px-8 py-4 text-lg font-black text-white shadow-lg transition-all hover:bg-rose-700 md:w-auto"
+            className="flex w-full animate-pulse cursor-pointer items-center justify-center gap-3 rounded-2xl bg-[#e63946] px-8 py-4 text-lg font-black text-white shadow-lg transition-all hover:bg-[#d62839] md:w-auto"
           >
             <Siren className="h-6 w-6" aria-hidden />
             🚨 TRIGGER SOS ALERT
@@ -288,14 +285,14 @@ export default function PatientEmergencyPage() {
             onClick={handleAmbulanceRequest}
             className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
           >
-            <Ambulance className="h-4 w-4 text-[#008588]" aria-hidden />
+            <Ambulance className="h-4 w-4 text-[#f47c8c]" aria-hidden />
             Ambulance Request
           </button>
 
           <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm md:justify-center">
             <div className="flex items-center gap-2">
               <MapPin
-                className={`h-4 w-4 ${shareLiveLocation ? 'text-[#00A481]' : 'text-slate-400'}`}
+                className={`h-4 w-4 ${shareLiveLocation ? 'text-[#f47c8c]' : 'text-slate-400'}`}
                 aria-hidden
               />
               <span className="text-sm font-bold text-slate-700">Share Live Location</span>
@@ -308,12 +305,12 @@ export default function PatientEmergencyPage() {
                 setShareLiveLocation((prev) => !prev);
                 showNotice(
                   shareLiveLocation
-                    ? 'Live location sharing stopped · sandbox tracking off'
-                    : 'Live location ping active · external tracking enabled · sandbox mode',
+                    ? patientToastCopy.locationSharingOff
+                    : patientToastCopy.locationSharingOn,
                 );
               }}
               className={`relative h-7 w-12 rounded-full transition-colors ${
-                shareLiveLocation ? 'bg-[#00A481]' : 'bg-slate-300'
+                shareLiveLocation ? 'bg-[#f47c8c]' : 'bg-slate-300'
               }`}
             >
               <span
@@ -329,7 +326,7 @@ export default function PatientEmergencyPage() {
           <button
             type="button"
             onClick={handleResetSos}
-            className="mt-4 text-xs font-bold text-[#008588] hover:underline"
+            className="mt-4 text-xs font-bold text-[#f47c8c] hover:underline"
           >
             Reset crisis console · stand down alert
           </button>
@@ -337,11 +334,11 @@ export default function PatientEmergencyPage() {
       </section>
 
       {/* Active profile context banner */}
-      <div className="rounded-xl border border-[#008588]/20 bg-[#008588]/5 px-4 py-3">
-        <p className="text-[10px] font-black uppercase tracking-wider text-[#008588]">
+      <div className="rounded-xl border border-[#f0d8dc] bg-[#fde8eb] px-4 py-3">
+        <p className="text-[10px] font-black uppercase tracking-wider text-[#f47c8c]">
           Active Profile Context
         </p>
-        <p className="mt-1 text-sm font-black text-[#00758C]">
+        <p className="mt-1 text-sm font-black text-[#8c2b39]">
           {activeProfile.name} · {activeProfile.relation} · {activeProfile.patientId}
         </p>
         <p className="text-xs font-medium text-slate-600">
@@ -353,8 +350,8 @@ export default function PatientEmergencyPage() {
         {/* Left column — family network (55%) */}
         <section aria-label="Family members network" className={PANEL_CLASS}>
           <div className="mb-4 flex items-center gap-2">
-            <Users className="h-5 w-5 text-[#008588]" aria-hidden />
-            <h2 className="text-lg font-black text-[#00758C]">Family Members Directory</h2>
+            <Users className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+            <h2 className="text-lg font-black text-[#8c2b39]">Family Members Directory</h2>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -365,17 +362,17 @@ export default function PatientEmergencyPage() {
                 <article
                   key={member.id}
                   className={`${FAMILY_CARD_CLASS} ${
-                    isActive ? 'ring-2 ring-[#008588]/30 border-[#008588]/40' : ''
+                    isActive ? 'ring-2 ring-[#f47c8c]/30 border-[#f47c8c]/40' : ''
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#008588]/10">
-                        <User className="h-5 w-5 text-[#008588]" aria-hidden />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fde8eb]">
+                        <User className="h-5 w-5 text-[#f47c8c]" aria-hidden />
                       </div>
                       <div>
-                        <p className="text-sm font-black text-[#00758C]">{member.name}</p>
-                        <p className="text-xs font-bold text-[#008588]">{member.relation}</p>
+                        <p className="text-sm font-black text-[#8c2b39]">{member.name}</p>
+                        <p className="text-xs font-bold text-[#f47c8c]">{member.relation}</p>
                       </div>
                     </div>
                     {isActive ? (
@@ -388,7 +385,7 @@ export default function PatientEmergencyPage() {
                       <dt className="font-bold uppercase tracking-wider text-slate-500">
                         Patient ID
                       </dt>
-                      <dd className="font-mono font-black text-[#008588]">{member.patientId}</dd>
+                      <dd className="font-mono font-black text-[#f47c8c]">{member.patientId}</dd>
                     </div>
                     <div>
                       <dt className="font-bold uppercase tracking-wider text-slate-500">
@@ -406,8 +403,8 @@ export default function PatientEmergencyPage() {
                       <dd className="font-medium text-slate-700">{member.nextAppointment}</dd>
                     </div>
                     {member.recordAlert ? (
-                      <div className="rounded-lg border border-[#5EC283]/30 bg-[#5EC283]/10 p-2">
-                        <dt className="flex items-center gap-1 font-bold text-[#00758C]">
+                      <div className="rounded-lg border border-[#f47c8c]/30 bg-[#fde8eb] p-2">
+                        <dt className="flex items-center gap-1 font-bold text-[#8c2b39]">
                           <AlertTriangle className="h-3 w-3" aria-hidden />
                           Record Flag
                         </dt>
@@ -427,7 +424,7 @@ export default function PatientEmergencyPage() {
                       Switch to Profile
                     </button>
                   ) : (
-                    <p className="mt-3 text-center text-xs font-bold text-[#00A481]">
+                    <p className="mt-3 text-center text-xs font-bold text-[#f47c8c]">
                       Currently viewing this profile
                     </p>
                   )}
@@ -439,10 +436,10 @@ export default function PatientEmergencyPage() {
             <button
               type="button"
               onClick={() => setShowAddMember((prev) => !prev)}
-              className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#008588]/30 bg-[#008588]/5 p-5 transition-all hover:border-[#008588]/50 hover:bg-[#008588]/10"
+              className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#f0d8dc] bg-[#fde8eb] p-5 transition-all hover:border-[#f47c8c]/50 hover:bg-[#e06373]/10"
             >
-              <Plus className="h-8 w-8 text-[#008588]" aria-hidden />
-              <span className="mt-2 text-sm font-black text-[#00758C]">Add New Family Member</span>
+              <Plus className="h-8 w-8 text-[#f47c8c]" aria-hidden />
+              <span className="mt-2 text-sm font-black text-[#8c2b39]">Add New Family Member</span>
               <span className="mt-1 text-xs font-medium text-slate-600">
                 Invite dependent · guardian verification required
               </span>
@@ -450,7 +447,7 @@ export default function PatientEmergencyPage() {
           </div>
 
           {showAddMember ? (
-            <div className="mt-4 rounded-xl border border-slate-200/60 bg-slate-50/80 p-4">
+            <div className="mt-4 rounded-xl border border-[#f0d8dc] bg-slate-50/80 p-4">
               <label htmlFor="new-member-name" className="text-xs font-bold text-slate-700">
                 Member full name
               </label>
@@ -461,12 +458,12 @@ export default function PatientEmergencyPage() {
                   value={newMemberName}
                   onChange={(event) => setNewMemberName(event.target.value)}
                   placeholder="Enter family member name…"
-                  className="flex-1 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium focus:border-[#008588]/30 focus:outline-none focus:ring-2 focus:ring-[#008588]/20"
+                  className="flex-1 rounded-xl border border-[#f0d8dc] bg-white px-4 py-2.5 text-sm font-medium focus:border-[#f0d8dc] focus:outline-none focus:ring-2 focus:ring-[#f47c8c]/20"
                 />
                 <button
                   type="button"
                   onClick={handleAddMember}
-                  className="rounded-xl bg-[#00758C] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#008588]"
+                  className="rounded-xl bg-[#f47c8c] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#e06373]"
                 >
                   Send Invite
                 </button>
@@ -479,18 +476,18 @@ export default function PatientEmergencyPage() {
         <aside className="space-y-6">
           <section aria-label="Emergency contacts" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Phone className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-base font-black text-[#00758C]">Primary Emergency Contacts</h2>
+              <Phone className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-base font-black text-[#8c2b39]">Primary Emergency Contacts</h2>
             </div>
             <ul className="space-y-3">
               {EMERGENCY_CONTACTS.map((contact) => (
                 <li
                   key={contact.id}
-                  className="rounded-xl border border-slate-200/60 bg-slate-50/50 p-4"
+                  className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <p className="text-sm font-black text-[#00758C]">{contact.name}</p>
+                      <p className="text-sm font-black text-[#8c2b39]">{contact.name}</p>
                       <p className="text-xs font-bold text-slate-600">{contact.relation}</p>
                     </div>
                     {contact.verified ? (
@@ -500,7 +497,7 @@ export default function PatientEmergencyPage() {
                   <button
                     type="button"
                     onClick={() => handleCallContact(contact)}
-                    className="mt-3 inline-flex items-center gap-2 text-sm font-black text-[#00758C] hover:underline"
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-black text-[#8c2b39] hover:underline"
                   >
                     <Phone className="h-4 w-4" aria-hidden />
                     {contact.phone}
@@ -512,33 +509,33 @@ export default function PatientEmergencyPage() {
 
           <section aria-label="Family operational summary" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <CalendarDays className="h-5 w-5 text-[#008588]" aria-hidden />
-              <h2 className="text-base font-black text-[#00758C]">Family Operational Summary</h2>
+              <CalendarDays className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+              <h2 className="text-base font-black text-[#8c2b39]">Family Operational Summary</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[320px] border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200/80 bg-slate-50/80">
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                  <tr className="border-b border-[#f0d8dc] bg-slate-50/80">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                       Member
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                       Type
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#00758C]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
                       Detail
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {FAMILY_OPERATIONAL.map((item) => (
-                    <tr key={item.id} className="border-b border-slate-200/60">
-                      <td className="px-3 py-3 text-xs font-black text-[#00758C]">{item.member}</td>
+                    <tr key={item.id} className="border-b border-[#f0d8dc]">
+                      <td className="px-3 py-3 text-xs font-black text-[#8c2b39]">{item.member}</td>
                       <td className="px-3 py-3">
                         <span
                           className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase ${
                             item.type === 'Appointment'
-                              ? 'text-[#008588]'
+                              ? 'text-[#f47c8c]'
                               : 'text-amber-800'
                           }`}
                         >
