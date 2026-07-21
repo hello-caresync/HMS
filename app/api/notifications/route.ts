@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server';
 
 import { apiError, resolveDoctorId } from '@/lib/doctor/server/api-helpers';

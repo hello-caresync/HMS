@@ -1,5 +1,3 @@
-import { createHash } from 'crypto';
-
 import { SUPABASE_TABLES } from '../../client/supabase';
 import type { NexoraServiceContext } from '../../types/context';
 import type { SharedAuditFootprint } from '../../types/transaction';
@@ -13,11 +11,19 @@ export interface WriteAuditLogInput {
   payload: Record<string, unknown>;
 }
 
-function computeImmutableHash(payload: Record<string, unknown>, recordedAt: string): string {
-  return createHash('sha256')
-    .update(JSON.stringify({ ...payload, recordedAt }))
-    .digest('hex')
-    .slice(0, 16);
+async function hashData(data: string): Promise<string> {
+  const msgUint8 = new TextEncoder().encode(data);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function computeImmutableHash(
+  payload: Record<string, unknown>,
+  recordedAt: string,
+): Promise<string> {
+  const full = await hashData(JSON.stringify({ ...payload, recordedAt }));
+  return full.slice(0, 16);
 }
 
 /** packages/shared/services/audit — append-only immutable footprint */
@@ -27,7 +33,7 @@ export async function writeAuditLog(
 ): Promise<ServiceResult<SharedAuditFootprint>> {
   const recordedAt = new Date().toISOString();
   const auditId = `AUD-${ctx.correlationId}`;
-  const immutableHash = computeImmutableHash(
+  const immutableHash = await computeImmutableHash(
     {
       ...input.payload,
       action: input.action,
