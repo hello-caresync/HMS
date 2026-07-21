@@ -4,13 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { APP_ROUTES } from '../app/lib/routes';
+import { pingClientSession, revokeClientSession } from '@/lib/doctor/client/session-client';
 import {
   clearSecuritySession,
-  collectDeviceMetadata,
   IDLE_THRESHOLD_MS,
   readSecuritySession,
   SESSION_PING_INTERVAL_MS,
-  type SessionPingResponse,
 } from '../app/lib/security';
 
 export type AuthSessionState = {
@@ -86,10 +85,7 @@ export function useAuthSession(options: UseAuthSessionOptions = {}) {
     onForcedLogoutRef.current?.(reason);
 
     if (token) {
-      void fetch('/api/auth/session', {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      revokeClientSession(token);
     }
 
     router.replace(`${APP_ROUTES.login}?reason=${encodeURIComponent(reason)}`);
@@ -124,22 +120,9 @@ export function useAuthSession(options: UseAuthSessionOptions = {}) {
     });
 
     try {
-      const response = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          activeToken: session.activeToken,
-          employeeId: session.employeeId,
-          assignedRole: session.assignedRole,
-          expiresAt: session.expiresAt,
-          lastActivityAt: lastActivityRef.current,
-          device: collectDeviceMetadata(),
-        }),
-      });
+      const payload = pingClientSession(session, lastActivityRef.current);
 
-      const payload = (await response.json()) as SessionPingResponse;
-
-      if (!response.ok || !payload.valid) {
+      if (!payload.valid) {
         const reason =
           payload.valid === false ? payload.reason.toLowerCase() : 'session_invalid';
 

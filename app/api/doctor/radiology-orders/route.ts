@@ -1,27 +1,7 @@
-export const runtime = 'edge';
+export const dynamic = 'force-static';
 
 import { NextResponse } from 'next/server';
 
-/** Mock PACS queue metadata — prerendered at build time (no separate DB worker). */
-export async function GET() {
-  return NextResponse.json({
-    success: true,
-    status: 'READY',
-    pacs: 'PACS queue · preliminary read ETA 45 min (mock)',
-  });
-}
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    return NextResponse.json({
-      success: true,
-      id: `rad-${Date.now()}`,
-      status: 'ORDERED',
-      pacs: 'PACS queue · preliminary read ETA 45 min (mock)',
-      payload: body,
-    });
-  } catch {
-    return NextResponse.json({ success: false }, { status: 500 });
-  }
+export function GET() {
+  return NextResponse.json({ success: true });
 }

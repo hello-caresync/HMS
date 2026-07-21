@@ -12,12 +12,12 @@ import {
   writeSession,
 } from './session';
 import type { MfaChallengeState, HospitalStaffProfile } from './types';
+import { registerClientSession, revokeClientSession } from '@/lib/doctor/client/session-client';
 import {
   appendLoginHistoryEvent,
   buildStaffSession as buildSecuritySession,
   clearPendingMfaChallenge,
   clearSecuritySession,
-  collectDeviceMetadata,
   createPendingMfaChallenge,
   isMfaRequiredForRole,
   readPendingMfaChallenge,
@@ -86,23 +86,7 @@ export async function completeStaffLogin(
   writeSession({ ...profile, mfaPending: false });
 
   const lastActivityAt = new Date().toISOString();
-
-  try {
-    await fetch('/api/auth/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        activeToken: securitySession.activeToken,
-        employeeId: securitySession.employeeId,
-        assignedRole: securitySession.assignedRole,
-        expiresAt: securitySession.expiresAt,
-        lastActivityAt,
-        device: collectDeviceMetadata(),
-      }),
-    });
-  } catch {
-    // Client-side demo — server registration is best-effort
-  }
+  registerClientSession(securitySession, lastActivityAt);
 
   logUserActivity(profile.userId, `Login (${profile.role})`, 'Hospital IAM');
   return { ok: true };
@@ -192,10 +176,7 @@ export function signOut(userId?: string): void {
   if (typeof window !== 'undefined') {
     const security = readSecuritySession();
     if (security?.activeToken) {
-      void fetch('/api/auth/session', {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${security.activeToken}` },
-      });
+      revokeClientSession(security.activeToken);
     }
   }
 

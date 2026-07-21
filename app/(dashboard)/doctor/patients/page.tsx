@@ -13,7 +13,7 @@ export default function DoctorPatientsPage() {
   if (isError) return <DoctorModuleShell title="My Patients" subtitle="Database unavailable"><p className="text-sm text-red-600">Could not load patients.</p></DoctorModuleShell>;
 
   return (
-    <DoctorModuleShell title="My Patients" subtitle="Directory from PostgreSQL via /api/patients">
+    <DoctorModuleShell title="My Patients" subtitle="Directory from Supabase (client) with offline mock fallback">
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {(data?.patients ?? []).map((p) => (
           <Link

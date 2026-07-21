@@ -6,7 +6,7 @@ import { useAuthSession } from '@/hooks/useAuthSession';
 import { useAuth } from '@/app/context/AuthProvider';
 
 /**
- * Mounts the Phase 1 session watchdog — pings `/api/auth/session` on interval
+ * Mounts the Phase 1 session watchdog — client-side session validation on interval
  * and forces logout when idle or token expiry is detected server-side.
  */
 export default function AuthSessionWatchdog() {

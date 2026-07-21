@@ -11,6 +11,7 @@ import {
   useSaveSoapNote,
   type IpdAdmissionDto,
 } from '@/lib/doctor/hooks/useClinicalQueries';
+import { updateIpdAdmission } from '@/lib/doctor/client/clinical-data-service';
 import { clinicalClasses } from '@/lib/doctor/theme';
 
 const WARDS = ['ICU', 'CCU', 'General Male', 'General Female', 'Private'] as const;
@@ -185,10 +186,9 @@ export default function IpdWardModule() {
           className={`mt-4 ${clinicalClasses.btnPrimary}`}
           onClick={async () => {
             if (!selected) return;
-            await fetch('/api/ipd/soap-notes', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ admissionId: selected.id, status: 'DISCHARGE_PLANNED' }),
+            await updateIpdAdmission({
+              admissionId: selected.id,
+              status: 'DISCHARGE_PLANNED',
             });
             toast.success('Discharge recommendation saved');
             setTransferOpen(false);

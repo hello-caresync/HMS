@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ClinicalPageSkeleton } from '@/components/doctor/ClinicalSkeleton';
 import { ClinicalPageHeader } from '@/components/doctor/doctor-ui';
 import { usePatients } from '@/lib/doctor/hooks/useClinicalQueries';
+import { runAiDifferential } from '@/lib/doctor/client/clinical-data-service';
 import { clinicalClasses } from '@/lib/doctor/theme';
 import { MOCK_GUIDELINES } from '@/lib/mock-data';
 
@@ -26,17 +27,12 @@ export default function AiClinicalWorkspace() {
   const runDx = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/doctor/ai/differential', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          complaint,
-          vitals,
-          patientId: patient?.id,
-          allergies: patient?.allergies,
-        }),
+      const data = await runAiDifferential({
+        complaint,
+        vitals,
+        patientId: patient?.id,
+        allergies: patient?.allergies,
       });
-      const data = await res.json();
       setDiffs(data.results ?? []);
       toast.success('Differential engine updated from clinical context');
     } catch {

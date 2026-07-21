@@ -143,6 +143,16 @@ export const MOCK_IPD_CENSUS: IpdCensusRow[] = [
   },
 ];
 
+export const MOCK_OPD_QUEUE = MOCK_PATIENTS.map((p, index) => ({
+  id: `opd-appt-${index}`,
+  token: `OPD-${100 + index}`,
+  patientId: p.id,
+  patientName: p.fullName,
+  chiefComplaint: 'Scheduled consultation',
+  priority: index === 1 ? 'Follow-up' : 'Routine',
+  waitMinutes: 3 + index * 4,
+}));
+
 export type EmergencyTriageCase = {
   id: string;
   esiLevel: 1 | 2 | 3 | 4 | 5;
@@ -384,3 +394,13 @@ export const MOCK_GUIDELINES = [
   { id: 'g2', title: 'ADA Standards of Care 2026', topic: 'Type 2 diabetes management' },
   { id: 'g3', title: 'KDIGO CKD staging', topic: 'eGFR · nephrology referral' },
 ];
+
+export const MOCK_TELEMEDICINE_SESSION = {
+  appointmentId: 'tele-appt-1',
+  roomId: 'TELE-NX-MRN-9021',
+  patient: MOCK_PATIENTS[0],
+  transcript: [
+    { from: 'Patient', text: 'Good evening doctor, I wanted to follow up on my sugars.' },
+    { from: 'You', text: 'Thanks — any hypoglycemia since we adjusted metformin?' },
+  ],
+};

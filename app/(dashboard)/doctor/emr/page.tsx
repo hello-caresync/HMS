@@ -1,11 +1,11 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { ClinicalPageSkeleton } from '@/components/doctor/ClinicalSkeleton';
 import { DoctorModuleShell, PatientHeaderBar, VitalsGrid } from '@/components/doctor/doctor-ui';
-import { usePatients } from '@/lib/doctor/hooks/useClinicalQueries';
+import { usePatients, useEmrTimeline } from '@/lib/doctor/hooks/useClinicalQueries';
 
 type TimelineEvent = {
   id: string;
@@ -19,16 +19,9 @@ function DoctorEmrContent() {
   const params = useSearchParams();
   const patientId = params.get('patient');
   const { data, isLoading } = usePatients();
-  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
-
   const patient = data?.patients?.find((p) => p.id === patientId) ?? data?.patients?.[0];
-
-  useEffect(() => {
-    if (!patient) return;
-    fetch(`/api/doctor/emr/timeline?patientId=${patient.id}`)
-      .then((r) => r.json())
-      .then((d) => setTimeline(d.events ?? []));
-  }, [patient]);
+  const { data: timelineData } = useEmrTimeline(patient?.id);
+  const timeline = timelineData?.events ?? [];
 
   if (isLoading || !patient) {
     return <ClinicalPageSkeleton rows={4} />;
