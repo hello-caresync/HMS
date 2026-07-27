@@ -1,5 +1,5 @@
-import NotificationHub from '@/components/doctor/notifications/NotificationHub';
+import DoctorOsNotificationsPage from '@/components/doctor-os/notifications/DoctorOsNotificationsPage';
 
-export default function DoctorNotificationsPage() {
-  return <NotificationHub />;
+export default function Page() {
+  return <DoctorOsNotificationsPage />;
 }

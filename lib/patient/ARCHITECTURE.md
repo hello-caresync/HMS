@@ -17,25 +17,25 @@ Enterprise patient companion within the Nexora static-export Next.js PWA (`curas
 
 Canonical routes: `lib/patient/navigation.ts` → `PATIENT_ROUTES` / `PATIENT_NAV_ITEMS`.
 
-- **Desktop:** grouped sidebar (Care journey · Records & meds · Billing · Safety · Account)
-- **Mobile:** 5-item bottom bar (Dashboard · Appointments · Health · Messages · Account) + header SOS
+- **Desktop:** flat sidebar (`PATIENT_NAV_ITEMS`, 13 modules)
+- **Mobile:** 5-item bottom bar (Dashboard · Appointments · Health · Telemedicine & Messages · Account) + header SOS
 
-## Design system (Rose Coral)
+## Design system (Plum & Beige — WCAG)
 
-Tokens live in `lib/patient/theme.ts` and Tailwind (`patient-*` in `tailwind.config.ts` / `app/globals.css`):
+Tokens live in `lib/patient/theme.ts`, shared UI strings in `lib/patient/ui-tokens.ts`, and Tailwind (`patient-*` in `tailwind.config.ts` / `app/globals.css`):
 
-| Token | Hex |
-|--------|-----|
-| Primary | `#f47c8c` |
-| Hover | `#e06373` |
-| Light tint | `#fde8eb` |
-| Border | `#f0d8dc` |
-| Headings | `#8c2b39` |
-| Muted text | `#736366` |
-| Canvas | `#faf6f7` |
-| Emergency | `#e63946` |
+| Token | Hex | Usage |
+|--------|-----|--------|
+| Dark plum | `#482A41` | Sidebar, top bar, headings on light surfaces |
+| Soft beige | `#E2D2C8` | Main canvas |
+| Dusty mauve | `#CEB2C0` | Cards, panels, modals |
+| Muted lavender | `#8E7692` | Secondary buttons, borders, subtitles |
+| Deep purple | `#572E54` | Primary CTAs, active tabs, progress fills |
+| Success | `#5E8B7E` | Verified badges · label `#482A41` |
+| Warning | `#D8A657` | Alerts · label `#482A41` |
+| Emergency | `#E63946` | SOS · white text |
 
-Shell: solid coral sidebar (`PatientShell`), white active nav pill, deep rose active text.
+Shell: `PatientShell` — dark plum sidebar, deep purple active pill, soft beige content canvas.
 
 ## App Router map
 
@@ -43,17 +43,23 @@ Shell: solid coral sidebar (`PatientShell`), white active nav pill, deep rose ac
 /patient                    → redirect /patient/dashboard
 /patient/dashboard
 /patient/appointments
-/patient/teleconsult
+/patient/telemedicine          Video visits + secure messages (?tab=messages)
+/patient/teleconsult           → redirect /patient/telemedicine
+/patient/communication         → redirect /patient/telemedicine?tab=messages
 /patient/health
 /patient/medications
 /patient/prescriptions
 /patient/records            FHIR-oriented EMR vault
 /patient/diagnostics        Labs + imaging (DICOM-ready)
+/patient/care-plan           → redirect /patient/dashboard (module removed)
+/patient/insurance
+/patient/notifications
 /patient/billing
-/patient/communication
 /patient/emergency
 /patient/profile
 ```
+
+Legacy bookmarks: `/patient/teleconsult` and `/patient/communication` redirect into telemedicine.
 
 ## Ecosystem integration
 

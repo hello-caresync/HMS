@@ -1,310 +1,985 @@
-// Nexora Doctor App — PostgreSQL (Supabase-compatible)
+// Nexora Doctor App — Production PostgreSQL schema
+
 // npm run db:push && npm run db:seed
 
+
+
 generator client {
+
   provider = "prisma-client-js"
+
 }
+
+
 
 datasource db {
+
   provider = "postgresql"
+
   url      = env("DATABASE_URL")
+
 }
+
+
+
+enum DoctorRole {
+
+  CONSULTANT
+
+  RESIDENT
+
+  SURGEON
+
+  LOCUM
+
+}
+
+
 
 enum AppointmentType {
+
   OPD
+
   TELEMEDICINE
+
   FOLLOWUP
+
+  WALK_IN
+
 }
+
+
 
 enum AppointmentStatus {
+
   SCHEDULED
+
   CHECKED_IN
+
+  WAITING
+
   IN_CONSULT
+
+  RUNNING
+
   COMPLETED
+
+  FINISHED
+
   CANCELLED
+
+  NO_SHOW
+
 }
+
+
 
 enum EncounterStatus {
+
+  DRAFT
+
   IN_PROGRESS
+
   COMPLETED
+
 }
+
+
 
 enum LabUrgency {
+
   NORMAL
+
   STAT
+
 }
+
+
 
 enum ClinicalOrderStatus {
+
   ORDERED
+
+  SAMPLE_COLLECTED
+
   IN_PROGRESS
+
   COMPLETED
+
   CANCELLED
+
   SENT_TO_PHARMACY
+
 }
+
+
 
 enum SurgeryStatus {
+
   REQUESTED
+
   SCHEDULED
+
   IN_PROGRESS
+
   COMPLETED
+
+  CANCELLED
+
 }
+
+
 
 enum DocumentType {
+
   PROGRESS_NOTE
+
   DISCHARGE_SUMMARY
+
   REFERRAL_LETTER
+
   MEDICAL_CERTIFICATE
+
   FITNESS_CERTIFICATE
+
   SICK_LEAVE
+
+  OPERATION_NOTE
+
 }
+
+
 
 enum DischargeStatus {
+
   ADMITTED
+
   DISCHARGE_PLANNED
+
   DISCHARGED
+
 }
+
+
+
+enum NotificationCategory {
+
+  EMERGENCY
+
+  CRITICAL_LAB
+
+  OT
+
+  PATIENT_MSG
+
+  APPOINTMENT
+
+  PRESCRIPTION
+
+  ADMISSION
+
+  SYSTEM
+
+}
+
+
+
+model Hospital {
+
+  id        String   @id @default(uuid())
+
+  name      String
+
+  code      String   @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+
+
+  doctors  Doctor[]
+
+  patients Patient[]
+
+  auditLogs AuditLog[]
+
+
+
+  @@map("hospitals")
+
+}
+
+
+
+enum AdminRole {
+
+  ENTREPRENEUR
+
+  SYSTEM_ADMIN
+
+  HOSPITAL_ADMIN
+
+}
+
+
 
 model Doctor {
-  id                String   @id @default(uuid())
-  userId            String   @unique @map("user_id")
-  fullName          String   @map("full_name")
+
+  id                String     @id @default(uuid())
+
+  userId            String     @unique @map("user_id")
+
+  hospitalId        String     @map("hospital_id")
+
+  email             String     @unique
+
+  passwordHash      String?    @map("password_hash")
+
+  fullName          String     @map("full_name")
+
   specialization    String
-  licenseNumber     String   @map("license_number")
-  signatureUrl      String?  @map("signature_url")
-  consultationFees  Decimal  @map("consultation_fees") @db.Decimal(10, 2)
-  workingHoursJson  Json     @map("working_hours_json")
-  createdAt         DateTime @default(now()) @map("created_at")
+
+  licenseNumber     String     @map("license_number")
+
+  role              DoctorRole @default(CONSULTANT)
+
+  signatureUrl      String?    @map("signature_url")
+
+  consultationFees  Decimal    @map("consultation_fees") @db.Decimal(10, 2)
+
+  workingHoursJson  Json       @map("working_hours_json")
+
+  departmentsJson   Json       @default("[]") @map("departments_json")
+
+  notificationPrefs Json       @default("{}") @map("notification_prefs")
+
+  deletedAt         DateTime?  @map("deleted_at")
+
+  createdAt         DateTime   @default(now()) @map("created_at")
+
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+
+
+
+  hospital          Hospital   @relation(fields: [hospitalId], references: [id])
 
   appointments      Appointment[]
+
   encounters        Encounter[]
+
   prescriptions     Prescription[]
+
   labOrders         LabOrder[]
+
   radiologyOrders   RadiologyOrder[]
+
   ipdAdmissions     IpdAdmission[]
+
   surgeries         Surgery[]     @relation("Surgeon")
+
   clinicalDocuments ClinicalDocument[]
+
   emergencyAlerts   EmergencyAlert[]
+
   clinicalMessages  ClinicalMessage[]
 
+  notifications     ClinicalNotification[]
+
+  patientAssignments DoctorPatientAssignment[]
+
+  auditLogs         AuditLog[]
+
+
+
+  @@index([hospitalId])
+
   @@map("doctors")
+
 }
+
+
 
 model Patient {
-  id                    String   @id @default(uuid())
-  mrn                   String   @unique
-  fullName              String   @map("full_name")
-  age                   Int
-  gender                String
-  bloodGroup            String   @map("blood_group")
-  allergiesJson         Json     @map("allergies_json")
-  chronicConditionsJson Json     @map("chronic_conditions_json")
-  createdAt             DateTime @default(now()) @map("created_at")
 
-  appointments    Appointment[]
-  encounters      Encounter[]
-  prescriptions   Prescription[]
-  labOrders       LabOrder[]
-  radiologyOrders RadiologyOrder[]
-  ipdAdmissions   IpdAdmission[]
-  surgeries       Surgery[]
+  id                    String    @id @default(uuid())
+
+  hospitalId            String    @map("hospital_id")
+
+  mrn                   String    @unique
+
+  fullName              String    @map("full_name")
+
+  age                   Int
+
+  gender                String
+
+  bloodGroup            String    @map("blood_group")
+
+  phone                 String?
+
+  email                 String?
+
+  allergiesJson         Json      @map("allergies_json")
+
+  chronicConditionsJson Json      @map("chronic_conditions_json")
+
+  insuranceJson         Json      @default("{}") @map("insurance_json")
+
+  emergencyContactsJson Json      @default("[]") @map("emergency_contacts_json")
+
+  familyJson            Json      @default("[]") @map("family_json")
+
+  vitalsHistoryJson     Json      @default("[]") @map("vitals_history_json")
+
+  deletedAt             DateTime? @map("deleted_at")
+
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+
+
+  hospital          Hospital @relation(fields: [hospitalId], references: [id])
+
+  appointments      Appointment[]
+
+  encounters        Encounter[]
+
+  prescriptions     Prescription[]
+
+  labOrders         LabOrder[]
+
+  radiologyOrders   RadiologyOrder[]
+
+  ipdAdmissions     IpdAdmission[]
+
+  surgeries         Surgery[]
+
   clinicalDocuments ClinicalDocument[]
+
   emergencyAlerts   EmergencyAlert[]
 
+  notifications     ClinicalNotification[]
+
+  doctorAssignments DoctorPatientAssignment[]
+
+
+
+  @@index([hospitalId])
+
   @@map("patients")
+
 }
+
+
+
+model DoctorPatientAssignment {
+
+  id           String    @id @default(uuid())
+
+  doctorId     String    @map("doctor_id")
+
+  patientId    String    @map("patient_id")
+
+  isFavorite   Boolean   @default(false) @map("is_favorite")
+
+  lastViewedAt DateTime? @map("last_viewed_at")
+
+  assignedAt   DateTime  @default(now()) @map("assigned_at")
+
+
+
+  doctor  Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+
+
+  @@unique([doctorId, patientId])
+
+  @@index([doctorId, lastViewedAt])
+
+  @@map("doctor_patient_assignments")
+
+}
+
+
 
 model Appointment {
+
   id              String            @id @default(uuid())
+
   doctorId        String            @map("doctor_id")
+
   patientId       String            @map("patient_id")
+
   appointmentType AppointmentType   @map("appointment_type")
+
   status          AppointmentStatus
+
   scheduledAt     DateTime          @map("scheduled_at")
 
-  doctor Doctor  @relation(fields: [doctorId], references: [id])
-  patient Patient @relation(fields: [patientId], references: [id])
-  encounters Encounter[]
-  telemedicineSessions TelemedicineSession[]
+  chiefComplaint  String?           @map("chief_complaint")
 
-  @@index([doctorId, scheduledAt])
-  @@map("appointments")
-}
+  notes           String?
 
-model Encounter {
-  id                 String          @id @default(uuid())
-  appointmentId      String?         @map("appointment_id")
-  doctorId           String          @map("doctor_id")
-  patientId          String          @map("patient_id")
-  chiefComplaint     String          @map("chief_complaint")
-  hpi                String
-  diagnosisIcd10Json Json            @map("diagnosis_icd10_json")
-  physicalExamJson   Json            @map("physical_exam_json")
-  soapNotesJson      Json            @map("soap_notes_json")
-  status             EncounterStatus
+  deletedAt       DateTime?         @map("deleted_at")
 
-  appointment Appointment? @relation(fields: [appointmentId], references: [id])
-  doctor      Doctor       @relation(fields: [doctorId], references: [id])
-  patient     Patient      @relation(fields: [patientId], references: [id])
-  prescriptions Prescription[]
-  labOrders     LabOrder[]
-  radiologyOrders RadiologyOrder[]
+  createdAt       DateTime          @default(now()) @map("created_at")
 
-  @@map("encounters")
-}
+  updatedAt       DateTime          @updatedAt @map("updated_at")
 
-model Prescription {
-  id               String              @id @default(uuid())
-  encounterId      String              @map("encounter_id")
-  doctorId         String              @map("doctor_id")
-  patientId        String              @map("patient_id")
-  medicinesJson    Json                @map("medicines_json")
-  digitalSignature String?             @map("digital_signature")
-  status           ClinicalOrderStatus
 
-  encounter Encounter @relation(fields: [encounterId], references: [id])
-  doctor    Doctor    @relation(fields: [doctorId], references: [id])
-  patient   Patient   @relation(fields: [patientId], references: [id])
 
-  @@map("prescriptions")
-}
-
-model LabOrder {
-  id            String              @id @default(uuid())
-  encounterId   String              @map("encounter_id")
-  patientId     String              @map("patient_id")
-  doctorId      String              @map("doctor_id")
-  testCodesJson Json                @map("test_codes_json")
-  urgency       LabUrgency
-  status        ClinicalOrderStatus
-  resultsJson   Json?               @map("results_json")
-
-  encounter Encounter @relation(fields: [encounterId], references: [id])
-  patient   Patient   @relation(fields: [patientId], references: [id])
-  doctor    Doctor    @relation(fields: [doctorId], references: [id])
-
-  @@map("lab_orders")
-}
-
-model RadiologyOrder {
-  id            String              @id @default(uuid())
-  encounterId   String              @map("encounter_id")
-  patientId     String              @map("patient_id")
-  doctorId      String              @map("doctor_id")
-  modality      String
-  bodyPart      String              @map("body_part")
-  urgency       LabUrgency
-  imageUrlsJson Json                @map("image_urls_json")
-  reportText    String?             @map("report_text")
-  status        ClinicalOrderStatus
-
-  encounter Encounter @relation(fields: [encounterId], references: [id])
-  patient   Patient   @relation(fields: [patientId], references: [id])
-  doctor    Doctor    @relation(fields: [doctorId], references: [id])
-
-  @@map("radiology_orders")
-}
-
-model IpdAdmission {
-  id                     String          @id @default(uuid())
-  patientId              String          @map("patient_id")
-  doctorId               String          @map("doctor_id")
-  wardName               String          @map("ward_name")
-  bedNumber              String          @map("bed_number")
-  admissionDate          DateTime        @map("admission_date")
-  dailyProgressNotesJson Json            @map("daily_progress_notes_json")
-  status                 DischargeStatus
-
-  patient Patient @relation(fields: [patientId], references: [id])
   doctor  Doctor  @relation(fields: [doctorId], references: [id])
 
-  @@map("ipd_admissions")
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  encounters Encounter[]
+
+  telemedicineSessions TelemedicineSession[]
+
+
+
+  @@index([doctorId, scheduledAt])
+
+  @@index([doctorId, status])
+
+  @@map("appointments")
+
 }
 
-model Surgery {
-  id               String        @id @default(uuid())
-  patientId        String        @map("patient_id")
-  surgeonDoctorId  String        @map("surgeon_doctor_id")
-  otRoom           String        @map("ot_room")
-  procedureName    String        @map("procedure_name")
-  scheduledTime    DateTime      @map("scheduled_time")
-  preOpNotes       String        @map("pre_op_notes")
-  operativeNotes   String?       @map("operative_notes")
-  postOpOrders     String        @map("post_op_orders")
-  status           SurgeryStatus
+
+
+model Encounter {
+
+  id                 String          @id @default(uuid())
+
+  appointmentId      String?         @map("appointment_id")
+
+  doctorId           String          @map("doctor_id")
+
+  patientId          String          @map("patient_id")
+
+  chiefComplaint     String          @map("chief_complaint")
+
+  hpi                String          @default("")
+
+  diagnosisIcd10Json Json            @default("[]") @map("diagnosis_icd10_json")
+
+  differentialJson   Json            @default("[]") @map("differential_json")
+
+  physicalExamJson   Json            @default("{}") @map("physical_exam_json")
+
+  soapNotesJson      Json            @default("{}") @map("soap_notes_json")
+
+  treatmentPlan      String?         @map("treatment_plan")
+
+  voiceNotesJson     Json            @default("[]") @map("voice_notes_json")
+
+  status             EncounterStatus @default(DRAFT)
+
+  signedAt           DateTime?       @map("signed_at")
+
+  deletedAt          DateTime?       @map("deleted_at")
+
+  createdAt          DateTime        @default(now()) @map("created_at")
+
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+
+
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+  doctor      Doctor       @relation(fields: [doctorId], references: [id])
+
+  patient     Patient      @relation(fields: [patientId], references: [id])
+
+  prescriptions Prescription[]
+
+  labOrders     LabOrder[]
+
+  radiologyOrders RadiologyOrder[]
+
+
+
+  @@index([doctorId, patientId])
+
+  @@map("encounters")
+
+}
+
+
+
+model Prescription {
+
+  id               String              @id @default(uuid())
+
+  encounterId      String              @map("encounter_id")
+
+  doctorId         String              @map("doctor_id")
+
+  patientId        String              @map("patient_id")
+
+  medicinesJson    Json                @map("medicines_json")
+
+  digitalSignature String?             @map("digital_signature")
+
+  status           ClinicalOrderStatus
+
+  deletedAt        DateTime?           @map("deleted_at")
+
+  createdAt        DateTime            @default(now()) @map("created_at")
+
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+
+
+
+  encounter Encounter @relation(fields: [encounterId], references: [id])
+
+  doctor    Doctor    @relation(fields: [doctorId], references: [id])
+
+  patient   Patient   @relation(fields: [patientId], references: [id])
+
+
+
+  @@index([doctorId, patientId])
+
+  @@map("prescriptions")
+
+}
+
+
+
+model LabOrder {
+
+  id            String              @id @default(uuid())
+
+  encounterId   String?             @map("encounter_id")
+
+  patientId     String              @map("patient_id")
+
+  doctorId      String              @map("doctor_id")
+
+  testCodesJson Json                @map("test_codes_json")
+
+  urgency       LabUrgency
+
+  status        ClinicalOrderStatus
+
+  resultsJson   Json?               @map("results_json")
+
+  deletedAt     DateTime?           @map("deleted_at")
+
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+
+
+  encounter Encounter? @relation(fields: [encounterId], references: [id])
+
+  patient   Patient    @relation(fields: [patientId], references: [id])
+
+  doctor    Doctor     @relation(fields: [doctorId], references: [id])
+
+
+
+  @@index([doctorId, status])
+
+  @@map("lab_orders")
+
+}
+
+
+
+model RadiologyOrder {
+
+  id            String              @id @default(uuid())
+
+  encounterId   String?             @map("encounter_id")
+
+  patientId     String              @map("patient_id")
+
+  doctorId      String              @map("doctor_id")
+
+  modality      String
+
+  bodyPart      String              @map("body_part")
+
+  urgency       LabUrgency
+
+  imageUrlsJson Json                @default("[]") @map("image_urls_json")
+
+  reportText    String?             @map("report_text")
+
+  status        ClinicalOrderStatus
+
+  deletedAt     DateTime?           @map("deleted_at")
+
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+
+
+  encounter Encounter? @relation(fields: [encounterId], references: [id])
+
+  patient   Patient    @relation(fields: [patientId], references: [id])
+
+  doctor    Doctor     @relation(fields: [doctorId], references: [id])
+
+
+
+  @@index([doctorId, status])
+
+  @@map("radiology_orders")
+
+}
+
+
+
+model IpdAdmission {
+
+  id                     String          @id @default(uuid())
+
+  patientId              String          @map("patient_id")
+
+  doctorId               String          @map("doctor_id")
+
+  wardName               String          @map("ward_name")
+
+  bedNumber              String          @map("bed_number")
+
+  admissionDate          DateTime        @map("admission_date")
+
+  dailyProgressNotesJson Json            @default("[]") @map("daily_progress_notes_json")
+
+  status                 DischargeStatus
+
+  deletedAt              DateTime?       @map("deleted_at")
+
+  createdAt              DateTime        @default(now()) @map("created_at")
+
+  updatedAt              DateTime        @updatedAt @map("updated_at")
+
+
 
   patient Patient @relation(fields: [patientId], references: [id])
-  surgeon Doctor  @relation("Surgeon", fields: [surgeonDoctorId], references: [id])
 
-  @@map("surgeries")
+  doctor  Doctor  @relation(fields: [doctorId], references: [id])
+
+
+
+  @@index([doctorId, status])
+
+  @@map("ipd_admissions")
+
 }
 
+
+
+model Surgery {
+
+  id               String        @id @default(uuid())
+
+  patientId        String        @map("patient_id")
+
+  surgeonDoctorId  String        @map("surgeon_doctor_id")
+
+  otRoom           String        @map("ot_room")
+
+  procedureName    String        @map("procedure_name")
+
+  scheduledTime    DateTime      @map("scheduled_time")
+
+  preOpNotes       String        @map("pre_op_notes")
+
+  operativeNotes   String?       @map("operative_notes")
+
+  postOpOrders     String        @map("post_op_orders")
+
+  status           SurgeryStatus
+
+  deletedAt        DateTime?     @map("deleted_at")
+
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  surgeon Doctor  @relation("Surgeon", fields: [surgeonDoctorId], references: [id])
+
+
+
+  @@index([surgeonDoctorId, scheduledTime])
+
+  @@map("surgeries")
+
+}
+
+
+
 model TelemedicineSession {
+
   id                   String   @id @default(uuid())
+
   appointmentId        String   @map("appointment_id")
+
   roomId               String   @map("room_id")
-  callDurationSeconds  Int      @map("call_duration_seconds")
-  chatTranscriptJson   Json     @map("chat_transcript_json")
+
+  callDurationSeconds  Int      @default(0) @map("call_duration_seconds")
+
+  chatTranscriptJson   Json     @default("[]") @map("chat_transcript_json")
+
+  status               String   @default("PENDING")
+
+  createdAt            DateTime @default(now()) @map("created_at")
+
+
 
   appointment Appointment @relation(fields: [appointmentId], references: [id])
 
+
+
   @@map("telemedicine_sessions")
+
 }
+
+
 
 model ClinicalDocument {
+
   id               String       @id @default(uuid())
+
   patientId        String       @map("patient_id")
+
   doctorId         String       @map("doctor_id")
+
   documentType     DocumentType @map("document_type")
+
   contentJson      Json         @map("content_json")
+
+  version          Int          @default(1)
+
   digitalSignature String?      @map("digital_signature")
+
+  deletedAt        DateTime?    @map("deleted_at")
+
   createdAt        DateTime     @default(now()) @map("created_at")
 
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+
+
   patient Patient @relation(fields: [patientId], references: [id])
+
   doctor  Doctor  @relation(fields: [doctorId], references: [id])
 
+
+
+  @@index([doctorId, patientId])
+
   @@map("clinical_documents")
+
 }
+
+
 
 model EmergencyAlert {
+
   id           String   @id @default(uuid())
+
   doctorId     String?  @map("doctor_id")
+
   patientId    String?  @map("patient_id")
+
   esiLevel     Int      @map("esi_level")
+
   title        String
+
   body         String
+
   bay          String?
+
   acknowledged Boolean  @default(false)
+
   createdAt    DateTime @default(now()) @map("created_at")
 
+
+
   doctor  Doctor?  @relation(fields: [doctorId], references: [id])
+
   patient Patient? @relation(fields: [patientId], references: [id])
 
+
+
+  @@index([doctorId, acknowledged])
+
   @@map("emergency_alerts")
+
 }
 
+
+
+model ClinicalNotification {
+
+  id           String               @id @default(uuid())
+
+  doctorId     String               @map("doctor_id")
+
+  patientId    String?              @map("patient_id")
+
+  category     NotificationCategory
+
+  title        String
+
+  body         String
+
+  entityType   String?              @map("entity_type")
+
+  entityId     String?              @map("entity_id")
+
+  acknowledged Boolean              @default(false)
+
+  createdAt    DateTime             @default(now()) @map("created_at")
+
+
+
+  doctor  Doctor   @relation(fields: [doctorId], references: [id])
+
+  patient Patient? @relation(fields: [patientId], references: [id])
+
+
+
+  @@index([doctorId, acknowledged, createdAt])
+
+  @@map("clinical_notifications")
+
+}
+
+
+
 model ClinicalMessage {
-  id        String   @id @default(uuid())
-  channelId String   @map("channel_id")
-  doctorId  String?  @map("doctor_id")
-  sender    String
-  body      String
-  stat      Boolean  @default(false)
+
+  id         String   @id @default(uuid())
+
+  channelId  String   @map("channel_id")
+
+  doctorId   String?  @map("doctor_id")
+
+  sender     String
+
+  body       String
+
+  stat       Boolean  @default(false)
+
   attachment String?
-  createdAt DateTime @default(now()) @map("created_at")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+
 
   doctor Doctor? @relation(fields: [doctorId], references: [id])
 
+
+
   @@index([channelId, createdAt])
+
   @@map("clinical_messages")
+
 }
+
+
 
 model FormularyDrug {
+
   id              String @id @default(uuid())
+
   brand           String
+
   generic         String
+
   route           String @default("PO")
+
   interactsWith   Json   @default("[]") @map("interacts_with")
+
   allergyConflict Json   @default("[]") @map("allergy_conflict")
 
+
+
   @@map("formulary_drugs")
+
 }
+
+
+
+model AuditLog {
+
+  id          String   @id @default(uuid())
+
+  doctorId    String?  @map("doctor_id")
+
+  hospitalId  String?  @map("hospital_id")
+
+  entityType  String   @map("entity_type")
+
+  entityId    String   @map("entity_id")
+
+  action      String
+
+  payloadJson Json     @default("{}") @map("payload_json")
+
+  ipAddress   String?  @map("ip_address")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+
+
+  doctor   Doctor?   @relation(fields: [doctorId], references: [id])
+
+  hospital Hospital? @relation(fields: [hospitalId], references: [id])
+
+
+
+  @@index([doctorId, createdAt])
+
+  @@index([entityType, entityId])
+
+  @@map("audit_logs")
+
+}
+
+
+
+model SystemAdmin {
+
+  id           String    @id @default(uuid())
+
+  email        String    @unique
+
+  passwordHash String    @map("password_hash")
+
+  fullName     String    @map("full_name")
+
+  role         AdminRole @default(ENTREPRENEUR)
+
+  hospitalId   String?   @map("hospital_id")
+
+  deletedAt    DateTime? @map("deleted_at")
+
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+
+
+  @@index([hospitalId])
+
+  @@map("system_admins")
+
+}
+
+

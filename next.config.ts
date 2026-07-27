@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
-  images: { unoptimized: true }, // Required: disables runtime image processing
+  output: 'standalone',
+  images: { unoptimized: true },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
+  },
 };
 
 export default nextConfig;

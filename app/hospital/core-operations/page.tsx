@@ -201,9 +201,9 @@ const DISPATCH_UTILITIES = [
 ];
 
 const INPUT_CLASS =
-  'w-full rounded-lg border border-slate-200/80 bg-slate-50/60 px-3 py-2 text-xs font-medium text-slate-800 transition-all placeholder:text-slate-400 focus:border-[#008588] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#008588]/15';
+  'w-full rounded-lg border border-slate-200/80 bg-slate-50/60 px-3 py-2 text-base font-medium text-slate-800 transition-all placeholder:text-slate-400 focus:border-[#008588] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#008588]/15';
 
-const LABEL_CLASS = 'mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500';
+const LABEL_CLASS = 'mb-1 block text-sm font-medium uppercase tracking-wider text-slate-500';
 
 const BED_STATUS_STYLES: Record<BedAllocation['status'], string> = {
   Occupied: 'bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold',
@@ -226,8 +226,8 @@ const BILLING_STATUS_STYLES: Record<BillingLineItem['status'], string> = {
 function StageWorkspaceHeader({ title, description }: { title: string; description: string }) {
   return (
     <div className="mb-4 border-b border-slate-100 pb-3">
-      <h2 className="text-xs font-black uppercase tracking-wider text-[#00758C]">{title}</h2>
-      <p className="mt-0.5 text-[11px] font-medium text-slate-500">{description}</p>
+      <h2 className="text-lg font-semibold text-[#00758C]">{title}</h2>
+      <p className="mt-0.5 text-base font-medium text-slate-500">{description}</p>
     </div>
   );
 }
@@ -254,27 +254,27 @@ export default function CoreOperationsTerminalPage() {
       <header className="space-y-4 border-b border-slate-200/80 pb-5">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex rounded-md border border-[#008588]/25 bg-[#008588]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#008588]">
+            <span className="inline-flex rounded-md border border-[#008588]/25 bg-[#008588]/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[#008588]">
               Layer 3 Engine
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-sm font-semibold uppercase tracking-wider text-slate-400">
               Core Operations Hub
             </span>
           </div>
-          <h1 className="mt-2 text-xl font-black tracking-tight text-[#00758C] sm:text-2xl">
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#00758C] sm:text-3xl">
             Patient Lifecycle Transactional Pipeline
           </h1>
-          <p className="mt-1 max-w-3xl text-xs font-medium text-slate-500">
+          <p className="mt-1 max-w-3xl text-base font-medium text-slate-500">
             11-stage sequential clinical workflow · reactive stage routing · integrated back-office dispatch
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Live Matrix</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Live Matrix</span>
           {LIVE_VOLUMES.map((item, idx) => (
             <span key={`vol-${item.label}-${idx}`} className="text-xs font-semibold text-slate-600">
               {idx > 0 ? <span className="mr-4 text-slate-300">|</span> : null}
-              {item.label}: <span className={`font-black tabular-nums ${item.accent}`}>{item.value}</span>
+              {item.label}: <span className={`font-bold tabular-nums ${item.accent}`}>{item.value}</span>
             </span>
           ))}
         </div>
@@ -282,7 +282,7 @@ export default function CoreOperationsTerminalPage() {
 
       {/* 2. Interactive clinical workflow timeline tracker — 11 stages */}
       <section className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
-        <p className="mb-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
           Sequential Processing Route · Stage {activeStageMeta.step} of 11
         </p>
         <div className="custom-scrollbar flex gap-1 overflow-x-auto pb-1">
@@ -305,14 +305,14 @@ export default function CoreOperationsTerminalPage() {
                 aria-current={isActive ? 'step' : undefined}
               >
                 <span
-                  className={`text-[9px] font-black uppercase tracking-wider ${
+                  className={`text-xs font-semibold uppercase tracking-wider ${
                     isActive ? 'text-white/80' : 'text-slate-400'
                   }`}
                 >
                   {stage.step}
                 </span>
                 <Icon className={`h-4 w-4 ${isActive ? 'text-white' : ''}`} aria-hidden />
-                <span className="text-center text-[10px] font-bold leading-tight">{stage.shortLabel}</span>
+                <span className="text-center text-sm font-semibold leading-tight">{stage.shortLabel}</span>
                 {idx < PIPELINE_STAGES.length - 1 ? (
                   <span
                     className={`absolute -right-1 top-1/2 hidden h-0 w-0 -translate-y-1/2 border-y-[6px] border-l-[6px] border-y-transparent sm:block ${
@@ -325,9 +325,9 @@ export default function CoreOperationsTerminalPage() {
             );
           })}
         </div>
-        <p className="mt-3 text-[11px] font-semibold text-slate-500">
+        <p className="mt-3 text-sm font-semibold text-slate-500">
           Active milestone:{' '}
-          <span className="font-black text-[#00758C]">{activeStageMeta.label}</span>
+          <span className="font-bold text-[#00758C]">{activeStageMeta.label}</span>
           {activeStageMeta.step < 11 ? (
             <>
               {' '}
@@ -352,7 +352,7 @@ export default function CoreOperationsTerminalPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] border-collapse text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/80 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     <th className="px-4 py-3">UHID</th>
                     <th className="px-4 py-3">Patient</th>
                     <th className="px-4 py-3">MPI Status</th>
@@ -364,7 +364,7 @@ export default function CoreOperationsTerminalPage() {
                       <td className="px-4 py-2.5 font-mono text-xs font-bold text-[#008588]">{row.uhid}</td>
                       <td className="px-4 py-2.5 text-xs font-semibold text-slate-900">{row.patient}</td>
                       <td className="px-4 py-2.5">
-                        <span className="rounded-md border border-[#5EC283]/30 bg-[#5EC283]/15 px-2 py-0.5 text-[10px] font-bold uppercase text-[#00758C]">
+                        <span className="rounded-md border border-[#5EC283]/30 bg-[#5EC283]/15 px-2 py-0.5 text-xs font-semibold uppercase text-[#00758C]">
                           {row.status}
                         </span>
                       </td>
@@ -391,8 +391,8 @@ export default function CoreOperationsTerminalPage() {
                 >
                   <p className="font-mono text-xs font-bold text-[#008588]">{row.token}</p>
                   <p className="mt-1 text-sm font-bold text-slate-900">{row.patient}</p>
-                  <p className="text-[11px] text-slate-500">{row.department}</p>
-                  <p className="mt-2 text-xs font-black tabular-nums text-[#00758C]">{row.slot}</p>
+                  <p className="text-base text-slate-500">{row.department}</p>
+                  <p className="mt-2 text-xs font-bold tabular-nums text-[#00758C]">{row.slot}</p>
                 </article>
               ))}
             </div>
@@ -415,7 +415,7 @@ export default function CoreOperationsTerminalPage() {
                 <div className="rounded-xl border border-slate-200/80 bg-slate-50/40 p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <HeartPulse className="h-4 w-4 text-rose-500" aria-hidden />
-                    <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-600">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600">
                       Live Vitals Capture
                     </h3>
                   </div>
@@ -472,7 +472,7 @@ export default function CoreOperationsTerminalPage() {
                 </div>
 
                 <div className="rounded-xl border border-slate-200/80 p-4">
-                  <h3 className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-600">
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
                     Automated Test Dispatch
                   </h3>
                   <div className="space-y-2">
@@ -515,7 +515,7 @@ export default function CoreOperationsTerminalPage() {
                   className={`${INPUT_CLASS} min-h-[180px] resize-y`}
                 />
                 {activeStage === 'emr-updated' ? (
-                  <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-[#00A481]">
+                  <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-[#00A481]">
                     <FileText className="h-3.5 w-3.5" aria-hidden />
                     EMR chart sync ready · vitals locked to encounter REF-OPD-102
                   </p>
@@ -546,12 +546,12 @@ export default function CoreOperationsTerminalPage() {
                     }`}
                   >
                     <Icon className={`h-5 w-5 ${util.color}`} aria-hidden />
-                    <p className="mt-2 text-xs font-black uppercase tracking-wider text-slate-700">{util.label}</p>
-                    <p className="mt-1 text-[11px] font-medium text-slate-500">
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-slate-700">{util.label}</p>
+                    <p className="mt-1 text-base font-medium text-slate-500">
                       {active ? 'Order dispatched · awaiting result sync' : 'No active dispatch'}
                     </p>
                     <span
-                      className={`mt-2 inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${
+                      className={`mt-2 inline-flex rounded-md px-2 py-0.5 text-xs font-semibold uppercase ${
                         active
                           ? 'bg-[#5EC283]/20 text-[#00758C]'
                           : 'bg-slate-100 text-slate-500'
@@ -580,15 +580,15 @@ export default function CoreOperationsTerminalPage() {
 
             {activeStage === 'admission-trigger' ? (
               <div className="rounded-xl border border-[#00758C]/20 bg-[#00758C]/5 p-4">
-                <p className="text-xs font-black uppercase tracking-wider text-[#00758C]">Admission Required?</p>
-                <p className="mt-1 text-[11px] font-medium text-slate-600">
+                <p className="text-lg font-semibold text-[#00758C]">Admission Required?</p>
+                <p className="mt-1 text-base font-medium text-slate-600">
                   Select routing path based on clinical disposition assessment
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => setAdmissionRequired(true)}
-                    className={`rounded-lg border px-4 py-2 text-xs font-black uppercase tracking-wide transition-all ${
+                    className={`rounded-lg border px-4 py-2 text-sm font-semibold uppercase tracking-wide transition-all ${
                       admissionRequired === true
                         ? 'border-[#00758C] bg-[#00758C] text-white shadow-sm'
                         : 'border-slate-200/80 bg-white text-slate-600 hover:border-[#008588]/40'
@@ -599,7 +599,7 @@ export default function CoreOperationsTerminalPage() {
                   <button
                     type="button"
                     onClick={() => setAdmissionRequired(false)}
-                    className={`rounded-lg border px-4 py-2 text-xs font-black uppercase tracking-wide transition-all ${
+                    className={`rounded-lg border px-4 py-2 text-sm font-semibold uppercase tracking-wide transition-all ${
                       admissionRequired === false
                         ? 'border-[#00A481] bg-[#00A481] text-white shadow-sm'
                         : 'border-slate-200/80 bg-white text-slate-600 hover:border-[#00A481]/40'
@@ -611,9 +611,9 @@ export default function CoreOperationsTerminalPage() {
                 {admissionRequired !== null ? (
                   <div className="mt-4 flex items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2">
                     <Activity className="h-4 w-4 text-[#008588]" aria-hidden />
-                    <p className="text-[11px] font-semibold text-slate-700">
+                    <p className="text-sm font-semibold text-slate-700">
                       Routing visualizer:{' '}
-                      <span className="font-black text-[#00758C]">
+                      <span className="font-bold text-[#00758C]">
                         {admissionRequired
                           ? 'Stage 7 · IPD Care → Bed Allocation Matrix'
                           : 'Stage 10 · Discharge Desk → Final clearance'}
@@ -627,7 +627,7 @@ export default function CoreOperationsTerminalPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] border-collapse text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/80 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     <th className="px-4 py-3">UHID</th>
                     <th className="px-4 py-3">Ward</th>
                     <th className="px-4 py-3">Bed</th>
@@ -644,7 +644,7 @@ export default function CoreOperationsTerminalPage() {
                       <td className="px-4 py-2.5 text-xs font-semibold text-slate-900">{row.patient}</td>
                       <td className="px-4 py-2.5">
                         <span
-                          className={`inline-flex rounded-md px-2 py-0.5 text-[10px] uppercase tracking-wide ${BED_STATUS_STYLES[row.status]}`}
+                          className={`inline-flex rounded-md px-2 py-0.5 text-xs uppercase tracking-wide ${BED_STATUS_STYLES[row.status]}`}
                         >
                           {row.status}
                         </span>
@@ -675,9 +675,9 @@ export default function CoreOperationsTerminalPage() {
                       <div>
                         <p className="font-mono text-xs font-bold">{entry.token}</p>
                         <p className="text-xs font-semibold">{entry.complaint}</p>
-                        <p className="text-[10px] opacity-80">Arrival {entry.arrivalTime}</p>
+                        <p className="text-xs opacity-80">Arrival {entry.arrivalTime}</p>
                       </div>
-                      <span className="text-[10px] font-black uppercase">{entry.level}</span>
+                      <span className="text-xs font-semibold uppercase">{entry.level}</span>
                     </li>
                   ))}
                 </ul>
@@ -693,7 +693,7 @@ export default function CoreOperationsTerminalPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px] border-collapse text-left text-sm">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50/80 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                         <th className="px-4 py-3">Theatre</th>
                         <th className="px-4 py-3">Surgeon</th>
                         <th className="px-4 py-3">Procedure</th>
@@ -709,7 +709,7 @@ export default function CoreOperationsTerminalPage() {
                           <td className="px-4 py-2.5 text-xs text-slate-700">{row.procedure}</td>
                           <td className="px-4 py-2.5 font-mono text-xs text-slate-500">{row.startTime}</td>
                           <td className="px-4 py-2.5">
-                            <span className="rounded-md border border-[#008588]/25 bg-[#008588]/10 px-2 py-0.5 text-[10px] font-bold uppercase text-[#008588]">
+                            <span className="rounded-md border border-[#008588]/25 bg-[#008588]/10 px-2 py-0.5 text-xs font-semibold uppercase text-[#008588]">
                               {row.status}
                             </span>
                           </td>
@@ -735,8 +735,8 @@ export default function CoreOperationsTerminalPage() {
                         key={`triage-sum-${level}-${idx}`}
                         className={`rounded-xl border p-4 text-center ${TRIAGE_STYLES[level]}`}
                       >
-                        <p className="text-2xl font-black tabular-nums">{count}</p>
-                        <p className="text-[10px] font-black uppercase">{level} Triage</p>
+                        <p className="text-2xl font-bold tabular-nums">{count}</p>
+                        <p className="text-xs font-semibold uppercase">{level} Triage</p>
                       </div>
                     );
                   })}
@@ -763,8 +763,8 @@ export default function CoreOperationsTerminalPage() {
                   key={`dc-${tile.label}-${idx}`}
                   className={`rounded-xl border border-slate-200/80 border-t-4 ${tile.accent} bg-white p-4 shadow-sm`}
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{tile.label}</p>
-                  <p className="mt-1 text-2xl font-black tabular-nums text-slate-900">{tile.value}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{tile.label}</p>
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{tile.value}</p>
                 </article>
               ))}
             </div>
@@ -781,7 +781,7 @@ export default function CoreOperationsTerminalPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[880px] border-collapse text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/80 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     <th className="px-4 py-3">UHID</th>
                     <th className="px-4 py-3">Patient</th>
                     <th className="px-4 py-3">Identity Reference</th>
@@ -795,14 +795,14 @@ export default function CoreOperationsTerminalPage() {
                     <tr key={`${row.id || row.uhid}-${idx}`} className="hover:bg-slate-50/60">
                       <td className="px-4 py-2.5 font-mono text-xs font-bold text-[#008588]">{row.uhid}</td>
                       <td className="px-4 py-2.5 text-xs font-semibold text-slate-900">{row.patient}</td>
-                      <td className="px-4 py-2.5 font-mono text-[11px] font-medium text-slate-500">
+                      <td className="px-4 py-2.5 font-mono text-base font-medium text-slate-500">
                         {row.identityRef}
                       </td>
                       <td className="px-4 py-2.5 text-xs text-slate-700">{row.serviceLine}</td>
-                      <td className="px-4 py-2.5 text-xs font-black tabular-nums text-slate-900">{row.amount}</td>
+                      <td className="px-4 py-2.5 text-xs font-bold tabular-nums text-slate-900">{row.amount}</td>
                       <td className="px-4 py-2.5">
                         <span
-                          className={`inline-flex rounded-md px-2 py-0.5 text-[10px] uppercase tracking-wide ${BILLING_STATUS_STYLES[row.status]}`}
+                          className={`inline-flex rounded-md px-2 py-0.5 text-xs uppercase tracking-wide ${BILLING_STATUS_STYLES[row.status]}`}
                         >
                           {row.status}
                         </span>

@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexora-doctor-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexora
+      POSTGRES_PASSWORD: nexora_dev_password
+      POSTGRES_DB: nexora_doctor
+    ports:
+      - "5432:5432"
+    volumes:
+      - nexora_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexora -d nexora_doctor"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexora-doctor-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://nexora:nexora_dev_password@postgres:5432/nexora_doctor
+      DIRECT_URL: postgresql://nexora:nexora_dev_password@postgres:5432/nexora_doctor
+      JWT_SECRET: change-this-in-production-use-openssl-rand-base64-32
+      DOCTOR_DEV_PASSWORD: "123456"
+      ADMIN_DEV_PASSWORD: "123456"
+      ADMIN_DEV_EMAIL: admin@curasync.com
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  nexora_pg_data:

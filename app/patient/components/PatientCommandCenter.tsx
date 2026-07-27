@@ -30,10 +30,10 @@ const NAV_ITEMS: PatientNavItem[] = [
 ];
 
 const ACTIVE_NAV_CLASS =
-  'w-full text-left px-4 py-3 flex items-center bg-[#E0A89F] text-slate-950 font-black shadow-sm shadow-[#E0A89F]/20 rounded-xl cursor-pointer text-xs';
+  'w-full text-left px-4 py-3 flex items-center bg-[#E0A89F] text-patient-charcoal font-black shadow-sm shadow-[#E0A89F]/20 rounded-xl cursor-pointer text-xs';
 
 const INACTIVE_NAV_CLASS =
-  'w-full text-left px-4 py-3 flex items-center text-slate-800 hover:text-[#E0A89F] hover:bg-slate-800/50 transition-all font-semibold text-xs rounded-xl cursor-pointer';
+  'w-full text-left px-4 py-3 flex items-center text-patient-text hover:text-[#E0A89F] hover:bg-slate-800/50 transition-all font-semibold text-xs rounded-xl cursor-pointer';
 
 export default function PatientCommandCenter() {
   const [activeTab, setActiveTab] = useState<PatientNavId>('dashboard');
@@ -60,7 +60,7 @@ export default function PatientCommandCenter() {
 
   return (
     <div className="min-h-screen bg-[#FDF4F2] flex">
-      <aside className="w-64 bg-[#0F172A] text-white p-4 flex flex-col justify-between shrink-0 border-r border-slate-800">
+      <aside className="w-64 bg-[#0F172A] text-white p-4 flex flex-col justify-between shrink-0 border-r border-patient-lavender/20 800">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-wider text-[#E0A89F]/80">
             CuraSync Patient Hub
@@ -83,14 +83,14 @@ export default function PatientCommandCenter() {
           </nav>
         </div>
 
-        <div className="space-y-2 border-t border-slate-800 pt-4">
+        <div className="space-y-2 border-t border-patient-lavender/20 800 pt-4">
           <Link
             href={APP_ROUTES.hospital}
-            className="flex w-full items-center justify-center rounded-xl border border-slate-700/80 bg-slate-800/40 px-3 py-2.5 text-center text-[10px] font-semibold text-slate-800 transition-all hover:bg-slate-800/50 hover:text-[#E0A89F]"
+            className="flex w-full items-center justify-center rounded-xl border border-patient-lavender/20 700/80 bg-slate-800/40 px-3 py-2.5 text-center text-[10px] font-semibold text-patient-text transition-all hover:bg-slate-800/50 hover:text-[#E0A89F]"
           >
             Hospital procurement console
           </Link>
-          <p className="text-center font-mono text-[9px] uppercase tracking-wider text-slate-800">
+          <p className="text-center font-mono text-[9px] uppercase tracking-wider text-patient-text">
             Secure patient lane · v2
           </p>
         </div>
@@ -101,24 +101,24 @@ export default function PatientCommandCenter() {
           <p className="font-mono text-[11px] uppercase tracking-wider text-[#A65E53]">
             Patient workspace
           </p>
-          <h1 className="text-slate-900 font-black text-3xl tracking-tight mt-1">
+          <h1 className="text-patient-charcoal font-black text-3xl tracking-tight mt-1">
             Victoria Healthcare Command Center
           </h1>
-          <p className="mt-2 max-w-2xl text-xs font-medium text-slate-800">
+          <p className="mt-2 max-w-2xl text-xs font-medium text-patient-text">
             On-site arrival triage, AI-assisted symptom routing, and live care navigation
             in one premium patient workspace.
           </p>
         </header>
 
-        <section className="mt-8 bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-xs mb-6 flex justify-between items-center gap-4 flex-wrap">
+        <section className="mt-8 bg-white border-2 border-patient-lavender/20 200 rounded-2xl p-6 shadow-xs mb-6 flex justify-between items-center gap-4 flex-wrap">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-wider text-slate-800">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-patient-text">
               On-site arrival
             </p>
-            <h2 className="mt-1 text-lg font-black text-slate-900 tracking-tight">
+            <h2 className="mt-1 text-lg font-black text-patient-charcoal tracking-tight">
               Facility desk check-in
             </h2>
-            <p className="mt-1 text-xs font-medium text-slate-800">
+            <p className="mt-1 text-xs font-medium text-patient-text">
               Signal your arrival to the front-desk triage queue before your consultation.
             </p>
             {checkInStatus && (
@@ -135,15 +135,15 @@ export default function PatientCommandCenter() {
           </button>
         </section>
 
-        <section className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-xs mb-6">
+        <section className="bg-white border-2 border-patient-lavender/20 200 rounded-2xl p-6 shadow-xs mb-6">
           <div className="mb-4">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-slate-800">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-patient-text">
               AI clinical triage
             </p>
-            <h2 className="mt-1 text-lg font-black text-slate-900 tracking-tight">
+            <h2 className="mt-1 text-lg font-black text-patient-charcoal tracking-tight">
               Symptom assistant
             </h2>
-            <p className="mt-1 text-xs font-medium text-slate-800">
+            <p className="mt-1 text-xs font-medium text-patient-text">
               Describe how you feel. The assistant routes your case to the right specialty
               lane.
             </p>
@@ -153,7 +153,7 @@ export default function PatientCommandCenter() {
             value={symptoms}
             onChange={(event) => setSymptoms(event.target.value)}
             placeholder="e.g. Persistent headache with mild fever for 2 days…"
-            className="w-full border border-slate-200 rounded-xl p-4 text-xs font-semibold bg-[#FDF4F2]/30 text-slate-900 focus:outline-none focus:border-[#D48D82] focus:ring-1 focus:ring-[#D48D82] h-24 placeholder-slate-400 resize-none"
+            className="w-full border border-patient-lavender/20 200 rounded-xl p-4 text-xs font-semibold bg-[#FDF4F2]/30 text-patient-charcoal focus:outline-none focus:border-[#D48D82] focus:ring-1 focus:ring-[#D48D82] h-24 placeholder-slate-400 resize-none"
           />
 
           {triageStatus && (
@@ -173,13 +173,13 @@ export default function PatientCommandCenter() {
           <button
             type="button"
             onClick={() => setActiveTab('appointments')}
-            className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-xs hover:border-[#D48D82]/50 transition-all cursor-pointer group text-left"
+            className="bg-white border-2 border-patient-lavender/20 200 rounded-2xl p-6 shadow-xs hover:border-[#D48D82]/50 transition-all cursor-pointer group text-left"
           >
-            <p className="font-mono text-[10px] uppercase tracking-wider text-slate-800">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-patient-text">
               Live schedule
             </p>
             <div className="mt-2 flex items-center justify-between gap-3">
-              <h3 className="text-base font-black text-slate-900 tracking-tight">
+              <h3 className="text-base font-black text-patient-charcoal tracking-tight">
                 View Live Appointments
               </h3>
               <span
@@ -189,7 +189,7 @@ export default function PatientCommandCenter() {
                 →
               </span>
             </div>
-            <p className="mt-2 text-xs font-medium text-slate-800">
+            <p className="mt-2 text-xs font-medium text-patient-text">
               Track upcoming consultations, queue position, and provider assignments.
             </p>
           </button>
@@ -197,13 +197,13 @@ export default function PatientCommandCenter() {
           <button
             type="button"
             onClick={() => setActiveTab('records')}
-            className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-xs hover:border-[#D48D82]/50 transition-all cursor-pointer group text-left"
+            className="bg-white border-2 border-patient-lavender/20 200 rounded-2xl p-6 shadow-xs hover:border-[#D48D82]/50 transition-all cursor-pointer group text-left"
           >
-            <p className="font-mono text-[10px] uppercase tracking-wider text-slate-800">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-patient-text">
               Clinical archive
             </p>
             <div className="mt-2 flex items-center justify-between gap-3">
-              <h3 className="text-base font-black text-slate-900 tracking-tight">
+              <h3 className="text-base font-black text-patient-charcoal tracking-tight">
                 Access Diagnostics History
               </h3>
               <span
@@ -213,7 +213,7 @@ export default function PatientCommandCenter() {
                 →
               </span>
             </div>
-            <p className="mt-2 text-xs font-medium text-slate-800">
+            <p className="mt-2 text-xs font-medium text-patient-text">
               Review lab panels, imaging summaries, and prior visit documentation.
             </p>
           </button>

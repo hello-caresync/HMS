@@ -44,15 +44,15 @@ export default function Layer1AuthGateway() {
         <div className="md:col-span-7 space-y-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="bg-[#00758C]/10 text-[#00758C] border border-[#00758C]/20 text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded">
+              <span className="bg-[#00758C]/10 text-[#00758C] border border-[#00758C]/20 text-xs font-semibold tracking-wider uppercase px-2 py-0.5 rounded">
                 Layer 1 Control
               </span>
-              <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+              <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
                 RBAC Access Gateway
               </span>
             </div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight mt-1">Select System Profile Role</h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Choose your authorized profile assignment below to initialize modules.</p>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight mt-1 sm:text-3xl">Select System Profile Role</h1>
+            <p className="text-base text-slate-500 font-medium mt-0.5">Choose your authorized profile assignment below to initialize modules.</p>
           </div>
 
           {/* Grid Allocation for the 8 Roles specified in the application structure */}
@@ -67,23 +67,23 @@ export default function Layer1AuthGateway() {
                     setSelectedRole(role.name);
                     setUsername(role.name.toLowerCase().replace(/\s+/g, '.'));
                   }}
-                  className={`text-left p-3 rounded-xl border text-xs transition-all flex flex-col justify-between group cursor-pointer ${
+                  className={`text-left p-3 rounded-xl border text-base transition-all flex flex-col justify-between group cursor-pointer ${
                     isSelected
                       ? 'border-[#00758C] bg-[#00758C]/5 shadow-sm font-bold'
                       : 'border-slate-200 bg-white hover:border-[#008588] hover:bg-slate-50/50'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className={`font-bold text-xs ${isSelected ? 'text-[#00758C]' : 'text-slate-800'}`}>
+                    <span className={`font-semibold text-base ${isSelected ? 'text-[#00758C]' : 'text-slate-800'}`}>
                       {role.name}
                     </span>
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${
+                    <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
                       isSelected ? 'bg-[#00758C] text-white' : 'bg-slate-100 text-slate-500'
                     }`}>
                       {role.code}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 font-medium mt-1 leading-snug">
+                  <p className="text-sm text-slate-400 font-medium mt-1 leading-snug">
                     {role.desc}
                   </p>
                 </button>
@@ -96,8 +96,8 @@ export default function Layer1AuthGateway() {
         <div className="md:col-span-5 border-t md:border-t-0 md:border-l border-slate-200/80 pt-6 md:pt-0 md:pl-6 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="text-center md:text-left">
-              <h2 className="text-base font-black text-[#00758C] tracking-tight uppercase">Nexora ERP</h2>
-              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Secure Operator Login</p>
+              <h2 className="text-xl font-bold text-[#00758C] tracking-tight uppercase">Nexora ERP</h2>
+              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Secure Operator Login</p>
             </div>
 
             {/* Active Highlight Status Box */}
@@ -106,8 +106,8 @@ export default function Layer1AuthGateway() {
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <div className="min-w-0">
-                <span className="text-[9px] font-black text-[#00A481] block uppercase tracking-wide">TARGET TARGET BOUND:</span>
-                <span className="text-xs font-bold text-slate-800 block truncate">{selectedRole}</span>
+                <span className="text-xs font-semibold text-[#00A481] block uppercase tracking-wide">TARGET TARGET BOUND:</span>
+                <span className="text-base font-semibold text-slate-800 block truncate">{selectedRole}</span>
               </div>
             </div>
 
@@ -121,7 +121,7 @@ export default function Layer1AuthGateway() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Username or Operator ID"
-                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#008588] transition-all shadow-inner"
+                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#008588] transition-all shadow-inner"
                 />
               </div>
 
@@ -133,14 +133,14 @@ export default function Layer1AuthGateway() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Security Access Pin / Code"
-                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#008588] transition-all shadow-inner"
+                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#008588] transition-all shadow-inner"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#00758C] hover:bg-[#008588] text-white font-black py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all text-center text-xs tracking-wider flex items-center justify-center gap-2 cursor-pointer border border-transparent disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+                className="w-full bg-[#00758C] hover:bg-[#008588] text-white font-semibold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all text-center text-sm tracking-wider flex items-center justify-center gap-2 cursor-pointer border border-transparent disabled:opacity-70 disabled:cursor-not-allowed mt-4"
               >
                 {isLoading ? (
                   <>
@@ -158,7 +158,7 @@ export default function Layer1AuthGateway() {
           </div>
 
           {/* Bottom Telemetry Gateway Badge Status */}
-          <div className="pt-6 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+          <div className="pt-6 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-semibold uppercase tracking-wider">
             <div className="flex items-center gap-1.5">
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>TLS Gateway Online</span>

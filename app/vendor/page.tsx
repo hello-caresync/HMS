@@ -30,7 +30,7 @@ export default function VendorMainGatewayShell() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all hover:shadow-md">
             <span
               className="absolute top-0 left-0 h-full w-1 bg-[#4A5D5E]"
@@ -53,7 +53,24 @@ export default function VendorMainGatewayShell() {
             </Link>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all hover:shadow-md">
+          <div className="relative overflow-hidden rounded-2xl border border-teal-200 bg-white p-5 shadow-xs transition-all hover:shadow-md">
+            <span className="absolute top-0 left-0 h-full w-1 bg-teal-600" aria-hidden />
+            <p className="pl-3 text-[11px] font-black uppercase tracking-wider text-slate-800">
+              Nexora SRM
+            </p>
+            <p className="mt-2 pl-3 font-mono text-2xl font-black text-slate-800">Portal</p>
+            <p className="mt-1 pl-3 text-xs font-medium text-slate-800">
+              Full procurement collaboration suite
+            </p>
+            <Link
+              href={APP_ROUTES.vendorPortalDashboard}
+              className="mt-4 ml-3 inline-flex w-[calc(100%-0.75rem)] items-center justify-center rounded-xl bg-teal-700 px-5 py-2.5 text-xs font-black text-white shadow-xs transition-all hover:bg-teal-800"
+            >
+              Open Nexora Vendor App
+            </Link>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all hover:shadow-md sm:col-span-2 lg:col-span-1">
             <span
               className="absolute top-0 left-0 h-full w-1 bg-blue-500"
               aria-hidden

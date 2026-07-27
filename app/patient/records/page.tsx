@@ -60,7 +60,7 @@ type RadiologyRecord = {
 };
 
 const CARD_CLASS =
-  'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
+  'rounded-2xl border border-patient-lavender/30 bg-white p-6 shadow-sm';
 
 const TAB_OPTIONS: { id: RecordsTab; label: string; icon: typeof FileText }[] = [
   { id: 'emr', label: 'EMR Clinical Profile', icon: HeartPulse },
@@ -176,16 +176,16 @@ export default function PatientRecordsPage() {
   };
 
   return (
-    <div className="min-h-full w-full space-y-6 font-sans text-slate-950">
+    <div className="min-h-full w-full space-y-6 font-sans text-patient-charcoal">
       {/* Suite header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-black text-[#8c2b39]">
+        <h1 className="text-xl font-black text-patient-plum">
           Personal Health Chart &amp; Diagnostic Records
         </h1>
         <button
           type="button"
           onClick={handleDownloadPdf}
-          className="inline-flex items-center gap-2 rounded-xl border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2.5 text-sm font-bold text-[#f47c8c] transition-all hover:bg-[#e06373]/10"
+          className="inline-flex items-center gap-2 rounded-xl border border-patient-lavender/30 bg-patient-card px-4 py-2.5 text-sm font-bold text-patient-primary transition-all hover:bg-patient-lavender/25"
         >
           <Download className="h-4 w-4" aria-hidden />
           Download Complete Health Record PDF
@@ -205,8 +205,8 @@ export default function PatientRecordsPage() {
             onClick={() => setActiveTab(id)}
             className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
               activeTab === id
-                ? 'bg-[#f47c8c] text-white shadow-sm'
-                : 'border border-[#f0d8dc] bg-white text-slate-600 hover:bg-slate-50/80 hover:text-[#8c2b39]'
+                ? 'bg-patient-primary text-white shadow-sm'
+                : 'border border-patient-lavender/30 bg-white text-patient-lavender hover:bg-patient-lavender/10/80 hover:text-patient-plum'
             }`}
           >
             <Icon className="h-4 w-4" aria-hidden />
@@ -220,17 +220,17 @@ export default function PatientRecordsPage() {
         <section aria-label="EMR clinical profile" className={`space-y-4 ${CARD_CLASS}`}>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div>
-              <h2 className="mb-3 text-sm font-black uppercase tracking-wider text-[#8c2b39]">
+              <h2 className="mb-3 text-sm font-black uppercase tracking-wider text-patient-plum">
                 Diagnoses
               </h2>
               <ul className="space-y-2">
                 {DIAGNOSES.map((item) => (
                   <li
                     key={item.id}
-                    className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-3"
+                    className="rounded-xl border border-patient-lavender/30 bg-patient-lavender/10/50 p-3"
                   >
-                    <p className="font-bold text-slate-900">{item.condition}</p>
-                    <p className="mt-1 text-xs font-medium text-slate-600">
+                    <p className="font-bold text-patient-charcoal">{item.condition}</p>
+                    <p className="mt-1 text-xs font-medium text-patient-lavender">
                       Since {item.since} · {item.status}
                     </p>
                   </li>
@@ -239,7 +239,7 @@ export default function PatientRecordsPage() {
             </div>
 
             <div>
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[#8c2b39]">
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wider text-patient-plum">
                 <AlertTriangle className="h-4 w-4 text-rose-600" aria-hidden />
                 Allergies
               </h2>
@@ -261,19 +261,19 @@ export default function PatientRecordsPage() {
           </div>
 
           <div>
-            <h2 className="mb-3 text-sm font-black uppercase tracking-wider text-[#8c2b39]">
+            <h2 className="mb-3 text-sm font-black uppercase tracking-wider text-patient-plum">
               Family History Summary
             </h2>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {FAMILY_HISTORY.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-xl border border-[#f0d8dc] bg-white p-3 shadow-sm"
+                  className="rounded-xl border border-patient-lavender/30 bg-white p-3 shadow-sm"
                 >
-                  <p className="text-xs font-black uppercase tracking-wider text-[#f47c8c]">
+                  <p className="text-xs font-black uppercase tracking-wider text-patient-primary">
                     {item.relation}
                   </p>
-                  <p className="mt-1 text-sm font-bold text-slate-900">{item.condition}</p>
+                  <p className="mt-1 text-sm font-bold text-patient-charcoal">{item.condition}</p>
                 </article>
               ))}
             </div>
@@ -284,28 +284,28 @@ export default function PatientRecordsPage() {
       {/* Prescription Companion */}
       {activeTab === 'prescription' ? (
         <section aria-label="Prescription companion" className={CARD_CLASS}>
-          <h2 className="mb-4 text-sm font-black uppercase tracking-wider text-[#8c2b39]">
+          <h2 className="mb-4 text-sm font-black uppercase tracking-wider text-patient-plum">
             Active Daily Medicines
           </h2>
           <ul className="space-y-4">
             {PRESCRIPTIONS.map((rx) => (
               <li
                 key={rx.id}
-                className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4"
+                className="rounded-xl border border-patient-lavender/30 bg-patient-lavender/10/50 p-4"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="text-base font-black text-slate-900">{rx.medication}</p>
-                    <p className="mt-1 text-sm font-bold text-slate-700">
+                    <p className="text-base font-black text-patient-charcoal">{rx.medication}</p>
+                    <p className="mt-1 text-sm font-bold text-patient-charcoal">
                       {rx.dosage} · {rx.frequency}
                     </p>
-                    <span className="mt-2 inline-flex rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#f47c8c]">
+                    <span className="mt-2 inline-flex rounded-full border border-patient-lavender/30 bg-patient-card px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-patient-primary">
                       {rx.reminderLabel}
                     </span>
                   </div>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 text-sm font-bold text-[#f47c8c] hover:underline"
+                    className="inline-flex items-center gap-1 text-sm font-bold text-patient-primary hover:underline"
                   >
                     <Download className="h-4 w-4" aria-hidden />
                     Download Rx PDF
@@ -322,8 +322,8 @@ export default function PatientRecordsPage() {
         <section aria-label="Diagnostic test vault" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <TestTubeDiagonal className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-sm font-black uppercase tracking-wider text-[#8c2b39]">
+              <TestTubeDiagonal className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-sm font-black uppercase tracking-wider text-patient-plum">
                 Laboratory Blood Counts
               </h2>
             </div>
@@ -331,20 +331,20 @@ export default function PatientRecordsPage() {
               {LAB_TRENDS.map((trend) => (
                 <div key={trend.id}>
                   <div className="mb-2 flex items-baseline justify-between">
-                    <p className="text-sm font-black text-slate-900">{trend.marker}</p>
-                    <p className="text-xs font-bold text-slate-500">{trend.unit}</p>
+                    <p className="text-sm font-black text-patient-charcoal">{trend.marker}</p>
+                    <p className="text-xs font-bold text-patient-lavender">{trend.unit}</p>
                   </div>
                   <div className="space-y-2">
                     {trend.values.map((point) => (
                       <div key={point.month} className="flex items-center gap-3">
-                        <span className="w-8 text-[10px] font-bold text-slate-500">{point.month}</span>
+                        <span className="w-8 text-[10px] font-bold text-patient-lavender">{point.month}</span>
                         <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
                           <div
-                            className="h-full rounded-full bg-[#f47c8c] transition-all"
+                            className="h-full rounded-full bg-patient-primary transition-all"
                             style={{ width: `${Math.round((point.value / point.max) * 100)}%` }}
                           />
                         </div>
-                        <span className="w-12 text-right text-xs font-black tabular-nums text-[#f47c8c]">
+                        <span className="w-12 text-right text-xs font-black tabular-nums text-patient-primary">
                           {point.value}
                         </span>
                       </div>
@@ -357,8 +357,8 @@ export default function PatientRecordsPage() {
 
           <div className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <ScanLine className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-sm font-black uppercase tracking-wider text-[#8c2b39]">
+              <ScanLine className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-sm font-black uppercase tracking-wider text-patient-plum">
                 Radiology Data Sheets
               </h2>
             </div>
@@ -366,16 +366,16 @@ export default function PatientRecordsPage() {
               {RADIOLOGY_LOGS.map((study) => (
                 <li
                   key={study.id}
-                  className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4"
+                  className="rounded-xl border border-patient-lavender/30 bg-patient-lavender/10/50 p-4"
                 >
-                  <p className="font-black text-slate-900">{study.modality}</p>
-                  <p className="mt-1 text-xs font-bold text-slate-600">
+                  <p className="font-black text-patient-charcoal">{study.modality}</p>
+                  <p className="mt-1 text-xs font-bold text-patient-lavender">
                     {study.studyDate} · {study.facility}
                   </p>
                   <span
                     className={`mt-2 ${
                       study.status === 'REPORT_READY_VERIFIED'
-                        ? 'inline-flex rounded-full border border-[#f47c8c]/40 bg-[#fde8eb] px-3 py-1 text-xs font-semibold tracking-wide text-[#15803d]'
+                        ? 'inline-flex rounded-full border border-patient-primary/40 bg-patient-card px-3 py-1 text-xs font-semibold tracking-wide text-[#15803d]'
                         : 'inline-flex rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-semibold tracking-wide text-amber-800'
                     }`}
                   >

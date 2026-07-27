@@ -1,5 +1,5 @@
-import EmergencySuite from '@/components/doctor/emergency/EmergencySuite';
+import { redirect } from 'next/navigation';
 
-export default function DoctorEmergencyPage() {
-  return <EmergencySuite />;
+export default function LegacyEmergencyRedirect() {
+  redirect('/doctor/emergency-cases');
 }

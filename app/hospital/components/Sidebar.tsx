@@ -98,8 +98,8 @@ export default function Sidebar() {
             <Stethoscope className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-base font-black tracking-wider text-slate-800 uppercase">Nexora</h1>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600">Clinical Suite</p>
+            <h1 className="text-lg font-bold tracking-wider text-slate-800 uppercase">Nexora</h1>
+            <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Clinical Suite</p>
           </div>
         </div>
       </div>
@@ -114,7 +114,7 @@ export default function Sidebar() {
               {/* Category Dropdown Toggle Header Label */}
               <button
                 onClick={() => toggleSection(section.category)}
-                className="flex w-full items-center justify-between px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors"
+                className="flex w-full items-center justify-between px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <span>{section.category}</span>
                 {isSectionOpen ? (
@@ -165,7 +165,7 @@ export default function Sidebar() {
           </div>
           <div className="flex flex-col truncate">
             <span className="text-xs font-bold text-slate-800 truncate">Active Staff Profile</span>
-            <span className="text-[10px] text-slate-500 font-medium truncate">Clinical Operator</span>
+            <span className="text-xs text-slate-500 font-medium truncate">Clinical Operator</span>
           </div>
         </div>
       </div>

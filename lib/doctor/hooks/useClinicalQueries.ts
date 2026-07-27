@@ -9,6 +9,10 @@ import {
   fetchAnalytics,
   fetchCalendarEvents,
   fetchClinicalMessages,
+  fetchClinicalOrders,
+  fetchDoctorProfile,
+  fetchDoctorSchedule,
+  fetchMessageChannels,
   fetchEmergencyCases,
   fetchEmrTimeline,
   fetchFormulary,
@@ -23,6 +27,7 @@ import {
   saveSoapNote,
   sendClinicalMessage,
   sendPrescription,
+  updateDoctorProfile,
 } from '@/lib/doctor/client/clinical-data-service';
 
 export type {
@@ -186,5 +191,41 @@ export function useEmrTimeline(patientId: string | undefined) {
     queryKey: ['emr', 'timeline', patientId],
     enabled: !!patientId,
     queryFn: () => fetchEmrTimeline(patientId!),
+  });
+}
+
+export function useClinicalOrders() {
+  return useQuery({
+    queryKey: ['clinical-orders'],
+    queryFn: fetchClinicalOrders,
+  });
+}
+
+export function useMessageChannels() {
+  return useQuery({
+    queryKey: ['message-channels'],
+    queryFn: fetchMessageChannels,
+  });
+}
+
+export function useDoctorProfile() {
+  return useQuery({
+    queryKey: ['doctor-profile'],
+    queryFn: fetchDoctorProfile,
+  });
+}
+
+export function useUpdateDoctorProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Parameters<typeof updateDoctorProfile>[0]) => updateDoctorProfile(body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['doctor-profile'] }),
+  });
+}
+
+export function useDoctorSchedule(from?: string, to?: string) {
+  return useQuery({
+    queryKey: ['doctor-schedule', from, to],
+    queryFn: () => fetchDoctorSchedule(from, to),
   });
 }

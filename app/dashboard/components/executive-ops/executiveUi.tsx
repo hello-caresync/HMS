@@ -22,20 +22,18 @@ export function ExecutivePanel({
 }) {
   return (
     <section
-      className={`rounded-lg border border-slate-200/90 bg-white shadow-sm ${dense ? 'p-3' : 'p-3.5'} ${className}`}
+      className={`rounded-lg border border-slate-200/90 bg-white shadow-sm ${dense ? 'p-4' : 'p-5'} ${className}`}
     >
-      <header className={`mb-2.5 flex items-start justify-between gap-2 ${dense ? 'mb-2' : ''}`}>
-        <div className="flex min-w-0 items-start gap-2">
+      <header className={`mb-3 flex items-start justify-between gap-3 ${dense ? 'mb-3' : ''}`}>
+        <div className="flex min-w-0 items-start gap-3">
           {Icon && (
-            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#0F172A] text-white">
-              <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#0F172A] text-white">
+              <Icon className="h-4 w-4" strokeWidth={2} />
             </span>
           )}
           <div className="min-w-0">
-            <h3 className="truncate text-[11px] font-bold uppercase tracking-[0.08em] text-[#0F172A]">
-              {title}
-            </h3>
-            {subtitle && <p className="mt-0.5 text-[10px] leading-snug text-slate-500">{subtitle}</p>}
+            <h3 className="truncate text-xl font-bold text-slate-900">{title}</h3>
+            {subtitle && <p className="mt-1 text-sm leading-snug text-slate-600">{subtitle}</p>}
           </div>
         </div>
         {headerRight}
@@ -59,12 +57,12 @@ export function MetricValue({
   return (
     <div>
       <p
-        className={`text-xl font-bold tabular-nums leading-none tracking-tight ${accent ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}
+        className={`text-2xl font-bold tabular-nums leading-none tracking-tight ${accent ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}
       >
         {value}
       </p>
-      <p className="mt-1 text-[10px] font-semibold text-slate-600">{label}</p>
-      {sub && <p className="mt-0.5 text-[9px] text-slate-400">{sub}</p>}
+      <p className="mt-2 text-sm font-semibold text-slate-700">{label}</p>
+      {sub && <p className="mt-1 text-sm text-slate-600">{sub}</p>}
     </div>
   );
 }
@@ -75,15 +73,15 @@ export function SplitMetricRow({
   items: { label: string; value: string | number; highlight?: boolean }[];
 }) {
   return (
-    <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-2">
+    <div className="grid grid-cols-3 gap-3 border-t border-slate-100 pt-3">
       {items.map((item) => (
         <div key={item.label}>
           <p
-            className={`text-sm font-bold tabular-nums ${item.highlight ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}
+            className={`text-base font-bold tabular-nums ${item.highlight ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}
           >
             {item.value}
           </p>
-          <p className="text-[9px] font-medium uppercase tracking-wide text-slate-500">{item.label}</p>
+          <p className="text-sm font-medium uppercase tracking-wide text-slate-600">{item.label}</p>
         </div>
       ))}
     </div>
@@ -101,11 +99,11 @@ export function DataTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[280px] text-left">
         <thead>
-          <tr className="border-b border-slate-100">
+          <tr className="border-b border-slate-200">
             {headers.map((h) => (
               <th
                 key={h}
-                className="pb-1.5 pr-2 text-[9px] font-bold uppercase tracking-wider text-slate-400"
+                className="pb-2 pr-3 text-sm font-bold uppercase tracking-wider text-slate-700"
               >
                 {h}
               </th>
@@ -116,7 +114,7 @@ export function DataTable({
           {rows.map((row, i) => (
             <tr key={i} className="border-b border-slate-50 last:border-0">
               {row.map((cell, j) => (
-                <td key={j} className="py-1.5 pr-2 text-[10px] font-medium text-slate-700">
+                <td key={j} className="py-3 pr-3 text-base font-medium text-slate-800">
                   {cell}
                 </td>
               ))}
@@ -137,7 +135,7 @@ export function SeverityPill({ severity }: { severity: 'critical' | 'warning' | 
 
   return (
     <span
-      className={`inline-flex shrink-0 rounded-full border px-1.5 py-px text-[8px] font-bold uppercase tracking-wider ${styles[severity]}`}
+      className={`inline-flex shrink-0 rounded-md border px-3 py-1 text-sm font-semibold uppercase tracking-wider ${styles[severity]}`}
     >
       {severity}
     </span>

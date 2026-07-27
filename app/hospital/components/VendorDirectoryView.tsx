@@ -48,7 +48,7 @@ export default function VendorDirectoryView({
             <div>
               <span className={overlineClassName}>Registered entity</span>
               <h4 className={featureHeaderClassName}>{vendor.companyName}</h4>
-              <p className={`mt-1 text-[11px] ${monoDataClassName} text-slate-800`}>
+              <p className={`mt-1 text-sm ${monoDataClassName} text-slate-800`}>
                 GSTIN: {vendor.gstin}
               </p>
             </div>
@@ -70,7 +70,7 @@ export default function VendorDirectoryView({
             </p>
             <p className={bodyTextClassName}>
               Outstanding:{' '}
-              <span className="font-mono font-black text-rose-600">
+              <span className="font-mono font-bold text-rose-600">
                 ₹{vendor.outstandingDues.toLocaleString('en-IN')}
               </span>
             </p>

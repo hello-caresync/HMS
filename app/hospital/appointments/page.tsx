@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import {
   BarChart3,
   CalendarDays,
@@ -17,9 +17,19 @@ import {
   XCircle,
 } from 'lucide-react';
 
+import { HospitalToastBanner, useHospitalToast } from '../_components/HospitalFeedback';
+import {
+  completeAppointment,
+  dbAppointmentToQueueEntry,
+  deleteAppointment,
+  fetchAppointments,
+  insertAppointment,
+  updateAppointment,
+} from '../_lib/hospital-db.service';
+
 type ViewMode = 'queue' | 'calendar' | 'analytics';
 
-type AppointmentStatus = 'Confirmed' | 'In-Queue' | 'Waiting List';
+type AppointmentStatus = 'Confirmed' | 'In-Queue' | 'Waiting List' | 'Completed' | 'Cancelled';
 
 type ReminderChannels = {
   sms: boolean;
@@ -71,97 +81,6 @@ const VIEW_MODES: { id: ViewMode; label: string; icon: typeof ListOrdered }[] = 
   { id: 'queue', label: 'Queue Registry', icon: ListOrdered },
   { id: 'calendar', label: 'Calendar View', icon: CalendarDays },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-];
-
-const QUEUE_REGISTRY: QueueEntry[] = [
-  {
-    id: 'ap-001',
-    token: 'OPD-102',
-    patientName: 'R.K.',
-    department: 'General Medicine',
-    provider: 'Dr. Mehta',
-    scheduledTime: '09:15 AM',
-    location: 'Main Campus',
-    channels: { sms: true, email: true, whatsapp: false },
-    status: 'Confirmed',
-  },
-  {
-    id: 'ap-002',
-    token: 'OPD-103',
-    patientName: 'S.M.',
-    department: 'Cardiology',
-    provider: 'Dr. Sharma',
-    scheduledTime: '09:30 AM',
-    location: 'Main Campus',
-    channels: { sms: true, email: false, whatsapp: true },
-    status: 'In-Queue',
-  },
-  {
-    id: 'ap-003',
-    token: 'OPD-104',
-    patientName: 'A.P.',
-    department: 'Orthopedics',
-    provider: 'Dr. Khan',
-    scheduledTime: '09:45 AM',
-    location: 'Annex Block',
-    channels: { sms: false, email: true, whatsapp: true },
-    status: 'In-Queue',
-  },
-  {
-    id: 'ap-004',
-    token: 'OPD-105',
-    patientName: 'L.N.',
-    department: 'Pediatrics',
-    provider: 'Dr. Iyer',
-    scheduledTime: '10:00 AM',
-    location: 'Satellite Clinic A',
-    channels: { sms: true, email: true, whatsapp: true },
-    status: 'Confirmed',
-  },
-  {
-    id: 'ap-005',
-    token: 'OPD-106',
-    patientName: 'V.D.',
-    department: 'Dermatology',
-    provider: 'Dr. Patel',
-    scheduledTime: '10:15 AM',
-    location: 'Main Campus',
-    channels: { sms: true, email: false, whatsapp: false },
-    status: 'Waiting List',
-  },
-  {
-    id: 'ap-006',
-    token: 'OPD-107',
-    patientName: 'M.J.',
-    department: 'Emergency Follow-Up',
-    provider: 'Dr. Alvarez',
-    scheduledTime: '10:30 AM',
-    location: 'Main Campus',
-    channels: { sms: true, email: true, whatsapp: false },
-    status: 'In-Queue',
-  },
-  {
-    id: 'ap-007',
-    token: 'OPD-108',
-    patientName: 'P.R.',
-    department: 'Med-Surg',
-    provider: 'Dr. Nguyen',
-    scheduledTime: '10:45 AM',
-    location: 'Annex Block',
-    channels: { sms: false, email: true, whatsapp: true },
-    status: 'Confirmed',
-  },
-  {
-    id: 'ap-008',
-    token: 'OPD-109',
-    patientName: 'K.S.',
-    department: 'General Medicine',
-    provider: 'Dr. Mehta',
-    scheduledTime: '11:00 AM',
-    location: 'Main Campus',
-    channels: { sms: true, email: true, whatsapp: true },
-    status: 'Waiting List',
-  },
 ];
 
 const PROVIDER_BLOCKS: ProviderBlock[] = [
@@ -230,6 +149,8 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
   Confirmed: 'bg-[#5EC283]/20 text-[#00758C] border border-[#5EC283]/40 font-bold',
   'In-Queue': 'bg-[#008588]/10 text-[#008588] border border-[#008588]/25 font-bold',
   'Waiting List': 'bg-amber-50 text-amber-800 border border-amber-200 font-bold',
+  Completed: 'bg-slate-100 text-slate-600 border border-slate-200 font-bold',
+  Cancelled: 'bg-rose-50 text-rose-700 border border-rose-200 font-bold line-through',
 };
 
 const PROVIDER_STATUS_STYLES: Record<ProviderBlock['status'], string> = {
@@ -246,22 +167,26 @@ const LOAD_STYLES: Record<CalendarDay['load'], string> = {
 };
 
 const PRIMARY_BTN =
-  'inline-flex items-center gap-2 rounded-xl bg-[#00758C] px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white shadow-sm transition-all hover:bg-[#008588] focus:outline-none focus:ring-2 focus:ring-[#008588]/30';
+  'inline-flex items-center gap-2 rounded-xl bg-[#00758C] px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition-all hover:bg-[#008588] focus:outline-none focus:ring-2 focus:ring-[#008588]/30';
 
 const SECONDARY_BTN =
-  'inline-flex items-center gap-2 rounded-xl border border-[#00A481]/30 bg-[#00A481]/10 px-4 py-2.5 text-xs font-black uppercase tracking-wide text-[#00758C] transition-all hover:bg-[#00A481]/20 focus:outline-none focus:ring-2 focus:ring-[#00A481]/20';
+  'inline-flex items-center gap-2 rounded-xl border border-[#00A481]/30 bg-[#00A481]/10 px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-[#00758C] transition-all hover:bg-[#00A481]/20 focus:outline-none focus:ring-2 focus:ring-[#00A481]/20';
 
 const TEXT_BTN =
-  'inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold text-[#00758C] transition-colors hover:bg-[#00758C]/5 hover:text-[#008588]';
+  'inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-bold text-[#00758C] transition-colors hover:bg-[#00758C]/5 hover:text-[#008588]';
 
-function buildJuly2026Calendar(): CalendarDay[] {
+function buildCalendarGrid(year: number, month: number): CalendarDay[] {
   const days: CalendarDay[] = [];
-  const today = 14;
+  const first = new Date(year, month, 1);
+  const startPad = first.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
-  for (let i = 0; i < 35; i += 1) {
-    const dayNum = i - 2;
-    const inMonth = dayNum >= 1 && dayNum <= 31;
-    const isToday = dayNum === today;
+  for (let i = 0; i < 42; i += 1) {
+    const dayNum = i - startPad + 1;
+    const inMonth = dayNum >= 1 && dayNum <= daysInMonth;
+    const isToday = isCurrentMonth && dayNum === today.getDate();
 
     let load: CalendarDay['load'] = 'none';
     let appointmentCount = 0;
@@ -271,7 +196,7 @@ function buildJuly2026Calendar(): CalendarDay[] {
       if (mod === 0 || mod === 6) {
         load = 'low';
         appointmentCount = 12 + (dayNum % 5);
-      } else if (dayNum === today) {
+      } else if (isToday) {
         load = 'high';
         appointmentCount = 47;
       } else if (dayNum % 3 === 0) {
@@ -289,7 +214,9 @@ function buildJuly2026Calendar(): CalendarDay[] {
   return days;
 }
 
-const CALENDAR_GRID = buildJuly2026Calendar();
+function monthLabel(year: number, month: number) {
+  return new Date(year, month, 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+}
 
 function ReminderChannelIcons({ channels }: { channels: ReminderChannels }) {
   return (
@@ -311,13 +238,50 @@ function ReminderChannelIcons({ channels }: { channels: ReminderChannels }) {
 }
 
 export default function AppointmentManagementPage() {
+  const { toast, showSuccess, showError } = useHospitalToast();
+  const [isPending, startTransition] = useTransition();
   const [viewMode, setViewMode] = useState<ViewMode>('queue');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<string>(LOCATIONS[0]);
+  const [queue, setQueue] = useState<QueueEntry[]>([]);
+  const [calendarAnchor, setCalendarAnchor] = useState(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth() };
+  });
+  const [bookModalOpen, setBookModalOpen] = useState(false);
+  const [walkInModalOpen, setWalkInModalOpen] = useState(false);
+  const [bookForm, setBookForm] = useState({
+    patientName: '',
+    department: 'General Medicine',
+    provider: 'Dr. Mehta',
+    time: '11:00 AM',
+  });
+  const [queueLoading, setQueueLoading] = useState(true);
+
+  const loadQueueFromSupabase = useCallback(async () => {
+    setQueueLoading(true);
+    const { data, error } = await fetchAppointments();
+    if (error) {
+      showError(error);
+      setQueue([]);
+    } else {
+      setQueue(data.map(dbAppointmentToQueueEntry));
+    }
+    setQueueLoading(false);
+  }, [showError]);
+
+  useEffect(() => {
+    void loadQueueFromSupabase();
+  }, [loadQueueFromSupabase]);
+
+  const calendarGrid = useMemo(
+    () => buildCalendarGrid(calendarAnchor.year, calendarAnchor.month),
+    [calendarAnchor.year, calendarAnchor.month],
+  );
 
   const filteredQueue = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return QUEUE_REGISTRY.filter((row) => {
+    return queue.filter((row) => {
       const locationMatch =
         selectedLocation === 'All Locations' || row.location === selectedLocation;
       if (!locationMatch) return false;
@@ -329,25 +293,141 @@ export default function AppointmentManagementPage() {
         row.department.toLowerCase().includes(query)
       );
     });
-  }, [searchQuery, selectedLocation]);
+  }, [searchQuery, selectedLocation, queue]);
+
+  const shiftCalendarMonth = (delta: number) => {
+    setCalendarAnchor((prev) => {
+      const d = new Date(prev.year, prev.month + delta, 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
+  };
+
+  const handleCancel = (id: string, token: string) => {
+    startTransition(() => {
+      void (async () => {
+        const { error } = await deleteAppointment(id);
+        if (error) {
+          showError(error);
+          return;
+        }
+        setQueue((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, status: 'Cancelled' as AppointmentStatus } : r)),
+        );
+        showSuccess(`Appointment ${token} cancelled.`);
+      })();
+    });
+  };
+
+  const handleComplete = (id: string, token: string) => {
+    startTransition(() => {
+      void (async () => {
+        const { error } = await completeAppointment(id);
+        if (error) {
+          showError(error);
+          return;
+        }
+        setQueue((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, status: 'Completed' as AppointmentStatus } : r)),
+        );
+        showSuccess(`${token} marked completed.`);
+      })();
+    });
+  };
+
+  const handleReschedule = (id: string, token: string) => {
+    startTransition(() => {
+      void (async () => {
+        const { error } = await updateAppointment(id, { scheduled_time: '02:30 PM', status: 'Confirmed' });
+        if (error) {
+          showError(error);
+          return;
+        }
+        setQueue((prev) =>
+          prev.map((r) =>
+            r.id === id ? { ...r, scheduledTime: '02:30 PM', status: 'Confirmed' as AppointmentStatus } : r,
+          ),
+        );
+        showSuccess(`${token} rescheduled to 02:30 PM.`);
+      })();
+    });
+  };
+
+  const submitBookForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookForm.patientName.trim()) {
+      showError('Patient name is required.');
+      return;
+    }
+    startTransition(() => {
+      void (async () => {
+        const token = `OPD-${110 + queue.length}`;
+        const location = selectedLocation === 'All Locations' ? 'Main Campus' : selectedLocation;
+        const { error } = await insertAppointment({
+          token,
+          patient_name: bookForm.patientName.trim(),
+          department: bookForm.department,
+          provider: bookForm.provider,
+          scheduled_time: bookForm.time,
+          location,
+          status: 'Confirmed',
+          channels: { sms: true, email: true, whatsapp: false },
+        });
+        if (error) {
+          showError(error);
+          return;
+        }
+        setBookModalOpen(false);
+        setBookForm({ patientName: '', department: 'General Medicine', provider: 'Dr. Mehta', time: '11:00 AM' });
+        showSuccess(`Booked ${token} for ${bookForm.patientName.trim()}.`);
+        await loadQueueFromSupabase();
+      })();
+    });
+  };
+
+  const submitWalkIn = () => {
+    startTransition(() => {
+      void (async () => {
+        const token = `WI-${20 + queue.length}`;
+        const location = selectedLocation === 'All Locations' ? 'Main Campus' : selectedLocation;
+        const { error } = await insertAppointment({
+          token,
+          patient_name: 'Walk-in',
+          department: 'General Medicine',
+          provider: 'Triage Desk',
+          scheduled_time: 'Now',
+          location,
+          status: 'In-Queue',
+          channels: { sms: false, email: false, whatsapp: false },
+        });
+        if (error) {
+          showError(error);
+          return;
+        }
+        setWalkInModalOpen(false);
+        showSuccess(`Walk-in token ${token} issued.`);
+        await loadQueueFromSupabase();
+      })();
+    });
+  };
 
   return (
     <div className="w-full space-y-6 font-sans text-slate-900 antialiased">
+      <HospitalToastBanner toast={toast} />
       {/* 1. High-density navigation segment head */}
       <header className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex rounded-md border border-[#00758C]/25 bg-[#00758C]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#00758C]">
+            <span className="inline-flex rounded-md border border-[#00758C]/25 bg-[#00758C]/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[#00758C]">
               Module 3
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Layer 3 · Scheduling Operations
             </span>
           </div>
-          <h1 className="mt-2 text-xl font-black tracking-tight text-[#00758C] sm:text-2xl">
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#00758C] sm:text-3xl">
             Appointment Management Terminal
           </h1>
-          <p className="mt-1 max-w-3xl text-xs font-medium text-slate-500">
+          <p className="mt-1 max-w-3xl text-base font-medium text-slate-500">
             Multi-location queue registry · provider block allocation · calendar matrices · dispatch analytics
           </p>
         </div>
@@ -367,7 +447,7 @@ export default function AppointmentManagementPage() {
                 role="tab"
                 aria-selected={active}
                 onClick={() => setViewMode(mode.id)}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black uppercase tracking-wide transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold uppercase tracking-wide transition-all ${
                   active
                     ? 'bg-[#00758C] text-white shadow-sm'
                     : 'text-slate-500 hover:bg-slate-50 hover:text-[#00758C]'
@@ -394,7 +474,7 @@ export default function AppointmentManagementPage() {
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Filter token, patient name, doctor..."
             aria-label="Filter appointment queue"
-            className="w-full rounded-xl border border-slate-200/80 bg-slate-50/80 py-2.5 pl-10 pr-4 text-xs font-medium text-slate-800 transition-all placeholder:text-slate-400 focus:border-[#008588] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#008588]/20"
+            className="w-full rounded-xl border border-slate-200/80 bg-slate-50/80 py-2.5 pl-10 pr-4 text-base font-medium text-slate-800 transition-all placeholder:text-slate-400 focus:border-[#008588] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#008588]/20"
           />
         </div>
 
@@ -402,7 +482,7 @@ export default function AppointmentManagementPage() {
           value={selectedLocation}
           onChange={(event) => setSelectedLocation(event.target.value)}
           aria-label="Filter by location"
-          className="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2.5 text-xs font-bold text-slate-700 transition-all focus:border-[#008588] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#008588]/20 lg:min-w-[200px]"
+          className="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2.5 text-base font-medium text-slate-700 transition-all focus:border-[#008588] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#008588]/20 lg:min-w-[200px]"
         >
           {LOCATIONS.map((location, idx) => (
             <option key={`loc-${location}-${idx}`} value={location}>
@@ -412,11 +492,11 @@ export default function AppointmentManagementPage() {
         </select>
 
         <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
-          <button type="button" className={SECONDARY_BTN}>
+          <button type="button" className={SECONDARY_BTN} onClick={() => setWalkInModalOpen(true)}>
             <UserRound className="h-4 w-4" aria-hidden />
             Walk-in Intake
           </button>
-          <button type="button" className={PRIMARY_BTN}>
+          <button type="button" className={PRIMARY_BTN} onClick={() => setBookModalOpen(true)}>
             <CalendarPlus className="h-4 w-4" aria-hidden />
             Book Appointment
           </button>
@@ -431,20 +511,20 @@ export default function AppointmentManagementPage() {
             <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50/50 px-5 py-3">
                 <div>
-                  <h2 className="text-xs font-black uppercase tracking-wider text-[#00758C]">Queue Registry Ledger</h2>
-                  <p className="mt-0.5 text-[11px] font-medium text-slate-500">
-                    {filteredQueue.length} active tokens · live dispatch tracking
+                  <h2 className="text-lg font-semibold text-[#00758C]">Queue Registry Ledger</h2>
+                  <p className="mt-0.5 text-sm text-slate-500">
+                    {filteredQueue.length} active tokens · {queueLoading ? 'syncing…' : 'Supabase live'}
                   </p>
                 </div>
-                <span className="rounded-full border border-[#00A481]/30 bg-[#00A481]/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#00A481]">
+                <span className="rounded-full border border-[#00A481]/30 bg-[#00A481]/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-[#00A481]">
                   Live
                 </span>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[880px] border-collapse text-left text-sm">
+                <table className="w-full min-w-[880px] border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50/80 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    <tr className="border-b border-slate-200 bg-slate-50/80 text-sm font-semibold uppercase tracking-wider text-slate-500">
                       <th className="px-4 py-3">Token ID</th>
                       <th className="px-4 py-3">Patient</th>
                       <th className="px-4 py-3">Department / Provider</th>
@@ -457,21 +537,21 @@ export default function AppointmentManagementPage() {
                   <tbody className="divide-y divide-slate-100">
                     {filteredQueue.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-4 py-10 text-center text-sm font-medium text-slate-500">
+                        <td colSpan={7} className="px-4 py-10 text-center text-base font-medium text-slate-500">
                           No appointments match the current filter criteria.
                         </td>
                       </tr>
                     ) : (
                       filteredQueue.map((row, idx) => (
                         <tr key={`${row.token}-${idx}`} className="transition-colors hover:bg-slate-50/60">
-                          <td className="px-4 py-2.5 font-mono text-xs font-bold text-[#008588]">{row.token}</td>
-                          <td className="px-4 py-2.5 text-xs font-semibold text-slate-900">{row.patientName}</td>
+                          <td className="px-4 py-2.5 font-mono text-base font-semibold text-[#008588]">{row.token}</td>
+                          <td className="px-4 py-2.5 text-base font-semibold text-slate-900">{row.patientName}</td>
                           <td className="px-4 py-2.5">
-                            <p className="text-xs font-semibold text-slate-800">{row.department}</p>
-                            <p className="text-[11px] text-slate-500">{row.provider}</p>
+                            <p className="text-base font-semibold text-slate-800">{row.department}</p>
+                            <p className="text-sm text-slate-500">{row.provider}</p>
                           </td>
                           <td className="px-4 py-2.5">
-                            <span className="flex items-center gap-1 text-xs font-bold tabular-nums text-slate-700">
+                            <span className="flex items-center gap-1 text-base font-semibold tabular-nums text-slate-700">
                               <Clock className="h-3 w-3 text-slate-400" aria-hidden />
                               {row.scheduledTime}
                             </span>
@@ -481,20 +561,32 @@ export default function AppointmentManagementPage() {
                           </td>
                           <td className="px-4 py-2.5">
                             <span
-                              className={`inline-flex rounded-md px-2 py-0.5 text-[10px] uppercase tracking-wide ${STATUS_STYLES[row.status]}`}
+                              className={`inline-flex rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wider ${STATUS_STYLES[row.status]}`}
                             >
                               {row.status}
                             </span>
                           </td>
                           <td className="px-4 py-2.5">
                             <div className="flex flex-wrap gap-1">
-                              <button type="button" className={TEXT_BTN}>
-                                Rescheduling
+                              <button type="button" disabled={isPending} className={TEXT_BTN} onClick={() => handleReschedule(row.id, row.token)}>
+                                Reschedule
                               </button>
-                              <button type="button" className={`${TEXT_BTN} text-rose-600 hover:bg-rose-50 hover:text-rose-700`}>
+                              {row.status !== 'Completed' && row.status !== 'Cancelled' ? (
+                                <button type="button" disabled={isPending} className={TEXT_BTN} onClick={() => handleComplete(row.id, row.token)}>
+                                  Complete
+                                </button>
+                              ) : null}
+                              {row.status !== 'Cancelled' && row.status !== 'Completed' ? (
+                              <button
+                                type="button"
+                                disabled={isPending}
+                                className={`${TEXT_BTN} text-rose-600 hover:bg-rose-50 hover:text-rose-700`}
+                                onClick={() => handleCancel(row.id, row.token)}
+                              >
                                 <XCircle className="h-3 w-3" aria-hidden />
-                                Cancellation
+                                Cancel
                               </button>
+                              ) : null}
                             </div>
                           </td>
                         </tr>
@@ -509,8 +601,8 @@ export default function AppointmentManagementPage() {
           {/* MODE A — Right 4-grid: Provider blocks + waiting list */}
           <div className="space-y-4 xl:col-span-4">
             <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <h2 className="text-xs font-black uppercase tracking-wider text-[#008588]">Provider Scheduling Blocks</h2>
-              <p className="mt-0.5 text-[11px] font-medium text-slate-500">Room status · live free slot telemetry</p>
+            <h2 className="text-lg font-semibold text-[#008588]">Provider Scheduling Blocks</h2>
+              <p className="mt-0.5 text-sm font-medium text-slate-500">Room status · live free slot telemetry</p>
 
               <ul className="mt-4 space-y-3">
                 {PROVIDER_BLOCKS.map((block, idx) => (
@@ -521,18 +613,18 @@ export default function AppointmentManagementPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="text-xs font-bold text-slate-900">{block.provider}</p>
-                        <p className="text-[11px] text-slate-500">{block.room}</p>
-                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                        <p className="text-sm text-slate-500">{block.room}</p>
+                        <p className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
                           {block.department}
                         </p>
                       </div>
-                      <span className={`text-[10px] font-black uppercase ${PROVIDER_STATUS_STYLES[block.status]}`}>
+                      <span className={`text-xs font-semibold uppercase ${PROVIDER_STATUS_STYLES[block.status]}`}>
                         {block.status}
                       </span>
                     </div>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Free Slots</span>
-                      <span className="rounded-md bg-[#00758C]/10 px-2 py-0.5 font-mono text-xs font-black text-[#00758C]">
+                      <span className="text-xs font-bold uppercase tracking-wide text-slate-400">Free Slots</span>
+                      <span className="rounded-md bg-[#00758C]/10 px-2 py-0.5 font-mono text-xs font-semibold text-[#00758C]">
                         {block.freeSlots}
                       </span>
                     </div>
@@ -542,8 +634,8 @@ export default function AppointmentManagementPage() {
             </div>
 
             <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <h2 className="text-xs font-black uppercase tracking-wider text-[#00758C]">Active Waiting List Pipeline</h2>
-              <p className="mt-0.5 text-[11px] font-medium text-slate-500">Priority-sorted overflow queue</p>
+            <h2 className="text-lg font-semibold text-[#00758C]">Active Waiting List Pipeline</h2>
+              <p className="mt-0.5 text-sm font-medium text-slate-500">Priority-sorted overflow queue</p>
 
               <ul className="mt-4 space-y-2">
                 {WAITING_LIST.map((entry, idx) => (
@@ -552,13 +644,13 @@ export default function AppointmentManagementPage() {
                     className="flex items-center justify-between rounded-lg border border-slate-200/60 bg-white px-3 py-2.5"
                   >
                     <div>
-                      <p className="font-mono text-[11px] font-bold text-[#008588]">{entry.token}</p>
+                      <p className="font-mono text-sm font-bold text-[#008588]">{entry.token}</p>
                       <p className="text-xs font-semibold text-slate-800">{entry.patientName}</p>
-                      <p className="text-[10px] text-slate-500">{entry.department}</p>
+                      <p className="text-xs text-slate-500">{entry.department}</p>
                     </div>
                     <div className="text-right">
                       <span
-                        className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${
+                        className={`inline-flex rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${
                           entry.priority === 'Urgent'
                             ? 'border border-rose-200 bg-rose-50 text-rose-700'
                             : 'border border-slate-200 bg-slate-50 text-slate-600'
@@ -566,7 +658,7 @@ export default function AppointmentManagementPage() {
                       >
                         {entry.priority}
                       </span>
-                      <p className="mt-1 text-[10px] font-bold text-slate-400">ETA {entry.eta}</p>
+                      <p className="mt-1 text-xs font-bold text-slate-400">ETA {entry.eta}</p>
                     </div>
                   </li>
                 ))}
@@ -580,24 +672,27 @@ export default function AppointmentManagementPage() {
         <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xs font-black uppercase tracking-wider text-[#00758C]">Multi-Location Calendar Matrix</h2>
-              <p className="mt-0.5 text-[11px] font-medium text-slate-500">
-                July 2026 · {selectedLocation === 'All Locations' ? 'All campuses' : selectedLocation}
+              <h2 className="text-lg font-semibold text-[#00758C]">Multi-Location Calendar Matrix</h2>
+              <p className="mt-0.5 text-sm font-medium text-slate-500">
+                {monthLabel(calendarAnchor.year, calendarAnchor.month)} ·{' '}
+                {selectedLocation === 'All Locations' ? 'All campuses' : selectedLocation}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={() => shiftCalendarMonth(-1)}
                 className="rounded-lg border border-slate-200/80 p-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-[#00758C]"
                 aria-label="Previous month"
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden />
               </button>
-              <span className="min-w-[120px] text-center text-xs font-black uppercase tracking-wider text-slate-700">
-                July 2026
+              <span className="min-w-[120px] text-center text-xs font-semibold uppercase tracking-wider text-slate-700">
+                {monthLabel(calendarAnchor.year, calendarAnchor.month)}
               </span>
               <button
                 type="button"
+                onClick={() => shiftCalendarMonth(1)}
                 className="rounded-lg border border-slate-200/80 p-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-[#00758C]"
                 aria-label="Next month"
               >
@@ -610,7 +705,7 @@ export default function AppointmentManagementPage() {
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((label, idx) => (
               <div
                 key={`dow-${label}-${idx}`}
-                className="py-2 text-center text-[10px] font-black uppercase tracking-wider text-slate-400"
+                className="py-2 text-center text-sm font-semibold uppercase tracking-wider text-slate-400"
               >
                 {label}
               </div>
@@ -618,7 +713,7 @@ export default function AppointmentManagementPage() {
           </div>
 
           <div className="grid grid-cols-7 gap-1.5">
-            {CALENDAR_GRID.map((cell, idx) => {
+            {calendarGrid.map((cell, idx) => {
               if (!cell.inMonth) {
                 return (
                   <div
@@ -638,18 +733,18 @@ export default function AppointmentManagementPage() {
                 >
                   <div className="flex items-start justify-between">
                     <span
-                      className={`text-xs font-black ${cell.isToday ? 'text-[#00758C]' : 'text-slate-700'}`}
+                      className={`text-xs font-semibold ${cell.isToday ? 'text-[#00758C]' : 'text-slate-700'}`}
                     >
                       {cell.day}
                     </span>
                     {cell.isToday ? (
-                      <span className="rounded bg-[#00758C] px-1 py-0.5 text-[8px] font-black uppercase text-white">
+                      <span className="rounded bg-[#00758C] px-1 py-0.5 text-xs font-semibold uppercase text-white">
                         Today
                       </span>
                     ) : null}
                   </div>
                   {cell.appointmentCount > 0 ? (
-                    <p className="mt-2 text-[10px] font-bold tabular-nums">{cell.appointmentCount} appts</p>
+                    <p className="mt-2 text-xs font-bold tabular-nums">{cell.appointmentCount} appts</p>
                   ) : null}
                 </div>
               );
@@ -657,9 +752,9 @@ export default function AppointmentManagementPage() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-4">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Load Index</span>
+            <span className="text-xs font-bold uppercase tracking-wide text-slate-400">Load Index</span>
             {(['low', 'medium', 'high'] as const).map((level, idx) => (
-              <span key={`legend-${level}-${idx}`} className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-600">
+              <span key={`legend-${level}-${idx}`} className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
                 <span className={`h-3 w-3 rounded border ${LOAD_STYLES[level]}`} aria-hidden />
                 {level === 'low' ? 'Light' : level === 'medium' ? 'Moderate' : 'Heavy'}
               </span>
@@ -673,11 +768,11 @@ export default function AppointmentManagementPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Total dispatched bookings */}
             <article className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Total Dispatched Bookings</p>
-              <p className="mt-1 text-3xl font-black tabular-nums text-[#00758C]">1,284</p>
-              <p className="mt-0.5 text-[11px] font-medium text-slate-500">Today · all locations combined</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Dispatched Bookings</p>
+              <p className="mt-1 text-3xl font-bold tabular-nums text-[#00758C]">1,284</p>
+              <p className="mt-0.5 text-sm font-medium text-slate-500">Today · all locations combined</p>
               <div className="mt-4">
-                <div className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                <div className="mb-1 flex items-center justify-between text-xs font-bold uppercase tracking-wide text-slate-500">
                   <span>Daily capacity utilization</span>
                   <span className="text-[#00A481]">78%</span>
                 </div>
@@ -697,11 +792,11 @@ export default function AppointmentManagementPage() {
 
             {/* No-show / cancellation index */}
             <article className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">No-Show / Cancellation Index</p>
-              <p className="mt-1 text-3xl font-black tabular-nums text-amber-600">6.2%</p>
-              <p className="mt-0.5 text-[11px] font-medium text-slate-500">Rolling 7-day facility average</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">No-Show / Cancellation Index</p>
+              <p className="mt-1 text-3xl font-bold tabular-nums text-amber-600">6.2%</p>
+              <p className="mt-0.5 text-sm font-medium text-slate-500">Rolling 7-day facility average</p>
               <div className="mt-4">
-                <div className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                <div className="mb-1 flex items-center justify-between text-xs font-bold uppercase tracking-wide text-slate-500">
                   <span>Threshold band (target &lt; 8%)</span>
                   <span className="text-[#00A481]">Within SLA</span>
                 </div>
@@ -721,27 +816,27 @@ export default function AppointmentManagementPage() {
 
             {/* Online vs walk-in */}
             <article className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Online vs. Walk-in Ratio</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Online vs. Walk-in Ratio</p>
               <div className="mt-3 flex items-end gap-4">
                 <div>
-                  <p className="text-2xl font-black tabular-nums text-[#008588]">64%</p>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Online Bookings</p>
+                  <p className="text-2xl font-bold tabular-nums text-[#008588]">64%</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Online Bookings</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-black tabular-nums text-[#5EC283]">36%</p>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Walk-in Intake</p>
+                  <p className="text-2xl font-bold tabular-nums text-[#5EC283]">36%</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Walk-in Intake</p>
                 </div>
               </div>
               <div className="mt-4 flex h-3 overflow-hidden rounded-full">
                 <div className="bg-[#008588]" style={{ width: '64%' }} aria-hidden />
                 <div className="bg-[#5EC283]" style={{ width: '36%' }} aria-hidden />
               </div>
-              <p className="mt-2 text-[11px] font-medium text-slate-500">822 online · 462 walk-in dispatches today</p>
+              <p className="mt-2 text-sm font-medium text-slate-500">822 online · 462 walk-in dispatches today</p>
             </article>
           </div>
 
           <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <h2 className="text-xs font-black uppercase tracking-wider text-[#00758C]">Location Dispatch Breakdown</h2>
+            <h2 className="text-lg font-semibold text-[#00758C]">Location Dispatch Breakdown</h2>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
                 { location: 'Main Campus', count: 612, pct: 48 },
@@ -749,8 +844,8 @@ export default function AppointmentManagementPage() {
                 { location: 'Satellite Clinic A', count: 288, pct: 22 },
               ].map((row, idx) => (
                 <div key={`loc-stat-${row.location}-${idx}`} className="rounded-lg border border-slate-200/80 bg-slate-50/50 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">{row.location}</p>
-                  <p className="mt-1 text-xl font-black tabular-nums text-[#00758C]">{row.count}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{row.location}</p>
+                  <p className="mt-1 text-xl font-bold tabular-nums text-[#00758C]">{row.count}</p>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200/80">
                     <div
                       className="h-full rounded-full bg-[#008588]"
@@ -762,12 +857,74 @@ export default function AppointmentManagementPage() {
                       aria-label={`${row.location} dispatch share`}
                     />
                   </div>
-                  <p className="mt-1 text-[10px] font-bold text-slate-500">{row.pct}% of total volume</p>
+                  <p className="mt-1 text-xs font-bold text-slate-500">{row.pct}% of total volume</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
+      ) : null}
+
+      {bookModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button type="button" className="absolute inset-0 bg-slate-900/40" aria-label="Close" onClick={() => setBookModalOpen(false)} />
+          <form
+            onSubmit={submitBookForm}
+            className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl"
+          >
+            <h2 className="text-xl font-bold text-[#00758C]">Book appointment</h2>
+            <div className="mt-4 space-y-3">
+              <input
+                required
+                placeholder="Patient name"
+                value={bookForm.patientName}
+                onChange={(e) => setBookForm((f) => ({ ...f, patientName: e.target.value }))}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+              <select
+                value={bookForm.department}
+                onChange={(e) => setBookForm((f) => ({ ...f, department: e.target.value }))}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              >
+                <option>General Medicine</option>
+                <option>Cardiology</option>
+                <option>Orthopedics</option>
+              </select>
+              <input
+                value={bookForm.time}
+                onChange={(e) => setBookForm((f) => ({ ...f, time: e.target.value }))}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Time"
+              />
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setBookModalOpen(false)} className="rounded-lg border px-4 py-2 text-sm font-bold">
+                Cancel
+              </button>
+              <button type="submit" disabled={isPending} className={PRIMARY_BTN}>
+                Confirm booking
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {walkInModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button type="button" className="absolute inset-0 bg-slate-900/40" aria-label="Close" onClick={() => setWalkInModalOpen(false)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-bold text-[#00758C]">Walk-in intake</h2>
+            <p className="mt-2 text-base text-slate-600">Issue a triage token and add to the live queue.</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setWalkInModalOpen(false)} className="rounded-lg border px-4 py-2 text-sm font-bold">
+                Cancel
+              </button>
+              <button type="button" disabled={isPending} onClick={submitWalkIn} className={PRIMARY_BTN}>
+                Issue token
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

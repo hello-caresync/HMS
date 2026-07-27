@@ -1,5 +1,5 @@
-import IpdWardModule from '@/components/doctor/ipd/IpdWardModule';
+import { redirect } from 'next/navigation';
 
-export default function DoctorIpdPage() {
-  return <IpdWardModule />;
+export default function LegacyIpdRedirect() {
+  redirect('/doctor/ipd-management');
 }

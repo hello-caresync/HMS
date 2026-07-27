@@ -6,9 +6,11 @@ import { useState } from 'react';
 import { Toaster } from 'sonner';
 
 import { useSupabaseClinicalRealtime } from '@/lib/doctor/hooks/useSupabaseClinicalRealtime';
+import { useSseClinicalRealtime } from '@/lib/doctor/hooks/useSseClinicalRealtime';
 
 function RealtimeBridge() {
   useSupabaseClinicalRealtime();
+  useSseClinicalRealtime();
   return null;
 }
 

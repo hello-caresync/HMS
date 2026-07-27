@@ -1,10 +1,15 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Activity, Radio } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ClinicalPageSkeleton } from '@/components/doctor/ClinicalSkeleton';
+import {
+  TraumaAssessmentFields,
+  emptyTraumaForm,
+  traumaFormHasContent,
+} from '@/components/doctor/emergency/TraumaAssessmentFields';
 import { ClinicalDrawer } from '@/components/doctor/modules/ClinicalDrawer';
 import { ClinicalPageHeader, CriticalAlertBanner, VitalsGrid } from '@/components/doctor/doctor-ui';
 import {
@@ -33,13 +38,22 @@ export default function EmergencySuite() {
   const emergencyAction = useEmergencyAction();
   const [pulse, setPulse] = useState(true);
   const [assessCase, setAssessCase] = useState<EmergencyCaseDto | null>(null);
-  const [traumaForm, setTraumaForm] = useState({ mechanism: '', injuries: '', interventions: '' });
+  const [traumaForm, setTraumaForm] = useState(emptyTraumaForm);
   const [bannerMessages, setBannerMessages] = useState<string[]>([]);
 
   const cases = data?.cases ?? [];
   const highPriority = useMemo(() => cases.filter((c) => c.esiLevel <= 2), [cases]);
 
-  const runStat = (c: EmergencyCaseDto, type: 'lab' | 'rad' | 'assess') => {
+  useEffect(() => {
+    if (assessCase) setTraumaForm(emptyTraumaForm());
+  }, [assessCase?.id]);
+
+  const runStat = (c: EmergencyCaseDto, type: 'lab' | 'rad' | 'assess' | 'icu') => {
+    const notesPayload =
+      type === 'assess' || (type === 'icu' && traumaFormHasContent(traumaForm))
+        ? JSON.stringify(traumaForm)
+        : undefined;
+
     emergencyAction.mutate(
       {
         patientId: c.patientId ?? undefined,
@@ -47,14 +61,25 @@ export default function EmergencySuite() {
         title: c.patientName,
         body: c.presentation,
         bay: c.bay,
+        vitalsSnapshot: type === 'icu' ? c.vitals : undefined,
+        icuAdmission: type === 'icu' ? true : undefined,
         statLabTests: type === 'lab' ? ['Troponin', 'CBC', 'ABG'] : undefined,
         statRadiology: type === 'rad' ? { modality: 'CT', bodyPart: 'Chest' } : undefined,
-        traumaNotes: type === 'assess' ? JSON.stringify(traumaForm) : undefined,
+        traumaNotes: type === 'assess' || type === 'icu' ? notesPayload : undefined,
       },
       {
         onSuccess: () => {
-          toast.success(type === 'lab' ? 'STAT Lab requested' : type === 'rad' ? 'STAT radiology ordered' : 'Assessment saved');
+          const msg =
+            type === 'lab'
+              ? 'STAT Lab requested'
+              : type === 'rad'
+                ? 'STAT radiology ordered'
+                : type === 'icu'
+                  ? 'ICU admission triggered (vitals + ESI)'
+                  : 'Assessment saved';
+          toast.success(msg);
           setBannerMessages((m) => [`${c.bay} · action recorded`, ...m].slice(0, 4));
+          if (type === 'icu' || type === 'assess') setAssessCase(null);
         },
         onError: (e) => toast.error(e.message),
       },
@@ -109,29 +134,38 @@ export default function EmergencySuite() {
       <ClinicalDrawer open={!!assessCase} title={`Trauma · ${assessCase?.patientName ?? ''}`} wide onClose={() => setAssessCase(null)}>
         {assessCase && (
           <>
-            <VitalsGrid items={[{ label: 'BP', value: assessCase.vitals.bp }, { label: 'HR', value: assessCase.vitals.hr }, { label: 'GCS', value: assessCase.vitals.gcs }]} />
-            {(['mechanism', 'injuries', 'interventions'] as const).map((field) => (
-              <label key={field} className="mb-3 block">
-                <span className="text-xs font-bold uppercase text-[#64748B]">{field}</span>
-                <textarea
-                  rows={2}
-                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                  value={traumaForm[field]}
-                  onChange={(e) => setTraumaForm((f) => ({ ...f, [field]: e.target.value }))}
-                />
-              </label>
-            ))}
-            <button
-              type="button"
-              className={clinicalClasses.btnPrimary}
-              onClick={() => {
-                runStat(assessCase, 'assess');
-                toast.success('ICU admission recommendation queued');
-                setAssessCase(null);
-              }}
-            >
-              Trigger ICU admission
-            </button>
+            <p className="mb-2 text-sm font-semibold text-[#0F172A]">
+              ESI {assessCase.esiLevel} · {assessCase.bay}
+            </p>
+            <VitalsGrid
+              items={[
+                { label: 'BP', value: assessCase.vitals.bp },
+                { label: 'HR', value: assessCase.vitals.hr },
+                { label: 'GCS', value: assessCase.vitals.gcs },
+              ]}
+            />
+            <TraumaAssessmentFields
+              form={traumaForm}
+              onChange={(field, value) => setTraumaForm((f) => ({ ...f, [field]: value }))}
+            />
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <button
+                type="button"
+                className={clinicalClasses.btnCritical}
+                disabled={emergencyAction.isPending}
+                onClick={() => runStat(assessCase, 'icu')}
+              >
+                Trigger ICU admission
+              </button>
+              <button
+                type="button"
+                className={clinicalClasses.btnSecondary}
+                disabled={emergencyAction.isPending}
+                onClick={() => runStat(assessCase, 'assess')}
+              >
+                Save trauma notes only
+              </button>
+            </div>
           </>
         )}
       </ClinicalDrawer>

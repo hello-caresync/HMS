@@ -1,6 +1,6 @@
 import { getModuleConfig } from '../_config/moduleRegistry';
-import HospitalModuleShell from '../_components/HospitalModuleShell';
+import HospitalInteractiveModuleShell from '../_components/HospitalInteractiveModuleShell';
 
 export function renderHospitalModule(moduleKey: string) {
-  return <HospitalModuleShell {...getModuleConfig(moduleKey)} />;
+  return <HospitalInteractiveModuleShell {...getModuleConfig(moduleKey)} />;
 }

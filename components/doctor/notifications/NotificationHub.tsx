@@ -48,7 +48,7 @@ export default function NotificationHub() {
             type="button"
             onClick={() => setTab(t.id)}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              tab === t.id ? 'bg-[#0F172A] text-white' : 'border border-slate-200 bg-white'
+              tab === t.id ? 'bg-brand-text text-white' : 'border border-brand-light bg-brand-surface'
             }`}
           >
             {t.label}
@@ -80,12 +80,12 @@ function NotificationCard({ item, onAck }: { item: NotificationDto; onAck: () =>
       ? 'border-l-[#EF4444]'
       : item.category === 'CRITICAL_LAB'
         ? 'border-l-[#F59E0B]'
-        : 'border-l-[#0D9488]';
+        : 'border-l-brand';
 
   return (
     <li className={`${clinicalClasses.card} border-l-4 p-4 ${border} ${item.acknowledged ? 'opacity-60' : ''}`}>
       <p className="text-xs text-[#64748B]">{new Date(item.at).toLocaleString('en-IN')}</p>
-      <p className="font-bold text-[#0F172A]">{item.title}</p>
+      <p className="font-bold text-brand-text">{item.title}</p>
       <p className="text-sm text-[#64748B]">{item.body}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {!item.acknowledged && (

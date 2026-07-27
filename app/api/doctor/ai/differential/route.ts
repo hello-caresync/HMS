@@ -1,7 +1,35 @@
-export const dynamic = 'force-static';
-
 import { NextResponse } from 'next/server';
 
-export function GET() {
-  return NextResponse.json({ success: true });
+import { requireDoctorSession } from '@/lib/doctor/server/auth';
+import { getPrisma } from '@/lib/prisma';
+import { MOCK_AI_DIFFERENTIALS } from '@/lib/mock-data';
+
+export async function POST(request: Request) {
+  try {
+    await requireDoctorSession(request);
+    const body = await request.json();
+    const complaint = String(body.complaint ?? '');
+
+    const prisma = await getPrisma();
+    const patientId = body.patientId as string | undefined;
+    let contextBoost = 0;
+    if (patientId) {
+      const patient = await prisma.patient.findUnique({ where: { id: patientId } });
+      if (patient && Array.isArray(patient.chronicConditionsJson)) {
+        contextBoost = 0.03;
+      }
+    }
+
+    const results = MOCK_AI_DIFFERENTIALS.map((d, i) => ({
+      ...d,
+      confidence: Math.min(
+        0.95,
+        d.confidence + (complaint.toLowerCase().includes('chest') ? 0.05 : 0) + contextBoost - i * 0.02,
+      ),
+    }));
+
+    return NextResponse.json({ success: true, results });
+  } catch {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
 }

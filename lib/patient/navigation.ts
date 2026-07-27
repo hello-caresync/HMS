@@ -1,33 +1,42 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  Bell,
   CalendarDays,
   CreditCard,
   FileStack,
   HeartHandshake,
   HeartPulse,
   LayoutDashboard,
-  MessageSquare,
   Pill,
   ScrollText,
+  Shield,
   ShieldAlert,
   TestTube,
   UserCog,
   Video,
 } from 'lucide-react';
 
+import { patientTheme } from '@/lib/patient/theme';
+
 /** Nexora Patient App — canonical route map (PWA / static export safe). */
 export const PATIENT_ROUTES = {
   root: '/patient',
   dashboard: '/patient/dashboard',
   appointments: '/patient/appointments',
-  teleconsult: '/patient/teleconsult',
+  /** Unified video + secure messaging hub */
+  telemedicine: '/patient/telemedicine',
+  /** @deprecated Use {@link PATIENT_ROUTES.telemedicine} */
+  teleconsult: '/patient/telemedicine',
   health: '/patient/health',
   medications: '/patient/medications',
   prescriptions: '/patient/prescriptions',
   records: '/patient/records',
   diagnostics: '/patient/diagnostics',
   billing: '/patient/billing',
-  communication: '/patient/communication',
+  insurance: '/patient/insurance',
+  /** @deprecated Use {@link PATIENT_ROUTES.telemedicine} (?tab=messages) */
+  communication: '/patient/telemedicine',
+  notifications: '/patient/notifications',
   emergency: '/patient/emergency',
   profile: '/patient/profile',
 } as const;
@@ -39,21 +48,12 @@ export type PatientNavItem = {
   label: string;
   href: string;
   icon: LucideIcon;
-  /** Shown in mobile bottom bar (max 5 primary + overflow). */
+  /** Shown in mobile bottom bar (max 5). */
   mobilePrimary?: boolean;
-  section: 'journey' | 'clinical' | 'financial' | 'safety' | 'account';
   description?: string;
 };
 
-export const PATIENT_NAV_SECTIONS: { id: PatientNavItem['section']; title: string }[] = [
-  { id: 'journey', title: 'Care journey' },
-  { id: 'clinical', title: 'Records & meds' },
-  { id: 'financial', title: 'Billing' },
-  { id: 'safety', title: 'Safety' },
-  { id: 'account', title: 'Account' },
-];
-
-/** Full sidebar hierarchy — maps to App Router under `app/patient/`. */
+/** Flat sidebar — 13 modules, no category headers. */
 export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
   {
     key: 'dashboard',
@@ -61,8 +61,7 @@ export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
     href: PATIENT_ROUTES.dashboard,
     icon: LayoutDashboard,
     mobilePrimary: true,
-    section: 'journey',
-    description: 'Today’s care snapshot, vitals, and quick actions',
+    description: 'Today’s care snapshot and quick actions',
   },
   {
     key: 'appointments',
@@ -70,16 +69,15 @@ export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
     href: PATIENT_ROUTES.appointments,
     icon: CalendarDays,
     mobilePrimary: true,
-    section: 'journey',
     description: 'Book, reschedule, and check in',
   },
   {
-    key: 'teleconsult',
-    label: 'Teleconsult',
-    href: PATIENT_ROUTES.teleconsult,
+    key: 'telemedicine',
+    label: 'Telemedicine & Messages',
+    href: PATIENT_ROUTES.telemedicine,
     icon: Video,
-    section: 'journey',
-    description: 'Video visits and virtual waiting room',
+    mobilePrimary: true,
+    description: 'Video visits, waiting room, and care team chat',
   },
   {
     key: 'health',
@@ -87,7 +85,6 @@ export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
     href: PATIENT_ROUTES.health,
     icon: HeartPulse,
     mobilePrimary: true,
-    section: 'journey',
     description: 'Vitals, wearables, and wellness trends',
   },
   {
@@ -95,7 +92,6 @@ export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
     label: 'Medications',
     href: PATIENT_ROUTES.medications,
     icon: Pill,
-    section: 'clinical',
     description: 'Adherence tracker and refill requests',
   },
   {
@@ -103,7 +99,6 @@ export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
     label: 'Prescriptions',
     href: PATIENT_ROUTES.prescriptions,
     icon: ScrollText,
-    section: 'clinical',
     description: 'Active Rx and pharmacy routing',
   },
   {
@@ -111,40 +106,41 @@ export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
     label: 'Health Records',
     href: PATIENT_ROUTES.records,
     icon: FileStack,
-    section: 'clinical',
-    description: 'FHIR-aligned EMR · allergies · problem list',
+    description: 'EMR vault · allergies · problem list',
   },
   {
     key: 'diagnostics',
     label: 'Diagnostics',
     href: PATIENT_ROUTES.diagnostics,
     icon: TestTube,
-    section: 'clinical',
-    description: 'Labs, imaging summaries · DICOM viewer ready',
+    description: 'Labs and imaging summaries',
   },
   {
     key: 'billing',
-    label: 'Billing & Insurance',
+    label: 'Billing & Payments',
     href: PATIENT_ROUTES.billing,
     icon: CreditCard,
-    section: 'financial',
-    description: 'Statements, coverage, and secure pay',
+    description: 'Statements and secure pay',
   },
   {
-    key: 'communication',
-    label: 'Messages',
-    href: PATIENT_ROUTES.communication,
-    icon: MessageSquare,
-    mobilePrimary: true,
-    section: 'journey',
-    description: 'Care team chat and portal notifications',
+    key: 'insurance',
+    label: 'Insurance',
+    href: PATIENT_ROUTES.insurance,
+    icon: Shield,
+    description: 'Coverage, pre-auth, and ID cards',
+  },
+  {
+    key: 'notifications',
+    label: 'Notifications',
+    href: PATIENT_ROUTES.notifications,
+    icon: Bell,
+    description: 'Alerts, reminders, and results ready',
   },
   {
     key: 'emergency',
     label: 'Emergency & Family',
     href: PATIENT_ROUTES.emergency,
     icon: ShieldAlert,
-    section: 'safety',
     description: 'SOS, ICE contacts, and family proxies',
   },
   {
@@ -153,35 +149,40 @@ export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
     href: PATIENT_ROUTES.profile,
     icon: UserCog,
     mobilePrimary: true,
-    section: 'account',
-    description: 'MFA, biometrics, profiles, and privacy',
+    description: 'MFA, privacy, and household profiles',
   },
 ];
 
 export const PATIENT_BRAND = {
   name: 'NEXORA PATIENT',
   icon: HeartHandshake,
-  primary: '#f47c8c',
-  primaryHover: '#e06373',
-  light: '#fde8eb',
-  border: '#f0d8dc',
-  heading: '#8c2b39',
-  muted: '#736366',
-  canvas: '#faf6f7',
-  emergency: '#e63946',
+  ...patientTheme,
 } as const;
 
 export function isPatientNavActive(pathname: string, href: string): boolean {
   if (href === PATIENT_ROUTES.dashboard) {
     return pathname === PATIENT_ROUTES.dashboard || pathname === `${PATIENT_ROUTES.dashboard}/`;
   }
+  if (href === PATIENT_ROUTES.telemedicine) {
+    return (
+      pathname === PATIENT_ROUTES.telemedicine ||
+      pathname.startsWith(`${PATIENT_ROUTES.telemedicine}/`) ||
+      pathname === '/patient/teleconsult' ||
+      pathname.startsWith('/patient/teleconsult/') ||
+      pathname === '/patient/communication' ||
+      pathname.startsWith('/patient/communication/')
+    );
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-export function patientNavBySection(section: PatientNavItem['section']) {
-  return PATIENT_NAV_ITEMS.filter((item) => item.section === section);
 }
 
 export function patientMobilePrimaryNav() {
   return PATIENT_NAV_ITEMS.filter((item) => item.mobilePrimary);
+}
+
+/** @deprecated Sidebar uses flat PATIENT_NAV_ITEMS — sections removed for zero-clutter nav. */
+export const PATIENT_NAV_SECTIONS: { id: string; title: string }[] = [];
+
+export function patientNavBySection(_section: string) {
+  return PATIENT_NAV_ITEMS;
 }

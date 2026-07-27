@@ -45,19 +45,19 @@ const STOCK_UNITS: Record<string, number> = {
 };
 
 const ACTIVE_NAV_CLASS =
-  'w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-[#7BBDE8] text-[#001D39] border border-[#BDD8E9]/40 shadow-sm';
+  'w-full text-left px-4 py-3 rounded-xl text-sm font-semibold bg-[#7BBDE8] text-[#001D39] border border-[#BDD8E9]/40 shadow-sm';
 
 const INACTIVE_NAV_CLASS =
-  'w-full text-left px-4 py-3 rounded-xl text-xs font-semibold text-[#BDD8E9]/80 hover:text-[#BDD8E9] hover:bg-[#0A4174]/50 transition-all';
+  'w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-[#BDD8E9]/80 hover:text-[#BDD8E9] hover:bg-[#0A4174]/50 transition-all';
 
 const SEARCH_INPUT_CLASS =
-  'w-full border border-[#49769F]/30 rounded-xl px-4 py-3 text-xs font-semibold bg-white text-[#001D39] focus:outline-none focus:border-[#0A4174] focus:ring-1 focus:ring-[#0A4174] placeholder:text-[#49769F]/60';
+  'w-full border border-[#49769F]/30 rounded-xl px-4 py-3 text-base font-medium bg-white text-[#001D39] focus:outline-none focus:border-[#0A4174] focus:ring-1 focus:ring-[#0A4174] placeholder:text-[#49769F]/60';
 
 const RESULTS_PANEL_CLASS =
   'absolute left-0 top-full mt-1.5 w-full bg-white border border-[#49769F]/25 rounded-xl shadow-xl z-50 max-h-52 overflow-y-auto p-1.5';
 
 const RESULT_ITEM_CLASS =
-  'w-full text-left px-4 py-3 rounded-lg hover:bg-[#BDD8E9]/40 hover:text-[#001D39] transition-colors cursor-pointer block text-xs';
+  'w-full text-left px-4 py-3 rounded-lg hover:bg-[#BDD8E9]/40 hover:text-[#001D39] transition-colors cursor-pointer block text-base';
 
 export default function HospitalHub() {
   const [activeTab, setActiveTab] = useState<HospitalTab>('dashboard');
@@ -96,10 +96,10 @@ export default function HospitalHub() {
     <div className="min-h-screen flex bg-[#BDD8E9]/25">
       <aside className="w-64 shrink-0 flex flex-col justify-between bg-[#001D39] border-r border-[#0A4174] p-4 text-white">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-wider text-[#BDD8E9]/70">
+          <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#BDD8E9]/70">
             CuraSync Hospital Hub
           </p>
-          <p className="mt-2 text-sm font-black tracking-tight text-[#BDD8E9]">
+          <p className="mt-2 text-sm font-bold tracking-tight text-[#BDD8E9]">
             Procurement Node
           </p>
 
@@ -120,11 +120,11 @@ export default function HospitalHub() {
         <div className="space-y-2 border-t border-[#0A4174] pt-4">
           <Link
             href={APP_ROUTES.patient}
-            className="block rounded-xl border border-[#49769F]/40 bg-[#0A4174]/30 px-4 py-2.5 text-center text-[10px] font-bold text-[#BDD8E9]/80 transition-all hover:bg-[#0A4174]/50 hover:text-[#BDD8E9]"
+            className="block rounded-xl border border-[#49769F]/40 bg-[#0A4174]/30 px-4 py-2.5 text-center text-sm font-semibold text-[#BDD8E9]/80 transition-all hover:bg-[#0A4174]/50 hover:text-[#BDD8E9]"
           >
             Patient command center
           </Link>
-          <p className="text-center font-mono text-[9px] uppercase tracking-wider text-[#49769F]">
+          <p className="text-center font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
             Deep oceanic lane · v2
           </p>
         </div>
@@ -132,10 +132,10 @@ export default function HospitalHub() {
 
       <main className="flex-1 overflow-y-auto p-8">
         <header>
-          <p className="font-mono text-[11px] uppercase tracking-wider text-[#49769F]">
+          <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
             Hospital workspace
           </p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-[#001D39]">
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#001D39] sm:text-3xl">
             Victoria Procurement Command Center
           </h1>
         </header>
@@ -146,29 +146,29 @@ export default function HospitalHub() {
           <>
         <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
           <article className="rounded-2xl border border-[#49769F]/20 bg-white p-6 shadow-xs">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-[#49769F]">
+            <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
               Pipeline
             </p>
-            <p className="mt-2 font-mono text-2xl font-black text-[#001D39]">18</p>
-            <p className="mt-1 text-xs font-medium text-[#49769F]">Active purchase orders</p>
+            <p className="mt-2 font-mono text-2xl font-bold text-[#001D39]">18</p>
+            <p className="mt-1 text-sm font-medium text-[#49769F]">Active purchase orders</p>
           </article>
 
           <article className="rounded-2xl border border-[#49769F]/20 bg-white p-6 shadow-xs">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-[#49769F]">
+            <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
               Settlement
             </p>
-            <p className="mt-2 font-mono text-2xl font-black text-[#0A4174]">₹4.18L</p>
-            <p className="mt-1 text-xs font-medium text-[#49769F]">Pending invoice clearance</p>
+            <p className="mt-2 font-mono text-2xl font-bold text-[#0A4174]">₹4.18L</p>
+            <p className="mt-1 text-sm font-medium text-[#49769F]">Pending invoice clearance</p>
           </article>
 
           <article className="rounded-2xl border border-[#49769F]/20 bg-white p-6 shadow-xs">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-[#49769F]">
+            <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
               Inventory value
             </p>
-            <p className="mt-2 font-mono text-2xl font-black text-[#001D39]">
+            <p className="mt-2 font-mono text-2xl font-bold text-[#001D39]">
               ₹{activeInventoryValue.toLocaleString('en-IN')}
             </p>
-            <p className="mt-1 text-xs font-medium text-[#49769F]">
+            <p className="mt-1 text-sm font-medium text-[#49769F]">
               Active on-hand stock valuation
             </p>
           </article>
@@ -176,13 +176,13 @@ export default function HospitalHub() {
 
         <section className="mt-6 rounded-2xl border border-[#49769F]/20 bg-white p-6 shadow-xs">
           <div className="mb-4">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-[#49769F]">
+            <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
               Smart catalog search
             </p>
-            <h2 className="mt-1 text-lg font-black tracking-tight text-[#001D39]">
+            <h2 className="mt-1 text-lg font-semibold tracking-tight text-[#001D39]">
               Draft purchase manifest
             </h2>
-            <p className="mt-1 text-xs font-medium text-[#49769F]">
+            <p className="mt-1 text-base font-medium text-[#49769F]">
               Search by product title or HSN code to locate contract-rate items.
             </p>
           </div>
@@ -221,7 +221,7 @@ export default function HospitalHub() {
                       className={RESULT_ITEM_CLASS}
                     >
                       <span className="block font-semibold text-[#001D39]">{product.name}</span>
-                      <span className="mt-0.5 block font-mono text-[10px] text-[#49769F]">
+                      <span className="mt-0.5 block font-mono text-xs text-[#49769F]">
                         HSN {product.hsn} · {product.sku} · ₹{product.rate}/unit
                       </span>
                     </button>
@@ -241,7 +241,7 @@ export default function HospitalHub() {
           <button
             type="button"
             disabled={!selectedProduct}
-            className="mt-5 rounded-xl bg-[#0A4174] px-5 py-3 text-xs font-bold text-white shadow-md shadow-[#0A4174]/20 transition-all hover:bg-[#001D39] disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-5 rounded-xl bg-[#0A4174] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#0A4174]/20 transition-all hover:bg-[#001D39] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Transmit PO to Supplier
           </button>

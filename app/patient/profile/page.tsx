@@ -52,16 +52,16 @@ type LinkedDevice = {
   activeNow: boolean;
 };
 
-const PANEL_CLASS = 'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
+const PANEL_CLASS = 'rounded-2xl border border-patient-lavender/30 bg-white p-6 shadow-sm';
 
 const SECURITY_CARD_CLASS =
-  'mb-4 rounded-xl border border-[#f0d8dc] bg-white p-5 shadow-sm transition-all hover:border-[#f0d8dc]';
+  'mb-4 rounded-xl border border-patient-lavender/30 bg-white p-5 shadow-sm transition-all hover:border-patient-lavender/30';
 
 const INPUT_CLASS =
-  'w-full rounded-xl border border-[#f0d8dc] bg-white px-4 py-2.5 text-sm font-medium text-slate-950 placeholder:text-slate-400 transition-all focus:border-[#f0d8dc] focus:outline-none focus:ring-2 focus:ring-[#f47c8c]/20';
+  'w-full rounded-xl border border-patient-lavender/30 bg-white px-4 py-2.5 text-sm font-medium text-patient-charcoal placeholder:text-patient-lavender/50 transition-all focus:border-patient-lavender/30 focus:outline-none focus:ring-2 focus:ring-[#572E54]/20';
 
 const VERIFIED_CHIP =
-  'bg-[#fde8eb] text-[#f47c8c] border border-[#f0d8dc] font-bold px-2.5 py-0.5 rounded-full text-[10px]';
+  'bg-patient-card text-patient-primary border border-patient-lavender/30 font-bold px-2.5 py-0.5 rounded-full text-[10px]';
 
 const INITIAL_PROFILE: PersonalProfile = {
   fullName: 'Aishwarya D S',
@@ -119,13 +119,13 @@ type ToggleSwitchProps = {
 
 function ToggleSwitch({ id, checked, onChange, label, description }: ToggleSwitchProps) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-[#f0d8dc] bg-slate-50/50 px-4 py-3">
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-patient-lavender/30 bg-patient-lavender/10/50 px-4 py-3">
       <div>
-        <label htmlFor={id} className="text-sm font-bold text-slate-900">
+        <label htmlFor={id} className="text-sm font-bold text-patient-charcoal">
           {label}
         </label>
         {description ? (
-          <p className="mt-0.5 text-xs font-medium text-slate-600">{description}</p>
+          <p className="mt-0.5 text-xs font-medium text-patient-lavender">{description}</p>
         ) : null}
       </div>
       <button
@@ -135,12 +135,12 @@ function ToggleSwitch({ id, checked, onChange, label, description }: ToggleSwitc
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-[#f47c8c]' : 'bg-slate-300'
+          checked ? 'bg-patient-primary' : 'bg-slate-300'
         }`}
       >
         <span
           className={`absolute top-0.5 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black transition-transform ${
-            checked ? 'translate-x-5 bg-[#f47c8c] text-white' : 'translate-x-0.5 bg-white text-slate-500 shadow'
+            checked ? 'translate-x-5 bg-patient-primary text-white' : 'translate-x-0.5 bg-white text-patient-lavender shadow'
           }`}
         >
           {checked ? '✓' : ''}
@@ -264,26 +264,26 @@ export default function PatientProfilePage() {
   );
 
   return (
-    <div className="min-h-screen w-full space-y-6 bg-[#faf6f7] p-6 font-sans text-slate-950">
+    <div className="min-h-screen w-full space-y-6 bg-patient-canvas p-6 font-sans text-patient-charcoal">
       {/* Central HUD control header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#8c2b39]">
+          <h1 className="text-2xl font-black text-patient-plum">
             Account Center &amp; System Operations Desk
           </h1>
-          <p className="mt-1 text-sm font-medium text-slate-600">
+          <p className="mt-1 text-sm font-medium text-patient-lavender">
             Identity verification · ID_NEX_9021 · platform session active · engine context{' '}
-            <span className="font-bold text-[#f47c8c]">TRUSTED_ENDPOINT</span> · 14 Jul 2026
+            <span className="font-bold text-patient-primary">TRUSTED_ENDPOINT</span> · 14 Jul 2026
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#f47c8c]">
+        <div className="inline-flex items-center gap-2 rounded-full border border-patient-lavender/30 bg-patient-card px-4 py-2 text-xs font-bold uppercase tracking-wide text-patient-primary">
           <ShieldCheck className="h-4 w-4" aria-hidden />
           IDENTITY_VERIFIED_OK
         </div>
       </header>
 
       {actionNotice ? (
-        <p className="rounded-xl border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2 text-sm font-bold text-[#f47c8c]">
+        <p className="rounded-xl border border-patient-lavender/30 bg-patient-card px-4 py-2 text-sm font-bold text-patient-primary">
           {actionNotice}
         </p>
       ) : null}
@@ -294,20 +294,20 @@ export default function PatientProfilePage() {
           {/* Personal profile & language */}
           <section aria-label="Personal profile and language" className={PANEL_CLASS}>
             <div className="mb-5 flex items-center gap-2">
-              <UserCircle className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-lg font-black text-[#8c2b39]">Personal Profile &amp; Language</h2>
+              <UserCircle className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-lg font-black text-patient-plum">Personal Profile &amp; Language</h2>
             </div>
 
             <div className="flex flex-col gap-6 sm:flex-row">
               {/* Profile picture placeholder */}
               <div className="flex shrink-0 flex-col items-center gap-2">
-                <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-2 border-dashed border-[#f0d8dc] bg-[#fde8eb]">
-                  <User className="h-10 w-10 text-[#f47c8c]" aria-hidden />
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-2 border-dashed border-patient-lavender/30 bg-patient-card">
+                  <User className="h-10 w-10 text-patient-primary" aria-hidden />
                 </div>
                 <button
                   type="button"
                   onClick={() => showNotice('Profile photo upload · sandbox media vault')}
-                  className="text-xs font-bold text-[#f47c8c] hover:underline"
+                  className="text-xs font-bold text-patient-primary hover:underline"
                 >
                   Upload Photo
                 </button>
@@ -316,7 +316,7 @@ export default function PatientProfilePage() {
 
               <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label htmlFor="fullName" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <label htmlFor="fullName" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-patient-lavender">
                     Full Name
                   </label>
                   <input
@@ -329,7 +329,7 @@ export default function PatientProfilePage() {
                 </div>
 
                 <div>
-                  <label htmlFor="phone" className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <label htmlFor="phone" className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-patient-lavender">
                     <Phone className="h-3.5 w-3.5" aria-hidden />
                     Contact Phone
                   </label>
@@ -343,7 +343,7 @@ export default function PatientProfilePage() {
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <label htmlFor="email" className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-patient-lavender">
                     <Mail className="h-3.5 w-3.5" aria-hidden />
                     Email Address
                   </label>
@@ -357,7 +357,7 @@ export default function PatientProfilePage() {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label htmlFor="language" className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <label htmlFor="language" className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-patient-lavender">
                     <Globe className="h-3.5 w-3.5" aria-hidden />
                     Language Preference
                   </label>
@@ -380,7 +380,7 @@ export default function PatientProfilePage() {
             <button
               type="button"
               onClick={handleSaveConfiguration}
-              className="mt-6 w-fit cursor-pointer rounded-xl bg-[#f47c8c] px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#e06373]"
+              className="mt-6 w-fit cursor-pointer rounded-xl bg-patient-primary px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-patient-plum"
             >
               Save Configuration Changes
             </button>
@@ -389,13 +389,13 @@ export default function PatientProfilePage() {
           {/* Notification & privacy matrix */}
           <section aria-label="Notification and privacy settings" className={PANEL_CLASS}>
             <div className="mb-5 flex items-center gap-2">
-              <Bell className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-lg font-black text-[#8c2b39]">Notification &amp; Privacy Matrix</h2>
+              <Bell className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-lg font-black text-patient-plum">Notification &amp; Privacy Matrix</h2>
             </div>
 
             <div className="space-y-6">
               <div>
-                <h3 className="mb-3 text-xs font-black uppercase tracking-wider text-[#f47c8c]">
+                <h3 className="mb-3 text-xs font-black uppercase tracking-wider text-patient-primary">
                   Notification Preferences
                 </h3>
                 <div className="space-y-2">
@@ -445,7 +445,7 @@ export default function PatientProfilePage() {
               </div>
 
               <div>
-                <h3 className="mb-3 text-xs font-black uppercase tracking-wider text-[#f47c8c]">
+                <h3 className="mb-3 text-xs font-black uppercase tracking-wider text-patient-primary">
                   Privacy Filters
                 </h3>
                 <div className="space-y-2">
@@ -488,16 +488,16 @@ export default function PatientProfilePage() {
           {/* Security & password ledger */}
           <section aria-label="Security and password settings">
             <div className="mb-4 flex items-center gap-2">
-              <Key className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-base font-black text-[#8c2b39]">Security &amp; Password Ledger</h2>
+              <Key className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-base font-black text-patient-plum">Security &amp; Password Ledger</h2>
             </div>
 
             <div className={SECURITY_CARD_CLASS}>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <p className="text-xs font-bold uppercase tracking-wider text-patient-lavender">
                 Current Password Hash
               </p>
-              <p className="mt-1 font-mono text-sm font-black text-slate-800">{security.passwordHash}</p>
-              <p className="mt-2 text-[10px] font-bold text-slate-500">
+              <p className="mt-1 font-mono text-sm font-black text-patient-text">{security.passwordHash}</p>
+              <p className="mt-2 text-[10px] font-bold text-patient-lavender">
                 Last changed · {security.lastPasswordChange}
               </p>
 
@@ -521,7 +521,7 @@ export default function PatientProfilePage() {
                 <button
                   type="button"
                   onClick={handleUpdatePassword}
-                  className="w-full rounded-xl border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2.5 text-sm font-bold text-[#f47c8c] transition-all hover:bg-[#e06373]/10"
+                  className="w-full rounded-xl border border-patient-lavender/30 bg-patient-card px-4 py-2.5 text-sm font-bold text-patient-primary transition-all hover:bg-patient-lavender/25"
                 >
                   Update Password
                 </button>
@@ -531,11 +531,11 @@ export default function PatientProfilePage() {
             <div className={SECURITY_CARD_CLASS}>
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-bold text-slate-900">Two-Factor Authentication (2FA)</p>
-                  <p className="mt-0.5 text-xs font-medium text-slate-600">
+                  <p className="text-sm font-bold text-patient-charcoal">Two-Factor Authentication (2FA)</p>
+                  <p className="mt-0.5 text-xs font-medium text-patient-lavender">
                     TOTP authenticator · SMS fallback channel
                   </p>
-                  <p className="mt-2 text-[10px] font-bold text-slate-500">
+                  <p className="mt-2 text-[10px] font-bold text-patient-lavender">
                     Last updated · {security.lastTwoFactorUpdate}
                   </p>
                 </div>
@@ -545,13 +545,13 @@ export default function PatientProfilePage() {
                   aria-checked={security.twoFactorEnabled}
                   onClick={handleToggle2FA}
                   className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-                    security.twoFactorEnabled ? 'bg-[#f47c8c]' : 'bg-slate-300'
+                    security.twoFactorEnabled ? 'bg-patient-primary' : 'bg-slate-300'
                   }`}
                 >
                   <span
                     className={`absolute top-0.5 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black transition-transform ${
                       security.twoFactorEnabled
-                        ? 'translate-x-5 bg-[#f47c8c] text-white'
+                        ? 'translate-x-5 bg-patient-primary text-white'
                         : 'translate-x-0.5 bg-white shadow'
                     }`}
                   >
@@ -568,20 +568,20 @@ export default function PatientProfilePage() {
           {/* Linked devices */}
           <section aria-label="Linked devices" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Smartphone className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-base font-black text-[#8c2b39]">Linked Devices Matrix</h2>
+              <Smartphone className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-base font-black text-patient-plum">Linked Devices Matrix</h2>
             </div>
             <ul className="space-y-3">
               {devices.map((device) => (
                 <li
                   key={device.id}
-                  className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4"
+                  className="rounded-xl border border-patient-lavender/30 bg-patient-lavender/10/50 p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <p className="text-sm font-black text-[#8c2b39]">{device.name}</p>
-                      <p className="text-xs font-medium text-slate-600">{device.location}</p>
-                      <p className="mt-1 text-[10px] font-bold text-slate-500">{device.lastActive}</p>
+                      <p className="text-sm font-black text-patient-plum">{device.name}</p>
+                      <p className="text-xs font-medium text-patient-lavender">{device.location}</p>
+                      <p className="mt-1 text-[10px] font-bold text-patient-lavender">{device.lastActive}</p>
                     </div>
                     {device.activeNow ? (
                       <span className={`inline-flex uppercase ${VERIFIED_CHIP}`}>ACTIVE_NOW</span>
@@ -598,7 +598,7 @@ export default function PatientProfilePage() {
               ))}
             </ul>
             {devices.length === 0 ? (
-              <p className="text-sm font-medium text-slate-600">No linked devices · all tokens revoked</p>
+              <p className="text-sm font-medium text-patient-lavender">No linked devices · all tokens revoked</p>
             ) : null}
           </section>
 
@@ -606,9 +606,9 @@ export default function PatientProfilePage() {
           <section aria-label="Session termination" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
               <LogOut className="h-5 w-5 text-rose-600" aria-hidden />
-              <h2 className="text-base font-black text-[#8c2b39]">System Termination</h2>
+              <h2 className="text-base font-black text-patient-plum">System Termination</h2>
             </div>
-            <p className="mb-4 text-xs font-medium text-slate-600">
+            <p className="mb-4 text-xs font-medium text-patient-lavender">
               End your active platform session and clear local authentication tokens from this
               endpoint.
             </p>

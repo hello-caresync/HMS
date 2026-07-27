@@ -1,0 +1,6 @@
+'use client'; import type { ReactNode } from 'react'; import { vendorClasses } from '@/lib/vendor/theme'; type VendorModuleHeaderProps = { title: string; description: string; actions?: ReactNode;
+}; export function VendorModuleHeader({ title, description, actions }: VendorModuleHeaderProps) { return ( <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"> <div> <h1 className={vendorClasses.heading}>{title}</h1> <p className={`mt-1 max-w-3xl ${vendorClasses.subheading}`}>{description}</p> </div> {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null} </header> );
+} export function VendorStatusPill({ label, tone = 'neutral',
+}: { label: string; tone?: 'neutral' | 'success' | 'warning' | 'danger' | 'info';
+}) { const classes = { neutral: 'border-vendor-accent/30 bg-vendor-cream text-vendor-charcoal', success: 'border-vendor-success/40 bg-vendor-success/15 text-vendor-charcoal', warning: 'border-vendor-warning/40 bg-vendor-warning/20 text-vendor-charcoal', danger: 'border-vendor-danger/40 bg-vendor-danger/15 text-vendor-charcoal', info: 'border-vendor-accent/40 bg-vendor-accent/20 text-vendor-charcoal', }[tone]; return ( <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${classes}`} > {label} </span> );
+}

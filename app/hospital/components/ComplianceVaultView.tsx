@@ -45,7 +45,7 @@ export default function ComplianceVaultView({
         <article key={doc.id} className={`${panelClassName} space-y-3`}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <span className={`text-[10px] ${monoDataClassName} text-slate-800`}>
+              <span className={`text-xs ${monoDataClassName} text-slate-800`}>
                 {doc.id}
               </span>
               <h4 className={`${featureHeaderClassName} mt-0.5`}>{doc.title}</h4>

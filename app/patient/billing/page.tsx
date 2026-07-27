@@ -82,10 +82,10 @@ type RefundRecord = {
   initiatedDate: string;
 };
 
-const PANEL_CLASS = 'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
+const PANEL_CLASS = 'rounded-2xl border border-patient-lavender/30 bg-white p-6 shadow-sm';
 
 const SUMMARY_CARD_CLASS =
-  'flex flex-col justify-between rounded-xl border border-[#f0d8dc] border-t-4 border-t-[#f47c8c] bg-white p-4 shadow-sm';
+  'flex flex-col justify-between rounded-xl border border-patient-lavender/30 border-t-4 border-t-[#572E54] bg-white p-4 shadow-sm';
 
 const INVOICES: InvoiceRecord[] = [
   {
@@ -233,7 +233,7 @@ const INVOICE_STATUS_STYLES: Record<InvoiceStatus, string> = {
 };
 
 const CLAIM_STATUS_STYLES: Record<ClaimStatus, string> = {
-  'Under Review': 'border border-[#f47c8c]/40 bg-[#fde8eb] text-[#8c2b39] font-semibold px-3 py-1 rounded-full text-xs tracking-wide',
+  'Under Review': 'border border-patient-primary/40 bg-patient-card text-patient-plum font-semibold px-3 py-1 rounded-full text-xs tracking-wide',
   Approved: patientVerifiedChipClass,
   Settled: patientVerifiedChipClass,
   Rejected: 'border border-rose-500/20 bg-rose-500/10 text-rose-700 font-bold px-3 py-1 rounded-full text-[11px] tracking-wide',
@@ -285,14 +285,14 @@ export default function PatientBillingPage() {
   }, [refundStatus, showNotice]);
 
   return (
-    <div className="min-h-screen w-full space-y-6 bg-[#faf6f7] p-6 font-sans text-slate-950">
+    <div className="min-h-screen w-full space-y-6 bg-patient-canvas p-6 font-sans text-patient-charcoal">
       {/* Central HUD financial header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#8c2b39]">
+          <h1 className="text-2xl font-black text-patient-plum">
             Financial Statements &amp; Insurance Claims Ledger
           </h1>
-          <p className="mt-1 text-sm font-medium text-slate-600">
+          <p className="mt-1 text-sm font-medium text-patient-lavender">
             Secure transactional portal · verified payment gateway · claims processing hub · 14 Jul
             2026
           </p>
@@ -312,30 +312,30 @@ export default function PatientBillingPage() {
         className="grid grid-cols-1 gap-3 md:grid-cols-3"
       >
         <div className={SUMMARY_CARD_CLASS}>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
             Total Outstanding Balance
           </p>
-          <p className="mt-2 text-2xl font-black tabular-nums text-[#8c2b39]">
+          <p className="mt-2 text-2xl font-black tabular-nums text-patient-plum">
             ₹{metrics.outstanding.toLocaleString('en-IN')}
           </p>
-          <Wallet className="mt-2 h-4 w-4 text-[#f47c8c]" aria-hidden />
+          <Wallet className="mt-2 h-4 w-4 text-patient-primary" aria-hidden />
         </div>
         <div className={SUMMARY_CARD_CLASS}>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
             Active Claims Pending
           </p>
-          <p className="mt-2 text-2xl font-black tabular-nums text-[#f47c8c]">
+          <p className="mt-2 text-2xl font-black tabular-nums text-patient-primary">
             {metrics.pendingClaims}
           </p>
-          <FileText className="mt-2 h-4 w-4 text-[#f47c8c]" aria-hidden />
+          <FileText className="mt-2 h-4 w-4 text-patient-primary" aria-hidden />
         </div>
         <div className={SUMMARY_CARD_CLASS}>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
             Last Processed Refund
           </p>
-          <p className="mt-2 text-lg font-black text-[#8c2b39]">{refundStatus}</p>
-          <p className="mt-0.5 text-xs font-bold text-slate-600">{REFUND_RECORD.amount}</p>
-          <RefreshCw className="mt-2 h-4 w-4 text-[#8c2b39]" aria-hidden />
+          <p className="mt-2 text-lg font-black text-patient-plum">{refundStatus}</p>
+          <p className="mt-0.5 text-xs font-bold text-patient-lavender">{REFUND_RECORD.amount}</p>
+          <RefreshCw className="mt-2 h-4 w-4 text-patient-plum" aria-hidden />
         </div>
       </section>
 
@@ -345,8 +345,8 @@ export default function PatientBillingPage() {
         <div className="space-y-6">
           <section aria-label="Active bills and invoices" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-lg font-black text-[#8c2b39]">Active Bills &amp; Invoices</h2>
+              <Receipt className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-lg font-black text-patient-plum">Active Bills &amp; Invoices</h2>
             </div>
 
             <ul className="space-y-4">
@@ -360,21 +360,21 @@ export default function PatientBillingPage() {
                     className={`rounded-xl border p-5 shadow-sm ${
                       isOverdue
                         ? 'border-rose-500/30 bg-rose-500/5 ring-1 ring-rose-500/20'
-                        : 'border-[#f0d8dc] bg-white'
+                        : 'border-patient-lavender/30 bg-white'
                     }`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <p className="font-mono text-xs font-black text-[#f47c8c]">
+                        <p className="font-mono text-xs font-black text-patient-primary">
                           {invoice.invoiceNumber}
                         </p>
-                        <p className="mt-1 text-sm font-black text-slate-900">
+                        <p className="mt-1 text-sm font-black text-patient-charcoal">
                           {invoice.department}
                         </p>
-                        <p className="text-xs font-medium text-slate-600">{invoice.description}</p>
+                        <p className="text-xs font-medium text-patient-lavender">{invoice.description}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xl font-black text-[#8c2b39]">{invoice.amount}</p>
+                        <p className="text-xl font-black text-patient-plum">{invoice.amount}</p>
                         <span className={`mt-1 inline-flex uppercase ${INVOICE_STATUS_STYLES[invoice.status]}`}>
                           {invoice.status}
                         </span>
@@ -388,11 +388,11 @@ export default function PatientBillingPage() {
                       </p>
                     ) : null}
 
-                    <ul className="mt-3 space-y-1 border-t border-[#f0d8dc] pt-3">
+                    <ul className="mt-3 space-y-1 border-t border-patient-lavender/30 pt-3">
                       {invoice.lineItems.map((item) => (
                         <li
                           key={item.label}
-                          className="flex justify-between text-xs font-medium text-slate-700"
+                          className="flex justify-between text-xs font-medium text-patient-charcoal"
                         >
                           <span>{item.label}</span>
                           <span className="font-bold tabular-nums">{item.amount}</span>
@@ -404,13 +404,13 @@ export default function PatientBillingPage() {
                       <button
                         type="button"
                         onClick={() => handlePayment(invoice)}
-                        className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#f47c8c] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#e06373]"
+                        className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-patient-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-patient-plum"
                       >
                         <CreditCard className="h-4 w-4" aria-hidden />
                         Proceed to Online Payment
                       </button>
                     ) : (
-                      <p className="mt-3 flex items-center gap-1 text-xs font-bold text-[#f47c8c]">
+                      <p className="mt-3 flex items-center gap-1 text-xs font-bold text-patient-primary">
                         <Wallet className="h-3.5 w-3.5" aria-hidden />
                         Settled · {invoice.issueDate}
                       </p>
@@ -423,44 +423,44 @@ export default function PatientBillingPage() {
 
           <section aria-label="Payment history" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <History className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-lg font-black text-[#8c2b39]">Payment History Archive</h2>
+              <History className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-lg font-black text-patient-plum">Payment History Archive</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[480px] border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-[#f0d8dc] bg-slate-50/80">
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
+                  <tr className="border-b border-patient-lavender/30 bg-patient-lavender/10/80">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-patient-plum">
                       Date
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-patient-plum">
                       Description
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-patient-plum">
                       Amount
                     </th>
-                    <th className="px-3 py-2 text-right text-[10px] font-black uppercase text-[#8c2b39]">
+                    <th className="px-3 py-2 text-right text-[10px] font-black uppercase text-patient-plum">
                       Receipt
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {PAYMENT_HISTORY.map((entry) => (
-                    <tr key={entry.id} className="border-b border-[#f0d8dc]">
-                      <td className="px-3 py-3 text-xs font-bold text-[#f47c8c]">{entry.date}</td>
+                    <tr key={entry.id} className="border-b border-patient-lavender/30">
+                      <td className="px-3 py-3 text-xs font-bold text-patient-primary">{entry.date}</td>
                       <td className="px-3 py-3">
-                        <p className="text-xs font-bold text-slate-900">{entry.description}</p>
-                        <p className="font-mono text-[10px] text-slate-500">{entry.transactionId}</p>
-                        <p className="text-[10px] text-slate-500">{entry.method}</p>
+                        <p className="text-xs font-bold text-patient-charcoal">{entry.description}</p>
+                        <p className="font-mono text-[10px] text-patient-lavender">{entry.transactionId}</p>
+                        <p className="text-[10px] text-patient-lavender">{entry.method}</p>
                       </td>
-                      <td className="px-3 py-3 font-black tabular-nums text-[#8c2b39]">
+                      <td className="px-3 py-3 font-black tabular-nums text-patient-plum">
                         {entry.amount}
                       </td>
                       <td className="px-3 py-3 text-right">
                         <button
                           type="button"
                           onClick={() => handleDownloadReceipt(entry)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-[#f47c8c] hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-patient-primary hover:underline"
                         >
                           <Download className="h-3.5 w-3.5" aria-hidden />
                           Download Receipt PDF
@@ -478,54 +478,54 @@ export default function PatientBillingPage() {
         <aside className="space-y-6">
           <section
             aria-label="Insurance coverage profile"
-            className="rounded-xl border border-[#f0d8dc] bg-white p-5 shadow-sm"
+            className="rounded-xl border border-patient-lavender/30 bg-white p-5 shadow-sm"
           >
             <div className="mb-4 flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-base font-black text-[#8c2b39]">Insurance Coverage Profile</h2>
+              <ShieldCheck className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-base font-black text-patient-plum">Insurance Coverage Profile</h2>
             </div>
             <dl className="space-y-3 text-sm">
               <div>
-                <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                   Provider
                 </dt>
-                <dd className="font-bold text-slate-900">{INSURANCE.providerName}</dd>
+                <dd className="font-bold text-patient-charcoal">{INSURANCE.providerName}</dd>
               </div>
               <div>
-                <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                   Policy ID
                 </dt>
-                <dd className="font-mono font-black text-[#f47c8c]">{INSURANCE.policyId}</dd>
+                <dd className="font-mono font-black text-patient-primary">{INSURANCE.policyId}</dd>
               </div>
               <div>
-                <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                   Member ID
                 </dt>
-                <dd className="font-bold text-slate-800">{INSURANCE.memberId}</dd>
+                <dd className="font-bold text-patient-text">{INSURANCE.memberId}</dd>
               </div>
               <div>
-                <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                   OPD Coverage
                 </dt>
-                <dd className="font-bold text-slate-800">{INSURANCE.opdCoverage}</dd>
+                <dd className="font-bold text-patient-text">{INSURANCE.opdCoverage}</dd>
               </div>
               <div>
-                <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                   IPD Coverage
                 </dt>
-                <dd className="font-bold text-slate-800">{INSURANCE.ipdCoverage}</dd>
+                <dd className="font-bold text-patient-text">{INSURANCE.ipdCoverage}</dd>
               </div>
               <div>
-                <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                   Valid Until
                 </dt>
-                <dd className="font-bold text-[#8c2b39]">{INSURANCE.validUntil}</dd>
+                <dd className="font-bold text-patient-plum">{INSURANCE.validUntil}</dd>
               </div>
               <div>
-                <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                   Network
                 </dt>
-                <dd className="text-xs font-medium text-slate-700">{INSURANCE.networkHospitals}</dd>
+                <dd className="text-xs font-medium text-patient-charcoal">{INSURANCE.networkHospitals}</dd>
               </div>
             </dl>
             <span className={`mt-4 ${patientVerifiedChipClass}`}>✓ {INSURANCE.coverageStatus}</span>
@@ -533,21 +533,21 @@ export default function PatientBillingPage() {
 
           <section aria-label="Claims and refunds tracker" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <FileText className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-base font-black text-[#8c2b39]">Claims Status &amp; Refunds</h2>
+              <FileText className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-base font-black text-patient-plum">Claims Status &amp; Refunds</h2>
             </div>
 
             <ul className="space-y-4">
               {INSURANCE_CLAIMS.map((claim) => (
-                <li key={claim.id} className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4">
+                <li key={claim.id} className="rounded-xl border border-patient-lavender/30 bg-patient-lavender/10/50 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-mono text-[10px] font-black text-[#f47c8c]">{claim.claimRef}</p>
+                    <p className="font-mono text-[10px] font-black text-patient-primary">{claim.claimRef}</p>
                     <span className={`inline-flex uppercase ${CLAIM_STATUS_STYLES[claim.status]}`}>
                       {claim.status}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm font-bold text-slate-900">{claim.service}</p>
-                  <p className="text-xs font-medium text-slate-600">
+                  <p className="mt-2 text-sm font-bold text-patient-charcoal">{claim.service}</p>
+                  <p className="text-xs font-medium text-patient-lavender">
                     Submitted {claim.submittedDate} · Reimbursed {claim.reimbursed}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-1">
@@ -556,8 +556,8 @@ export default function PatientBillingPage() {
                         key={step}
                         className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
                           index === claim.timeline.length - 1
-                            ? 'bg-[#fde8eb] text-[#f47c8c]'
-                            : 'bg-slate-200/80 text-slate-600'
+                            ? 'bg-patient-card text-patient-primary'
+                            : 'bg-slate-200/80 text-patient-lavender'
                         }`}
                       >
                         {step}
@@ -568,18 +568,18 @@ export default function PatientBillingPage() {
               ))}
             </ul>
 
-            <div className="mt-5 rounded-lg border border-[#f47c8c]/30 bg-[#fde8eb] p-3 text-[#8c2b39]">
+            <div className="mt-5 rounded-lg border border-patient-primary/30 bg-patient-card p-3 text-patient-plum">
               <p className="text-xs font-black uppercase tracking-wider">Refund Tracker</p>
               <p className="mt-1 text-sm font-bold">{REFUND_RECORD.reference}</p>
               <p className="text-xs font-medium">{REFUND_RECORD.reason}</p>
               <p className="mt-2 text-lg font-black">{REFUND_RECORD.amount}</p>
               <p className="mt-1 text-xs font-bold">{refundStatus}</p>
-              <p className="text-[10px] text-slate-600">Initiated {REFUND_RECORD.initiatedDate}</p>
+              <p className="text-[10px] text-patient-lavender">Initiated {REFUND_RECORD.initiatedDate}</p>
               {refundStatus === 'Processing by Bank' ? (
                 <button
                   type="button"
                   onClick={handleAdvanceRefund}
-                  className="mt-3 text-xs font-bold text-[#f47c8c] hover:underline"
+                  className="mt-3 text-xs font-bold text-patient-primary hover:underline"
                 >
                   Simulate settlement update
                 </button>

@@ -10,9 +10,9 @@ const VARIANT_ICON: Record<PatientBannerVariant, LucideIcon> = {
 };
 
 const VARIANT_ICON_COLOR: Record<PatientBannerVariant, string> = {
-  success: 'text-[#15803d]',
-  info: 'text-[#f47c8c]',
-  warning: 'text-[#8c2b39]',
+  success: 'text-patient-success',
+  info: 'text-patient-primary',
+  warning: 'text-patient-warning',
 };
 
 type PatientStatusBannerProps = {
@@ -20,21 +20,19 @@ type PatientStatusBannerProps = {
   variant?: PatientBannerVariant;
 };
 
-/** Light rose toast / action notice bar for patient modules. */
 export function PatientStatusBanner({ message, variant = 'info' }: PatientStatusBannerProps) {
   const Icon = VARIANT_ICON[variant];
   return (
     <div
       role="status"
-      className="flex items-start gap-2.5 rounded-xl border border-[#f0d8dc] bg-[#fde8eb]/70 px-4 py-2.5 text-sm font-medium text-[#8c2b39]"
+      className="flex items-start gap-2.5 rounded-xl border border-patient-card/80 bg-patient-card/50 px-4 py-2.5 text-sm font-medium text-patient-text"
     >
       <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${VARIANT_ICON_COLOR[variant]}`} aria-hidden />
-      <p className="text-[#374151]">{message}</p>
+      <p>{message}</p>
     </div>
   );
 }
 
-/** Header row status pill (verified = green text, emergency = deep rose). */
 export function PatientHeaderBadge({
   label,
   tone = 'default',
@@ -46,26 +44,29 @@ export function PatientHeaderBadge({
 }) {
   const textClass =
     tone === 'verified'
-      ? 'text-[#15803d]'
+      ? 'text-patient-success'
       : tone === 'emergency'
-        ? 'text-[#8c2b39]'
-        : 'text-[#8c2b39]';
+        ? 'text-patient-emergency'
+        : 'text-patient-text';
 
   return (
     <div
-      className={`inline-flex items-center gap-2 rounded-full border border-[#f47c8c]/40 bg-[#fde8eb] px-4 py-2 text-xs font-semibold tracking-wide ${textClass}`}
+      className={`inline-flex items-center gap-2 rounded-full border border-patient-lavender/40 bg-patient-lavender/15 px-4 py-2 text-xs font-semibold tracking-wide ${textClass}`}
     >
-      <Icon className="h-4 w-4 shrink-0 text-[#f47c8c]" aria-hidden />
+      <Icon className="h-4 w-4 shrink-0 text-patient-lavender" aria-hidden />
       <span>{label}</span>
     </div>
   );
 }
 
 export const patientVerifiedChipClass =
-  'inline-flex items-center gap-1 rounded-full border border-[#f47c8c]/40 bg-[#fde8eb] px-3 py-1 text-xs font-semibold tracking-wide text-[#15803d]';
+  'inline-flex items-center gap-1 rounded-full border border-patient-success/40 bg-patient-success/15 px-3 py-1 text-xs font-semibold text-patient-plum';
 
 export const patientStatusChipClass =
-  'inline-flex items-center gap-1 rounded-full border border-[#f47c8c]/40 bg-[#fde8eb] px-3 py-1 text-xs font-semibold tracking-wide text-[#8c2b39]';
+  'inline-flex items-center gap-1 rounded-full border border-patient-lavender/40 bg-patient-card/40 px-3 py-1 text-xs font-semibold text-patient-text';
 
 export const patientWarningBannerClass =
-  'flex items-start gap-2.5 rounded-xl border border-[#f0d8dc] bg-[#fde8eb]/70 px-4 py-2.5 text-sm font-medium';
+  'flex items-start gap-2.5 rounded-xl border border-patient-warning/40 bg-patient-warning/10 px-4 py-2.5 text-sm font-medium text-patient-text';
+
+export const patientEmergencyBannerClass =
+  'flex items-start gap-2.5 rounded-xl border border-patient-emergency/40 bg-patient-error/10 px-4 py-2.5 text-sm font-semibold text-patient-emergency';

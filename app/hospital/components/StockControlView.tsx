@@ -56,7 +56,7 @@ export default function StockControlView({
           <article key={item.sku} className={`${panelClassName} space-y-4`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <span className={`text-[10px] ${monoDataClassName} text-slate-800`}>
+                <span className={`text-xs ${monoDataClassName} text-slate-800`}>
                   {item.sku}
                 </span>
                 <h4 className={`${featureHeaderClassName} mt-0.5`}>{item.name}</h4>

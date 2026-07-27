@@ -60,9 +60,9 @@ export default function LiveMessagingView({
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-black text-inherit">{note.title}</p>
+                <p className="text-base font-bold text-inherit">{note.title}</p>
                 <p className="mt-1 text-xs font-semibold">{note.body}</p>
-                <p className={`mt-1 text-[10px] ${monoDataClassName} text-slate-800`}>
+                <p className={`mt-1 text-xs ${monoDataClassName} text-slate-800`}>
                   {note.timestamp}
                 </p>
               </div>
@@ -101,7 +101,7 @@ export default function LiveMessagingView({
               >
                 <p>{msg.text}</p>
                 <p
-                  className={`mt-1 text-[10px] font-mono font-black ${
+                  className={`mt-1 text-xs font-mono font-bold ${
                     msg.sender === 'Hospital' ? 'text-white/80' : 'text-slate-800'
                   }`}
                 >

@@ -51,17 +51,17 @@ export default function InvoiceAuditingView({
             className={`${panelClassName} flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between`}
           >
             <div className="space-y-1">
-              <span className={`text-[10px] ${monoDataClassName}`}>
+              <span className={`text-xs ${monoDataClassName}`}>
                 {invoice.id}
               </span>
               <p className={featureHeaderClassName}>{invoice.vendorName}</p>
               <p className={bodyTextClassName}>
                 Gross total:{' '}
-                <span className="font-mono font-black text-[#A65E53]">
+                <span className="font-mono font-bold text-[#A65E53]">
                   ₹{invoice.totalAmount.toLocaleString('en-IN')}
                 </span>
               </p>
-              <p className={`text-[10px] ${monoDataClassName} text-slate-800`}>
+              <p className={`text-xs ${monoDataClassName} text-slate-800`}>
                 PO {invoice.poReferenceId} · Match {invoice.matchingStatus}
               </p>
             </div>

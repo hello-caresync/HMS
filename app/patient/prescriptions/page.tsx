@@ -26,7 +26,7 @@ type PrescriptionEntry = {
 };
 
 const CARD_CLASS =
-  'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
+  'rounded-2xl border border-patient-lavender/30 bg-white p-6 shadow-sm';
 
 const ACTIVE_PRESCRIPTIONS: PrescriptionEntry[] = [
   {
@@ -127,12 +127,12 @@ export default function PatientPrescriptionsPage() {
   }, []);
 
   return (
-    <div className="min-h-full w-full space-y-6 font-sans text-slate-950">
+    <div className="min-h-full w-full space-y-6 font-sans text-patient-charcoal">
       {/* Page header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#8c2b39]">Active Prescriptions</h1>
-          <p className="mt-1 text-sm font-medium text-slate-600">
+          <h1 className="text-2xl font-black text-patient-plum">Active Prescriptions</h1>
+          <p className="mt-1 text-sm font-medium text-patient-lavender">
             Daily medicine ledger · dosage tracking · reminder controls · 14 Jul 2026
           </p>
         </div>
@@ -153,36 +153,36 @@ export default function PatientPrescriptionsPage() {
         aria-label="Prescription tracking summary"
         className="grid grid-cols-2 gap-3 lg:grid-cols-4"
       >
-        <div className="rounded-xl border border-[#f0d8dc] bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        <div className="rounded-xl border border-patient-lavender/30 bg-white p-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
             Active Medicines
           </p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-[#8c2b39]">
+          <p className="mt-2 text-3xl font-black tabular-nums text-patient-plum">
             {ACTIVE_PRESCRIPTIONS.length}
           </p>
         </div>
-        <div className="rounded-xl border border-[#f0d8dc] bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        <div className="rounded-xl border border-patient-lavender/30 bg-white p-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
             Reminders Active
           </p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-[#f47c8c]">
+          <p className="mt-2 text-3xl font-black tabular-nums text-patient-primary">
             {activeReminderCount}
           </p>
         </div>
-        <div className="rounded-xl border border-[#f0d8dc] bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        <div className="rounded-xl border border-patient-lavender/30 bg-white p-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
             Doses Today
           </p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-[#f47c8c]">
+          <p className="mt-2 text-3xl font-black tabular-nums text-patient-primary">
             {dosesTakenToday}
             <span className="text-lg font-medium text-slate-400"> / {totalDosesToday}</span>
           </p>
         </div>
-        <div className="rounded-xl border border-[#f0d8dc] bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        <div className="rounded-xl border border-patient-lavender/30 bg-white p-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
             Adherence Rate
           </p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-[#8c2b39]">
+          <p className="mt-2 text-3xl font-black tabular-nums text-patient-plum">
             {totalDosesToday > 0
               ? Math.round((dosesTakenToday / totalDosesToday) * 100)
               : 0}
@@ -194,8 +194,8 @@ export default function PatientPrescriptionsPage() {
       {/* Vertical medicine list */}
       <section aria-label="Current daily medicines" className={CARD_CLASS}>
         <div className="mb-5 flex items-center gap-2">
-          <Pill className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-          <h2 className="text-lg font-black text-[#8c2b39]">Current Daily Medicines</h2>
+          <Pill className="h-5 w-5 text-patient-primary" aria-hidden />
+          <h2 className="text-lg font-black text-patient-plum">Current Daily Medicines</h2>
         </div>
 
         <ul className="space-y-4">
@@ -206,29 +206,29 @@ export default function PatientPrescriptionsPage() {
             return (
               <li
                 key={rx.id}
-                className="rounded-xl border border-[#f0d8dc] bg-white p-5 shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)]"
+                className="rounded-xl border border-patient-lavender/30 bg-white p-5 shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)]"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-start gap-2">
-                      <h3 className="text-base font-black text-slate-900">{rx.medication}</h3>
-                      <span className="inline-flex rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#f47c8c]">
+                      <h3 className="text-base font-black text-patient-charcoal">{rx.medication}</h3>
+                      <span className="inline-flex rounded-full border border-patient-lavender/30 bg-patient-card px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-patient-primary">
                         Active
                       </span>
                     </div>
 
-                    <p className="mt-2 text-sm font-bold text-[#f47c8c]">
+                    <p className="mt-2 text-sm font-bold text-patient-primary">
                       {rx.dosage} · {rx.frequency}
                     </p>
-                    <p className="mt-1 text-xs font-medium text-slate-600">{rx.prescriber}</p>
+                    <p className="mt-1 text-xs font-medium text-patient-lavender">{rx.prescriber}</p>
 
                     {/* Dose tracking counter */}
                     <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <div className="rounded-lg border border-[#f0d8dc] bg-slate-50/80 px-3 py-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      <div className="rounded-lg border border-patient-lavender/30 bg-patient-lavender/10/80 px-3 py-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                           Doses Today
                         </p>
-                        <p className="mt-1 text-lg font-black tabular-nums text-[#8c2b39]">
+                        <p className="mt-1 text-lg font-black tabular-nums text-patient-plum">
                           {rx.dosesTakenToday}
                           <span className="text-sm font-medium text-slate-400">
                             {' '}
@@ -236,32 +236,32 @@ export default function PatientPrescriptionsPage() {
                           </span>
                         </p>
                       </div>
-                      <div className="rounded-lg border border-[#f0d8dc] bg-slate-50/80 px-3 py-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      <div className="rounded-lg border border-patient-lavender/30 bg-patient-lavender/10/80 px-3 py-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                           Days Remaining
                         </p>
-                        <p className="mt-1 text-lg font-black tabular-nums text-[#f47c8c]">
+                        <p className="mt-1 text-lg font-black tabular-nums text-patient-primary">
                           {rx.totalDaysRemaining}
                         </p>
                       </div>
-                      <div className="rounded-lg border border-[#f0d8dc] bg-slate-50/80 px-3 py-2">
-                        <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      <div className="rounded-lg border border-patient-lavender/30 bg-patient-lavender/10/80 px-3 py-2">
+                        <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                           <Clock className="h-3 w-3" aria-hidden />
                           Next Dose
                         </p>
-                        <p className="mt-1 text-sm font-black text-[#f47c8c]">{rx.nextDose}</p>
+                        <p className="mt-1 text-sm font-black text-patient-primary">{rx.nextDose}</p>
                       </div>
                     </div>
 
                     {/* Progress bar */}
                     <div className="mt-3">
-                      <div className="mb-1 flex justify-between text-[10px] font-bold text-slate-500">
+                      <div className="mb-1 flex justify-between text-[10px] font-bold text-patient-lavender">
                         <span>Today&apos;s dose progress</span>
-                        <span className="text-[#8c2b39]">{doseProgress}%</span>
+                        <span className="text-patient-plum">{doseProgress}%</span>
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                         <div
-                          className="h-full rounded-full bg-[#f47c8c] transition-all duration-500"
+                          className="h-full rounded-full bg-patient-primary transition-all duration-500"
                           style={{ width: `${doseProgress}%` }}
                         />
                       </div>
@@ -276,8 +276,8 @@ export default function PatientPrescriptionsPage() {
                       aria-pressed={reminderOn}
                       className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-all ${
                         reminderOn
-                          ? 'border-[#f0d8dc] bg-[#fde8eb] text-[#8c2b39] hover:bg-[#f47c8c]/20'
-                          : 'border-[#f0d8dc] bg-slate-50 text-slate-600 hover:bg-slate-100'
+                          ? 'border-patient-lavender/30 bg-patient-card text-patient-plum hover:bg-patient-primary/20'
+                          : 'border-patient-lavender/30 bg-patient-lavender/10 text-patient-lavender hover:bg-slate-100'
                       }`}
                     >
                       {reminderOn ? (
@@ -291,7 +291,7 @@ export default function PatientPrescriptionsPage() {
                     <button
                       type="button"
                       onClick={() => handleDownloadPdf(rx.medication)}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2.5 text-xs font-bold text-[#f47c8c] transition-all hover:bg-[#e06373]/10"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-patient-lavender/30 bg-patient-card px-4 py-2.5 text-xs font-bold text-patient-primary transition-all hover:bg-patient-lavender/25"
                     >
                       <Download className="h-4 w-4" aria-hidden />
                       Download Prescription PDF
@@ -300,7 +300,7 @@ export default function PatientPrescriptionsPage() {
                 </div>
 
                 {reminderOn ? (
-                  <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#8c2b39]">
+                  <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-patient-lavender/30 bg-patient-card px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-patient-plum">
                     <Bell className="h-3 w-3" aria-hidden />
                     Medicine Reminder Active · alert at {rx.nextDose}
                   </p>

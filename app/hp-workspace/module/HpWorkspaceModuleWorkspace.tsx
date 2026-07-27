@@ -83,12 +83,12 @@ export default function HpWorkspaceModuleWorkspace() {
               role="tab"
               aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`shrink-0 rounded-md px-3 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/50 ${
+              className={`shrink-0 rounded-md px-4 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/50 ${
                 activeTab === tab.id ? 'bg-[#0F172A] text-white' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              <span className="block text-[11px] font-bold">{tab.label}</span>
-              <span className={`block text-[9px] ${activeTab === tab.id ? 'text-slate-300' : 'text-slate-400'}`}>{tab.description}</span>
+              <span className="block text-sm font-bold">{tab.label}</span>
+              <span className={`block text-sm ${activeTab === tab.id ? 'text-slate-300' : 'text-slate-500'}`}>{tab.description}</span>
             </button>
           ))}
         </div>

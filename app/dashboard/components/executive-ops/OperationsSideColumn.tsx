@@ -99,25 +99,25 @@ export default function OperationsSideColumn({ data }: OperationsSideColumnProps
         icon={ClipboardList}
         dense
       >
-        <ul className="custom-scrollbar max-h-[180px] space-y-1.5 overflow-y-auto">
+        <ul className="custom-scrollbar max-h-[240px] space-y-0 overflow-y-auto">
           {data.activities.map((event) => {
             const Icon = ACTIVITY_ICONS[event.type];
             return (
               <li
                 key={event.id}
-                className="flex gap-2 border-b border-slate-50 pb-1.5 last:border-0 last:pb-0"
+                className="flex gap-3 border-b border-slate-100 py-3 last:border-0"
               >
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-slate-100">
-                  <Icon className="h-2.5 w-2.5 text-[#0F172A]" />
+                <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100">
+                  <Icon className="h-4 w-4 text-[#0F172A]" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <p className="truncate text-[10px] font-bold text-[#0F172A]">{event.title}</p>
-                    <time className="shrink-0 text-[8px] text-slate-400">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-base font-semibold text-slate-900">{event.title}</p>
+                    <time className="shrink-0 text-sm text-slate-600">
                       {formatEventTime(event.timestamp)}
                     </time>
                   </div>
-                  <p className="text-[9px] leading-snug text-slate-600">{event.detail}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">{event.detail}</p>
                 </div>
               </li>
             );

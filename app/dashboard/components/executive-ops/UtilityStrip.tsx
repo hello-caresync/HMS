@@ -44,21 +44,21 @@ export default function UtilityStrip({ data, onQuickAction }: UtilityStripProps)
           </span>
         }
       >
-        <ul className="custom-scrollbar max-h-[72px] space-y-1.5 overflow-y-auto pr-1">
+        <ul className="custom-scrollbar max-h-[120px] space-y-0 overflow-y-auto pr-1">
           {data.liveAlerts.map((alert) => (
             <li
               key={alert.id}
-              className="flex items-start gap-2 rounded-md border border-slate-100 bg-slate-50/80 px-2 py-1.5"
+              className="flex items-start gap-3 border-b border-slate-100 px-2 py-3 last:border-0"
             >
               <SeverityPill severity={alert.severity} />
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold text-[#0F172A]">
+                <p className="text-base font-semibold text-slate-900">
                   {alert.category}
-                  <span className="ml-1.5 font-normal text-slate-400">
+                  <span className="ml-2 font-normal text-sm text-slate-600">
                     · {formatEventTime(alert.timestamp)}
                   </span>
                 </p>
-                <p className="truncate text-[10px] text-slate-600">{alert.message}</p>
+                <p className="mt-1 text-sm text-slate-600">{alert.message}</p>
               </div>
               {alert.severity === 'critical' && (
                 <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-red-500" aria-hidden />
@@ -82,7 +82,7 @@ export default function UtilityStrip({ data, onQuickAction }: UtilityStripProps)
                 key={action.id}
                 type="button"
                 onClick={() => onQuickAction?.(action.moduleId)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-left text-[10px] font-semibold text-[#0F172A] transition-colors hover:border-[#2563EB]/40 hover:bg-blue-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/40"
+                className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-semibold text-[#0F172A] transition-colors hover:border-[#2563EB]/40 hover:bg-blue-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/40"
               >
                 <Icon className="h-3 w-3 shrink-0 text-[#2563EB]" strokeWidth={2} />
                 <span className="truncate">{action.label}</span>

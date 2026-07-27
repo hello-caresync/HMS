@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
-export default function DoctorLabRedirect() {
-  redirect('/doctor/labs');
+export default function LegacyLabRedirect() {
+  redirect('/doctor/lab-orders');
 }

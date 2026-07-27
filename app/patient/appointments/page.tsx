@@ -77,7 +77,7 @@ const SPECIALTY_FILTERS: Specialty[] = [
   'Endocrinology',
 ];
 
-const PANEL_CLASS = 'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
+const PANEL_CLASS = 'rounded-2xl border border-patient-lavender/30 bg-white p-6 shadow-sm';
 
 const QUEUE_STATUS: QueueStatus = {
   currentToken: 4,
@@ -309,20 +309,20 @@ export default function PatientAppointmentsPage() {
   }, [showActionNote]);
 
   return (
-    <div className="min-h-screen w-full space-y-6 bg-[#faf6f7] p-6 font-sans text-slate-950">
+    <div className="min-h-screen w-full space-y-6 bg-patient-canvas p-6 font-sans text-patient-charcoal">
       {/* Logistical hub header */}
       <header>
-        <h1 className="text-2xl font-black text-[#8c2b39]">
+        <h1 className="text-2xl font-black text-patient-plum">
           Consultation Booking &amp; Encounter Ledger
         </h1>
-        <p className="mt-1 text-sm font-medium text-slate-600">
+        <p className="mt-1 text-sm font-medium text-patient-lavender">
           Active medical appointment operations · live queue tracking · slot booking · encounter
           archive · 14 Jul 2026
         </p>
       </header>
 
       {actionNote ? (
-        <p className="rounded-xl border border-[#f0d8dc] bg-[#fde8eb] px-4 py-2 text-sm font-bold text-[#f47c8c]">
+        <p className="rounded-xl border border-patient-lavender/30 bg-patient-card px-4 py-2 text-sm font-bold text-patient-primary">
           {actionNote}
         </p>
       ) : null}
@@ -331,45 +331,45 @@ export default function PatientAppointmentsPage() {
       {QUEUE_STATUS.isActiveToday ? (
         <section
           aria-label="Live queue tracker"
-          className="flex flex-col gap-4 rounded-xl border border-[#f0d8dc] border-l-4 border-l-[#f47c8c] bg-gradient-to-r from-white to-slate-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-4 rounded-xl border border-patient-lavender/30 border-l-4 border-l-[#572E54] bg-gradient-to-r from-white to-patient-lavender/10 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-[#f0d8dc] bg-[#fde8eb] p-2.5 text-[#f47c8c]">
+            <div className="rounded-lg border border-patient-lavender/30 bg-patient-card p-2.5 text-patient-primary">
               <Timer className="h-5 w-5" aria-hidden />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-[#8c2b39]">
+              <p className="text-xs font-bold uppercase tracking-wider text-patient-plum">
                 Live Queue · {QUEUE_STATUS.department}
               </p>
-              <p className="mt-0.5 text-sm font-medium text-slate-600">
+              <p className="mt-0.5 text-sm font-medium text-patient-lavender">
                 Today&apos;s OPD token stream active
               </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-4 sm:gap-6">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                 Current Token
               </p>
-              <p className="text-xl font-black tabular-nums text-[#f47c8c]">
+              <p className="text-xl font-black tabular-nums text-patient-primary">
                 {QUEUE_STATUS.currentToken}
               </p>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                 Your Token
               </p>
-              <p className="text-xl font-black tabular-nums text-[#8c2b39]">
+              <p className="text-xl font-black tabular-nums text-patient-plum">
                 {QUEUE_STATUS.yourToken}
               </p>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
                 Est. Wait Time
               </p>
-              <p className="text-xl font-black tabular-nums text-[#8c2b39]">
+              <p className="text-xl font-black tabular-nums text-patient-plum">
                 {QUEUE_STATUS.estimatedWaitMins}
-                <span className="text-sm font-medium text-slate-500"> mins</span>
+                <span className="text-sm font-medium text-patient-lavender"> mins</span>
               </p>
             </div>
           </div>
@@ -383,8 +383,8 @@ export default function PatientAppointmentsPage() {
           {/* Book appointment module */}
           <section aria-label="Book appointment" className={PANEL_CLASS}>
             <div className="mb-5 flex items-center gap-2">
-              <Stethoscope className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-lg font-black text-[#8c2b39]">Book Appointment</h2>
+              <Stethoscope className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-lg font-black text-patient-plum">Book Appointment</h2>
             </div>
 
             <div className="relative mb-4">
@@ -398,7 +398,7 @@ export default function PatientAppointmentsPage() {
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search physicians or specialties…"
                 aria-label="Search physicians or specialties"
-                className="w-full rounded-xl border border-[#f0d8dc] bg-white py-2.5 pl-10 pr-4 text-sm font-medium focus:border-[#f0d8dc] focus:outline-none focus:ring-2 focus:ring-[#f47c8c]/20"
+                className="w-full rounded-xl border border-patient-lavender/30 bg-white py-2.5 pl-10 pr-4 text-sm font-medium focus:border-patient-lavender/30 focus:outline-none focus:ring-2 focus:ring-[#572E54]/20"
               />
             </div>
 
@@ -410,8 +410,8 @@ export default function PatientAppointmentsPage() {
                   onClick={() => setSpecialtyFilter(specialty)}
                   className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
                     specialtyFilter === specialty
-                      ? 'bg-[#f47c8c] text-white shadow-sm'
-                      : 'bg-[#fde8eb] text-[#f47c8c] hover:bg-[#e06373]/10'
+                      ? 'bg-patient-primary text-white shadow-sm'
+                      : 'bg-patient-card text-patient-primary hover:bg-patient-lavender/25'
                   }`}
                 >
                   {specialty}
@@ -419,7 +419,7 @@ export default function PatientAppointmentsPage() {
               ))}
             </div>
 
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-patient-lavender">
               Open slots · {filteredSlots.length} available
             </p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -432,18 +432,18 @@ export default function PatientAppointmentsPage() {
                     onClick={() => setSelectedSlotId(slot.id)}
                     className={`rounded-xl border px-3 py-3 text-left transition-all ${
                       selected
-                        ? 'border-[#f47c8c] bg-[#f47c8c] text-white shadow-sm'
-                        : 'border-[#f0d8dc] bg-[#fde8eb] text-[#f47c8c] hover:bg-[#e06373]/10'
+                        ? 'border-patient-primary bg-patient-primary text-white shadow-sm'
+                        : 'border-patient-lavender/30 bg-patient-card text-patient-primary hover:bg-patient-lavender/25'
                     }`}
                   >
                     <p className="text-xs font-black">{slot.dateLabel}</p>
                     <p className={`mt-0.5 text-sm font-black ${selected ? 'text-white' : ''}`}>
                       {slot.timeLabel}
                     </p>
-                    <p className={`mt-1 text-[11px] font-bold ${selected ? 'text-white/90' : 'text-slate-700'}`}>
+                    <p className={`mt-1 text-[11px] font-bold ${selected ? 'text-white/90' : 'text-patient-charcoal'}`}>
                       {slot.doctorName}
                     </p>
-                    <p className={`mt-0.5 text-[10px] ${selected ? 'text-white/80' : 'text-slate-500'}`}>
+                    <p className={`mt-0.5 text-[10px] ${selected ? 'text-white/80' : 'text-patient-lavender'}`}>
                       {slot.specialty}
                     </p>
                   </button>
@@ -452,20 +452,20 @@ export default function PatientAppointmentsPage() {
             </div>
 
             {filteredSlots.length === 0 ? (
-              <p className="mt-4 text-sm font-medium text-slate-500">
+              <p className="mt-4 text-sm font-medium text-patient-lavender">
                 No slots match your filters.
               </p>
             ) : null}
 
             {selectedSlot ? (
-              <div className="mt-4 rounded-xl border border-[#f0d8dc] bg-[#fde8eb] p-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#8c2b39]">
+              <div className="mt-4 rounded-xl border border-patient-lavender/30 bg-patient-card p-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-patient-plum">
                   Selected slot
                 </p>
-                <p className="mt-1 text-sm font-black text-slate-900">
+                <p className="mt-1 text-sm font-black text-patient-charcoal">
                   {selectedSlot.doctorName} · {selectedSlot.specialty}
                 </p>
-                <p className="text-xs font-medium text-slate-600">
+                <p className="text-xs font-medium text-patient-lavender">
                   {selectedSlot.dateLabel} · {selectedSlot.timeLabel} · {selectedSlot.department}
                 </p>
               </div>
@@ -474,7 +474,7 @@ export default function PatientAppointmentsPage() {
             <button
               type="button"
               onClick={handleConfirmAppointment}
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#f47c8c] px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#e06373] sm:w-auto"
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-patient-primary px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-patient-plum sm:w-auto"
             >
               <CheckCircle2 className="h-4 w-4" aria-hidden />
               Confirm Appointment
@@ -484,49 +484,49 @@ export default function PatientAppointmentsPage() {
           {/* Upcoming appointments list */}
           <section aria-label="Upcoming appointments" className={PANEL_CLASS}>
             <div className="mb-5 flex items-center gap-2">
-              <CalendarClock className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-lg font-black text-[#8c2b39]">Upcoming Appointments</h2>
+              <CalendarClock className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-lg font-black text-patient-plum">Upcoming Appointments</h2>
             </div>
 
             <ul className="space-y-3">
               {appointments.length === 0 ? (
-                <li className="rounded-xl border border-dashed border-[#f0d8dc] px-4 py-8 text-center text-sm font-medium text-slate-500">
+                <li className="rounded-xl border border-dashed border-patient-lavender/30 px-4 py-8 text-center text-sm font-medium text-patient-lavender">
                   No upcoming appointments scheduled.
                 </li>
               ) : (
                 appointments.map((apt) => (
                   <li
                     key={apt.id}
-                    className="rounded-xl border border-[#f0d8dc] bg-white p-5 shadow-sm"
+                    className="rounded-xl border border-patient-lavender/30 bg-white p-5 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="text-sm font-black text-slate-900">{apt.doctorName}</p>
-                        <p className="mt-0.5 text-xs font-bold text-[#f47c8c]">{apt.specialty}</p>
+                        <p className="text-sm font-black text-patient-charcoal">{apt.doctorName}</p>
+                        <p className="mt-0.5 text-xs font-bold text-patient-primary">{apt.specialty}</p>
                       </div>
-                      <span className="inline-flex shrink-0 rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#f47c8c]">
+                      <span className="inline-flex shrink-0 rounded-full border border-patient-lavender/30 bg-patient-card px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-patient-primary">
                         {apt.status}
                       </span>
                     </div>
                     <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <dt className="font-bold text-slate-500">Date</dt>
-                        <dd className="font-black text-[#8c2b39]">{apt.slotDate}</dd>
+                        <dt className="font-bold text-patient-lavender">Date</dt>
+                        <dd className="font-black text-patient-plum">{apt.slotDate}</dd>
                       </div>
                       <div>
-                        <dt className="font-bold text-slate-500">Time</dt>
-                        <dd className="font-black text-[#f47c8c]">{apt.slotTime}</dd>
+                        <dt className="font-bold text-patient-lavender">Time</dt>
+                        <dd className="font-black text-patient-primary">{apt.slotTime}</dd>
                       </div>
                       <div className="col-span-2">
-                        <dt className="font-bold text-slate-500">Department</dt>
-                        <dd className="font-bold text-slate-800">{apt.department}</dd>
+                        <dt className="font-bold text-patient-lavender">Department</dt>
+                        <dd className="font-bold text-patient-text">{apt.department}</dd>
                       </div>
                     </dl>
-                    <div className="mt-4 flex gap-4 border-t border-[#f0d8dc] pt-3">
+                    <div className="mt-4 flex gap-4 border-t border-patient-lavender/30 pt-3">
                       <button
                         type="button"
                         onClick={() => handleReschedule(apt.id)}
-                        className="text-xs font-bold text-[#f47c8c] hover:underline"
+                        className="text-xs font-bold text-patient-primary hover:underline"
                       >
                         Reschedule
                       </button>
@@ -550,36 +550,36 @@ export default function PatientAppointmentsPage() {
           {/* Doctor availability engine */}
           <section aria-label="Doctor availability" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <UserCheck className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-base font-black text-[#8c2b39]">Doctor Availability</h2>
+              <UserCheck className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-base font-black text-patient-plum">Doctor Availability</h2>
             </div>
             <ul className="space-y-2">
               {PHYSICIANS.map((physician) => (
                 <li
                   key={physician.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-[#f0d8dc] bg-slate-50/50 px-3 py-2.5"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-patient-lavender/30 bg-patient-lavender/10/50 px-3 py-2.5"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-slate-900">{physician.name}</p>
-                    <p className="text-[10px] font-medium text-slate-600">{physician.specialty}</p>
+                    <p className="truncate text-sm font-bold text-patient-charcoal">{physician.name}</p>
+                    <p className="text-[10px] font-medium text-patient-lavender">{physician.specialty}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                         physician.isAvailable
-                          ? 'bg-[#fde8eb] text-[#f47c8c]'
-                          : 'bg-slate-200/80 text-slate-600'
+                          ? 'bg-patient-card text-patient-primary'
+                          : 'bg-slate-200/80 text-patient-lavender'
                       }`}
                     >
                       <span
                         className={`h-1.5 w-1.5 rounded-full ${
-                          physician.isAvailable ? 'bg-[#f47c8c]' : 'bg-slate-400'
+                          physician.isAvailable ? 'bg-patient-primary' : 'bg-slate-400'
                         }`}
                         aria-hidden
                       />
                       {physician.isAvailable ? 'Available' : 'Busy'}
                     </span>
-                    <span className="text-[10px] font-bold text-[#f47c8c]">{physician.nextSlot}</span>
+                    <span className="text-[10px] font-bold text-patient-primary">{physician.nextSlot}</span>
                   </div>
                 </li>
               ))}
@@ -589,38 +589,38 @@ export default function PatientAppointmentsPage() {
           {/* Visit & appointment history */}
           <section aria-label="Visit history" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <History className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-base font-black text-[#8c2b39]">Visit &amp; Appointment History</h2>
+              <History className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-base font-black text-patient-plum">Visit &amp; Appointment History</h2>
             </div>
-            <ol className="relative space-y-4 border-l-2 border-[#f0d8dc] pl-5">
+            <ol className="relative space-y-4 border-l-2 border-patient-lavender/30 pl-5">
               {VISIT_HISTORY.map((entry) => (
                 <li key={entry.id} className="relative">
                   <span
-                    className="absolute -left-[1.35rem] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#f47c8c]"
+                    className="absolute -left-[1.35rem] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-patient-primary"
                     aria-hidden
                   />
-                  <div className="rounded-xl border border-[#f0d8dc] bg-white p-4 shadow-sm">
+                  <div className="rounded-xl border border-patient-lavender/30 bg-white p-4 shadow-sm">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-xs font-black text-[#8c2b39]">{entry.date}</p>
+                      <p className="text-xs font-black text-patient-plum">{entry.date}</p>
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
                           entry.completionStatus === 'Completed'
-                            ? 'bg-[#fde8eb] text-[#f47c8c]'
+                            ? 'bg-patient-card text-patient-primary'
                             : 'bg-amber-500/10 text-amber-800'
                         }`}
                       >
                         {entry.completionStatus}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm font-black text-slate-900">{entry.doctorName}</p>
-                    <p className="text-xs font-bold text-[#f47c8c]">{entry.specialty}</p>
-                    <p className="mt-2 text-xs font-medium leading-relaxed text-slate-700">
+                    <p className="mt-2 text-sm font-black text-patient-charcoal">{entry.doctorName}</p>
+                    <p className="text-xs font-bold text-patient-primary">{entry.specialty}</p>
+                    <p className="mt-2 text-xs font-medium leading-relaxed text-patient-charcoal">
                       {entry.diagnosisSummary}
                     </p>
                     <button
                       type="button"
                       onClick={() => handleViewSummary(entry)}
-                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#f47c8c] hover:underline"
+                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-patient-primary hover:underline"
                     >
                       <FileText className="h-3.5 w-3.5" aria-hidden />
                       View Visit Summary Document

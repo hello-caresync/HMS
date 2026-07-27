@@ -81,7 +81,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 const ACTIVE_LINK_CLASS =
-  'bg-gradient-to-r from-[#008588]/10 to-transparent text-[#008588] border-l-4 border-l-[#008588] font-black pl-5 pr-4 py-2.5 transition-all flex items-center gap-3 text-sm shadow-sm';
+  'bg-gradient-to-r from-[#008588]/10 to-transparent text-[#008588] border-l-4 border-l-[#008588] font-semibold pl-5 pr-4 py-2.5 transition-all flex items-center gap-3 text-sm shadow-sm';
 
 const INACTIVE_LINK_CLASS =
   'text-slate-600 hover:text-[#00758C] hover:bg-slate-50/60 transition-colors font-medium text-sm px-4 py-2.5 rounded-lg flex items-center gap-3';
@@ -90,12 +90,12 @@ const EXTERNAL_LINK_CLASS =
   'text-slate-600 hover:text-[#008588] hover:bg-[#008588]/5 transition-colors font-medium text-sm px-4 py-2.5 rounded-lg flex items-center gap-3 border border-transparent hover:border-[#008588]/15';
 
 const SECTION_LABEL_CLASS =
-  'text-[#00A481] font-black tracking-wider text-[11px] uppercase block mb-2 mt-3 px-4';
+  'text-xs font-semibold uppercase tracking-wider text-[#00A481] block mb-2 mt-3 px-4';
 
 const LAYER_LABEL_CLASS =
-  'text-[10px] font-black uppercase tracking-wider block mb-0.5 px-4 first:mt-0';
+  'text-xs font-semibold uppercase tracking-wider block mb-0.5 px-4 first:mt-0';
 
-const ZONE_TITLE_CLASS = 'text-[11px] font-black uppercase tracking-wider block mb-1 px-4';
+const ZONE_TITLE_CLASS = 'text-sm font-semibold uppercase tracking-wider block mb-1 px-4';
 
 function resolveIcon(linkId: string): LucideIcon {
   const iconKey = NAV_LINK_ICON_IDS[linkId] ?? 'layout';
@@ -136,7 +136,7 @@ export default function HospitalPortalLayout({ children }: HospitalPortalLayoutP
       >
         <div>
           <header className="border-b border-slate-200/60 px-6 pb-4 pt-6">
-            <span className="block text-lg font-black uppercase tracking-wider text-[#00758C]">
+            <span className="block text-lg font-bold uppercase tracking-wider text-[#00758C]">
               Nexora Hospital
             </span>
             <p className="mt-1.5 text-xs font-semibold leading-snug text-slate-500">
@@ -153,15 +153,15 @@ export default function HospitalPortalLayout({ children }: HospitalPortalLayoutP
                 }`}
                 aria-hidden
               />
-              <span className="text-[10px] font-bold uppercase tracking-wide text-[#00758C]">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#00758C]">
                 Systems Online
               </span>
-              <span className="text-[10px] text-slate-400">·</span>
-              <span className="font-mono text-[10px] font-semibold tabular-nums text-slate-600">
+              <span className="text-xs text-slate-400">·</span>
+              <span className="font-mono text-xs font-semibold tabular-nums text-slate-600">
                 {networkLatencyMs}ms
               </span>
-              <span className="text-[10px] text-slate-400">·</span>
-              <span className="font-mono text-[10px] font-semibold tabular-nums text-[#00A481]">
+              <span className="text-xs text-slate-400">·</span>
+              <span className="font-mono text-xs font-semibold tabular-nums text-[#00A481]">
                 DB {dbSyncIndex.toFixed(1)}%
               </span>
             </div>
@@ -175,7 +175,7 @@ export default function HospitalPortalLayout({ children }: HospitalPortalLayoutP
                     {layer.layerLabel}
                   </span>
                   <span className={`${ZONE_TITLE_CLASS} ${layer.accentClass}`}>{layer.title}</span>
-                  <p className="mb-1 text-[10px] font-medium text-slate-400">{layer.description}</p>
+                  <p className="mb-1 text-sm font-medium text-slate-500">{layer.description}</p>
                 </div>
 
                 {layer.sections.map((section) => (
@@ -204,7 +204,7 @@ export default function HospitalPortalLayout({ children }: HospitalPortalLayoutP
                                 }`}
                                 aria-hidden
                               />
-                              <span className="min-w-0 flex-1 text-[12px] leading-snug">{link.label}</span>
+                              <span className="min-w-0 flex-1 text-sm leading-snug">{link.label}</span>
                               {link.external ? (
                                 <ExternalLink className="h-3 w-3 shrink-0 text-slate-400" aria-hidden />
                               ) : null}
@@ -221,10 +221,10 @@ export default function HospitalPortalLayout({ children }: HospitalPortalLayoutP
         </div>
 
         <footer className="border-t border-slate-200/80 px-6 py-4">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[#008588]">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#008588]">
             Facility Sync Active
           </p>
-          <p className="mt-1 font-mono text-[10px] text-slate-500">node · nexora-hospital-ecosystem</p>
+          <p className="mt-1 font-mono text-xs text-slate-500">node · nexora-hospital-ecosystem</p>
         </footer>
       </aside>
 

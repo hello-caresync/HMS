@@ -51,15 +51,15 @@ type FamilyOperationalItem = {
 };
 
 const VERIFIED_TAG =
-  'inline-flex rounded-full border border-[#f47c8c]/40 bg-[#fde8eb] px-2.5 py-0.5 text-xs font-semibold tracking-wide text-[#15803d]';
+  'inline-flex rounded-full border border-patient-primary/40 bg-patient-card px-2.5 py-0.5 text-xs font-semibold tracking-wide text-[#15803d]';
 
-const PANEL_CLASS = 'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
+const PANEL_CLASS = 'rounded-2xl border border-patient-lavender/30 bg-white p-6 shadow-sm';
 
 const FAMILY_CARD_CLASS =
-  'rounded-2xl border border-[#f0d8dc] bg-white p-5 shadow-sm transition-all hover:border-[#f0d8dc]';
+  'rounded-2xl border border-patient-lavender/30 bg-white p-5 shadow-sm transition-all hover:border-patient-lavender/30';
 
 const SWITCH_PROFILE_CLASS =
-  'mt-3 block w-full rounded-lg border border-[#f47c8c]/10 bg-[#fde8eb] px-3 py-1.5 text-center text-xs font-bold text-[#f47c8c] transition-colors hover:bg-[#e06373]/10';
+  'mt-3 block w-full rounded-lg border border-patient-primary/10 bg-patient-card px-3 py-1.5 text-center text-xs font-bold text-patient-primary transition-colors hover:bg-patient-lavender/25';
 
 const PRIMARY_SELF: FamilyMemberProfile = {
   id: 'self',
@@ -234,14 +234,14 @@ export default function PatientEmergencyPage() {
   const sosHeaderBadge = useMemo(() => formatSosHeaderBadge(sosStatus), [sosStatus]);
 
   return (
-    <div className="min-h-screen w-full space-y-6 bg-[#faf6f7] p-6 font-sans text-slate-950">
+    <div className="min-h-screen w-full space-y-6 bg-patient-canvas p-6 font-sans text-patient-charcoal">
       {/* Logistical hub header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#8c2b39]">
+          <h1 className="text-2xl font-black text-patient-plum">
             Emergency Dispatch Center &amp; Family Circle
           </h1>
-          <p className="mt-1 text-sm font-medium text-slate-600">
+          <p className="mt-1 text-sm font-medium text-patient-lavender">
             24/7 care coordination · rapid monitoring updates · crisis dispatch bridge · family
             network sync · 14 Jul 2026
           </p>
@@ -263,11 +263,11 @@ export default function PatientEmergencyPage() {
       {/* Top high-alert interaction bar — SOS console */}
       <section
         aria-label="SOS emergency console"
-        className="rounded-2xl border border-[#f0d8dc] bg-white p-5 shadow-sm"
+        className="rounded-2xl border border-patient-lavender/30 bg-white p-5 shadow-sm"
       >
         <div className="mb-4 flex items-center gap-2">
           <ShieldAlert className="h-5 w-5 text-rose-600" aria-hidden />
-          <h2 className="text-base font-black text-[#8c2b39]">Crisis Response Console</h2>
+          <h2 className="text-base font-black text-patient-plum">Crisis Response Console</h2>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-[auto_1fr_auto] md:items-center">
@@ -283,19 +283,19 @@ export default function PatientEmergencyPage() {
           <button
             type="button"
             onClick={handleAmbulanceRequest}
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+            className="flex items-center justify-center gap-2 rounded-xl border border-patient-lavender/20 200 bg-white px-4 py-3 text-sm font-bold text-patient-charcoal shadow-sm transition-colors hover:bg-patient-lavender/10"
           >
-            <Ambulance className="h-4 w-4 text-[#f47c8c]" aria-hidden />
+            <Ambulance className="h-4 w-4 text-patient-primary" aria-hidden />
             Ambulance Request
           </button>
 
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm md:justify-center">
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-patient-lavender/20 200 bg-white px-4 py-3 shadow-sm md:justify-center">
             <div className="flex items-center gap-2">
               <MapPin
-                className={`h-4 w-4 ${shareLiveLocation ? 'text-[#f47c8c]' : 'text-slate-400'}`}
+                className={`h-4 w-4 ${shareLiveLocation ? 'text-patient-primary' : 'text-slate-400'}`}
                 aria-hidden
               />
-              <span className="text-sm font-bold text-slate-700">Share Live Location</span>
+              <span className="text-sm font-bold text-patient-charcoal">Share Live Location</span>
             </div>
             <button
               type="button"
@@ -310,7 +310,7 @@ export default function PatientEmergencyPage() {
                 );
               }}
               className={`relative h-7 w-12 rounded-full transition-colors ${
-                shareLiveLocation ? 'bg-[#f47c8c]' : 'bg-slate-300'
+                shareLiveLocation ? 'bg-patient-primary' : 'bg-slate-300'
               }`}
             >
               <span
@@ -326,7 +326,7 @@ export default function PatientEmergencyPage() {
           <button
             type="button"
             onClick={handleResetSos}
-            className="mt-4 text-xs font-bold text-[#f47c8c] hover:underline"
+            className="mt-4 text-xs font-bold text-patient-primary hover:underline"
           >
             Reset crisis console · stand down alert
           </button>
@@ -334,14 +334,14 @@ export default function PatientEmergencyPage() {
       </section>
 
       {/* Active profile context banner */}
-      <div className="rounded-xl border border-[#f0d8dc] bg-[#fde8eb] px-4 py-3">
-        <p className="text-[10px] font-black uppercase tracking-wider text-[#f47c8c]">
+      <div className="rounded-xl border border-patient-lavender/30 bg-patient-card px-4 py-3">
+        <p className="text-[10px] font-black uppercase tracking-wider text-patient-primary">
           Active Profile Context
         </p>
-        <p className="mt-1 text-sm font-black text-[#8c2b39]">
+        <p className="mt-1 text-sm font-black text-patient-plum">
           {activeProfile.name} · {activeProfile.relation} · {activeProfile.patientId}
         </p>
-        <p className="text-xs font-medium text-slate-600">
+        <p className="text-xs font-medium text-patient-lavender">
           Medical Record {activeProfile.medicalRecordRef} · Next: {activeProfile.nextAppointment}
         </p>
       </div>
@@ -350,8 +350,8 @@ export default function PatientEmergencyPage() {
         {/* Left column — family network (55%) */}
         <section aria-label="Family members network" className={PANEL_CLASS}>
           <div className="mb-4 flex items-center gap-2">
-            <Users className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-            <h2 className="text-lg font-black text-[#8c2b39]">Family Members Directory</h2>
+            <Users className="h-5 w-5 text-patient-primary" aria-hidden />
+            <h2 className="text-lg font-black text-patient-plum">Family Members Directory</h2>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -362,17 +362,17 @@ export default function PatientEmergencyPage() {
                 <article
                   key={member.id}
                   className={`${FAMILY_CARD_CLASS} ${
-                    isActive ? 'ring-2 ring-[#f47c8c]/30 border-[#f47c8c]/40' : ''
+                    isActive ? 'ring-2 ring-[#572E54]/30 border-patient-primary/40' : ''
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fde8eb]">
-                        <User className="h-5 w-5 text-[#f47c8c]" aria-hidden />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-patient-card">
+                        <User className="h-5 w-5 text-patient-primary" aria-hidden />
                       </div>
                       <div>
-                        <p className="text-sm font-black text-[#8c2b39]">{member.name}</p>
-                        <p className="text-xs font-bold text-[#f47c8c]">{member.relation}</p>
+                        <p className="text-sm font-black text-patient-plum">{member.name}</p>
+                        <p className="text-xs font-bold text-patient-primary">{member.relation}</p>
                       </div>
                     </div>
                     {isActive ? (
@@ -382,33 +382,33 @@ export default function PatientEmergencyPage() {
 
                   <dl className="mt-4 space-y-2 text-xs">
                     <div>
-                      <dt className="font-bold uppercase tracking-wider text-slate-500">
+                      <dt className="font-bold uppercase tracking-wider text-patient-lavender">
                         Patient ID
                       </dt>
-                      <dd className="font-mono font-black text-[#f47c8c]">{member.patientId}</dd>
+                      <dd className="font-mono font-black text-patient-primary">{member.patientId}</dd>
                     </div>
                     <div>
-                      <dt className="font-bold uppercase tracking-wider text-slate-500">
+                      <dt className="font-bold uppercase tracking-wider text-patient-lavender">
                         Family Medical Records
                       </dt>
-                      <dd className="flex flex-wrap items-center gap-2 font-medium text-slate-800">
+                      <dd className="flex flex-wrap items-center gap-2 font-medium text-patient-text">
                         {member.medicalRecordRef}
                         <span className={`inline-flex uppercase ${VERIFIED_TAG}`}>VERIFIED_RECORD</span>
                       </dd>
                     </div>
                     <div>
-                      <dt className="font-bold uppercase tracking-wider text-slate-500">
+                      <dt className="font-bold uppercase tracking-wider text-patient-lavender">
                         Family Appointments
                       </dt>
-                      <dd className="font-medium text-slate-700">{member.nextAppointment}</dd>
+                      <dd className="font-medium text-patient-charcoal">{member.nextAppointment}</dd>
                     </div>
                     {member.recordAlert ? (
-                      <div className="rounded-lg border border-[#f47c8c]/30 bg-[#fde8eb] p-2">
-                        <dt className="flex items-center gap-1 font-bold text-[#8c2b39]">
+                      <div className="rounded-lg border border-patient-primary/30 bg-patient-card p-2">
+                        <dt className="flex items-center gap-1 font-bold text-patient-plum">
                           <AlertTriangle className="h-3 w-3" aria-hidden />
                           Record Flag
                         </dt>
-                        <dd className="mt-0.5 text-[11px] font-medium text-slate-700">
+                        <dd className="mt-0.5 text-[11px] font-medium text-patient-charcoal">
                           {member.recordAlert}
                         </dd>
                       </div>
@@ -424,7 +424,7 @@ export default function PatientEmergencyPage() {
                       Switch to Profile
                     </button>
                   ) : (
-                    <p className="mt-3 text-center text-xs font-bold text-[#f47c8c]">
+                    <p className="mt-3 text-center text-xs font-bold text-patient-primary">
                       Currently viewing this profile
                     </p>
                   )}
@@ -436,19 +436,19 @@ export default function PatientEmergencyPage() {
             <button
               type="button"
               onClick={() => setShowAddMember((prev) => !prev)}
-              className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#f0d8dc] bg-[#fde8eb] p-5 transition-all hover:border-[#f47c8c]/50 hover:bg-[#e06373]/10"
+              className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-patient-lavender/30 bg-patient-card p-5 transition-all hover:border-patient-primary/50 hover:bg-patient-lavender/25"
             >
-              <Plus className="h-8 w-8 text-[#f47c8c]" aria-hidden />
-              <span className="mt-2 text-sm font-black text-[#8c2b39]">Add New Family Member</span>
-              <span className="mt-1 text-xs font-medium text-slate-600">
+              <Plus className="h-8 w-8 text-patient-primary" aria-hidden />
+              <span className="mt-2 text-sm font-black text-patient-plum">Add New Family Member</span>
+              <span className="mt-1 text-xs font-medium text-patient-lavender">
                 Invite dependent · guardian verification required
               </span>
             </button>
           </div>
 
           {showAddMember ? (
-            <div className="mt-4 rounded-xl border border-[#f0d8dc] bg-slate-50/80 p-4">
-              <label htmlFor="new-member-name" className="text-xs font-bold text-slate-700">
+            <div className="mt-4 rounded-xl border border-patient-lavender/30 bg-patient-lavender/10/80 p-4">
+              <label htmlFor="new-member-name" className="text-xs font-bold text-patient-charcoal">
                 Member full name
               </label>
               <div className="mt-2 flex gap-2">
@@ -458,12 +458,12 @@ export default function PatientEmergencyPage() {
                   value={newMemberName}
                   onChange={(event) => setNewMemberName(event.target.value)}
                   placeholder="Enter family member name…"
-                  className="flex-1 rounded-xl border border-[#f0d8dc] bg-white px-4 py-2.5 text-sm font-medium focus:border-[#f0d8dc] focus:outline-none focus:ring-2 focus:ring-[#f47c8c]/20"
+                  className="flex-1 rounded-xl border border-patient-lavender/30 bg-white px-4 py-2.5 text-sm font-medium focus:border-patient-lavender/30 focus:outline-none focus:ring-2 focus:ring-[#572E54]/20"
                 />
                 <button
                   type="button"
                   onClick={handleAddMember}
-                  className="rounded-xl bg-[#f47c8c] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#e06373]"
+                  className="rounded-xl bg-patient-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-patient-plum"
                 >
                   Send Invite
                 </button>
@@ -476,19 +476,19 @@ export default function PatientEmergencyPage() {
         <aside className="space-y-6">
           <section aria-label="Emergency contacts" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Phone className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-base font-black text-[#8c2b39]">Primary Emergency Contacts</h2>
+              <Phone className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-base font-black text-patient-plum">Primary Emergency Contacts</h2>
             </div>
             <ul className="space-y-3">
               {EMERGENCY_CONTACTS.map((contact) => (
                 <li
                   key={contact.id}
-                  className="rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4"
+                  className="rounded-xl border border-patient-lavender/30 bg-patient-lavender/10/50 p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <p className="text-sm font-black text-[#8c2b39]">{contact.name}</p>
-                      <p className="text-xs font-bold text-slate-600">{contact.relation}</p>
+                      <p className="text-sm font-black text-patient-plum">{contact.name}</p>
+                      <p className="text-xs font-bold text-patient-lavender">{contact.relation}</p>
                     </div>
                     {contact.verified ? (
                       <span className={`inline-flex uppercase ${VERIFIED_TAG}`}>VERIFIED</span>
@@ -497,7 +497,7 @@ export default function PatientEmergencyPage() {
                   <button
                     type="button"
                     onClick={() => handleCallContact(contact)}
-                    className="mt-3 inline-flex items-center gap-2 text-sm font-black text-[#8c2b39] hover:underline"
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-black text-patient-plum hover:underline"
                   >
                     <Phone className="h-4 w-4" aria-hidden />
                     {contact.phone}
@@ -509,33 +509,33 @@ export default function PatientEmergencyPage() {
 
           <section aria-label="Family operational summary" className={PANEL_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <CalendarDays className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-base font-black text-[#8c2b39]">Family Operational Summary</h2>
+              <CalendarDays className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-base font-black text-patient-plum">Family Operational Summary</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[320px] border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-[#f0d8dc] bg-slate-50/80">
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
+                  <tr className="border-b border-patient-lavender/30 bg-patient-lavender/10/80">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-patient-plum">
                       Member
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-patient-plum">
                       Type
                     </th>
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-[#8c2b39]">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase text-patient-plum">
                       Detail
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {FAMILY_OPERATIONAL.map((item) => (
-                    <tr key={item.id} className="border-b border-[#f0d8dc]">
-                      <td className="px-3 py-3 text-xs font-black text-[#8c2b39]">{item.member}</td>
+                    <tr key={item.id} className="border-b border-patient-lavender/30">
+                      <td className="px-3 py-3 text-xs font-black text-patient-plum">{item.member}</td>
                       <td className="px-3 py-3">
                         <span
                           className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase ${
                             item.type === 'Appointment'
-                              ? 'text-[#f47c8c]'
+                              ? 'text-patient-primary'
                               : 'text-amber-800'
                           }`}
                         >
@@ -548,9 +548,9 @@ export default function PatientEmergencyPage() {
                         </span>
                       </td>
                       <td className="px-3 py-3">
-                        <p className="text-xs font-medium text-slate-800">{item.detail}</p>
+                        <p className="text-xs font-medium text-patient-text">{item.detail}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] font-bold text-slate-500">{item.timestamp}</span>
+                          <span className="text-[10px] font-bold text-patient-lavender">{item.timestamp}</span>
                           <span className={`inline-flex uppercase ${VERIFIED_TAG}`}>VERIFIED_RECORD</span>
                         </div>
                       </td>

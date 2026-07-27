@@ -218,7 +218,7 @@ export default function POCreationView({
             </h3>
           </div>
           {permissions.isRequisitionOnly && (
-            <span className="inline-flex items-center bg-[#FCEEEB] text-[#A65E53] border border-[#F5D5CF] rounded-lg px-3 py-1 font-mono font-black text-[10px] tracking-wider uppercase">
+            <span className="inline-flex items-center bg-[#FCEEEB] text-[#A65E53] border border-[#F5D5CF] rounded-lg px-3 py-1 font-mono font-semibold text-xs tracking-wider uppercase">
               Requisition · {currentRole}
             </span>
           )}
@@ -307,7 +307,7 @@ export default function POCreationView({
                             <span className="block font-semibold text-slate-800">
                               {product.name}
                             </span>
-                            <span className="mt-0.5 block font-mono text-[10px] text-slate-800">
+                            <span className="mt-0.5 block font-mono text-xs text-slate-800">
                               HSN {product.hsn} · {product.sku} · ₹{product.rate}/unit
                             </span>
                           </button>
@@ -318,7 +318,7 @@ export default function POCreationView({
                 </div>
 
                 {selectedProduct && (
-                  <p className="text-[10px] font-semibold text-[#A65E53]">
+                  <p className="text-xs font-semibold text-[#A65E53]">
                     Selected: {selectedProduct.sku} · HSN {selectedProduct.hsn}
                     {lineTotalPreview > 0 && (
                       <>
@@ -389,7 +389,7 @@ export default function POCreationView({
                     {po.createdBy}
                   </p>
                   {lineTotal > 0 && (
-                    <p className={`mt-0.5 text-[10px] ${monoDataClassName} text-[#A65E53]`}>
+                    <p className={`mt-0.5 text-xs ${monoDataClassName} text-[#A65E53]`}>
                       Line value ₹{lineTotal.toLocaleString('en-IN')}
                     </p>
                   )}

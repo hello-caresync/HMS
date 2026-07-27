@@ -1,7 +1,4 @@
-export const dynamic = 'force-static';
+import { getCalendarEvents } from '@/lib/doctor/server/clinical-service';
+import { withDoctorHandler } from '@/lib/doctor/server/route-handler';
 
-import { NextResponse } from 'next/server';
-
-export function GET() {
-  return NextResponse.json({ success: true });
-}
+export const GET = withDoctorHandler(async (session) => getCalendarEvents(session));

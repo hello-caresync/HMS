@@ -34,17 +34,17 @@ export default function AuditTrailView({ auditLogs }: AuditTrailViewProps) {
             key={log.id}
             className={`${panelClassName} flex items-start gap-4`}
           >
-            <span className={`shrink-0 text-[10px] ${monoDataClassName} text-slate-800`}>
+            <span className={`shrink-0 text-xs ${monoDataClassName} text-slate-800`}>
               {log.id}
             </span>
             <div className="min-w-0 flex-1">
               <p className={`text-sm ${featureHeaderClassName}`}>
                 {log.actionDescription}
               </p>
-              <p className={`mt-1 text-[10px] ${monoDataClassName} text-slate-800`}>
+              <p className={`mt-1 text-xs ${monoDataClassName} text-slate-800`}>
                 {log.timestamp} · {log.userName} ({log.userId})
               </p>
-              <p className="mt-1 text-[10px] font-mono font-black text-[#A65E53]">
+              <p className="mt-1 text-xs font-mono font-bold text-[#A65E53]">
                 {log.metadataToken}
               </p>
             </div>

@@ -51,20 +51,20 @@ export default function ExecutiveOpsDashboard({
       <header className="flex flex-col gap-2 border-b border-slate-200/80 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="mb-1 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#0F172A] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
-              <Radio className="h-2.5 w-2.5 animate-pulse text-[#93C5FD]" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#0F172A] px-3 py-1 text-sm font-semibold uppercase tracking-wider text-white">
+              <Radio className="h-3 w-3 animate-pulse text-[#93C5FD]" />
               Real-Time Command Center
             </span>
-            <span className="text-[10px] font-medium text-slate-500">
+            <span className="text-sm font-medium text-slate-600">
               Nexora Central Hospital · Executive Operations
             </span>
           </div>
-          <h1 className="text-lg font-bold tracking-tight text-[#0F172A] sm:text-xl">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#0F172A] sm:text-4xl">
             Executive Operations Dashboard
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <p className="flex items-center gap-1 text-[10px] text-slate-500">
+          <p className="flex items-center gap-1 text-sm text-slate-600">
             <Clock className="h-3 w-3" aria-hidden />
             Sync{' '}
             <time dateTime={mounted && refreshedAt ? refreshedAt.toISOString() : undefined}>
@@ -75,7 +75,7 @@ export default function ExecutiveOpsDashboard({
             type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-[#0F172A] transition hover:border-[#2563EB]/30 hover:bg-blue-50/40 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] transition hover:border-[#2563EB]/30 hover:bg-blue-50/40 disabled:opacity-60"
           >
             <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh

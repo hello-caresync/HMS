@@ -191,13 +191,13 @@ export default function HospitalInventoryDashboard() {
   return (
     <div className="mt-8 space-y-6">
       <header>
-        <p className="font-mono text-[11px] uppercase tracking-wider text-[#49769F]">
+        <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
           Inventory operations
         </p>
-        <h2 className="mt-1 text-2xl font-black tracking-tight text-[#001D39]">
+        <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#001D39] sm:text-3xl">
           Hospital Warehouse Control Tower
         </h2>
-        <p className="mt-2 max-w-2xl text-xs font-medium text-[#49769F]">
+        <p className="mt-2 max-w-2xl text-base font-medium text-[#49769F]">
           Live holdings ledger synchronized with prescription dispense events and inbound
           procurement receipts.
         </p>
@@ -207,10 +207,10 @@ export default function HospitalInventoryDashboard() {
         <article
           className={`${ALERT_CLASS} border-[#0A4174]/30 bg-[#BDD8E9]/40`}
         >
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[#0A4174]">
+          <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#0A4174]">
             Low stock alert
           </p>
-          <p className="mt-2 font-mono text-2xl font-black text-[#001D39]">
+          <p className="mt-2 font-mono text-2xl font-bold text-[#001D39]">
             {lowStockCount}
           </p>
           <p className="mt-1 text-xs font-medium text-[#49769F]">
@@ -221,10 +221,10 @@ export default function HospitalInventoryDashboard() {
         <article
           className={`${ALERT_CLASS} border-[#49769F]/30 bg-white`}
         >
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[#49769F]">
+          <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
             Near expiry watch
           </p>
-          <p className="mt-2 font-mono text-2xl font-black text-[#0A4174]">
+          <p className="mt-2 font-mono text-2xl font-bold text-[#0A4174]">
             {nearExpiryCount}
           </p>
           <p className="mt-1 text-xs font-medium text-[#49769F]">
@@ -235,10 +235,10 @@ export default function HospitalInventoryDashboard() {
         <article
           className={`${ALERT_CLASS} border-[#001D39]/20 bg-[#001D39] text-white`}
         >
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[#BDD8E9]">
+          <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#BDD8E9]">
             Expired units quarantine
           </p>
-          <p className="mt-2 font-mono text-2xl font-black text-[#BDD8E9]">
+          <p className="mt-2 font-mono text-2xl font-bold text-[#BDD8E9]">
             {expiredUnitsTotal.toLocaleString('en-IN')}
           </p>
           <p className="mt-1 text-xs font-medium text-[#49769F]">
@@ -251,7 +251,7 @@ export default function HospitalInventoryDashboard() {
         <button
           type="button"
           onClick={() => setPanelView('holdings')}
-          className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+          className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
             panelView === 'holdings'
               ? 'bg-[#0A4174] text-white'
               : 'border border-[#49769F]/30 bg-white text-[#001D39] hover:bg-[#BDD8E9]/40'
@@ -262,7 +262,7 @@ export default function HospitalInventoryDashboard() {
         <button
           type="button"
           onClick={() => setPanelView('movements')}
-          className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+          className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
             panelView === 'movements'
               ? 'bg-[#0A4174] text-white'
               : 'border border-[#49769F]/30 bg-white text-[#001D39] hover:bg-[#BDD8E9]/40'
@@ -276,20 +276,20 @@ export default function HospitalInventoryDashboard() {
         <section className={CARD_CLASS}>
           <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-wider text-[#49769F]">
+              <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
                 Warehouse holdings
               </p>
-              <h3 className="mt-1 text-lg font-black text-[#001D39]">
+              <h3 className="mt-1 text-lg font-semibold text-[#001D39]">
                 On-hand stock registry
               </h3>
             </div>
-            <p className="font-mono text-[10px] font-black text-[#49769F]">
+            <p className="font-mono text-xs font-semibold text-[#49769F]">
               {filteredHoldings.length} record(s)
             </p>
           </div>
 
           <label className="mb-4 block">
-            <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-wider text-[#49769F]">
+            <span className="mb-1.5 block font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
               Quick filter — medicine name or batch code
             </span>
             <input
@@ -302,8 +302,8 @@ export default function HospitalInventoryDashboard() {
           </label>
 
           <div className="overflow-x-auto rounded-xl border border-[#49769F]/20">
-            <table className="min-w-full text-left text-xs">
-              <thead className="bg-[#BDD8E9]/50 font-mono text-[10px] uppercase tracking-wider text-[#49769F]">
+            <table className="min-w-full text-left text-base">
+              <thead className="bg-[#BDD8E9]/50 font-mono text-sm font-semibold uppercase tracking-wider text-[#49769F]">
                 <tr>
                   <th className="px-4 py-3">Medicine</th>
                   <th className="px-4 py-3">Batch</th>
@@ -334,26 +334,26 @@ export default function HospitalInventoryDashboard() {
                         className="border-t border-[#49769F]/10 text-[#001D39]"
                       >
                         <td className="px-4 py-3 font-bold">{holding.medicineName}</td>
-                        <td className="px-4 py-3 font-mono font-black text-[#0A4174]">
+                        <td className="px-4 py-3 font-mono font-bold text-[#0A4174]">
                           {holding.batchCode}
                         </td>
                         <td className="px-4 py-3 text-[#49769F]">{holding.department}</td>
-                        <td className="px-4 py-3 font-mono font-black">
+                        <td className="px-4 py-3 font-mono font-bold">
                           {holding.unitsOnHand.toLocaleString('en-IN')}{' '}
                           <span className="text-[#49769F]">{holding.unit}</span>
                         </td>
                         <td className="px-4 py-3 font-mono">{holding.expiryDate}</td>
                         <td className="px-4 py-3">
                           {expired ? (
-                            <span className="rounded-md border border-[#001D39]/20 bg-[#001D39] px-2 py-0.5 font-mono text-[10px] font-black uppercase text-[#BDD8E9]">
+                            <span className="rounded-md border border-[#001D39]/20 bg-[#001D39] px-2 py-0.5 font-mono text-xs font-semibold uppercase text-[#BDD8E9]">
                               Expired
                             </span>
                           ) : low ? (
-                            <span className="rounded-md border border-[#0A4174]/20 bg-[#BDD8E9] px-2 py-0.5 font-mono text-[10px] font-black uppercase text-[#0A4174]">
+                            <span className="rounded-md border border-[#0A4174]/20 bg-[#BDD8E9] px-2 py-0.5 font-mono text-xs font-semibold uppercase text-[#0A4174]">
                               Low stock
                             </span>
                           ) : (
-                            <span className="rounded-md border border-[#49769F]/20 px-2 py-0.5 font-mono text-[10px] font-black uppercase text-[#49769F]">
+                            <span className="rounded-md border border-[#49769F]/20 px-2 py-0.5 font-mono text-xs font-semibold uppercase text-[#49769F]">
                               Stable
                             </span>
                           )}
@@ -368,10 +368,10 @@ export default function HospitalInventoryDashboard() {
         </section>
       ) : (
         <section className={CARD_CLASS}>
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[#49769F]">
+          <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
             Movement history
           </p>
-          <h3 className="mt-1 text-lg font-black text-[#001D39]">Stock ledger pipeline</h3>
+          <h3 className="mt-1 text-lg font-semibold text-[#001D39]">Stock ledger pipeline</h3>
 
           <div className="mt-4 space-y-3">
             {movementHistory.map((entry) => (
@@ -380,11 +380,11 @@ export default function HospitalInventoryDashboard() {
                 className="rounded-xl border border-[#49769F]/15 bg-[#BDD8E9]/20 p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-mono text-[10px] font-black text-[#49769F]">
+                  <p className="font-mono text-xs font-semibold text-[#49769F]">
                     {entry.timestamp}
                   </p>
                   <p
-                    className={`font-mono text-sm font-black ${
+                    className={`font-mono text-sm font-bold ${
                       entry.delta >= 0 ? 'text-[#0A4174]' : 'text-[#001D39]'
                     }`}
                   >
@@ -395,7 +395,7 @@ export default function HospitalInventoryDashboard() {
                 <p className="mt-1 text-sm font-semibold text-[#001D39]">
                   {entry.medicineName}
                 </p>
-                <p className="mt-0.5 font-mono text-[10px] text-[#49769F]">
+                <p className="mt-0.5 font-mono text-xs text-[#49769F]">
                   Batch {entry.batchCode} · {entry.reason}
                 </p>
               </article>

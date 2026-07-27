@@ -1,5 +1,5 @@
-import ClinicalChatCenter from '@/components/doctor/messages/ClinicalChatCenter';
+import { redirect } from 'next/navigation';
 
-export default function DoctorMessagesPage() {
-  return <ClinicalChatCenter />;
+export default function LegacyMessagesRedirect() {
+  redirect('/doctor/communication-center');
 }

@@ -39,6 +39,22 @@ export function useSupabaseClinicalRealtime() {
           }
         },
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'appointments' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['care-center'] });
+          queryClient.invalidateQueries({ queryKey: ['opd', 'queue'] });
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ipd_admissions' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['care-center'] });
+          queryClient.invalidateQueries({ queryKey: ['ipd', 'admissions'] });
+        },
+      )
       .subscribe();
 
     return () => {

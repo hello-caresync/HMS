@@ -21,7 +21,7 @@ const INACTIVE_NAV =
   'w-full text-left px-4 py-3 flex items-center text-slate-200 hover:text-[#E0A89F] hover:bg-slate-800/50 transition-all font-semibold text-xs rounded-xl cursor-pointer';
 
 const ACTIVE_NAV =
-  'w-full text-left px-4 py-3 flex items-center bg-[#E0A89F] text-slate-950 font-black shadow-sm shadow-[#E0A89F]/20 rounded-xl cursor-pointer';
+  'w-full text-left px-4 py-3 flex items-center bg-[#E0A89F] text-slate-950 font-semibold shadow-sm shadow-[#E0A89F]/20 rounded-xl cursor-pointer';
 
 export default function HospitalSidebar({
   navItems,
@@ -60,7 +60,7 @@ export default function HospitalSidebar({
         >
           Supplier gateway
         </Link>
-        <p className="text-center font-mono text-[10px] font-black text-slate-200">
+        <p className="text-center font-mono text-xs font-semibold text-slate-200">
           node · curasync-hospital
         </p>
       </div>

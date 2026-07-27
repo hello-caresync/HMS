@@ -213,6 +213,8 @@ export const MOCK_DRUG_CATALOG: DrugCatalogEntry[] = [
   { id: 'd4', brand: 'Warfarin 5mg', generic: 'Warfarin', route: 'PO', interactsWith: ['Aspirin'] },
   { id: 'd5', brand: 'Atorvastatin 20mg', generic: 'Atorvastatin', route: 'PO' },
   { id: 'd6', brand: 'Paracetamol 650mg', generic: 'Paracetamol', route: 'PO' },
+  { id: 'd7', brand: 'Amlodipine 5mg', generic: 'Amlodipine', route: 'PO' },
+  { id: 'd8', brand: 'Cotrimoxazole DS', generic: 'Sulfamethoxazole', route: 'PO', allergyConflict: ['Sulfa drugs'] },
 ];
 
 export type DocumentTemplateType =

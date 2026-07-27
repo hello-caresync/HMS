@@ -1,46 +1,48 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { useState } from 'react';
 
+import { useDoctorAuth } from '@/lib/doctor/auth/DoctorAuthProvider';
 import { DOCTOR_SIDEBAR_NAV, isDoctorNavActive } from '@/lib/doctor/navigation';
-import { MOCK_DOCTOR } from '@/lib/doctor/mock-data';
-import { clinicalClasses } from '@/lib/doctor/theme';
+import { nxUi } from '@/lib/doctor/design-system';
 
 export default function DoctorSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { session, signOut } = useDoctorAuth();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <aside
-      className={`flex shrink-0 flex-col border-r border-slate-200/80 bg-white transition-[width] ${
-        collapsed ? 'w-[72px]' : 'w-[280px]'
+      className={`flex shrink-0 flex-col border-r border-[rgba(28,27,24,0.08)] bg-white transition-[width] ${
+        collapsed ? 'w-[68px]' : 'w-[248px]'
       }`}
-      aria-label="Nexora Doctor App navigation"
+      aria-label="Doctor workspace navigation"
     >
-      <div className={`${clinicalClasses.sidebarBrand} p-4`}>
+      <div className="border-b border-[rgba(28,27,24,0.08)] p-4">
         <div className="flex items-center justify-between gap-2">
-          {!collapsed && <span className="text-sm font-bold tracking-wide">Nexora Doctor</span>}
+          {!collapsed && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#9C9890]">Nexora</p>
+              <p className="text-[14px] font-semibold text-[#1C1B18]">Doctor</p>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
-            className="rounded-lg border border-white/20 p-1.5 text-white/80 hover:bg-white/10"
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={nxUi.btnGhost + ' !p-1.5'}
+            aria-label={collapsed ? 'Expand' : 'Collapse'}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
         </div>
-        {!collapsed && (
-          <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3">
-            <p className="text-sm font-semibold">{MOCK_DOCTOR.name}</p>
-            <p className="text-xs text-slate-300">{MOCK_DOCTOR.specialization}</p>
-            <span className="mt-2 inline-block rounded-md bg-[#0D9488]/20 px-2 py-0.5 text-[10px] font-semibold text-[#10B981]">
-              {MOCK_DOCTOR.regId}
-            </span>
+        {!collapsed && session && (
+          <div className="mt-3 rounded-xl bg-[#F3F2ED] p-3">
+            <p className="truncate text-[13px] font-semibold text-[#1C1B18]">{session.fullName}</p>
+            <p className="truncate text-[11px] text-[#6B6860]">{session.specialization}</p>
           </div>
         )}
       </div>
@@ -54,13 +56,15 @@ export default function DoctorSidebar() {
                 <Link
                   href={href}
                   title={collapsed ? label : undefined}
-                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488]/40 ${
-                    active ? clinicalClasses.navActive : 'font-medium text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] transition ${
+                    active
+                      ? 'bg-[#1C1B18] font-semibold text-white'
+                      : 'font-medium text-[#6B6860] hover:bg-[#F3F2ED] hover:text-[#1C1B18]'
                   } ${collapsed ? 'justify-center px-2' : ''}`}
                   aria-current={active ? 'page' : undefined}
                 >
-                  <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-[#0D9488]' : 'text-slate-400'}`} />
-                  {!collapsed && <span>{label}</span>}
+                  <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-white' : 'text-[#9C9890]'}`} />
+                  {!collapsed && <span className="truncate">{label}</span>}
                 </Link>
               </li>
             );
@@ -68,11 +72,14 @@ export default function DoctorSidebar() {
         </ul>
       </nav>
 
-      <div className="border-t border-slate-200 p-3">
+      <div className="border-t border-[rgba(28,27,24,0.08)] p-3">
         <button
           type="button"
-          onClick={() => router.push('/doctor/auth/login')}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-[#64748B] hover:border-[#EF4444]/30 hover:text-[#EF4444]"
+          onClick={() => {
+            signOut();
+            router.push('/doctor/auth/login');
+          }}
+          className={`${nxUi.btnGhost} w-full justify-center text-[#6B6860] hover:text-[#DC2626]`}
         >
           <LogOut className="h-4 w-4" />
           {!collapsed && 'Sign out'}

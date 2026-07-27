@@ -71,6 +71,9 @@ export const APP_ROUTES = {
   hospital: '/hospital',
   clinicalDoctor: '/clinical/doctor',
   vendorGateway: '/vendor',
+  vendorPortal: '/vendor/portal',
+  vendorPortalLogin: '/vendor/portal/login',
+  vendorPortalDashboard: '/vendor/portal/dashboard',
   vendorSecureHub: '/vendor/secure-hub',
   vendorSecureHubPoInbox: '/vendor/secure-hub/po-inbox',
 } as const;

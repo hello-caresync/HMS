@@ -51,7 +51,7 @@ export default function ClinicalCalendar() {
                 key={v}
                 type="button"
                 onClick={() => setView(v)}
-                className={`rounded-lg px-3 py-1 text-xs font-bold capitalize ${view === v ? 'bg-[#0D9488] text-white' : 'border bg-white'}`}
+                className={`rounded-lg px-3 py-1 text-xs font-bold capitalize ${view === v ? 'bg-[#0D9488] text-white' : 'border bg-brand-surface'}`}
               >
                 {v}
               </button>

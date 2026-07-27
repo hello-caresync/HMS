@@ -2,11 +2,26 @@
 @config "../tailwind.config.ts";
 @source "./**/*.{js,ts,jsx,tsx,mdx}";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #fdf4f2;
   --foreground: #171717;
   --hub-background: #fdf4f2;
   --hub-border: #f5d5cf;
+
+  /* Nexora Patient — luxury plum & beige (scoped via patient-* utilities) */
+  --patient-plum: #482a41;
+  --patient-canvas: #e2d2c8;
+  --patient-card: #ceb2c0;
+  --patient-lavender: #8e7692;
+  --patient-primary: #572e54;
+  --patient-text: #482a41;
+  --patient-charcoal: #1f2937;
+  --patient-nav-ivory: #f3e8ee;
+  --patient-success: #5e8b7e;
+  --patient-warning: #d8a657;
+  --patient-emergency: #e63946;
 
   /* Luxury Gold — primary interactive brand */
   --primary: #d97706;
@@ -50,20 +65,154 @@
   --color-sidebar-panel: #1e293b;
   --color-obsidian: #0b0f19;
 
-  --color-patient-primary: #f47c8c;
-  --color-patient-primary-hover: #e06373;
-  --color-patient-light: #fde8eb;
-  --color-patient-border: #f0d8dc;
-  --color-patient-heading: #8c2b39;
-  --color-patient-muted: #736366;
-  --color-patient-canvas: #faf6f7;
+  --color-vendor-primary: #ffb703;
+  --color-vendor-secondary: #f77f00;
+  --color-vendor-cream: #fff7e8;
+  --color-vendor-card: #ffffff;
+  --color-vendor-accent: #f4a261;
+  --color-vendor-charcoal: #2b2b2b;
+  --color-vendor-muted: #6b6b6b;
+  --color-vendor-sidebar: #2b2b2b;
+  --color-vendor-success: #2a9d8f;
+  --color-vendor-warning: #d8a657;
+  --color-vendor-danger: #e76f51;
+
+  --color-patient-plum: #482a41;
+  --color-patient-canvas: #e2d2c8;
+  --color-patient-card: #ceb2c0;
+  --color-patient-lavender: #8e7692;
+  --color-patient-primary: #572e54;
+  --color-patient-text: #482a41;
+  --color-patient-charcoal: #1f2937;
+  --color-patient-ivory: #ffffff;
+  --color-patient-ivory-soft: #f3e8ee;
+  --color-patient-success: #5e8b7e;
+  --color-patient-warning: #d8a657;
+  --color-patient-error: #b85c5c;
   --color-patient-emergency: #e63946;
+  --color-patient-light: #e2d2c8;
+  --color-patient-border: #8e7692;
+  --color-patient-heading: #482a41;
+  --color-patient-muted: #8e7692;
+
+  --color-brand: #a39e75;
+  --color-brand-hover: #8e8963;
+  --color-brand-secondary: #c7c39e;
+  --color-brand-light: #e6e3c5;
+  --color-brand-surface: #f7f6e8;
+  --color-brand-bg: #fafaf5;
+  --color-brand-text: #2b2a22;
+  --color-brand-primary: #a39e75;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
   --shadow-3xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
   --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.06);
+}
+
+/* ── Nexora Doctor · Sage & Cream clinical layer (plain CSS — safe for @layer) ── */
+@layer components {
+  .doctor-page {
+    min-height: 100%;
+    background-color: #fafaf5;
+    color: #2b2a22;
+  }
+
+  .doctor-input {
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(199 195 158 / 0.6);
+    background-color: #ffffff;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #2b2a22;
+  }
+
+  .doctor-input:focus {
+    border-color: #a39e75;
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(163 158 117 / 0.25);
+  }
+
+  .doctor-input:-webkit-autofill,
+  .doctor-input:-webkit-autofill:hover,
+  .doctor-input:-webkit-autofill:focus,
+  .doctor-input:-webkit-autofill:active {
+    background-color: #f7f6e8 !important;
+    -webkit-text-fill-color: #2b2a22 !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  .doctor-card {
+    border-radius: 0.75rem;
+    border: 1px solid rgb(230 227 197 / 0.8);
+    background-color: #ffffff;
+    padding: 1rem;
+    box-shadow: 0 1px 2px 0 rgb(43 42 34 / 0.06);
+  }
+
+  .doctor-card-surface {
+    border-radius: 0.75rem;
+    border: 1px solid rgb(230 227 197 / 0.8);
+    background-color: #f7f6e8;
+    padding: 1rem;
+    box-shadow: 0 1px 2px 0 rgb(43 42 34 / 0.06);
+  }
+
+  .allergy-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 0.375rem;
+    border: 1px solid #fecdd3;
+    background-color: #ffe4e6;
+    padding: 0.125rem 0.5rem;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #9f1239;
+  }
+
+  .esi-critical-callout {
+    border-radius: 0.75rem;
+    border: 2px solid #fda4af;
+    background-color: #fff1f2;
+    padding: 1rem;
+    color: #881337;
+    animation: emergencyPulse 2.5s ease-in-out infinite;
+  }
+
+  .doctor-sidebar-active {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+    border-left: 4px solid #a39e75;
+    background-color: #e6e3c5;
+    padding: 0.625rem 0.75rem;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2b2a22;
+  }
+
+  .doctor-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    font-size: 13px;
+    font-weight: 500;
+    color: #5a584a;
+    transition: all 0.15s ease;
+  }
+
+  .doctor-sidebar-link:hover {
+    background-color: #f7f6e8;
+    color: #2b2a22;
+  }
 }
 
 @media (prefers-color-scheme: dark) {

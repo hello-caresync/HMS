@@ -9,9 +9,11 @@ import {
   DocumentType,
   EncounterStatus,
   LabUrgency,
+  NotificationCategory,
   PrismaClient,
   SurgeryStatus,
 } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 // Hard-override: .env.local first, then .env (both override existing process.env)
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true });
@@ -36,6 +38,9 @@ const prisma = new PrismaClient({
 async function main() {
   console.log('Seeding Nexora Doctor App…');
 
+  await prisma.auditLog.deleteMany();
+  await prisma.clinicalNotification.deleteMany();
+  await prisma.doctorPatientAssignment.deleteMany();
   await prisma.clinicalMessage.deleteMany();
   await prisma.clinicalDocument.deleteMany();
   await prisma.telemedicineSession.deleteMany();
@@ -50,13 +55,27 @@ async function main() {
   await prisma.formularyDrug.deleteMany();
   await prisma.patient.deleteMany();
   await prisma.doctor.deleteMany();
+  await prisma.hospital.deleteMany();
+  await prisma.systemAdmin.deleteMany();
+
+  const defaultPassword = process.env.DOCTOR_DEV_PASSWORD ?? '123456';
+  const passwordHash = await bcrypt.hash(defaultPassword, 12);
+  const adminPasswordHash = await bcrypt.hash(process.env.ADMIN_DEV_PASSWORD ?? '123456', 12);
+
+  const hospital = await prisma.hospital.create({
+    data: { name: 'Nexora Multispeciality Hospital', code: 'NX-HOSP-001' },
+  });
 
   const doctor = await prisma.doctor.create({
     data: {
       userId: 'seed-doctor-user',
+      hospitalId: hospital.id,
+      email: 'hospital@curasync.com',
+      passwordHash,
       fullName: 'Dr. Aishwarya D S',
       specialization: 'Internal Medicine / Cardiology',
       licenseNumber: 'REG_NEX_MD_9021',
+      role: 'CONSULTANT',
       consultationFees: 500.0,
       workingHoursJson: {
         mon: '09:00-17:00',
@@ -64,6 +83,7 @@ async function main() {
         wed: '09:00-13:00',
         tele: '17:00-19:00',
       },
+      departmentsJson: ['Cardiology', 'Internal Medicine', 'OPD Clinic 2'],
     },
   });
 
@@ -114,7 +134,15 @@ async function main() {
         allergiesJson: [],
         chronicConditionsJson: ['Hypothyroidism'],
       },
-    ].map((p) => prisma.patient.create({ data: p })),
+    ].map((p) => prisma.patient.create({ data: { ...p, hospitalId: hospital.id } })),
+  );
+
+  await Promise.all(
+    patients.map((p) =>
+      prisma.doctorPatientAssignment.create({
+        data: { doctorId: doctor.id, patientId: p.id },
+      }),
+    ),
   );
 
   const [pOpd, pIcu, pChronic, pEr, pTele] = patients;
@@ -317,12 +345,48 @@ async function main() {
     data: [
       { channelId: 'ch-nurse', doctorId: doctor.id, sender: 'Charge Nurse', body: 'Vitals updated for ICU-Bed 04', stat: true },
       { channelId: 'ch-lab', doctorId: doctor.id, sender: 'Lab Tech', body: 'STAT Troponin resulted', stat: false },
-      { channelId: 'ch-pharm', doctorId: doctor.id, sender: 'Pharmacy', body: 'Rx dispensed for Venkatesh', stat: false },
-      { channelId: 'ch-admin', doctorId: doctor.id, sender: 'Bed Manager', body: 'ICU bed available', stat: false },
+      { channelId: 'ch-rad', doctorId: doctor.id, sender: 'Radiology', body: 'CT Chest report ready — PACS', stat: false },
+      { channelId: 'ch-team', doctorId: doctor.id, sender: 'Consultant Team', body: 'MDT at 16:00 — Cardiology wing', stat: false },
     ],
   });
 
+  await prisma.clinicalNotification.createMany({
+    data: [
+      {
+        doctorId: doctor.id,
+        patientId: pIcu.id,
+        category: NotificationCategory.CRITICAL_LAB,
+        title: 'Panic value · Potassium',
+        body: 'K+ 6.2 mmol/L · ICU-Bed 04',
+      },
+      {
+        doctorId: doctor.id,
+        patientId: pOpd.id,
+        category: NotificationCategory.PATIENT_MSG,
+        title: 'Patient portal message',
+        body: 'Question about fasting labs',
+      },
+      {
+        doctorId: doctor.id,
+        category: NotificationCategory.OT,
+        title: 'OT schedule update',
+        body: 'Lap cholecystectomy moved to OT-2 · 14:30',
+      },
+    ],
+  });
+
+  await prisma.systemAdmin.create({
+    data: {
+      email: 'admin@curasync.com',
+      passwordHash: adminPasswordHash,
+      fullName: 'CuraSync Platform Admin',
+      role: 'ENTREPRENEUR',
+    },
+  });
+
   console.log('Seed complete.');
+  console.log('Doctor login: hospital@curasync.com / ' + defaultPassword);
+  console.log('Admin login: admin@curasync.com / ' + (process.env.ADMIN_DEV_PASSWORD ?? '123456'));
   console.log('Set in .env.local: DEFAULT_DOCTOR_ID=' + doctor.id);
   console.log('Telemedicine appointment:', apptTele.id, 'OPD:', apptOpd.id);
 }

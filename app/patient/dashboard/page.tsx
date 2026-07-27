@@ -151,10 +151,10 @@ const QUICK_ACTIONS = [
   { label: 'Upload Vitals', href: '/patient/health', icon: Upload },
 ] as const;
 
-const CARD_CLASS = 'rounded-2xl border border-[#f0d8dc] bg-white p-6 shadow-sm';
+const CARD_CLASS = 'rounded-2xl border border-patient-lavender/30 bg-white p-6 shadow-sm';
 
 const VITAL_CARD_CLASS =
-  'flex items-center justify-between rounded-xl border border-[#f0d8dc] bg-white p-4 shadow-sm';
+  'flex items-center justify-between rounded-xl border border-patient-lavender/30 bg-white p-4 shadow-sm';
 
 export default function PatientDashboardPage() {
   const [medicines, setMedicines] = useState<MedicineIntake[]>(INITIAL_MEDICINES);
@@ -203,12 +203,12 @@ export default function PatientDashboardPage() {
   );
 
   return (
-    <div className="w-full max-w-full space-y-6 font-sans text-slate-950">
+    <div className="w-full max-w-full space-y-6 font-sans text-patient-charcoal">
       {/* Interactive header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#8c2b39]">Aishwarya D S</h1>
-          <p className="mt-1 text-sm font-medium text-[#736366]">{TODAY_LABEL}</p>
+          <h1 className="text-2xl font-black text-patient-plum">Aishwarya D S</h1>
+          <p className="mt-1 text-sm font-medium text-patient-lavender">{TODAY_LABEL}</p>
         </div>
         <button
           type="button"
@@ -239,47 +239,47 @@ export default function PatientDashboardPage() {
       <section aria-label="Health summary" className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className={VITAL_CARD_CLASS}>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#736366]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
               Daily Steps
             </p>
-            <p className="mt-2 text-2xl font-black tabular-nums text-[#8c2b39]">
+            <p className="mt-2 text-2xl font-black tabular-nums text-patient-plum">
               {HEALTH_SUMMARY.steps.toLocaleString('en-IN')}
             </p>
-            <p className="mt-0.5 text-xs font-bold text-[#8c2b39]">{stepsProgress}% of goal</p>
+            <p className="mt-0.5 text-xs font-bold text-patient-plum">{stepsProgress}% of goal</p>
           </div>
-          <div className="rounded-lg border border-[#f0d8dc] bg-[#fde8eb] p-2.5 text-[#f47c8c]">
+          <div className="rounded-lg border border-patient-lavender/30 bg-patient-card p-2.5 text-patient-primary">
             <Footprints className="h-5 w-5" aria-hidden />
           </div>
         </div>
 
         <div className={VITAL_CARD_CLASS}>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#736366]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
               Heart Rate
             </p>
-            <p className="mt-2 text-2xl font-black tabular-nums text-[#f47c8c]">
+            <p className="mt-2 text-2xl font-black tabular-nums text-patient-primary">
               {HEALTH_SUMMARY.heartRateBpm}
-              <span className="text-sm font-medium text-slate-500"> BPM</span>
+              <span className="text-sm font-medium text-patient-lavender"> BPM</span>
             </p>
-            <p className="mt-0.5 text-xs font-bold text-[#f47c8c]">Resting · normal range</p>
+            <p className="mt-0.5 text-xs font-bold text-patient-primary">Resting · normal range</p>
           </div>
-          <div className="rounded-lg border border-[#f0d8dc] bg-[#fde8eb] p-2.5 text-[#f47c8c]">
+          <div className="rounded-lg border border-patient-lavender/30 bg-patient-card p-2.5 text-patient-primary">
             <Activity className="h-5 w-5" aria-hidden />
           </div>
         </div>
 
         <div className={VITAL_CARD_CLASS}>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#736366]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-patient-lavender">
               Sleep Index
             </p>
-            <p className="mt-2 text-2xl font-black tabular-nums text-[#8c2b39]">
+            <p className="mt-2 text-2xl font-black tabular-nums text-patient-plum">
               {HEALTH_SUMMARY.sleepHours}
-              <span className="text-sm font-medium text-slate-500"> hrs</span>
+              <span className="text-sm font-medium text-patient-lavender"> hrs</span>
             </p>
-            <p className="mt-0.5 text-xs font-bold text-[#736366]">{HEALTH_SUMMARY.sleepQuality}</p>
+            <p className="mt-0.5 text-xs font-bold text-patient-lavender">{HEALTH_SUMMARY.sleepQuality}</p>
           </div>
-          <div className="rounded-lg border border-[#f0d8dc] bg-[#fde8eb] p-2.5 text-[#f47c8c]">
+          <div className="rounded-lg border border-patient-lavender/30 bg-patient-card p-2.5 text-patient-primary">
             <Moon className="h-5 w-5" aria-hidden />
           </div>
         </div>
@@ -292,25 +292,25 @@ export default function PatientDashboardPage() {
           {/* Upcoming appointment widget */}
           <section aria-label="Upcoming appointment" className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <CalendarClock className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-lg font-black text-[#8c2b39]">Upcoming Appointment</h2>
+              <CalendarClock className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-lg font-black text-patient-plum">Upcoming Appointment</h2>
             </div>
-            <div className="rounded-xl border border-[#f0d8dc] bg-gradient-to-r from-[#fde8eb] to-transparent p-5">
+            <div className="rounded-xl border border-patient-lavender/30 bg-gradient-to-r from-patient-card/60 to-transparent p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-lg font-black text-slate-900">
+                  <p className="text-lg font-black text-patient-charcoal">
                     {UPCOMING_APPOINTMENT.doctorName}
                   </p>
-                  <p className="mt-1 text-sm font-bold text-[#f47c8c]">
+                  <p className="mt-1 text-sm font-bold text-patient-primary">
                     {UPCOMING_APPOINTMENT.specialization}
                   </p>
-                  <p className="mt-2 text-xs font-medium text-slate-600">
+                  <p className="mt-2 text-xs font-medium text-patient-lavender">
                     {UPCOMING_APPOINTMENT.department}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-3 text-sm">
-                    <span className="font-black text-[#8c2b39]">{UPCOMING_APPOINTMENT.date}</span>
-                    <span className="font-black text-[#f47c8c]">{UPCOMING_APPOINTMENT.slotTime}</span>
-                    <span className="inline-flex rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#f47c8c]">
+                    <span className="font-black text-patient-plum">{UPCOMING_APPOINTMENT.date}</span>
+                    <span className="font-black text-patient-primary">{UPCOMING_APPOINTMENT.slotTime}</span>
+                    <span className="inline-flex rounded-full border border-patient-lavender/30 bg-patient-card px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-patient-primary">
                       {UPCOMING_APPOINTMENT.status}
                     </span>
                   </div>
@@ -318,13 +318,13 @@ export default function PatientDashboardPage() {
                 <div className="flex shrink-0 flex-col gap-2">
                   <Link
                     href="/patient/appointments"
-                    className="rounded-lg border border-[#f0d8dc] bg-white px-4 py-2 text-center text-xs font-bold text-[#f47c8c] transition-all hover:bg-[#fde8eb]"
+                    className="rounded-lg border border-patient-lavender/30 bg-white px-4 py-2 text-center text-xs font-bold text-patient-primary transition-all hover:bg-patient-card"
                   >
                     View All Bookings
                   </Link>
                   <Link
                     href="/patient/communication"
-                    className="rounded-lg bg-[#f47c8c] px-4 py-2 text-center text-xs font-bold text-white transition-all hover:bg-[#e06373]"
+                    className="rounded-lg bg-patient-primary px-4 py-2 text-center text-xs font-bold text-white transition-all hover:bg-patient-plum"
                   >
                     Message Doctor
                   </Link>
@@ -336,20 +336,20 @@ export default function PatientDashboardPage() {
           {/* Today's medicines tracker */}
           <section aria-label="Today's medicines" className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Pill className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-lg font-black text-[#8c2b39]">Today&apos;s Medicines</h2>
+              <Pill className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-lg font-black text-patient-plum">Today&apos;s Medicines</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-[#f0d8dc] bg-slate-50/80">
-                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase tracking-wider text-[#8c2b39]">
+                  <tr className="border-b border-patient-lavender/30 bg-patient-lavender/10/80">
+                    <th className="px-3 py-2 text-left text-[10px] font-black uppercase tracking-wider text-patient-plum">
                       Medicine
                     </th>
-                    <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-wider text-[#8c2b39]">
+                    <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-wider text-patient-plum">
                       Morning
                     </th>
-                    <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-wider text-[#8c2b39]">
+                    <th className="px-3 py-2 text-center text-[10px] font-black uppercase tracking-wider text-patient-plum">
                       Evening
                     </th>
                   </tr>
@@ -358,15 +358,15 @@ export default function PatientDashboardPage() {
                   {medicines.map((med) => {
                     const complete = isMedicineComplete(med);
                     return (
-                      <tr key={med.id} className="border-b border-[#f0d8dc]">
+                      <tr key={med.id} className="border-b border-patient-lavender/30">
                         <td className="px-3 py-3">
                           <p
-                            className={`font-bold text-slate-900 ${complete ? 'line-through opacity-60' : ''}`}
+                            className={`font-bold text-patient-charcoal ${complete ? 'line-through opacity-60' : ''}`}
                           >
                             {med.name}
                           </p>
                           <p
-                            className={`mt-0.5 text-xs font-medium text-slate-600 ${complete ? 'line-through opacity-60' : ''}`}
+                            className={`mt-0.5 text-xs font-medium text-patient-lavender ${complete ? 'line-through opacity-60' : ''}`}
                           >
                             {med.dosage}
                           </p>
@@ -380,7 +380,7 @@ export default function PatientDashboardPage() {
                               checked={med.morning}
                               onChange={() => toggleIntake(med.id, 'morning')}
                               aria-label={`Mark ${med.name} morning dose taken`}
-                              className="h-4 w-4 cursor-pointer rounded border-[#f0d8dc] accent-[#f47c8c] text-[#f47c8c] focus:ring-2 focus:ring-[#f47c8c]/30 focus:ring-offset-0"
+                              className="h-4 w-4 cursor-pointer rounded border-patient-lavender/30 accent-[#572E54] text-patient-primary focus:ring-2 focus:ring-[#572E54]/30 focus:ring-offset-0"
                             />
                           )}
                         </td>
@@ -393,7 +393,7 @@ export default function PatientDashboardPage() {
                               checked={med.evening}
                               onChange={() => toggleIntake(med.id, 'evening')}
                               aria-label={`Mark ${med.name} evening dose taken`}
-                              className="h-4 w-4 cursor-pointer rounded border-[#f0d8dc] accent-[#f47c8c] text-[#f47c8c] focus:ring-2 focus:ring-[#f47c8c]/30 focus:ring-offset-0"
+                              className="h-4 w-4 cursor-pointer rounded border-patient-lavender/30 accent-[#572E54] text-patient-primary focus:ring-2 focus:ring-[#572E54]/30 focus:ring-offset-0"
                             />
                           )}
                         </td>
@@ -408,36 +408,36 @@ export default function PatientDashboardPage() {
           {/* Latest reports module */}
           <section aria-label="Latest reports" className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <FileText className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-lg font-black text-[#8c2b39]">Latest Reports</h2>
+              <FileText className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-lg font-black text-patient-plum">Latest Reports</h2>
             </div>
             <ul className="space-y-3">
               {LATEST_REPORTS.map((report) => (
                 <li
                   key={report.id}
-                  className="flex flex-col gap-3 rounded-xl border border-[#f0d8dc] bg-slate-50/50 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-xl border border-patient-lavender/30 bg-patient-lavender/10/50 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-black text-slate-900">{report.title}</p>
+                      <p className="text-sm font-black text-patient-charcoal">{report.title}</p>
                       {report.verified ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-[#f0d8dc] bg-[#fde8eb] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#f47c8c]">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-patient-lavender/30 bg-patient-card px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-patient-primary">
                           <Zap className="h-3 w-3" aria-hidden />
                           Verified
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-1 text-xs font-bold text-slate-600">
+                    <p className="mt-1 text-xs font-bold text-patient-lavender">
                       {report.type} · {report.date}
                     </p>
-                    <p className="mt-0.5 font-mono text-[10px] font-bold text-[#f47c8c]">
+                    <p className="mt-0.5 font-mono text-[10px] font-bold text-patient-primary">
                       {report.verificationKey}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleViewPdf(report.title)}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#f0d8dc] bg-white px-3 py-2 text-xs font-bold text-[#f47c8c] transition-all hover:bg-[#fde8eb]"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-patient-lavender/30 bg-white px-3 py-2 text-xs font-bold text-patient-primary transition-all hover:bg-patient-card"
                   >
                     <FileText className="h-3.5 w-3.5" aria-hidden />
                     View PDF
@@ -453,20 +453,20 @@ export default function PatientDashboardPage() {
           {/* Quick actions hub */}
           <section aria-label="Quick actions" className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <Zap className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-base font-black text-[#8c2b39]">Quick Actions</h2>
+              <Zap className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-base font-black text-patient-plum">Quick Actions</h2>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {QUICK_ACTIONS.map(({ label, href, icon: Icon }) => (
                 <Link
                   key={label}
                   href={href}
-                  className="flex flex-col items-start gap-2 rounded-xl border border-[#f0d8dc] bg-gradient-to-br from-white to-slate-50 p-4 transition-all hover:-translate-y-0.5 hover:border-[#f0d8dc]"
+                  className="flex flex-col items-start gap-2 rounded-xl border border-patient-lavender/30 bg-gradient-to-br from-white to-patient-lavender/10 p-4 transition-all hover:-translate-y-0.5 hover:border-patient-lavender/30"
                 >
-                  <div className="rounded-lg border border-[#f0d8dc] bg-[#fde8eb] p-2 text-[#f47c8c]">
+                  <div className="rounded-lg border border-patient-lavender/30 bg-patient-card p-2 text-patient-primary">
                     <Icon className="h-4 w-4" aria-hidden />
                   </div>
-                  <span className="text-xs font-bold leading-snug text-slate-800">{label}</span>
+                  <span className="text-xs font-bold leading-snug text-patient-text">{label}</span>
                 </Link>
               ))}
             </div>
@@ -475,22 +475,22 @@ export default function PatientDashboardPage() {
           {/* Pending bills ledger */}
           <section aria-label="Pending bills" className={CARD_CLASS}>
             <div className="mb-4 flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-[#f47c8c]" aria-hidden />
-              <h2 className="text-base font-black text-[#8c2b39]">Pending Bills</h2>
+              <CreditCard className="h-5 w-5 text-patient-primary" aria-hidden />
+              <h2 className="text-base font-black text-patient-plum">Pending Bills</h2>
             </div>
             <ul className="space-y-3">
               {PENDING_BILLS.map((bill) => (
                 <li
                   key={bill.id}
-                  className="rounded-xl border border-[#f0d8dc] bg-[#fde8eb]/50 p-3"
+                  className="rounded-xl border border-patient-lavender/30 bg-patient-card/50 p-3"
                 >
-                  <p className="font-mono text-[10px] font-black text-[#f47c8c]">
+                  <p className="font-mono text-[10px] font-black text-patient-primary">
                     {bill.transactionCode}
                   </p>
-                  <p className="mt-1 text-sm font-bold text-slate-900">{bill.description}</p>
+                  <p className="mt-1 text-sm font-bold text-patient-charcoal">{bill.description}</p>
                   <div className="mt-2 flex items-baseline justify-between">
-                    <p className="text-lg font-black text-[#8c2b39]">{bill.amount}</p>
-                    <p className="text-[10px] font-bold text-slate-500">Due {bill.dueDate}</p>
+                    <p className="text-lg font-black text-patient-plum">{bill.amount}</p>
+                    <p className="text-[10px] font-bold text-patient-lavender">Due {bill.dueDate}</p>
                   </div>
                 </li>
               ))}
@@ -498,7 +498,7 @@ export default function PatientDashboardPage() {
             <button
               type="button"
               onClick={handlePaySecurely}
-              className="mt-4 block w-full rounded-lg bg-[#f47c8c] py-2 text-center text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#e06373]"
+              className="mt-4 block w-full rounded-lg bg-patient-primary py-2 text-center text-sm font-bold text-white shadow-sm transition-colors hover:bg-patient-plum"
             >
               Pay Statement Securely
             </button>

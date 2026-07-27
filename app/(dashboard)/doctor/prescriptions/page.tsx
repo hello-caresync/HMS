@@ -1,5 +1,5 @@
-import PrescriptionBuilder from '@/components/doctor/prescriptions/PrescriptionBuilder';
+import { redirect } from 'next/navigation';
 
-export default function DoctorPrescriptionsPage() {
-  return <PrescriptionBuilder />;
+export default function LegacyPrescriptionsRedirect() {
+  redirect('/doctor/e-prescription');
 }

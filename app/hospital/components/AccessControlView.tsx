@@ -59,7 +59,7 @@ export default function AccessControlView({
           <div>
             <h4 className={featureHeaderClassName}>{user.name}</h4>
             <p className={bodyTextClassName}>{user.email}</p>
-            <p className={`mt-1 text-[10px] ${monoDataClassName} text-slate-800`}>
+            <p className={`mt-1 text-xs ${monoDataClassName} text-slate-800`}>
               Dept {user.departmentId}
             </p>
           </div>
