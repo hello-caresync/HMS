@@ -1,0 +1,13 @@
+{
+    "version": 1,
+    "include": [
+      "/doctor/*",
+      "/api/doctor/*"
+    ],
+    "exclude": [
+      "/vendor/*",
+      "/hospital/*",
+      "/patient/*",
+      "/admin/*"
+    ]
+  }
