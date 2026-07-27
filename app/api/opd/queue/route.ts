@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { updateAppointmentStatus } from '@/lib/doctor/server/clinical-service';
 import { appointmentUpdateSchema } from '@/lib/doctor/validation/schemas';
 import { requireDoctorSession } from '@/lib/doctor/server/auth';

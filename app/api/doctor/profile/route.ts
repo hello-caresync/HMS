@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { getDoctorProfile, updateDoctorProfile } from '@/lib/doctor/server/clinical-service';
 import { withDoctorHandler } from '@/lib/doctor/server/route-handler';
 import { requireDoctorSession } from '@/lib/doctor/server/auth';

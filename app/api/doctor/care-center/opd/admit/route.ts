@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { requestAdmissionFromOpd } from '@/lib/doctor/server/care-center-service';
 import { withDoctorHandler } from '@/lib/doctor/server/route-handler';
 

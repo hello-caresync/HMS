@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { getEmrTimeline } from '@/lib/doctor/server/clinical-service';
 import { withDoctorHandler } from '@/lib/doctor/server/route-handler';
 

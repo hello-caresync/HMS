@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { createIpdAdmission, listIpdAdmissions } from '@/lib/doctor/server/clinical-service';
 import { ipdAdmissionSchema } from '@/lib/doctor/validation/schemas';
 import { requireDoctorSession } from '@/lib/doctor/server/auth';
