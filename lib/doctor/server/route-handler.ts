@@ -5,7 +5,7 @@ import { apiError } from '@/lib/doctor/server/api-http';
 
 type RouteContext = { params?: Promise<Record<string, string>> };
 
-export async function withDoctorHandler<T extends Record<string, unknown>>(
+export function withDoctorHandler<T extends Record<string, unknown>>(
   handler: (
     session: Awaited<ReturnType<typeof requireDoctorSession>>,
     request: Request,

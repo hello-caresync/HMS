@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     }
 
     const result = await authenticateDoctor(parsed.data.email, parsed.data.password);
-    if (!result.ok) {
+    if (result.ok === false) {
       const status = result.error.code === 'NO_DOCTOR_PRIVILEGES' ? 403 : 401;
       return NextResponse.json({ success: false, error: result.error.message, code: result.error.code }, { status });
     }
