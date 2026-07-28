@@ -1,7 +1,7 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { RefreshCw, Search } from 'lucide-react';
 
 export type KpiItem = {
@@ -99,14 +99,14 @@ export function SearchDesk({
   );
 }
 
-export function TabBar<T extends string>({
+export function TabBar<const T extends string>({
   tabs,
   active,
   onChange,
 }: {
-  tabs: { id: T; label: string }[];
+  tabs: readonly { id: T; label: string }[];
   active: T;
-  onChange: (id: T) => void;
+  onChange: Dispatch<SetStateAction<T>> | ((id: T) => void);
 }) {
   return (
     <div className="flex flex-wrap gap-1 rounded-lg border border-slate-800 bg-slate-900/60 p-1">
@@ -114,7 +114,7 @@ export function TabBar<T extends string>({
         <button
           key={tab.id}
           type="button"
-          onClick={() => onChange(tab.id)}
+          onClick={() => (onChange as (id: T) => void)(tab.id)}
           className={`rounded-md px-3 py-1.5 text-[11px] font-semibold transition-all ${
             active === tab.id
               ? 'bg-[#1e3a8a] text-white shadow-sm'

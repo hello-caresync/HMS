@@ -34,7 +34,7 @@ export default function AdminSettingsView() {
           { id: 'master', label: 'Master Parameters' },
         ]}
         active={tab}
-        onChange={setTab}
+        onChange={(id) => setTab(id as AdminTab)}
       />
       {tab === 'rbac' && (
         <Panel title="Role-Based Access Control Policy Matrix">

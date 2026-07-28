@@ -1,7 +1,7 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { Search } from 'lucide-react';
 
 export function MasterViewHeader({
@@ -74,14 +74,14 @@ export function MasterPanel({
   );
 }
 
-export function MasterTabBar<T extends string>({
+export function MasterTabBar<const T extends string>({
   tabs,
   active,
   onChange,
 }: {
-  tabs: { id: T; label: string }[];
+  tabs: readonly { id: T; label: string }[];
   active: T;
-  onChange: (id: T) => void;
+  onChange: Dispatch<SetStateAction<T>> | ((id: T) => void);
 }) {
   return (
     <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
@@ -89,7 +89,7 @@ export function MasterTabBar<T extends string>({
         <button
           key={tab.id}
           type="button"
-          onClick={() => onChange(tab.id)}
+          onClick={() => (onChange as (id: T) => void)(tab.id)}
           className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
             active === tab.id
               ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200'

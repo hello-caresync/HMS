@@ -38,7 +38,7 @@ export function DoctorAuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string, rememberMe: boolean) => {
     const result = await apiLogin(email, password, rememberMe);
-    if (!result.ok) {
+    if (result.ok === false) {
       throw new Error(result.error);
     }
     setSession(result.session);

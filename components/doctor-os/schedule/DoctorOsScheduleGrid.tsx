@@ -160,14 +160,15 @@ export default function DoctorOsScheduleGrid() {
 
   const laidOut = useMemo(() => layoutDayEvents(events), [events]);
 
-  const visibleEvents = useMemo(() => {
-    if (view === 'month') return events.slice(0, 12);
+  const gridEvents = useMemo(() => {
     if (view === 'day') {
       const today = dayKey(new Date().toISOString());
       return laidOut.filter((e) => e.dayKey === today);
     }
     return laidOut;
-  }, [events, laidOut, view]);
+  }, [laidOut, view]);
+
+  const monthEvents = useMemo(() => events.slice(0, 12), [events]);
 
   const weekColumns = view === 'week' ? days : [new Date()];
 
@@ -205,7 +206,7 @@ export default function DoctorOsScheduleGrid() {
 
       {view === 'month' ? (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {visibleEvents.map((e) => (
+          {monthEvents.map((e) => (
             <div key={e.id} className="doctor-card text-sm">
               <p className="line-clamp-1 overflow-hidden font-bold">{e.title}</p>
               <p className="text-xs text-[#5A584A]">{new Date(e.start).toLocaleString()}</p>
@@ -225,7 +226,7 @@ export default function DoctorOsScheduleGrid() {
 
             {weekColumns.map((day) => {
               const key = dayKey(day.toISOString());
-              const dayEvents = visibleEvents.filter((e) => e.dayKey === key);
+              const dayEvents = gridEvents.filter((e) => e.dayKey === key);
               return (
                 <div key={key} className="relative flex-1 border-r border-brand-light/60 last:border-r-0">
                   {view === 'week' && (

@@ -32,7 +32,7 @@ export default function MfaChallengePlaceholder({
     const result = await verifyMfaChallenge();
     setLoading(false);
 
-    if (!result.ok) {
+    if (result.ok === false) {
       setError(result.error ?? 'Verification failed.');
       return;
     }

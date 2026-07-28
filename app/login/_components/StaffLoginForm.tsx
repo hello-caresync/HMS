@@ -82,7 +82,7 @@ export default function StaffLoginForm() {
       const completed = await completeStaffLogin(mockProfile);
       setLoading(false);
 
-      if (!completed.ok) {
+      if (completed.ok === false) {
         setError(completed.error);
         return;
       }
@@ -94,7 +94,7 @@ export default function StaffLoginForm() {
     const result = await initiateStaffLogin(identifier, password);
     setLoading(false);
 
-    if (!result.ok) {
+    if (result.ok === false) {
       setError(result.error);
       return;
     }
@@ -107,7 +107,7 @@ export default function StaffLoginForm() {
     }
 
     const completed = await completeStaffLogin(result.profile);
-    if (!completed.ok) {
+    if (completed.ok === false) {
       setError(completed.error);
       return;
     }
@@ -122,7 +122,7 @@ export default function StaffLoginForm() {
     const result = await verifyStaffMfa(code);
     setLoading(false);
 
-    if (!result.ok) {
+    if (result.ok === false) {
       setError(result.error);
       return;
     }
@@ -134,7 +134,7 @@ export default function StaffLoginForm() {
     }
 
     const completed = await completeStaffLogin(pendingProfile);
-    if (!completed.ok) {
+    if (completed.ok === false) {
       setError(completed.error);
       return;
     }

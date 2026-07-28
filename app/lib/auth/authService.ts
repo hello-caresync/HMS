@@ -36,10 +36,10 @@ export async function initiateStaffLogin(
 > {
   const result = authenticateStaff(identifier, password);
 
-  if (!result.ok) {
+  if (result.ok === false) {
     appendLoginHistoryEvent(identifier, 'FAILED');
     logUserActivity(identifier, 'Failed login attempt', 'Hospital IAM');
-    return result;
+    return { ok: false, error: result.error };
   }
 
   const profile: HospitalStaffProfile = { ...result.session, mfaPending: false };
@@ -100,7 +100,7 @@ export async function signInWithEmail(
   | { ok: false; error: string }
 > {
   const result = await initiateStaffLogin(identifier, password);
-  if (!result.ok) return result;
+  if (result.ok === false) return result;
 
   if (result.requiresMfa) {
     return {
@@ -111,7 +111,7 @@ export async function signInWithEmail(
   }
 
   const completed = await completeStaffLogin(result.profile);
-  if (!completed.ok) return completed;
+  if (completed.ok === false) return { ok: false, error: completed.error };
 
   return { ok: true, session: result.profile, requiresMfa: false };
 }
@@ -124,14 +124,14 @@ export async function signInWithBiometricBypass(
 > {
   const result = authenticateBiometricBypass(employeeId);
 
-  if (!result.ok) {
+  if (result.ok === false) {
     logUserActivity(employeeId ?? 'unknown', 'Biometric auth failed', 'Hospital IAM');
-    return result;
+    return { ok: false, error: result.error };
   }
 
   const profile: HospitalStaffProfile = { ...result.session, mfaPending: false };
   const completed = await completeStaffLogin(profile);
-  if (!completed.ok) return completed;
+  if (completed.ok === false) return { ok: false, error: completed.error };
 
   appendLoginHistoryEvent(profile.employeeId, 'SUCCESS');
   logUserActivity(

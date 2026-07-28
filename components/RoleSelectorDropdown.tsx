@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 
 export type RoleOption<T extends string> = {
   value: T;
@@ -9,7 +9,7 @@ export type RoleOption<T extends string> = {
 
 type RoleSelectorDropdownProps<T extends string> = {
   value: T;
-  onChange: (value: T) => void;
+  onChange: Dispatch<SetStateAction<T>> | ((value: T) => void);
   options: RoleOption<T>[];
   align?: 'left' | 'right';
   variant?: 'amber' | 'blush';
@@ -101,7 +101,7 @@ export default function RoleSelectorDropdown<T extends string>({
                 role="option"
                 aria-selected={isActive}
                 onClick={() => {
-                  onChange(option.value);
+                  (onChange as (value: T) => void)(option.value);
                   setOpen(false);
                 }}
                 className={`${ROW_CLASSNAME} ${isActive ? activeRowClass : ''}`}

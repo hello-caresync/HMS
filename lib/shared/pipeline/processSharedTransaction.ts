@@ -25,7 +25,7 @@ export async function processSharedTransaction(
     correlationId,
   });
 
-  if (!billingResult.ok) {
+  if (billingResult.ok === false) {
     return {
       success: false,
       transactionId,
@@ -48,7 +48,7 @@ export async function processSharedTransaction(
     { ...ctx, correlationId },
   );
 
-  if (!paymentResult.ok) {
+  if (paymentResult.ok === false) {
     return {
       success: false,
       transactionId,
@@ -71,7 +71,7 @@ export async function processSharedTransaction(
     { ...ctx, correlationId },
   );
 
-  if (!inventoryResult.ok) {
+  if (inventoryResult.ok === false) {
     return {
       success: false,
       transactionId,
@@ -107,7 +107,7 @@ export async function processSharedTransaction(
     { ...ctx, correlationId },
   );
 
-  if (!auditResult.ok) {
+  if (auditResult.ok === false) {
     return {
       success: false,
       transactionId,

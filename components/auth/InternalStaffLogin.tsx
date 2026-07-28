@@ -42,7 +42,7 @@ export default function InternalStaffLogin({
     const result = await signInWithEmail(identifier, password);
     setLoading(false);
 
-    if (!result.ok) {
+    if (result.ok === false) {
       setError(result.error);
       return;
     }
@@ -65,7 +65,7 @@ export default function InternalStaffLogin({
     setBiometricLoading(false);
     setBiometricPulse(false);
 
-    if (!result.ok) {
+    if (result.ok === false) {
       setError(result.error);
       return;
     }
