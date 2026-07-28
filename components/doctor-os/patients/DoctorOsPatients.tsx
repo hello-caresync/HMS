@@ -2,135 +2,191 @@
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Bot, Heart, Pill, ScanLine, Stethoscope, Users } from 'lucide-react';
+import { Activity, Heart, Pill } from 'lucide-react';
 
-import {
-  OsBadge,
-  OsBtn,
-  OsPage,
-  OsSegment,
-  OsSkeleton,
-  OsTimeline,
-  OsWidget,
-} from '@/components/doctor-os/ui/OsPrimitives';
 import { usePatients, useEmrTimeline } from '@/lib/doctor/hooks/useClinicalQueries';
-import { useOsColors } from '@/lib/doctor-os/store';
+import { sageUi } from '@/lib/doctor/ui-tokens';
+
+const VITALS_SPARKLINE = [118, 122, 128, 125, 128, 130, 128];
+
+function VitalsSparkline({ values }: { values: number[] }) {
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const points = values
+    .map((v, i) => {
+      const x = (i / (values.length - 1)) * 100;
+      const y = 100 - ((v - min) / range) * 80 - 10;
+      return `${x},${y}`;
+    })
+    .join(' ');
+  return (
+    <svg viewBox="0 0 100 40" className="h-10 w-full" aria-hidden>
+      <polyline fill="none" stroke="#A39E75" strokeWidth="2" points={points} />
+    </svg>
+  );
+}
 
 function PatientWorkspaceInner() {
-  const c = useOsColors();
   const params = useSearchParams();
   const selectedId = params.get('patient');
-  const [view, setView] = useState('summary');
+  const [drawer, setDrawer] = useState<'timeline' | 'meds' | 'vitals'>('timeline');
   const { data, isLoading } = usePatients();
   const patients = data?.patients ?? [];
   const active = patients.find((p) => p.id === selectedId) ?? patients[0];
   const { data: timelineData } = useEmrTimeline(active?.id);
 
-  const timelines = useMemo(
-    () => ({
-      summary: [{ time: 'Active', title: active?.fullName ?? '—', meta: `${active?.mrn} · ${active?.age}y ${active?.gender}` }],
-      health: (timelineData?.events ?? []).map((e) => ({ time: e.at, title: e.title, meta: e.summary })),
-      vitals: [{ time: 'Latest', title: 'BP 128/82', meta: 'HR 72 · SpO₂ 98%' }],
-      meds: [{ time: 'Active', title: 'Metformin 500mg BD', meta: 'Amlodipine 5mg OD' }],
-      labs: [{ time: 'Today', title: 'HbA1c 7.2%', meta: 'Processing: LFT' }],
-      rad: [{ time: 'Pending', title: 'CXR portable', meta: 'In review' }],
-    }),
-    [active, timelineData],
+  const timeline = useMemo(
+    () => (timelineData?.events ?? []).map((e) => ({ time: e.at, title: e.title, meta: e.summary })),
+    [timelineData],
   );
 
   return (
-    <OsPage>
-      <div className="mb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: c.accent }}>Patient workspace</p>
-        <h1 className="text-[24px] font-bold tracking-[-0.03em]">Clinical chart</h1>
-      </div>
+    <div className="doctor-page">
+      <header className="mb-6">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-brand-primary">Patient workspace</p>
+        <h1 className="text-xl font-black text-brand-text">Clinical chart & EMR</h1>
+      </header>
 
-      <div className="grid gap-6 lg:grid-cols-12">
-        {/* Patient list — cards not table */}
-        <aside className="space-y-2 lg:col-span-3">
+      <div className="grid grid-cols-12 gap-6">
+        <aside className="col-span-12 space-y-2 lg:col-span-3">
           {isLoading ? (
-            <OsSkeleton className="h-20" />
+            <div className="doctor-card h-20 animate-pulse bg-brand-surface" />
           ) : (
             patients.map((p) => (
-              <motion.a
+              <a
                 key={p.id}
                 href={`/doctor/patients?patient=${p.id}`}
-                whileHover={{ x: 4 }}
-                className="block rounded-xl border p-3"
-                style={{
-                  backgroundColor: active?.id === p.id ? c.accentSoft : c.surface,
-                  borderColor: active?.id === p.id ? c.accent : c.border,
-                }}
+                className={`block rounded-xl border p-3 transition-all ${
+                  active?.id === p.id
+                    ? 'border-brand-primary bg-brand-light shadow-sage'
+                    : 'border-brand-light bg-white hover:border-brand-primary/40'
+                }`}
               >
-                <p className="font-semibold">{p.fullName}</p>
-                <p className="text-[11px]" style={{ color: c.textSecondary }}>{p.mrn}</p>
-                {p.allergies?.length > 0 && <OsBadge tone="critical" >{p.allergies[0]}</OsBadge>}
-              </motion.a>
+                <p className="font-semibold text-brand-text">{p.fullName}</p>
+                <p className="text-[11px] text-[#5A584A]">{p.mrn}</p>
+                {p.allergies?.length > 0 && (
+                  <span className="allergy-badge mt-1">{p.allergies[0]}</span>
+                )}
+              </a>
             ))
           )}
         </aside>
 
-        {/* Main content */}
-        <div className="lg:col-span-9">
+        <div className="col-span-12 lg:col-span-5">
           {active && (
-            <div
-              className="mb-4 overflow-hidden rounded-2xl p-6"
-              style={{ background: 'linear-gradient(135deg, #0071E3 0%, #5856D6 100%)' }}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4 text-white">
+            <div className="doctor-card mb-4 border-2 border-brand-light bg-gradient-to-br from-brand-surface to-white">
+              <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-[22px] font-bold">{active.fullName}</h2>
-                  <p className="text-[13px] text-white/80">{active.mrn} · {active.age}y · {active.gender} · {active.bloodGroup}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <h2 className="text-lg font-black text-brand-text">{active.fullName}</h2>
+                  <p className="text-sm text-[#5A584A]">
+                    {active.mrn} · {active.age}y · {active.gender} · {active.bloodGroup}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1">
                     {(active.allergies?.length ? active.allergies : ['NKDA']).map((a) => (
-                      <span key={a} className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">{a}</span>
+                      <span key={a} className={sageUi.allergyBadge}>{a}</span>
                     ))}
                   </div>
                 </div>
-                <OsBtn href={`/doctor/clinical?patient=${active.id}`} variant="secondary" className="!bg-white !text-[#0071E3]">
+                <a href={`/doctor/opd-consultation?patient=${active.id}`} className={sageUi.btnPrimary + ' text-xs'}>
                   Start consultation
-                </OsBtn>
+                </a>
               </div>
             </div>
           )}
 
-          <OsSegment
-            value={view}
-            onChange={setView}
-            options={[
-              { id: 'summary', label: 'Summary' },
-              { id: 'health', label: 'Timeline' },
-              { id: 'vitals', label: 'Vitals' },
-              { id: 'meds', label: 'Medications' },
-              { id: 'labs', label: 'Labs' },
-              { id: 'rad', label: 'Radiology' },
-            ]}
-          />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="doctor-card">
+              <div className="mb-2 flex items-center gap-2 text-sm font-bold">
+                <Heart className="h-4 w-4 text-brand-primary" aria-hidden />
+                Vitals trend (BP systolic)
+              </div>
+              <VitalsSparkline values={VITALS_SPARKLINE} />
+              <p className="mt-1 text-xs text-[#5A584A]">Latest: BP 128/82 · HR 72 · SpO₂ 98%</p>
+            </div>
+            <div className="doctor-card">
+              <div className="mb-2 flex items-center gap-2 text-sm font-bold">
+                <Pill className="h-4 w-4 text-brand-primary" aria-hidden />
+                Active medications
+              </div>
+              <ul className="space-y-1 text-sm">
+                <li>Metformin 500mg BD</li>
+                <li>Amlodipine 5mg OD</li>
+              </ul>
+            </div>
+          </div>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <OsWidget title={view.charAt(0).toUpperCase() + view.slice(1)} span={2}>
-              <OsTimeline items={timelines[view as keyof typeof timelines] ?? timelines.summary} />
-            </OsWidget>
-            <OsWidget title="AI summary" accent="ai">
-              <p className="text-[13px] leading-relaxed" style={{ color: c.textSecondary }}>
-                {active?.chronicConditions?.join(', ') || 'No chronic conditions on file.'} Patient stable for outpatient management. Review latest labs before medication changes.
-              </p>
-              <OsBtn variant="secondary" size="sm" className="mt-3" href="/doctor/clinical">Generate AI brief</OsBtn>
-            </OsWidget>
-            <OsWidget title="Family & insurance">
-              <p className="text-[13px]" style={{ color: c.textSecondary }}>Insurance verification pending · Emergency contact on file</p>
-            </OsWidget>
+          <div className="doctor-card mt-4">
+            <div className="mb-3 flex gap-2">
+              {(['timeline', 'meds', 'vitals'] as const).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDrawer(d)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-bold capitalize ${
+                    drawer === d ? sageUi.segmentActive : sageUi.segmentIdle
+                  }`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+            {drawer === 'timeline' && (
+              <ul className="space-y-2 text-sm">
+                {timeline.length ? timeline.map((t, i) => (
+                  <li key={i} className="rounded-lg border border-brand-light px-3 py-2">
+                    <p className="font-semibold">{t.title}</p>
+                    <p className="text-xs text-[#5A584A]">{t.time} · {t.meta}</p>
+                  </li>
+                )) : (
+                  <li className="text-[#5A584A]">No timeline events yet.</li>
+                )}
+              </ul>
+            )}
+            {drawer === 'meds' && (
+              <ul className="space-y-1 text-sm">
+                <li>Metformin 500mg — Active since Jan 2026</li>
+                <li>Amlodipine 5mg — Active since Mar 2025</li>
+              </ul>
+            )}
+            {drawer === 'vitals' && (
+              <ul className="space-y-1 text-sm">
+                <li>Today 09:15 — BP 128/82, HR 72</li>
+                <li>Yesterday — BP 125/80, HR 74</li>
+              </ul>
+            )}
           </div>
         </div>
+
+        <aside className="col-span-12 space-y-4 lg:col-span-4">
+          <div className="doctor-card-surface">
+            <div className="mb-2 flex items-center gap-2 font-bold">
+              <Activity className="h-4 w-4 text-brand-primary" aria-hidden />
+              Clinical summary
+            </div>
+            <p className="text-sm text-[#5A584A]">
+              {active?.chronicConditions?.join(', ') || 'No chronic conditions on file.'} Stable for outpatient management.
+            </p>
+          </div>
+          <div className="doctor-card-surface">
+            <h3 className="font-bold">Recent labs</h3>
+            <ul className="mt-2 space-y-1 text-xs">
+              <li>HbA1c 7.2% · <span className="font-bold text-amber-700">Flagged</span></li>
+              <li>LFT panel · Processing</li>
+            </ul>
+          </div>
+          <a href={`/doctor/emr?patient=${active?.id ?? ''}`} className={`${sageUi.btnSecondary} block text-center text-sm`}>
+            Open full EMR vault →
+          </a>
+        </aside>
       </div>
-    </OsPage>
+    </div>
   );
 }
 
 export default function DoctorOsPatients() {
   return (
-    <Suspense fallback={<OsSkeleton className="h-96" />}>
+    <Suspense fallback={<div className="doctor-page p-6 text-sm">Loading patients…</div>}>
       <PatientWorkspaceInner />
     </Suspense>
   );

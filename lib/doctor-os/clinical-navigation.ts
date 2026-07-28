@@ -80,7 +80,7 @@ export function isClinicalNavActive(pathname: string, href: string): boolean {
 
 /** Sage & Cream sidebar item classes */
 export const sageSidebar = {
-  aside: 'h-screen sticky top-0 flex w-[260px] shrink-0 flex-col justify-between border-r border-[#E6E3C5]/80 bg-[#F7F6E8]',
+  aside: 'h-screen sticky top-0 flex w-[260px] shrink-0 flex-col justify-between border-r border-[#E6E3C5] bg-white p-4',
   brand: 'border-b border-[#E6E3C5]/60 bg-gradient-to-br from-[#2B2A22] to-[#3D3C32] p-4 text-[#FAFAF5]',
   navScroll: 'custom-scrollbar flex-1 overflow-y-auto max-h-[calc(100vh-160px)] space-y-1 px-2 py-3 pr-1',
   linkActive:

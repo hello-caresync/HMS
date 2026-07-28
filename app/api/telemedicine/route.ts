@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { getPrisma } from '@/lib/prisma';
 import { withDoctorHandler } from '@/lib/doctor/server/route-handler';
 

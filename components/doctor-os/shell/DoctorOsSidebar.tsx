@@ -17,7 +17,7 @@ export default function DoctorOsSidebar() {
   const { session, signOut } = useDoctorAuth();
 
   return (
-    <aside className={`${sageSidebar.aside} p-4`} aria-label="Nexora Doctor clinical navigation">
+    <aside className={sageSidebar.aside} aria-label="Nexora Doctor clinical navigation">
       {/* Brand header */}
       <div className={sageSidebar.brand}>
         <span className="text-[10px] font-bold uppercase tracking-widest text-[#C7C39E]">Nexora</span>

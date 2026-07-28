@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { getFormulary } from '@/lib/doctor/server/clinical-service';
 import { withDoctorHandler } from '@/lib/doctor/server/route-handler';
 

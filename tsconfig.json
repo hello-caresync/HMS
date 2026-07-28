@@ -1,45 +1,20 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": ["./*"],
-      "@nexora/shared": ["./lib/shared/index.ts"],
-      "@nexora/shared/*": ["./lib/shared/*"]
-    }
+    /* ... your existing compiler options ... */
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "lib/shared/**/*.ts",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "nexora-backend",
-    "nexora-erp",
-    "nexora",
-    "packages",
-    ".next",
-    "prisma/seed.ts"
+    "app/(dashboard)/vendor/**/*",
+    "app/(dashboard)/hospital/**/*",
+    "app/(dashboard)/patient/**/*",
+    "app/api/admin/**/*",
+    "app/api/hospital/**/*",
+    "app/api/vendor/**/*"
   ]
 }

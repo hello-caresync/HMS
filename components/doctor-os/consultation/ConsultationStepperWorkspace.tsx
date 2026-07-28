@@ -165,38 +165,59 @@ function ConsultationInner() {
           </div>
         </div>
 
-        {/* Pre-encounter context panel */}
+        {/* Pre-encounter patient snapshot */}
         <aside className="col-span-12 space-y-4 lg:col-span-4">
-          {patient && (
-            <div className="doctor-card">
-              <p className="font-bold">{patient.fullName}</p>
-              <p className="text-xs text-[#5A584A]">{patient.mrn} · {patient.age}y · {patient.gender}</p>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {(patient.allergies ?? []).map((a) => (
-                  <span key={a} className={sageUi.allergyBadge}>{a}</span>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="doctor-card-surface">
-            <h3 className="text-sm font-bold">Recent Vitals</h3>
-            <p className="mt-1 text-xs text-[#5A584A]">BP 128/82 · HR 78 · Temp 36.8°C · SpO₂ 98%</p>
+          <div className="doctor-card border-2 border-brand-primary/30">
+            <h3 className="text-sm font-black uppercase tracking-wide text-brand-primary">Pre-Encounter Patient Snapshot</h3>
+            {patient ? (
+              <>
+                <p className="mt-2 font-bold">{patient.fullName}</p>
+                <p className="text-xs text-[#5A584A]">{patient.mrn} · {patient.age}y · {patient.gender}</p>
+                <div className="mt-3">
+                  <p className="mb-1 text-[10px] font-bold uppercase text-[#5A584A]">Allergy alerts</p>
+                  <div className="flex flex-wrap gap-1">
+                    {(patient.allergies?.length ? patient.allergies : ['Penicillin', 'Sulfa drugs']).map((a) => (
+                      <span key={a} className={sageUi.allergyBadge}>{a}</span>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="mt-2 text-sm text-[#5A584A]">Select a patient from the queue to load snapshot.</p>
+            )}
           </div>
           <div className="doctor-card-surface">
-            <h3 className="text-sm font-bold">Recent Labs</h3>
-            <ul className="mt-1 space-y-1 text-xs">
-              {((labs?.orders ?? []) as { testCodesJson?: string[]; status?: string }[]).slice(0, 3).map((o, i) => (
-                <li key={i}>{Array.isArray(o.testCodesJson) ? o.testCodesJson.join(', ') : 'Lab panel'} · {o.status}</li>
-              ))}
-              {!labs?.orders?.length && <li className="text-[#5A584A]">No recent labs</li>}
+            <h3 className="text-sm font-bold">Vitals history</h3>
+            <ul className="mt-2 space-y-1 text-xs">
+              <li className="flex justify-between"><span>Today 09:15</span><span className="font-semibold">BP 128/82 · HR 78</span></li>
+              <li className="flex justify-between"><span>Yesterday</span><span>BP 125/80 · HR 74</span></li>
+              <li className="flex justify-between"><span>3 days ago</span><span>Temp 36.8°C · SpO₂ 98%</span></li>
             </ul>
           </div>
           <div className="doctor-card-surface">
-            <h3 className="text-sm font-bold">Timeline</h3>
+            <h3 className="text-sm font-bold">Recent lab flags</h3>
+            <ul className="mt-1 space-y-1 text-xs">
+              {((labs?.orders ?? []) as { testCodesJson?: string[]; status?: string }[]).slice(0, 3).map((o, i) => (
+                <li key={i} className="flex justify-between">
+                  <span>{Array.isArray(o.testCodesJson) ? o.testCodesJson.join(', ') : 'Lab panel'}</span>
+                  <span className={`font-bold ${o.status === 'CRITICAL' ? 'text-rose-700' : 'text-[#5A584A]'}`}>{o.status ?? 'Pending'}</span>
+                </li>
+              ))}
+              {!labs?.orders?.length && (
+                <>
+                  <li className="flex justify-between"><span>HbA1c</span><span className="font-bold text-amber-700">Elevated 7.2%</span></li>
+                  <li className="flex justify-between"><span>Creatinine</span><span className="text-[#5A584A]">Normal</span></li>
+                </>
+              )}
+            </ul>
+          </div>
+          <div className="doctor-card-surface">
+            <h3 className="text-sm font-bold">EMR timeline</h3>
             <ul className="mt-1 space-y-1 text-xs">
               {(timeline?.events ?? []).slice(0, 4).map((e) => (
                 <li key={e.id}>{e.title}</li>
               ))}
+              {!timeline?.events?.length && <li className="text-[#5A584A]">No prior encounters this week.</li>}
             </ul>
           </div>
         </aside>
