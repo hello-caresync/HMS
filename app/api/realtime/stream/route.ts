@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { getPrisma } from '@/lib/prisma';
 import { requireDoctorSession } from '@/lib/doctor/server/auth';
 import { apiError } from '@/lib/doctor/server/api-http';

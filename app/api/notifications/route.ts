@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server';
 
 import { acknowledgeNotification, listNotifications } from '@/lib/doctor/server/clinical-service';

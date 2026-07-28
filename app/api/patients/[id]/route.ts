@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { getPatientById } from '@/lib/doctor/server/clinical-service';
 import { withDoctorHandler } from '@/lib/doctor/server/route-handler';
 
