@@ -1,12 +1,12 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
   typescript: {
-    // Prevent build failures on minor warning types
+    // Ignore TypeScript errors during production build if needed
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // Tells Next.js 16 Turbopack to proceed smoothly
+  turbopack: {},
   experimental: {
     optimizePackageImports: [
       'lucide-react',
@@ -16,17 +16,6 @@ const nextConfig = {
       'date-fns',
     ],
   },
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      // Enable aggressive dead-code elimination & minification for Edge workers
-      config.optimization = {
-        ...config.optimization,
-        minimize: true,
-        usedExports: true,
-      };
-    }
-    return config;
-  },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
