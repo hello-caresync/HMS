@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { NextResponse } from 'next/server';
 
 import { requireDoctorSession } from '@/lib/doctor/server/auth';

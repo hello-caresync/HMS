@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { listClinicalMessages, sendClinicalMessage } from '@/lib/doctor/server/clinical-service';
 import { clinicalMessageSchema } from '@/lib/doctor/validation/schemas';
 import { requireDoctorSession } from '@/lib/doctor/server/auth';

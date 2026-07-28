@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { saveEncounter } from '@/lib/doctor/server/clinical-service';
 import { saveEncounterSchema } from '@/lib/doctor/validation/schemas';
 import { requireDoctorSession } from '@/lib/doctor/server/auth';

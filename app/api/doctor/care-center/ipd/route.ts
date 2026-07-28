@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { getIpdCareCenter } from '@/lib/doctor/server/care-center-service';
 import { withDoctorHandler } from '@/lib/doctor/server/route-handler';
 

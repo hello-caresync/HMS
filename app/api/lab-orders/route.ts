@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { createLabOrder, listLabOrders } from '@/lib/doctor/server/clinical-service';
 import { labOrderSchema } from '@/lib/doctor/validation/schemas';
 import { requireDoctorSession } from '@/lib/doctor/server/auth';

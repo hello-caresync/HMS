@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { createPrescription } from '@/lib/doctor/server/clinical-service';
 import { prescriptionSchema } from '@/lib/doctor/validation/schemas';
 import { requireDoctorSession } from '@/lib/doctor/server/auth';
