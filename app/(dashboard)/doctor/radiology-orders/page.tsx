@@ -1,5 +1,5 @@
-import DoctorOsOrders from '@/components/doctor-os/orders/DoctorOsOrders';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <DoctorOsOrders defaultTab="rad" />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/orders');
 }

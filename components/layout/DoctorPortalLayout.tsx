@@ -1,1 +1,1 @@
-export { default } from '@/components/doctor-os/shell/DoctorOsShell';
+export { default } from '@/components/nexora-doctor/shell/DoctorAppShell';

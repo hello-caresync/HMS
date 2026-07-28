@@ -1,5 +1,5 @@
-import DoctorOsNotificationsPage from '@/components/doctor-os/notifications/DoctorOsNotificationsPage';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <DoctorOsNotificationsPage />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/communication');
 }

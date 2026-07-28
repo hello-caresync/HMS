@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+﻿import { redirect } from 'next/navigation';
 
-export default function LegacyEmrVaultRedirect() {
-  redirect('/doctor/emr');
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/patients');
 }

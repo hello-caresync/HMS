@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+﻿import { redirect } from 'next/navigation';
 
-export default function LegacyTelehealthRedirect() {
-  redirect('/doctor/telemedicine');
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/communication');
 }

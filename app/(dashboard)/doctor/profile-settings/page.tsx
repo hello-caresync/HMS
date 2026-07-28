@@ -1,5 +1,5 @@
-import DoctorOsProfile from '@/components/doctor-os/profile/DoctorOsProfile';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <DoctorOsProfile />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/profile');
 }

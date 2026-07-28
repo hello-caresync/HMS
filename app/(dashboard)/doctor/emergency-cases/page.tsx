@@ -1,5 +1,5 @@
-import DoctorOsEmergencyCases from '@/components/doctor-os/emergency/DoctorOsEmergencyCases';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <DoctorOsEmergencyCases />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/dashboard');
 }

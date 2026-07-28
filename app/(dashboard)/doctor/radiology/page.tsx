@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+﻿import { redirect } from 'next/navigation';
 
-export default function LegacyRadiologyRedirect() {
-  redirect('/doctor/radiology-orders');
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/orders');
 }

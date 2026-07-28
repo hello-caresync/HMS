@@ -1,5 +1,5 @@
-import DoctorOsScheduleGrid from '@/components/doctor-os/schedule/DoctorOsScheduleGrid';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <DoctorOsScheduleGrid />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/schedule');
 }

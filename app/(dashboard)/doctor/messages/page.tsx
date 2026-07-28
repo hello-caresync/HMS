@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+﻿import { redirect } from 'next/navigation';
 
-export default function LegacyMessagesRedirect() {
-  redirect('/doctor/communication-center');
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/communication');
 }

@@ -1,5 +1,5 @@
-import DoctorOsInsights from '@/components/doctor-os/insights/DoctorOsInsights';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <DoctorOsInsights />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/analytics');
 }

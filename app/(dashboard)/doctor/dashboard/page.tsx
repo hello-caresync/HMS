@@ -1,5 +1,7 @@
-import DoctorOsHome from '@/components/doctor-os/home/DoctorOsHome';
+'use client';
 
-export default function Page() {
-  return <DoctorOsHome />;
+import { DashboardWorkspace } from '@/components/nexora-doctor/workspaces/DashboardWorkspace';
+
+export default function DoctorDashboardPage() {
+  return <DashboardWorkspace />;
 }

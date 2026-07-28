@@ -1,5 +1,5 @@
-import ConsultationStepperWorkspace from '@/components/doctor-os/consultation/ConsultationStepperWorkspace';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <ConsultationStepperWorkspace />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/consultations');
 }

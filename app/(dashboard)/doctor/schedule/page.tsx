@@ -1,5 +1,7 @@
-import DoctorOsScheduleGrid from '@/components/doctor-os/schedule/DoctorOsScheduleGrid';
+'use client';
 
-export default function Page() {
-  return <DoctorOsScheduleGrid />;
+import { ScheduleWorkspace } from '@/components/nexora-doctor/workspaces/ScheduleWorkspace';
+
+export default function DoctorSchedulePage() {
+  return <ScheduleWorkspace />;
 }

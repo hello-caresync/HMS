@@ -1,5 +1,7 @@
-import DoctorOsPatients from '@/components/doctor-os/patients/DoctorOsPatients';
+'use client';
 
-export default function Page() {
-  return <DoctorOsPatients />;
+import { PatientsWorkspace } from '@/components/nexora-doctor/workspaces/PatientsWorkspace';
+
+export default function DoctorPatientsPage() {
+  return <PatientsWorkspace />;
 }

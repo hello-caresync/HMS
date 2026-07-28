@@ -1,5 +1,5 @@
-import { IpdManagementPage } from '@/components/doctor-os/routes/ClinicalRouteModules';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <IpdManagementPage />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/patients');
 }

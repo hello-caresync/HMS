@@ -1,5 +1,5 @@
-import DoctorOsPatients from '@/components/doctor-os/patients/DoctorOsPatients';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <DoctorOsPatients />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/patients');
 }

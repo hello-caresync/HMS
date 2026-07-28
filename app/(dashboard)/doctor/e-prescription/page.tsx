@@ -1,5 +1,5 @@
-import EprescriptionEngine from '@/components/doctor-os/prescription/EprescriptionEngine';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <EprescriptionEngine />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/consultations');
 }

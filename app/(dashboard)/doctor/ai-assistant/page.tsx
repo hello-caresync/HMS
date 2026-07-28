@@ -1,5 +1,5 @@
-import DoctorOsAiAssistantPage from '@/components/doctor-os/ai/DoctorOsAiAssistantPage';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <DoctorOsAiAssistantPage />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/consultations');
 }

@@ -1,5 +1,5 @@
-import DoctorOsSurgeryManagement from '@/components/doctor-os/surgery/DoctorOsSurgeryManagement';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <DoctorOsSurgeryManagement />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/orders');
 }

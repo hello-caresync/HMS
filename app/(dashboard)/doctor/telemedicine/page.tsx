@@ -1,5 +1,5 @@
-import DoctorOsCommunication from '@/components/doctor-os/communication/DoctorOsCommunication';
+﻿import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <DoctorOsCommunication />;
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/communication');
 }

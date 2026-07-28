@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+﻿import { redirect } from 'next/navigation';
 
-export default function LegacyEmergencyRedirect() {
-  redirect('/doctor/emergency-cases');
+export default function LegacyDoctorRedirect() {
+  redirect('/doctor/dashboard');
 }
