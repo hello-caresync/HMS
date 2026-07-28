@@ -1,4 +1,4 @@
-import { getPrisma } from '@/lib/prisma';
+import { DEV_DOCTOR_ACCOUNTS } from '@/lib/doctor/auth/dev-auth';
 
 export { apiError, parseJsonArray } from './api-http';
 
@@ -10,10 +10,5 @@ export async function resolveDoctorId(request: Request): Promise<string> {
     return process.env.DEFAULT_DOCTOR_ID;
   }
 
-  const prisma = await getPrisma();
-  const doctor = await prisma.doctor.findFirst({ select: { id: true } });
-  if (!doctor) {
-    throw new Error('NO_DOCTOR');
-  }
-  return doctor.id;
+  return DEV_DOCTOR_ACCOUNTS[0]?.id ?? '00000000-0000-4000-a000-000000000101';
 }

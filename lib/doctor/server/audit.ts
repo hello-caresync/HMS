@@ -1,6 +1,4 @@
-import type { Prisma } from '@prisma/client';
-
-import { getPrisma } from '@/lib/prisma';
+import { mockStore, nextMockId } from './mock-store';
 
 import type { DoctorSession } from './auth';
 
@@ -12,17 +10,13 @@ export async function writeAuditLog(input: {
   payload?: Record<string, unknown>;
   ipAddress?: string;
 }) {
-  const prisma = await getPrisma();
-  await prisma.auditLog.create({
-    data: {
-      doctorId: input.session.doctorId,
-      hospitalId: input.session.hospitalId,
-      entityType: input.entityType,
-      entityId: input.entityId,
-      action: input.action,
-      payloadJson: (input.payload ?? {}) as Prisma.InputJsonValue,
-      ipAddress: input.ipAddress,
-    },
+  mockStore.auditLogs.unshift({
+    id: nextMockId('audit'),
+    action: input.action,
+    entityType: input.entityType,
+    entityId: input.entityId,
+    at: new Date().toISOString(),
+    payload: input.payload,
   });
 }
 

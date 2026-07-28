@@ -3,8 +3,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 
 import { requireDoctorSession } from '@/lib/doctor/server/auth';
-import { getPrisma } from '@/lib/prisma';
-import { MOCK_AI_DIFFERENTIALS } from '@/lib/mock-data';
+import { MOCK_AI_DIFFERENTIALS, MOCK_PATIENTS } from '@/lib/mock-data';
 
 export async function POST(request: Request) {
   try {
@@ -12,14 +11,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     const complaint = String(body.complaint ?? '');
 
-    const prisma = await getPrisma();
     const patientId = body.patientId as string | undefined;
     let contextBoost = 0;
     if (patientId) {
-      const patient = await prisma.patient.findUnique({ where: { id: patientId } });
-      if (patient && Array.isArray(patient.chronicConditionsJson)) {
-        contextBoost = 0.03;
-      }
+      const patient = MOCK_PATIENTS.find((p) => p.id === patientId);
+      if (patient?.chronicConditions.length) contextBoost = 0.03;
     }
 
     const results = MOCK_AI_DIFFERENTIALS.map((d, i) => ({

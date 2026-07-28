@@ -12,7 +12,6 @@ const nextConfig: NextConfig = {
       'lucide-react',
       'recharts',
       '@supabase/supabase-js',
-      '@prisma/client',
       'date-fns',
     ],
   },
