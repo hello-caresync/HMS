@@ -1,7 +1,5 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { OrdersWorkspace } from '@/components/nexora-doctor/workspaces/OrdersWorkspace';
-
-export default function DoctorOrdersPage() {
-  return <OrdersWorkspace />;
+export default function LegacyOrdersRedirect() {
+  redirect('/doctor/prescriptions');
 }

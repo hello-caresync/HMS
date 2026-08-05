@@ -1,5 +1,5 @@
-import { renderHospitalModule } from '../_lib/renderModulePage';
+import { AdmissionsWorkspace } from '@/components/nexora-hospital/workspaces/AdmissionsWorkspace';
 
 export default function HospitalAdmissionsPage() {
-  return renderHospitalModule('admissions');
+  return <AdmissionsWorkspace />;
 }

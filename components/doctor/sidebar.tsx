@@ -1,89 +1,75 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import { ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
-import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
+  Stethoscope,
+  FileText,
+  Bell,
+  User,
+  LogOut
+} from 'lucide-react';
 
-import { useDoctorAuth } from '@/lib/doctor/auth/DoctorAuthProvider';
-import { DOCTOR_SIDEBAR_NAV, isDoctorNavActive } from '@/lib/doctor/navigation';
-import { nxUi } from '@/lib/doctor/design-system';
+const navItems = [
+  { name: 'Dashboard', href: '/doctor/dashboard', icon: LayoutDashboard },
+  { name: 'Schedule', href: '/doctor/schedule', icon: Calendar },
+  { name: 'Patients', href: '/doctor/patients', icon: Users },
+  { name: 'Consultations', href: '/doctor/consultation', icon: Stethoscope },
+  { name: 'Prescriptions', href: '/doctor/prescriptions', icon: FileText },
+  { name: 'Notifications', href: '/doctor/notifications', icon: Bell },
+  { name: 'Profile', href: '/doctor/profile', icon: User },
+];
 
-export default function DoctorSidebar() {
+export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { session, signOut } = useDoctorAuth();
-  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside
-      className={`flex shrink-0 flex-col border-r border-[rgba(28,27,24,0.08)] bg-white transition-[width] ${
-        collapsed ? 'w-[68px]' : 'w-[248px]'
-      }`}
-      aria-label="Doctor workspace navigation"
-    >
-      <div className="border-b border-[rgba(28,27,24,0.08)] p-4">
-        <div className="flex items-center justify-between gap-2">
-          {!collapsed && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#9C9890]">Nexora</p>
-              <p className="text-[14px] font-semibold text-[#1C1B18]">Doctor</p>
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => setCollapsed((c) => !c)}
-            className={nxUi.btnGhost + ' !p-1.5'}
-            aria-label={collapsed ? 'Expand' : 'Collapse'}
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
+    <aside className="w-64 h-full bg-[#004D56] text-white flex flex-col justify-between shrink-0 z-40 border-r border-[#007B8A]/30 select-none">
+      <div>
+        {/* BRAND HEADER */}
+        <div className="p-5 border-b border-[#007B8A]/30">
+          <h2 className="font-black text-lg text-white tracking-wide">Nexora Health</h2>
+          <p className="text-xs text-[#80E0D0] font-medium">Clinical Workstation</p>
         </div>
-        {!collapsed && session && (
-          <div className="mt-3 rounded-xl bg-[#F3F2ED] p-3">
-            <p className="truncate text-[13px] font-semibold text-[#1C1B18]">{session.fullName}</p>
-            <p className="truncate text-[11px] text-[#6B6860]">{session.specialization}</p>
-          </div>
-        )}
-      </div>
 
-      <nav className="custom-scrollbar flex-1 overflow-y-auto px-2 py-3">
-        <ul className="space-y-0.5">
-          {DOCTOR_SIDEBAR_NAV.map(({ label, href, icon: Icon }) => {
-            const active = isDoctorNavActive(pathname, href);
+        {/* NAVIGATION LINKS */}
+        <nav className="p-3 space-y-1.5">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
             return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  title={collapsed ? label : undefined}
-                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] transition ${
-                    active
-                      ? 'bg-[#1C1B18] font-semibold text-white'
-                      : 'font-medium text-[#6B6860] hover:bg-[#F3F2ED] hover:text-[#1C1B18]'
-                  } ${collapsed ? 'justify-center px-2' : ''}`}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-white' : 'text-[#9C9890]'}`} />
-                  {!collapsed && <span className="truncate">{label}</span>}
-                </Link>
-              </li>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  isActive
+                    ? 'bg-[#007B8A] text-white shadow-xs'
+                    : 'text-white/80 hover:bg-[#007B8A]/40 hover:text-white'
+                }`}
+              >
+                <Icon className={`h-4 w-4 ${isActive ? 'text-[#80E0D0]' : 'text-white/70'}`} />
+                <span>{item.name}</span>
+              </Link>
             );
           })}
-        </ul>
-      </nav>
+        </nav>
+      </div>
 
-      <div className="border-t border-[rgba(28,27,24,0.08)] p-3">
-        <button
-          type="button"
-          onClick={() => {
-            signOut();
-            router.push('/doctor/auth/login');
-          }}
-          className={`${nxUi.btnGhost} w-full justify-center text-[#6B6860] hover:text-[#DC2626]`}
-        >
-          <LogOut className="h-4 w-4" />
-          {!collapsed && 'Sign out'}
-        </button>
+      {/* FOOTER USER PROFILE & LOGOUT */}
+      <div className="p-4 border-t border-[#007B8A]/30 bg-[#003B42]">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-white">Dr. Aishwarya D S</p>
+            <p className="text-[10px] text-[#80E0D0]">KMC-88410</p>
+          </div>
+          <button className="p-1.5 hover:bg-[#007B8A]/40 rounded-lg text-white/80 hover:text-white transition-colors cursor-pointer">
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </aside>
   );

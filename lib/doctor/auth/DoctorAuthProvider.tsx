@@ -84,8 +84,8 @@ export function DoctorAuthGuard({ children }: { children: ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF5]">
-        <p className="text-sm text-[#5C5A4E]">Loading workspace…</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#F4F6F0] text-[#2C3531]">
+        <p className="text-sm text-[#2C3531]/60">Loading workspace…</p>
       </div>
     );
   }

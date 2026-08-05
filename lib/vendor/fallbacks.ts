@@ -1,7 +1,8 @@
+import { isDemoMode } from '@/lib/shared/demo-mode';
 import { DEFAULT_VENDOR_ID } from '@/lib/vendor-supabase/constants';
 import type { PurchaseOrderRow } from '@/lib/vendor-supabase/types';
 
-/** Demo KPIs when Supabase counts return zero (screenshot-safe). */
+/** Demo KPIs when Supabase counts return zero — production returns 0 */
 export const DEFAULT_KPI_FALLBACK = {
   pendingPos: 6,
   activeDeliveries: 2,
@@ -9,6 +10,11 @@ export const DEFAULT_KPI_FALLBACK = {
   openTickets: 1,
   upcomingPayments: 2,
 } as const;
+
+export function kpiWithFallback(count: number, key: keyof typeof DEFAULT_KPI_FALLBACK): number {
+  if (count > 0) return count;
+  return isDemoMode() ? DEFAULT_KPI_FALLBACK[key] : 0;
+}
 
 export const FALLBACK_PENDING_POS: PurchaseOrderRow[] = [
   {
@@ -42,6 +48,10 @@ export const FALLBACK_PENDING_POS: PurchaseOrderRow[] = [
     created_at: '2026-07-14T14:00:00Z',
   },
 ];
+
+export function getFallbackPendingPos(): PurchaseOrderRow[] {
+  return isDemoMode() ? FALLBACK_PENDING_POS : [];
+}
 
 export type FsrTicketOption = {
   id: string;

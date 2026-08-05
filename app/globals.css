@@ -95,14 +95,27 @@
   --color-patient-heading: #482a41;
   --color-patient-muted: #8e7692;
 
-  --color-brand: #a39e75;
-  --color-brand-hover: #8e8963;
-  --color-brand-secondary: #c7c39e;
-  --color-brand-light: #e6e3c5;
-  --color-brand-surface: #f7f6e8;
-  --color-brand-bg: #fafaf5;
-  --color-brand-text: #2b2a22;
-  --color-brand-primary: #a39e75;
+  --color-brand: #7a9a8b;
+  --color-brand-hover: #6b8a7c;
+  --color-brand-secondary: #d8e2dc;
+  --color-brand-light: #eef5f1;
+  --color-brand-surface: #fafcf8;
+  --color-brand-bg: #f4f6f0;
+  --color-brand-text: #2c3531;
+  --color-brand-primary: #7a9a8b;
+
+  --doctor-sage: #7a9a8b;
+  --doctor-text: #2c3531;
+  --doctor-linen: #f4f6f0;
+  --doctor-cream: #fafcf8;
+  --doctor-dusty: #d8e2dc;
+  --doctor-border: #e2e8e0;
+  --doctor-success-bg: #eef5f1;
+  --doctor-success-text: #4a856a;
+  --doctor-warning-bg: #fdf0ed;
+  --doctor-warning-text: #d96b52;
+  --doctor-pending-bg: #f8f6e9;
+  --doctor-pending-text: #9a8938;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -111,77 +124,79 @@
   --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.06);
 }
 
-/* ── Nexora Doctor · Sage & Cream clinical layer (plain CSS — safe for @layer) ── */
+/* ── Nexora Doctor · Soft Sage & Linen clinical layer ── */
 @layer components {
   .doctor-page {
     min-height: 100%;
-    background-color: #fafaf5;
-    color: #2b2a22;
+    background-color: #f4f6f0;
+    color: #2c3531;
   }
 
   .doctor-input {
     width: 100%;
-    border-radius: 0.5rem;
-    border: 1px solid rgb(199 195 158 / 0.6);
-    background-color: #ffffff;
-    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8e0;
+    background-color: #fafcf8;
+    padding: 0.5rem 0.875rem;
     font-size: 0.875rem;
     line-height: 1.25rem;
-    color: #2b2a22;
+    color: #2c3531;
   }
 
   .doctor-input:focus {
-    border-color: #a39e75;
+    border-color: #7a9a8b;
     outline: none;
-    box-shadow: 0 0 0 2px rgb(163 158 117 / 0.25);
+    box-shadow: 0 0 0 2px rgb(122 154 139 / 0.2);
   }
 
   .doctor-input:-webkit-autofill,
   .doctor-input:-webkit-autofill:hover,
   .doctor-input:-webkit-autofill:focus,
   .doctor-input:-webkit-autofill:active {
-    background-color: #f7f6e8 !important;
-    -webkit-text-fill-color: #2b2a22 !important;
+    background-color: #f4f6f0 !important;
+    -webkit-text-fill-color: #2c3531 !important;
     transition: background-color 5000s ease-in-out 0s;
   }
 
   .doctor-card {
     border-radius: 0.75rem;
-    border: 1px solid rgb(230 227 197 / 0.8);
-    background-color: #ffffff;
-    padding: 1rem;
-    box-shadow: 0 1px 2px 0 rgb(43 42 34 / 0.06);
+    border: 1px solid #e2e8e0;
+    background-color: #fafcf8;
+    padding: 1.25rem;
+    box-shadow: 0 1px 2px 0 rgb(44 53 49 / 0.04);
+    transition: border-color 0.15s ease;
+  }
+
+  .doctor-card:hover {
+    border-color: rgb(122 154 139 / 0.3);
   }
 
   .doctor-card-surface {
     border-radius: 0.75rem;
-    border: 1px solid rgb(230 227 197 / 0.8);
-    background-color: #f7f6e8;
-    padding: 1rem;
-    box-shadow: 0 1px 2px 0 rgb(43 42 34 / 0.06);
+    border: 1px solid #e2e8e0;
+    background-color: #f4f6f0;
+    padding: 1.25rem;
+    box-shadow: 0 1px 2px 0 rgb(44 53 49 / 0.04);
   }
 
   .allergy-badge {
     display: inline-flex;
     align-items: center;
-    border-radius: 0.375rem;
-    border: 1px solid #fecdd3;
-    background-color: #ffe4e6;
+    border-radius: 9999px;
+    border: 1px solid rgb(217 107 82 / 0.3);
+    background-color: #fdf0ed;
     padding: 0.125rem 0.5rem;
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: #9f1239;
+    font-weight: 600;
+    color: #d96b52;
   }
 
   .esi-critical-callout {
     border-radius: 0.75rem;
-    border: 2px solid #fda4af;
-    background-color: #fff1f2;
+    border: 1px solid rgb(217 107 82 / 0.35);
+    background-color: #fdf0ed;
     padding: 1rem;
-    color: #881337;
-    animation: emergencyPulse 2.5s ease-in-out infinite;
+    color: #d96b52;
   }
 
   .doctor-sidebar-active {
@@ -189,12 +204,13 @@
     align-items: center;
     gap: 0.625rem;
     border-radius: 0 0.5rem 0.5rem 0;
-    border-left: 4px solid #a39e75;
-    background-color: #e6e3c5;
+    border-left: 4px solid #7a9a8b;
+    background-color: #354a41;
     padding: 0.625rem 0.75rem;
     font-size: 13px;
     font-weight: 700;
-    color: #2b2a22;
+    color: #ffffff;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.15);
   }
 
   .doctor-sidebar-link {
@@ -205,13 +221,27 @@
     padding: 0.625rem 0.75rem;
     font-size: 13px;
     font-weight: 500;
-    color: #5a584a;
+    color: #d0d7cf;
     transition: all 0.15s ease;
   }
 
   .doctor-sidebar-link:hover {
-    background-color: #f7f6e8;
-    color: #2b2a22;
+    background-color: #28322e;
+    color: #ffffff;
+  }
+
+  .doctor-table-head {
+    background-color: #f4f6f0;
+    color: rgb(44 53 49 / 0.8);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid #e2e8e0;
+  }
+
+  .doctor-table-row:hover {
+    background-color: rgb(238 245 241 / 0.5);
   }
 }
 

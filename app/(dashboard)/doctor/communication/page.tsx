@@ -1,7 +1,5 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { CommunicationWorkspace } from '@/components/nexora-doctor/workspaces/CommunicationWorkspace';
-
-export default function DoctorCommunicationPage() {
-  return <CommunicationWorkspace />;
+export default function LegacyCommunicationRedirect() {
+  redirect('/doctor/notifications');
 }

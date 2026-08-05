@@ -3,9 +3,10 @@
 import { useEffect } from 'react';
 
 import { useDoctorAuth } from '@/lib/doctor/auth/DoctorAuthProvider';
+import { mergeEcosystemIntoDoctor } from '@/lib/ecosystem/doctor-sync';
 
-import { useDoctorClinicalStore } from './store';
 import { SEED_DRUGS } from './seed-data';
+import { useDoctorClinicalStore } from './store';
 import type { Patient } from './types';
 
 /** Bootstrap clinical store when doctor session is available */
@@ -22,6 +23,7 @@ export function useDoctorClinicalInit() {
       session.specialization,
       session.licenseNumber,
     );
+    mergeEcosystemIntoDoctor(session.doctorId);
   }, [session, initializeForDoctor]);
 }
 
@@ -59,13 +61,19 @@ export function useDrugCatalog() {
 export function checkDrugAlerts(patient: Patient | undefined, drugName: string) {
   if (!patient) return { interactions: [] as string[], allergies: [] as string[] };
   const drug = SEED_DRUGS.find(
-    (d) => d.brand.toLowerCase().includes(drugName.toLowerCase()) || d.generic.toLowerCase().includes(drugName.toLowerCase()),
+    (d) =>
+      d.brand.toLowerCase().includes(drugName.toLowerCase()) ||
+      d.generic.toLowerCase().includes(drugName.toLowerCase()),
   );
   const allergies =
-    drug?.allergyConflict?.filter((a) => patient.allergies.some((pa) => pa.toLowerCase().includes(a.toLowerCase()))) ?? [];
+    drug?.allergyConflict?.filter((a) =>
+      patient.allergies.some((pa) => pa.toLowerCase().includes(a.toLowerCase())),
+    ) ?? [];
   const currentMeds = patient.medications.map((m) => m.name);
   const interactions =
-    drug?.interactsWith?.filter((i) => currentMeds.some((m) => m.toLowerCase().includes(i.toLowerCase()))) ?? [];
+    drug?.interactsWith?.filter((i) =>
+      currentMeds.some((m) => m.toLowerCase().includes(i.toLowerCase())),
+    ) ?? [];
   return { interactions, allergies };
 }
 

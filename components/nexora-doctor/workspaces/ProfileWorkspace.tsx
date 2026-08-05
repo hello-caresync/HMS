@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { LogOut, Moon, Sun } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ui } from '@/components/nexora-doctor/ui/primitives';
@@ -13,8 +13,6 @@ export function ProfileWorkspace() {
   const { session, signOut } = useDoctorAuth();
   const profile = useDoctorClinicalStore((s) => s.profile);
   const updateProfile = useDoctorClinicalStore((s) => s.updateProfile);
-  const theme = useDoctorClinicalStore((s) => s.theme);
-  const setTheme = useDoctorClinicalStore((s) => s.setTheme);
   const notificationPrefs = useDoctorClinicalStore((s) => s.notificationPrefs);
   const setNotificationPrefs = useDoctorClinicalStore((s) => s.setNotificationPrefs);
   const router = useRouter();
@@ -29,7 +27,7 @@ export function ProfileWorkspace() {
   if (!profile) {
     return (
       <div className={ui.page}>
-        <p className="text-slate-500">Loading profile…</p>
+        <p className="text-[#2C3531]/60">Loading profile…</p>
       </div>
     );
   }
@@ -38,7 +36,7 @@ export function ProfileWorkspace() {
     <div className={ui.page}>
       <div className="mb-8">
         <h1 className={ui.pageTitle}>Profile</h1>
-        <p className={ui.pageSubtitle}>Manage your account and preferences</p>
+        <p className={ui.pageSubtitle}>Doctor account & availability</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -48,54 +46,65 @@ export function ProfileWorkspace() {
             <Field label="Full Name" value={profile.fullName} onChange={(v) => updateProfile({ fullName: v })} />
             <Field label="Email" value={profile.email} onChange={(v) => updateProfile({ email: v })} />
             <Field label="Phone" value={profile.phone} onChange={(v) => updateProfile({ phone: v })} />
-            <Field label="License Number" value={profile.licenseNumber} readOnly />
-          </div>
-        </section>
-
-        <section className={ui.card}>
-          <SectionHeader title="Hospital & Department" />
-          <div className="space-y-3 text-sm">
-            <p><span className="text-slate-500">Hospital:</span> {profile.hospital}</p>
-            <p><span className="text-slate-500">Department:</span> {profile.department}</p>
-            <Field label="Specialization" value={profile.specialization} onChange={(v) => updateProfile({ specialization: v })} />
+            <Field label="Registration ID" value={profile.licenseNumber} readOnly />
+            <Field
+              label="Specialization"
+              value={profile.specialization}
+              onChange={(v) => updateProfile({ specialization: v })}
+            />
             <div>
-              <label className="text-xs font-medium text-slate-500">Availability</label>
-              <select
-                value={profile.availability}
-                onChange={(e) => updateProfile({ availability: e.target.value as typeof profile.availability })}
-                className={`${ui.select} mt-1 w-full`}
-              >
-                <option value="available">Available</option>
-                <option value="busy">Busy</option>
-                <option value="off-duty">Off Duty</option>
-              </select>
+              <label className="text-xs font-medium text-[#2C3531]/60">Department</label>
+              <p className="mt-1 text-sm font-medium">{profile.department}</p>
             </div>
           </div>
         </section>
 
         <section className={ui.card}>
-          <SectionHeader title="Working Hours" />
+          <SectionHeader title="Availability" />
+          <div className="mb-4">
+            <label className="text-xs font-medium text-[#2C3531]/60">Status</label>
+            <select
+              value={profile.availability}
+              onChange={(e) =>
+                updateProfile({ availability: e.target.value as typeof profile.availability })
+              }
+              className={`${ui.select} mt-1 w-full`}
+            >
+              <option value="available">Available</option>
+              <option value="busy">Busy</option>
+              <option value="off-duty">Off Duty</option>
+            </select>
+          </div>
+          <SectionHeader title="Working Days & Hours" />
           <ul className="space-y-2">
             {profile.workingHours.map((wh) => (
-              <li key={wh.day} className="flex justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
-                <span className="font-medium text-slate-800">{wh.day}</span>
-                <span className="text-slate-600">{wh.start} – {wh.end}</span>
+              <li
+                key={wh.day}
+                className="flex justify-between rounded-lg bg-[#F4F6F0] px-3 py-2 text-sm"
+              >
+                <span className="font-medium">{wh.day}</span>
+                <span className="text-[#2C3531]/70">
+                  {wh.start} – {wh.end}
+                </span>
               </li>
             ))}
           </ul>
         </section>
 
         <section className={ui.card}>
-          <SectionHeader title="Notifications" />
+          <SectionHeader title="Notification Toggles" />
           <div className="space-y-3">
             {(['email', 'push', 'sms'] as const).map((key) => (
-              <label key={key} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2.5">
-                <span className="text-sm capitalize text-slate-700">{key} notifications</span>
+              <label
+                key={key}
+                className="flex items-center justify-between rounded-lg bg-[#F4F6F0] px-3 py-2.5"
+              >
+                <span className="text-sm capitalize">{key} notifications</span>
                 <input
                   type="checkbox"
                   checked={notificationPrefs[key]}
                   onChange={(e) => setNotificationPrefs({ [key]: e.target.checked })}
-                  className="h-4 w-4 accent-teal-700"
+                  className="h-4 w-4 accent-[#7A9A8B]"
                 />
               </label>
             ))}
@@ -103,38 +112,13 @@ export function ProfileWorkspace() {
         </section>
 
         <section className={ui.card}>
-          <SectionHeader title="Theme" />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => { setTheme('light'); toast.success('Light theme'); }}
-              className={`${ui.btnSecondary} ${theme === 'light' ? 'ring-2 ring-teal-500' : ''}`}
-            >
-              <Sun className="h-4 w-4" /> Light
-            </button>
-            <button
-              type="button"
-              onClick={() => { setTheme('dark'); toast.success('Dark theme saved'); }}
-              className={`${ui.btnSecondary} ${theme === 'dark' ? 'ring-2 ring-teal-500' : ''}`}
-            >
-              <Moon className="h-4 w-4" /> Dark
-            </button>
-          </div>
-        </section>
-
-        <section className={ui.card}>
-          <SectionHeader title="Security" />
-          <p className="mb-4 text-sm text-slate-600">Signed in as {session?.email}</p>
-          <button type="button" onClick={() => toast.success('Password reset link sent')} className={ui.btnSecondary}>
-            Change Password
+          <SectionHeader title="Account" />
+          <p className="mb-4 text-sm text-[#2C3531]/70">Signed in as {session?.email}</p>
+          <p className="mb-4 text-sm text-[#2C3531]/70">{profile.hospital}</p>
+          <button type="button" onClick={handleLogout} className={ui.btnDanger}>
+            <LogOut className="h-4 w-4" /> Sign out
           </button>
         </section>
-      </div>
-
-      <div className="mt-8">
-        <button type="button" onClick={handleLogout} className={ui.btnDanger}>
-          <LogOut className="h-4 w-4" /> Logout
-        </button>
       </div>
     </div>
   );
@@ -153,12 +137,12 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-xs font-medium text-slate-500">{label}</label>
+      <label className="text-xs font-medium text-[#2C3531]/60">{label}</label>
       <input
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
         readOnly={readOnly}
-        className={`${ui.input} mt-1 ${readOnly ? 'bg-slate-50' : ''}`}
+        className={`${ui.input} mt-1 ${readOnly ? 'bg-[#F4F6F0]' : ''}`}
       />
     </div>
   );

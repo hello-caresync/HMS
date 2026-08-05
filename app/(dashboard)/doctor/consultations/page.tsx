@@ -1,7 +1,5 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { ConsultationsWorkspace } from '@/components/nexora-doctor/workspaces/ConsultationsWorkspace';
-
-export default function DoctorConsultationsPage() {
-  return <ConsultationsWorkspace />;
+export default function LegacyConsultationsRedirect() {
+  redirect('/doctor/consultation');
 }

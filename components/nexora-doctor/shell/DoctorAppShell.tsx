@@ -5,14 +5,21 @@ import { useState, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 
 import { DoctorAuthGuard, DoctorAuthProvider } from '@/lib/doctor/auth/DoctorAuthProvider';
+import { doctorUi } from '@/lib/nexora-doctor/design-tokens';
 import { useDoctorClinicalInit } from '@/lib/nexora-doctor/hooks';
+import { DoctorRealtimeSync } from '@/lib/realtime/RealtimeSyncProvider';
 
 import { DoctorSidebar } from './DoctorSidebar';
 import { DoctorTopBar } from './DoctorTopBar';
 
 function ClinicalBootstrap({ children }: { children: ReactNode }) {
   useDoctorClinicalInit();
-  return <>{children}</>;
+  return (
+    <>
+      <DoctorRealtimeSync />
+      {children}
+    </>
+  );
 }
 
 export function DoctorAppShell({ children }: { children: ReactNode }) {
@@ -27,8 +34,8 @@ export function DoctorAppShell({ children }: { children: ReactNode }) {
           {isAuthRoute ? (
             children
           ) : (
-            <div className="flex h-screen overflow-hidden bg-slate-50">
-              <div className="hidden lg:block">
+            <div className={doctorUi.shell}>
+              <div className="sticky top-0 hidden h-screen shrink-0 lg:block">
                 <DoctorSidebar />
               </div>
 
@@ -36,23 +43,23 @@ export function DoctorAppShell({ children }: { children: ReactNode }) {
                 <div className="fixed inset-0 z-40 lg:hidden">
                   <button
                     type="button"
-                    className="absolute inset-0 bg-slate-900/40"
+                    className="absolute inset-0 bg-[#1E2522]/60"
                     onClick={() => setSidebarOpen(false)}
                     aria-label="Close menu"
                   />
-                  <div className="relative z-50 h-full w-64 shadow-xl">
+                  <div className="relative z-50 h-full w-64 shadow-2xl">
                     <DoctorSidebar />
                   </div>
                 </div>
               )}
 
-              <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex min-h-screen min-w-0 flex-1 flex-col">
                 <DoctorTopBar onMenuClick={() => setSidebarOpen(true)} />
-                <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</main>
+                <main className={doctorUi.mainScroll}>{children}</main>
               </div>
             </div>
           )}
-          <Toaster position="top-right" richColors closeButton />
+          <Toaster position="top-right" closeButton />
         </ClinicalBootstrap>
       </DoctorAuthGuard>
     </DoctorAuthProvider>

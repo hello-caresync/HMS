@@ -107,6 +107,7 @@ export type Consultation = {
   diagnosis: string;
   treatmentPlan: string;
   prescription: PrescriptionItem[];
+  vitals?: Vitals;
   followUpDate?: string;
   updatedAt: string;
 };
@@ -118,6 +119,18 @@ export type PrescriptionItem = {
   frequency: string;
   duration: string;
   instructions?: string;
+};
+
+export type DoctorPrescription = {
+  id: string;
+  patientId: string;
+  patientName: string;
+  appointmentId?: string;
+  medicines: PrescriptionItem[];
+  notes?: string;
+  status: 'draft' | 'sent';
+  issuedAt: string;
+  doctorId: string;
 };
 
 export type ClinicalOrder = {
@@ -156,10 +169,12 @@ export type Notification = {
   id: string;
   title: string;
   body: string;
-  category: 'emergency' | 'lab' | 'radiology' | 'patient' | 'system';
+  category: 'emergency' | 'lab' | 'radiology' | 'patient' | 'system' | 'appointment';
   at: string;
   read: boolean;
   patientId?: string;
+  appointmentId?: string;
+  targetHref?: string;
 };
 
 export type ActivityItem = {

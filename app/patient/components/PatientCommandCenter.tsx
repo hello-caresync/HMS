@@ -8,11 +8,9 @@ import { APP_ROUTES } from '../../lib/routes';
 type PatientNavId =
   | 'dashboard'
   | 'appointments'
-  | 'virtual_consultations'
   | 'billing_ledger'
   | 'records'
-  | 'prescriptions'
-  | 'messages';
+  | 'prescriptions';
 
 type PatientNavItem = {
   id: PatientNavId;
@@ -22,11 +20,9 @@ type PatientNavItem = {
 const NAV_ITEMS: PatientNavItem[] = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'appointments', label: 'Live Appointments' },
-  { id: 'virtual_consultations', label: 'Virtual Consultations' },
   { id: 'billing_ledger', label: 'Billing Ledger' },
   { id: 'records', label: 'Diagnostics History' },
   { id: 'prescriptions', label: 'Prescriptions' },
-  { id: 'messages', label: 'Care Messages' },
 ];
 
 const ACTIVE_NAV_CLASS =

@@ -1,5 +1,7 @@
-import { InsuranceView } from '@/components/patient/insurance/InsuranceView';
+import { redirect } from 'next/navigation';
 
-export default function PatientInsurancePage() {
-  return <InsuranceView />;
+import { PATIENT_ROUTES } from '@/lib/patient/navigation';
+
+export default function LegacyPatientInsurancePage() {
+  redirect(PATIENT_ROUTES.profile);
 }

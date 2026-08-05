@@ -1,23 +1,69 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useVendorAppStore } from '@/lib/vendor/store/vendor-app-store';
 
-/** Mock realtime channel — production: replace with WebSocket or EventSource. */
+/** Supabase realtime for Vendor ↔ Hospital PO sync */
 export function useVendorRealtime() {
   const setConnected = useVendorAppStore((s) => s.setRealtimeConnected);
-  const tickRef = useRef(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setConnected(true);
-    const interval = window.setInterval(() => {
-      tickRef.current += 1;
-      setConnected(true);
-    }, 25000);
-    return () => {
-      window.clearInterval(interval);
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
       setConnected(false);
+      return;
+    }
+
+    const bump = () => {
+      setConnected(true);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vendor:realtime-refresh'));
+      }
+    };
+
+    const poChannel = supabase
+      .channel('vendor-purchase-orders')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'purchase_orders' },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { status?: string; vendor_name?: string } | null;
+          if (payload.eventType === 'INSERT') {
+            toast.info('New purchase order', {
+              description: 'Issued from Hospital Operations Console',
+            });
+          } else if (row?.status) {
+            toast.info('PO status updated', { description: row.status });
+          }
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(bump, 300);
+        },
+      )
+      .subscribe((status) => {
+        setConnected(status === 'SUBSCRIBED');
+      });
+
+    const invChannel = supabase
+      .channel('vendor-invoices')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'invoices' },
+        () => {
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(bump, 300);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      setConnected(false);
+      void supabase.removeChannel(poChannel);
+      void supabase.removeChannel(invChannel);
     };
   }, [setConnected]);
 }

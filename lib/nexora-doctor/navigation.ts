@@ -1,9 +1,8 @@
 import {
-  BarChart3,
+  Bell,
   CalendarDays,
   LayoutDashboard,
-  MessageSquare,
-  ClipboardList,
+  ScrollText,
   Stethoscope,
   UserCircle,
   Users,
@@ -14,10 +13,9 @@ export type DoctorModuleId =
   | 'dashboard'
   | 'schedule'
   | 'patients'
-  | 'consultations'
-  | 'orders'
-  | 'communication'
-  | 'analytics'
+  | 'consultation'
+  | 'prescriptions'
+  | 'notifications'
   | 'profile';
 
 export type DoctorNavItem = {
@@ -28,7 +26,7 @@ export type DoctorNavItem = {
   description: string;
 };
 
-/** Exactly 8 core workspaces — no extras */
+/** Doctor App V0 — exactly 7 core modules */
 export const DOCTOR_NAV: DoctorNavItem[] = [
   {
     id: 'dashboard',
@@ -52,32 +50,25 @@ export const DOCTOR_NAV: DoctorNavItem[] = [
     description: 'Assigned patients',
   },
   {
-    id: 'consultations',
+    id: 'consultation',
     label: 'Consultations',
-    href: '/doctor/consultations',
+    href: '/doctor/consultation',
     icon: Stethoscope,
-    description: 'Complete consultations',
+    description: 'Clinical workstation',
   },
   {
-    id: 'orders',
-    label: 'Orders',
-    href: '/doctor/orders',
-    icon: ClipboardList,
-    description: 'Lab, radiology & more',
+    id: 'prescriptions',
+    label: 'Prescriptions',
+    href: '/doctor/prescriptions',
+    icon: ScrollText,
+    description: 'Issue & review Rx',
   },
   {
-    id: 'communication',
-    label: 'Communication',
-    href: '/doctor/communication',
-    icon: MessageSquare,
-    description: 'Messages & telehealth',
-  },
-  {
-    id: 'analytics',
-    label: 'Analytics',
-    href: '/doctor/analytics',
-    icon: BarChart3,
-    description: 'Performance insights',
+    id: 'notifications',
+    label: 'Notifications',
+    href: '/doctor/notifications',
+    icon: Bell,
+    description: 'Alerts & reminders',
   },
   {
     id: 'profile',
@@ -88,58 +79,61 @@ export const DOCTOR_NAV: DoctorNavItem[] = [
   },
 ];
 
-/** Legacy route → canonical 8-module redirect map */
+/** Legacy enterprise routes → V0 canonical paths */
 export const LEGACY_DOCTOR_REDIRECTS: Record<string, string> = {
-  '/doctor/opd-consultation': '/doctor/consultations',
-  '/doctor/opd': '/doctor/consultations',
-  '/doctor/consultation': '/doctor/consultations',
+  '/doctor/consultations': '/doctor/consultation',
+  '/doctor/opd-consultation': '/doctor/consultation',
+  '/doctor/opd': '/doctor/consultation',
+  '/doctor/e-prescription': '/doctor/prescriptions',
+  '/doctor/orders': '/doctor/prescriptions',
+  '/doctor/lab-orders': '/doctor/schedule',
+  '/doctor/radiology-orders': '/doctor/schedule',
+  '/doctor/lab': '/doctor/schedule',
+  '/doctor/labs': '/doctor/schedule',
+  '/doctor/radiology': '/doctor/schedule',
+  '/doctor/surgery-management': '/doctor/schedule',
+  '/doctor/surgeries': '/doctor/schedule',
+  '/doctor/surgery': '/doctor/schedule',
   '/doctor/ipd-management': '/doctor/patients',
   '/doctor/ipd': '/doctor/patients',
   '/doctor/emergency-cases': '/doctor/dashboard',
   '/doctor/emergency': '/doctor/dashboard',
   '/doctor/emr': '/doctor/patients',
   '/doctor/emr-vault': '/doctor/patients',
-  '/doctor/e-prescription': '/doctor/consultations',
-  '/doctor/prescriptions': '/doctor/consultations',
-  '/doctor/lab-orders': '/doctor/orders',
-  '/doctor/radiology-orders': '/doctor/orders',
-  '/doctor/lab': '/doctor/orders',
-  '/doctor/labs': '/doctor/orders',
-  '/doctor/radiology': '/doctor/orders',
-  '/doctor/surgery-management': '/doctor/orders',
-  '/doctor/surgeries': '/doctor/orders',
-  '/doctor/surgery': '/doctor/orders',
-  '/doctor/telemedicine': '/doctor/communication',
-  '/doctor/telehealth': '/doctor/communication',
   '/doctor/clinical-documents': '/doctor/patients',
   '/doctor/documents': '/doctor/patients',
-  '/doctor/ai-assistant': '/doctor/consultations',
-  '/doctor/communication-center': '/doctor/communication',
-  '/doctor/messages': '/doctor/communication',
-  '/doctor/notifications': '/doctor/communication',
+  '/doctor/ai-assistant': '/doctor/consultation',
+  '/doctor/communication': '/doctor/notifications',
+  '/doctor/communication-center': '/doctor/notifications',
+  '/doctor/messages': '/doctor/notifications',
+  '/doctor/telemedicine': '/doctor/consultation',
+  '/doctor/telehealth': '/doctor/consultation',
   '/doctor/calendar': '/doctor/schedule',
   '/doctor/scheduler': '/doctor/schedule',
-  '/doctor/reports-analytics': '/doctor/analytics',
-  '/doctor/analytics': '/doctor/analytics',
-  '/doctor/reports': '/doctor/analytics',
+  '/doctor/reports-analytics': '/doctor/dashboard',
+  '/doctor/analytics': '/doctor/dashboard',
+  '/doctor/reports': '/doctor/dashboard',
   '/doctor/profile-settings': '/doctor/profile',
   '/doctor/settings': '/doctor/profile',
 };
 
 export const doctorTheme = {
-  bg: '#F8FAFC',
-  surface: '#FFFFFF',
-  border: '#E2E8F0',
-  primary: '#0F766E',
-  primaryHover: '#0D9488',
-  primaryLight: '#CCFBF1',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  accent: '#14B8A6',
-  danger: '#DC2626',
-  warning: '#D97706',
-  success: '#059669',
-  sidebar: '#FFFFFF',
-  sidebarActive: '#F0FDFA',
-  sidebarActiveBorder: '#0F766E',
+  bg: '#F4F6F0',
+  surface: '#FAFCF8',
+  border: '#E2E8E0',
+  primary: '#7A9A8B',
+  primaryHover: '#6B8B7C',
+  primaryLight: '#EEF5F1',
+  text: '#2C3531',
+  textMuted: '#2C3531',
+  dusty: '#D8E2DC',
+  success: '#4A856A',
+  successBg: '#EEF5F1',
+  warning: '#D96B52',
+  warningBg: '#FDF0ED',
+  pending: '#9A8938',
+  pendingBg: '#F8F6E9',
+  sidebar: '#1E2522',
+  sidebarActive: '#354A41',
+  sidebarActiveBorder: '#7A9A8B',
 } as const;

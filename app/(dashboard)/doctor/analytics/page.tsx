@@ -1,7 +1,5 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { AnalyticsWorkspace } from '@/components/nexora-doctor/workspaces/AnalyticsWorkspace';
-
-export default function DoctorAnalyticsPage() {
-  return <AnalyticsWorkspace />;
+export default function LegacyAnalyticsRedirect() {
+  redirect('/doctor/dashboard');
 }

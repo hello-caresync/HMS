@@ -1,5 +1,5 @@
-import { renderHospitalModule } from '../_lib/renderModulePage';
+import { BillingWorkspace } from '@/components/nexora-hospital/workspaces/BillingWorkspace';
 
 export default function HospitalBillingPage() {
-  return renderHospitalModule('billing');
+  return <BillingWorkspace />;
 }

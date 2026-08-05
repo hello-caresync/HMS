@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { doctorUi } from '@/lib/nexora-doctor/design-tokens';
 import { DOCTOR_NAV } from '@/lib/nexora-doctor/navigation';
 import { cn } from '@/components/nexora-doctor/ui/primitives';
 
@@ -10,24 +11,19 @@ export function DoctorSidebar({ collapsed }: { collapsed?: boolean }) {
   const pathname = usePathname();
 
   return (
-    <aside
-      className={cn(
-        'flex h-full flex-col border-r border-slate-200 bg-white transition-all',
-        collapsed ? 'w-[72px]' : 'w-64',
-      )}
-    >
-      <div className={cn('border-b border-slate-100 px-4 py-5', collapsed && 'px-2 text-center')}>
+    <aside className={cn(doctorUi.sidebar, collapsed ? 'w-[72px]' : 'w-64')}>
+      <div className={cn(doctorUi.sidebarHeader, collapsed && 'px-2 text-center')}>
         {!collapsed ? (
           <>
-            <p className="text-lg font-bold tracking-tight text-slate-900">Nexora</p>
-            <p className="text-xs text-slate-500">Doctor</p>
+            <p className="text-lg font-bold tracking-tight text-white">Nexora</p>
+            <p className="text-xs text-[#A3B19B]">Doctor</p>
           </>
         ) : (
-          <span className="text-lg font-bold text-teal-700">N</span>
+          <span className="text-lg font-bold text-[#7A9A8B]">N</span>
         )}
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+      <nav className="custom-scrollbar flex-1 space-y-1 overflow-y-auto p-3">
         {DOCTOR_NAV.map((item) => {
           const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
           const Icon = item.icon;
@@ -37,14 +33,17 @@ export function DoctorSidebar({ collapsed }: { collapsed?: boolean }) {
               href={item.href}
               title={item.label}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
-                active
-                  ? 'border-l-[3px] border-teal-700 bg-teal-50 text-teal-800'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
+                active ? doctorUi.sidebarActive : doctorUi.sidebarIdle,
                 collapsed && 'justify-center px-2',
               )}
             >
-              <Icon className={cn('h-5 w-5 shrink-0', active ? 'text-teal-700' : 'text-slate-400')} />
+              <Icon
+                className={cn(
+                  'h-5 w-5 shrink-0',
+                  active ? 'text-[#7A9A8B]' : 'text-[#A3B19B]',
+                )}
+              />
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );
@@ -52,8 +51,9 @@ export function DoctorSidebar({ collapsed }: { collapsed?: boolean }) {
       </nav>
 
       {!collapsed && (
-        <div className="border-t border-slate-100 p-4">
-          <p className="text-xs text-slate-400">Nexora Health Platform</p>
+        <div className={doctorUi.sidebarFooter}>
+          <p className="text-xs font-medium text-white">Nexora Health Platform</p>
+          <p className="mt-0.5 text-[10px] text-[#A3B19B]">Clinical workstation</p>
         </div>
       )}
     </aside>

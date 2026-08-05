@@ -5,7 +5,6 @@ import {
   Bell,
   CalendarClock,
   FlaskConical,
-  MessageSquare,
   Pill,
   Settings2,
 } from 'lucide-react';
@@ -16,7 +15,7 @@ import Link from 'next/link';
 import { patientClasses } from '@/lib/patient/theme';
 import { patientUi } from '@/lib/patient/ui-tokens';
 
-type NotificationCategory = 'all' | 'appointments' | 'results' | 'messages' | 'medications';
+type NotificationCategory = 'all' | 'appointments' | 'results' | 'medications';
 
 type PatientNotification = {
   id: string;
@@ -49,12 +48,12 @@ const INITIAL: PatientNotification[] = [
   },
   {
     id: 'n3',
-    category: 'messages',
-    title: 'Care team message',
+    category: 'medications',
+    title: 'Care team reminder',
     body: 'Sister Anjali: Please log fasting glucose before tomorrow’s visit.',
     time: 'Yesterday',
     read: true,
-    href: `${PATIENT_ROUTES.telemedicine}?tab=messages`,
+    href: PATIENT_ROUTES.health,
   },
   {
     id: 'n4',
@@ -80,14 +79,12 @@ const FILTERS: { key: NotificationCategory; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'appointments', label: 'Appointments' },
   { key: 'results', label: 'Results' },
-  { key: 'messages', label: 'Messages' },
   { key: 'medications', label: 'Meds' },
 ];
 
 const CATEGORY_ICON = {
   appointments: CalendarClock,
   results: FlaskConical,
-  messages: MessageSquare,
   medications: Pill,
 } as const;
 
@@ -119,7 +116,7 @@ export function NotificationsView() {
         <div>
           <h1 className={patientUi.pageTitle}>Notifications</h1>
           <p className={`mt-1 ${patientUi.bodyMuted}`}>
-            Appointment reminders, verified results, and secure messages · push &amp; SMS synced
+            Appointment reminders, verified results, and medication alerts · push &amp; SMS synced
           </p>
         </div>
         {unreadCount > 0 ? (

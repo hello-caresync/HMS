@@ -182,6 +182,27 @@ export default function EntrepreneurDashboard() {
           </div>
         ) : (
           <>
+            <div className="mb-6 flex flex-wrap gap-3">
+              <Link
+                href="/entrepreneur/opd-analytics"
+                className="rounded-xl bg-[#572E54] px-4 py-2 text-sm font-bold text-white hover:bg-[#482A41]"
+              >
+                OPD Analytics Dashboard
+              </Link>
+              <Link
+                href="/display-board"
+                className="rounded-xl border border-[#8E7692]/40 bg-white px-4 py-2 text-sm font-bold text-[#572E54] hover:bg-[#CEB2C0]/30"
+              >
+                Waiting Area Display Board
+              </Link>
+              <Link
+                href="/hospital/opd-reception"
+                className="rounded-xl border border-[#8E7692]/40 bg-white px-4 py-2 text-sm font-bold text-[#572E54] hover:bg-[#CEB2C0]/30"
+              >
+                Hospital OPD Reception
+              </Link>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {[
                 { label: 'Doctors', value: dashboard.kpis.doctors, icon: Stethoscope },

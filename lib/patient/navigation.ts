@@ -2,43 +2,40 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Bell,
   CalendarDays,
-  CreditCard,
   FileStack,
   HeartHandshake,
-  HeartPulse,
   LayoutDashboard,
-  Pill,
   ScrollText,
-  Shield,
-  ShieldAlert,
-  TestTube,
+  Stethoscope,
   UserCog,
-  Video,
 } from 'lucide-react';
 
 import { patientTheme } from '@/lib/patient/theme';
 
-/** Nexora Patient App — canonical route map (PWA / static export safe). */
+/** Nexora Patient App V0 — canonical route map */
 export const PATIENT_ROUTES = {
   root: '/patient',
+  login: '/patient/auth/login',
   dashboard: '/patient/dashboard',
   appointments: '/patient/appointments',
-  /** Unified video + secure messaging hub */
-  telemedicine: '/patient/telemedicine',
-  /** @deprecated Use {@link PATIENT_ROUTES.telemedicine} */
-  teleconsult: '/patient/telemedicine',
-  health: '/patient/health',
-  medications: '/patient/medications',
-  prescriptions: '/patient/prescriptions',
+  doctors: '/patient/doctors',
   records: '/patient/records',
-  diagnostics: '/patient/diagnostics',
-  billing: '/patient/billing',
-  insurance: '/patient/insurance',
-  /** @deprecated Use {@link PATIENT_ROUTES.telemedicine} (?tab=messages) */
-  communication: '/patient/telemedicine',
+  prescriptions: '/patient/prescriptions',
   notifications: '/patient/notifications',
-  emergency: '/patient/emergency',
   profile: '/patient/profile',
+  settings: '/patient/settings',
+  /** Legacy redirects */
+  health: '/patient/records',
+  medications: '/patient/prescriptions',
+  diagnostics: '/patient/records',
+  billing: '/patient/dashboard',
+  insurance: '/patient/profile',
+  emergency: '/patient/profile',
+  telemedicine: '/patient/dashboard',
+  teleconsult: '/patient/dashboard',
+  communication: '/patient/notifications',
+  messages: '/patient/notifications',
+  carePlan: '/patient/dashboard',
 } as const;
 
 export type PatientRouteKey = keyof typeof PATIENT_ROUTES;
@@ -48,12 +45,11 @@ export type PatientNavItem = {
   label: string;
   href: string;
   icon: LucideIcon;
-  /** Shown in mobile bottom bar (max 5). */
   mobilePrimary?: boolean;
   description?: string;
 };
 
-/** Flat sidebar — 13 modules, no category headers. */
+/** V0 sidebar — 7 modules only */
 export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
   {
     key: 'dashboard',
@@ -69,87 +65,44 @@ export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
     href: PATIENT_ROUTES.appointments,
     icon: CalendarDays,
     mobilePrimary: true,
-    description: 'Book, reschedule, and check in',
+    description: 'Book, reschedule, and manage visits',
   },
   {
-    key: 'telemedicine',
-    label: 'Telemedicine & Messages',
-    href: PATIENT_ROUTES.telemedicine,
-    icon: Video,
+    key: 'doctors',
+    label: 'Doctors',
+    href: PATIENT_ROUTES.doctors,
+    icon: Stethoscope,
     mobilePrimary: true,
-    description: 'Video visits, waiting room, and care team chat',
+    description: 'Find specialists and view profiles',
   },
   {
-    key: 'health',
-    label: 'My Health',
-    href: PATIENT_ROUTES.health,
-    icon: HeartPulse,
-    mobilePrimary: true,
-    description: 'Vitals, wearables, and wellness trends',
-  },
-  {
-    key: 'medications',
-    label: 'Medications',
-    href: PATIENT_ROUTES.medications,
-    icon: Pill,
-    description: 'Adherence tracker and refill requests',
+    key: 'records',
+    label: 'Medical Records',
+    href: PATIENT_ROUTES.records,
+    icon: FileStack,
+    description: 'Visit history, labs, and imaging',
   },
   {
     key: 'prescriptions',
     label: 'Prescriptions',
     href: PATIENT_ROUTES.prescriptions,
     icon: ScrollText,
-    description: 'Active Rx and pharmacy routing',
-  },
-  {
-    key: 'records',
-    label: 'Health Records',
-    href: PATIENT_ROUTES.records,
-    icon: FileStack,
-    description: 'EMR vault · allergies · problem list',
-  },
-  {
-    key: 'diagnostics',
-    label: 'Diagnostics',
-    href: PATIENT_ROUTES.diagnostics,
-    icon: TestTube,
-    description: 'Labs and imaging summaries',
-  },
-  {
-    key: 'billing',
-    label: 'Billing & Payments',
-    href: PATIENT_ROUTES.billing,
-    icon: CreditCard,
-    description: 'Statements and secure pay',
-  },
-  {
-    key: 'insurance',
-    label: 'Insurance',
-    href: PATIENT_ROUTES.insurance,
-    icon: Shield,
-    description: 'Coverage, pre-auth, and ID cards',
+    description: 'Current and previous medicines',
   },
   {
     key: 'notifications',
     label: 'Notifications',
     href: PATIENT_ROUTES.notifications,
     icon: Bell,
-    description: 'Alerts, reminders, and results ready',
-  },
-  {
-    key: 'emergency',
-    label: 'Emergency & Family',
-    href: PATIENT_ROUTES.emergency,
-    icon: ShieldAlert,
-    description: 'SOS, ICE contacts, and family proxies',
+    mobilePrimary: true,
+    description: 'Appointment and report alerts',
   },
   {
     key: 'profile',
-    label: 'Account & Settings',
+    label: 'Profile',
     href: PATIENT_ROUTES.profile,
     icon: UserCog,
-    mobilePrimary: true,
-    description: 'MFA, privacy, and household profiles',
+    description: 'Account, insurance, and settings',
   },
 ];
 
@@ -163,16 +116,6 @@ export function isPatientNavActive(pathname: string, href: string): boolean {
   if (href === PATIENT_ROUTES.dashboard) {
     return pathname === PATIENT_ROUTES.dashboard || pathname === `${PATIENT_ROUTES.dashboard}/`;
   }
-  if (href === PATIENT_ROUTES.telemedicine) {
-    return (
-      pathname === PATIENT_ROUTES.telemedicine ||
-      pathname.startsWith(`${PATIENT_ROUTES.telemedicine}/`) ||
-      pathname === '/patient/teleconsult' ||
-      pathname.startsWith('/patient/teleconsult/') ||
-      pathname === '/patient/communication' ||
-      pathname.startsWith('/patient/communication/')
-    );
-  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -180,7 +123,6 @@ export function patientMobilePrimaryNav() {
   return PATIENT_NAV_ITEMS.filter((item) => item.mobilePrimary);
 }
 
-/** @deprecated Sidebar uses flat PATIENT_NAV_ITEMS — sections removed for zero-clutter nav. */
 export const PATIENT_NAV_SECTIONS: { id: string; title: string }[] = [];
 
 export function patientNavBySection(_section: string) {
