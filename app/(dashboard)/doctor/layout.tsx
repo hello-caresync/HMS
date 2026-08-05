@@ -2,10 +2,9 @@
 
 import React, { createContext, useContext, useState } from 'react';
 
-// Force dynamic rendering across all doctor dashboard sub-routes
+// Forces dynamic rendering for all /doctor routes to bypass static prerender issues
 export const dynamic = 'force-dynamic';
 
-// 1. Define Doctor Auth Context Types
 interface DoctorUser {
   id: string;
   name: string;
@@ -30,7 +29,6 @@ const defaultDoctor: DoctorUser = {
   roomNo: '302',
 };
 
-// 2. Create Context & Custom Hook
 const DoctorAuthContext = createContext<DoctorAuthContextType>({
   doctor: defaultDoctor,
   isAuthenticated: true,
@@ -45,7 +43,6 @@ export function useDoctorAuth() {
   return context;
 }
 
-// 3. Provider Component
 export function DoctorAuthProvider({ children }: { children: React.ReactNode }) {
   const [doctor, setDoctor] = useState<DoctorUser | null>(defaultDoctor);
 
@@ -66,7 +63,6 @@ export function DoctorAuthProvider({ children }: { children: React.ReactNode }) 
   );
 }
 
-// 4. Main Layout Wrapper
 export default function DoctorDashboardLayout({
   children,
 }: {
