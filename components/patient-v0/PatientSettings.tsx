@@ -69,14 +69,14 @@ function SettingsModal({
   children: ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#482A41]/40 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A332F]/40 p-4 backdrop-blur-sm">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="family-modal-title"
         className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[#8E7692]/30 bg-white shadow-xl"
       >
-        <div className="flex items-center justify-between border-b border-[#8E7692]/25 bg-[#482A41] px-5 py-4 text-white">
+        <div className="flex items-center justify-between border-b border-[#8E7692]/25 bg-[#1A332F] px-5 py-4 text-white">
           <h3 id="family-modal-title" className="text-lg font-black">
             {title}
           </h3>
@@ -312,8 +312,8 @@ export function PatientSettings() {
             onClick={() => setTab(id)}
             className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
               tab === id
-                ? 'bg-[#572E54] text-white shadow-sm'
-                : 'border border-[#8E7692]/30 bg-white text-[#482A41] hover:bg-[#CEB2C0]/30'
+                ? 'bg-[#3B8C7E] text-white shadow-sm'
+                : 'border border-[#8E7692]/30 bg-white text-[#1A332F] hover:bg-[#CEB2C0]/30'
             }`}
           >
             <Icon className="h-4 w-4" />
@@ -327,14 +327,14 @@ export function PatientSettings() {
         <section className={v0Ui.card}>
           {profileLoading || !profile ? (
             <div className="flex items-center justify-center gap-2 py-16 text-sm text-[#8E7692]">
-              <Loader2 className="h-5 w-5 animate-spin text-[#572E54]" />
+              <Loader2 className="h-5 w-5 animate-spin text-[#3B8C7E]" />
               Loading profile…
             </div>
           ) : (
             <form onSubmit={handleProfileSave} className="space-y-8">
               {/* Basic Info */}
               <div>
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-[#482A41]">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-[#1A332F]">
                   <UserRound className="h-5 w-5" /> Basic Information
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -404,7 +404,7 @@ export function PatientSettings() {
 
               {/* Address Details */}
               <div>
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-[#482A41]">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-[#1A332F]">
                   <MapPin className="h-5 w-5" /> Address Details
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -436,7 +436,7 @@ export function PatientSettings() {
 
               {/* Emergency Contact */}
               <div>
-                <h2 className="mb-4 text-lg font-black text-[#482A41]">Emergency Contact</h2>
+                <h2 className="mb-4 text-lg font-black text-[#1A332F]">Emergency Contact</h2>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Contact person name">
                     <input
@@ -461,13 +461,13 @@ export function PatientSettings() {
 
               {/* Medical History with Dynamic Pill Badges */}
               <div>
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-[#482A41]">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-[#1A332F]">
                   <HeartPulse className="h-5 w-5" /> Medical History
                 </h2>
                 <div className="grid gap-6">
                   {/* Known Allergies Tag Editor */}
                   <Field label="Known allergies">
-                    <div className="rounded-xl border border-[#8E7692]/30 bg-white p-3 focus-within:border-[#572E54]">
+                    <div className="rounded-xl border border-[#8E7692]/30 bg-white p-3 focus-within:border-[#3B8C7E]">
                       <div className="mb-2 flex flex-wrap gap-2">
                         {parseTags(profile.knownAllergies).map((tag) => (
                           <span
@@ -502,12 +502,12 @@ export function PatientSettings() {
 
                   {/* Chronic Conditions Tag Editor */}
                   <Field label="Chronic conditions">
-                    <div className="rounded-xl border border-[#8E7692]/30 bg-white p-3 focus-within:border-[#572E54]">
+                    <div className="rounded-xl border border-[#8E7692]/30 bg-white p-3 focus-within:border-[#3B8C7E]">
                       <div className="mb-2 flex flex-wrap gap-2">
                         {parseTags(profile.chronicConditions).map((tag) => (
                           <span
                             key={tag}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[#572E54]/30 bg-[#572E54]/10 px-2.5 py-1 text-xs font-bold text-[#572E54]"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[#3B8C7E]/30 bg-[#3B8C7E]/10 px-2.5 py-1 text-xs font-bold text-[#3B8C7E]"
                           >
                             {tag}
                             <button
@@ -589,7 +589,7 @@ export function PatientSettings() {
 
           {facilitiesLoading ? (
             <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[#8E7692]/40 bg-white/60 py-16 text-sm text-[#8E7692]">
-              <Loader2 className="h-5 w-5 animate-spin text-[#572E54]" />
+              <Loader2 className="h-5 w-5 animate-spin text-[#3B8C7E]" />
               Finding nearby facilities…
             </div>
           ) : facilities.length === 0 ? (
@@ -603,40 +603,40 @@ export function PatientSettings() {
                 return (
                   <article
                     key={f.id}
-                    className={`${v0Ui.cardHover} ${isPreferred ? 'ring-2 ring-[#572E54]/40' : ''}`}
+                    className={`${v0Ui.cardHover} ${isPreferred ? 'ring-2 ring-[#3B8C7E]/40' : ''}`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <Building2 className="h-4 w-4 text-[#572E54]" />
-                          <h3 className="font-black text-[#482A41]">{f.facilityName}</h3>
+                          <Building2 className="h-4 w-4 text-[#3B8C7E]" />
+                          <h3 className="font-black text-[#1A332F]">{f.facilityName}</h3>
                         </div>
                         <p className="mt-1 text-xs text-[#8E7692]">{f.address}</p>
-                        <p className="mt-1 text-xs font-semibold text-[#572E54]">
+                        <p className="mt-1 text-xs font-semibold text-[#3B8C7E]">
                           {f.city} · {f.areaPincode}
                         </p>
                       </div>
                       <span
                         className={`${v0Ui.badge} ${
                           f.facilityType === 'hospital'
-                            ? 'border-[#572E54]/30 bg-[#572E54]/10 text-[#572E54]'
+                            ? 'border-[#3B8C7E]/30 bg-[#3B8C7E]/10 text-[#3B8C7E]'
                             : 'border-[#5E8B7E]/30 bg-[#5E8B7E]/10 text-[#5E8B7E]'
                         }`}
                       >
                         {f.facilityType === 'hospital' ? 'Hospital' : 'Clinic'}
                       </span>
                     </div>
-                    <p className="mt-3 text-sm font-bold text-[#482A41]">
+                    <p className="mt-3 text-sm font-bold text-[#1A332F]">
                       {f.distanceKm.toFixed(1)} km away
                     </p>
-                    <label className="mt-4 flex cursor-pointer items-center gap-2 rounded-xl border border-[#8E7692]/25 bg-[#CEB2C0]/15 px-3 py-2.5 text-sm font-bold text-[#482A41]">
+                    <label className="mt-4 flex cursor-pointer items-center gap-2 rounded-xl border border-[#8E7692]/25 bg-[#CEB2C0]/15 px-3 py-2.5 text-sm font-bold text-[#1A332F]">
                       <input
                         type="radio"
                         name="preferred-hospital"
                         checked={isPreferred}
                         disabled={preferredSaving === f.id}
                         onChange={() => void handleSetPreferred(f.id)}
-                        className="accent-[#572E54]"
+                        className="accent-[#3B8C7E]"
                       />
                       {preferredSaving === f.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -668,7 +668,7 @@ export function PatientSettings() {
 
           {familyLoading ? (
             <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[#8E7692]/40 bg-white/60 py-16 text-sm text-[#8E7692]">
-              <Loader2 className="h-5 w-5 animate-spin text-[#572E54]" />
+              <Loader2 className="h-5 w-5 animate-spin text-[#3B8C7E]" />
               Loading family members…
             </div>
           ) : familyMembers.length === 0 ? (
@@ -682,15 +682,15 @@ export function PatientSettings() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {familyMembers.map((m) => (
                 <article key={m.id} className={v0Ui.cardHover}>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#572E54] text-lg font-black text-white">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#3B8C7E] text-lg font-black text-white">
                     {m.fullName
                       .split(' ')
                       .slice(0, 2)
                       .map((p) => p[0])
                       .join('')}
                   </div>
-                  <h3 className="mt-3 font-black text-[#482A41]">{m.fullName}</h3>
-                  <p className="text-xs font-bold text-[#572E54]">{m.relationship}</p>
+                  <h3 className="mt-3 font-black text-[#1A332F]">{m.fullName}</h3>
+                  <p className="text-xs font-bold text-[#3B8C7E]">{m.relationship}</p>
                   <dl className="mt-3 space-y-1 text-xs text-[#8E7692]">
                     {m.dateOfBirth && (
                       <div>
@@ -708,7 +708,7 @@ export function PatientSettings() {
                       </div>
                     )}
                     {m.medicalNotes && (
-                      <div className="mt-2 leading-relaxed text-[#482A41]/80">{m.medicalNotes}</div>
+                      <div className="mt-2 leading-relaxed text-[#1A332F]/80">{m.medicalNotes}</div>
                     )}
                   </dl>
                   <div className="mt-4 flex gap-2">

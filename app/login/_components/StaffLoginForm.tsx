@@ -3,38 +3,39 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 
 import { useAuth } from '../../context/AuthProvider';
 import { APP_ROUTES } from '../../lib/routes';
-import {
-  completeStaffLogin,
-  initiateStaffLogin,
-  resendMfaChallenge,
-  resolvePostLoginRoute,
-  verifyStaffMfa,
-} from '../../lib/auth/authService';
+import { completeStaffLogin } from '../../lib/auth/authService';
 import type { HospitalStaffProfile } from '../../lib/auth/hospital/types';
+import {
+  authenticateHospitalMember,
+  resolveMemberPostLoginRoute,
+} from '@/lib/auth/hospital/member-auth';
+import type { LoginPortalRole } from '@/lib/auth/hospital/member-types';
 import AuthLoginShell, {
   AuthAlert,
   AuthField,
   AuthPrimaryButton,
 } from './AuthLoginShell';
-import MfaOtpVerification from './MfaOtpVerification';
 
-type LoginStep = 'credentials' | 'mfa';
+const PORTAL_ROLES: { value: LoginPortalRole; label: string; hint: string }[] = [
+  { value: 'Staff', label: 'Staff', hint: 'Nurse · Reception · Billing · Pharmacy' },
+  { value: 'Doctor', label: 'Doctor', hint: 'Clinical workspace' },
+  { value: 'Admin', label: 'Admin', hint: 'Hospital administration' },
+];
 
 export default function StaffLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setSession } = useAuth();
 
-  const [step, setStep] = useState<LoginStep>('credentials');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [portalRole, setPortalRole] = useState<LoginPortalRole>('Staff');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pendingEmployeeId, setPendingEmployeeId] = useState('');
-  const [pendingProfile, setPendingProfile] = useState<HospitalStaffProfile | null>(null);
 
   const reason = searchParams.get('reason');
   const redirect = searchParams.get('redirect');
@@ -48,9 +49,12 @@ export default function StaffLoginForm() {
           ? 'You have been signed out.'
           : null;
 
-  const finishLogin = (profile: HospitalStaffProfile, destination?: string) => {
+  const finishLogin = (profile: HospitalStaffProfile, destination: string) => {
     setSession(profile);
-    router.push(destination ?? redirect ?? resolvePostLoginRoute(profile.role));
+    toast.success('Signed in successfully', {
+      description: `Redirecting to ${profile.shiftLabel}.`,
+    });
+    router.push(destination ?? redirect ?? APP_ROUTES.dashboard);
   };
 
   const handleCredentialsSubmit = async (event: React.FormEvent) => {
@@ -71,7 +75,7 @@ export default function StaffLoginForm() {
         displayName: 'Dr. Aishwarya D S',
         role: 'hospital_admin',
         department: 'Clinical Operations',
-        shiftLabel: 'Doctor Console',
+        shiftLabel: 'Hospital Operations',
         permissions: ['*'],
         authMethod: 'password',
         issuedAtUtc: now,
@@ -84,102 +88,93 @@ export default function StaffLoginForm() {
 
       if (completed.ok === false) {
         setError(completed.error);
+        toast.error('Sign-in failed', { description: completed.error });
         return;
       }
 
-      finishLogin(mockProfile, APP_ROUTES.hospitalDashboard);
+      const destination =
+        portalRole === 'Doctor'
+          ? '/doctor/dashboard'
+          : redirect ?? APP_ROUTES.dashboard;
+      finishLogin(mockProfile, destination);
       return;
     }
 
-    const result = await initiateStaffLogin(identifier, password);
+    const result = await authenticateHospitalMember(identifier, password, portalRole);
     setLoading(false);
 
     if (result.ok === false) {
       setError(result.error);
+      if (result.code === 'suspended') {
+        toast.error('Account suspended', { description: result.error });
+      } else if (result.code === 'no_hospital') {
+        toast.error('Hospital not configured', { description: result.error });
+      } else if (result.code === 'role_mismatch') {
+        toast.warning('Role mismatch', { description: result.error });
+      } else {
+        toast.error('Invalid credentials', { description: result.error });
+      }
       return;
     }
 
-    if (result.requiresMfa) {
-      setPendingEmployeeId(result.employeeId);
-      setPendingProfile(result.profile);
-      setStep('mfa');
-      return;
-    }
+    const profile: HospitalStaffProfile = {
+      ...result.staffSession,
+      mfaPending: false,
+    };
 
-    const completed = await completeStaffLogin(result.profile);
+    const completed = await completeStaffLogin(profile);
     if (completed.ok === false) {
       setError(completed.error);
+      toast.error('Sign-in failed', { description: completed.error });
       return;
     }
 
-    finishLogin(result.profile);
+    finishLogin(profile, resolveMemberPostLoginRoute(result.member.role));
   };
-
-  const handleMfaVerify = async (code: string) => {
-    setLoading(true);
-    setError(null);
-
-    const result = await verifyStaffMfa(code);
-    setLoading(false);
-
-    if (result.ok === false) {
-      setError(result.error);
-      return;
-    }
-
-    if (!pendingProfile) {
-      setError('Authentication state lost. Sign in again.');
-      setStep('credentials');
-      return;
-    }
-
-    const completed = await completeStaffLogin(pendingProfile);
-    if (completed.ok === false) {
-      setError(completed.error);
-      return;
-    }
-
-    finishLogin(pendingProfile);
-  };
-
-  const handleMfaResend = () => {
-    if (pendingEmployeeId) {
-      resendMfaChallenge(pendingEmployeeId);
-    }
-  };
-
-  if (step === 'mfa') {
-    return (
-      <MfaOtpVerification
-        employeeId={pendingEmployeeId}
-        onVerified={handleMfaVerify}
-        onCancel={() => {
-          setStep('credentials');
-          setError(null);
-          setPendingProfile(null);
-        }}
-        onResend={handleMfaResend}
-        loading={loading}
-        error={error}
-      />
-    );
-  }
 
   return (
     <AuthLoginShell
-      title="Clinical Staff Sign-In"
-      subtitle="Enter credentials to access the Nexora Doctor workspace."
+      title="Unified Role-Based Sign-In"
+      subtitle="Authenticate with your hospital-issued credentials. Access is routed by role."
     >
-      <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+      <form onSubmit={handleCredentialsSubmit} className="space-y-5">
         {bannerMessage && <AuthAlert tone="info" message={bannerMessage} />}
         {error && <AuthAlert tone="error" message={error} />}
 
+        <fieldset className="space-y-2">
+          <legend className="text-base font-medium text-slate-800">Sign in as</legend>
+          <div className="grid grid-cols-3 gap-2">
+            {PORTAL_ROLES.map((option) => {
+              const active = portalRole === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setPortalRole(option.value)}
+                  className={`rounded-xl border px-2 py-3 text-center transition ${
+                    active
+                      ? 'border-teal-700 bg-teal-50 ring-2 ring-teal-600/20'
+                      : 'border-slate-200 bg-slate-50 hover:border-teal-300'
+                  }`}
+                >
+                  <span className="block text-sm font-bold uppercase tracking-wider text-slate-900">
+                    {option.label}
+                  </span>
+                  <span className="mt-1 block text-[11px] font-medium leading-tight text-slate-600">
+                    {option.hint}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+
         <AuthField
           id="staff-identifier"
-          label="Employee ID / Email"
+          label="Email / Employee ID"
           value={identifier}
           onChange={setIdentifier}
-          placeholder="hospital@curasync.com"
+          placeholder="you@hospital.org or EMP-1001"
           autoComplete="username"
         />
 
@@ -196,13 +191,16 @@ export default function StaffLoginForm() {
         <div className="flex items-center justify-between pt-1">
           <Link
             href={APP_ROUTES.loginForgotPassword}
-            className="text-xs font-semibold text-teal-800 hover:text-teal-950 hover:underline"
+            className="text-sm font-bold uppercase tracking-wider text-teal-800 hover:text-teal-950 hover:underline"
           >
             Forgot Password?
           </Link>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400">
-            Sandbox
-          </span>
+          <Link
+            href={APP_ROUTES.adminOnboarding}
+            className="text-sm font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800"
+          >
+            Onboard Hospital
+          </Link>
         </div>
 
         <AuthPrimaryButton loading={loading}>Sign In</AuthPrimaryButton>

@@ -38,7 +38,7 @@ export function DoctorProfileDrawer({ doctor, onClose, liveSource }: Props) {
         </button>
       )}
 
-      <div className="border-b border-[#8E7692]/25 bg-[#482A41] px-5 py-4 text-white">
+      <div className="border-b border-[#8E7692]/25 bg-[#1A332F] px-5 py-4 text-white">
         <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Doctor Profile</p>
         {liveSource === 'supabase' && (
           <span className="mt-1 inline-block rounded-full bg-[#5E8B7E]/30 px-2 py-0.5 text-[10px] font-bold text-[#5E8B7E]">
@@ -49,15 +49,15 @@ export function DoctorProfileDrawer({ doctor, onClose, liveSource }: Props) {
 
       <div className="p-5">
         <div className="flex flex-col items-center text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#572E54] text-2xl font-black text-white shadow-md">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#3B8C7E] text-2xl font-black text-white shadow-md">
             {doctor.photoInitials}
           </div>
-          <h2 className="mt-3 text-lg font-black text-[#482A41]">{doctor.name}</h2>
-          <p className="text-sm font-bold text-[#572E54]">{doctor.specialization}</p>
+          <h2 className="mt-3 text-lg font-black text-[#1A332F]">{doctor.name}</h2>
+          <p className="text-sm font-bold text-[#3B8C7E]">{doctor.specialization}</p>
           <p className="mt-1 text-xs text-[#8E7692]">{doctor.department}</p>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#D8A657]/25 px-2.5 py-0.5 text-xs font-bold text-[#482A41]">
-              <Star className="h-3 w-3 fill-[#D8A657]" /> {doctor.rating} ({doctor.reviewCount})
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#BDE2F5]/25 px-2.5 py-0.5 text-xs font-bold text-[#1A332F]">
+              <Star className="h-3 w-3 fill-[#BDE2F5]" /> {doctor.rating} ({doctor.reviewCount})
             </span>
             {doctor.availableToday ? (
               <span className={opdUi.badgeOnTime}>Available today</span>
@@ -72,17 +72,17 @@ export function DoctorProfileDrawer({ doctor, onClose, liveSource }: Props) {
         <dl className="mt-6 space-y-4 text-sm">
           <div>
             <dt className="text-xs font-bold uppercase tracking-wide text-[#8E7692]">Experience</dt>
-            <dd className="mt-0.5 font-semibold text-[#482A41]">{doctor.experience}</dd>
+            <dd className="mt-0.5 font-semibold text-[#1A332F]">{doctor.experience}</dd>
           </div>
           <div>
             <dt className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-[#8E7692]">
               <Languages className="h-3 w-3" /> Languages
             </dt>
-            <dd className="mt-0.5 font-semibold text-[#482A41]">{doctor.languages.join(', ')}</dd>
+            <dd className="mt-0.5 font-semibold text-[#1A332F]">{doctor.languages.join(', ')}</dd>
           </div>
           <div>
             <dt className="text-xs font-bold uppercase tracking-wide text-[#8E7692]">Consultation fee</dt>
-            <dd className="mt-0.5 text-xl font-black text-[#572E54]">₹{doctor.consultationFee}</dd>
+            <dd className="mt-0.5 text-xl font-black text-[#3B8C7E]">₹{doctor.consultationFee}</dd>
           </div>
           <div className="flex gap-4">
             <div>
@@ -100,7 +100,7 @@ export function DoctorProfileDrawer({ doctor, onClose, liveSource }: Props) {
           </div>
           <div>
             <dt className="text-xs font-bold uppercase tracking-wide text-[#8E7692]">About</dt>
-            <dd className="mt-0.5 leading-relaxed text-[#482A41]/90">{doctor.bio}</dd>
+            <dd className="mt-0.5 leading-relaxed text-[#1A332F]/90">{doctor.bio}</dd>
           </div>
           <div>
             <dt className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-[#8E7692]">
@@ -111,7 +111,7 @@ export function DoctorProfileDrawer({ doctor, onClose, liveSource }: Props) {
                 doctor.slots.map((s) => (
                   <span
                     key={s}
-                    className="rounded-md border border-[#8E7692]/30 bg-[#CEB2C0]/25 px-2 py-0.5 text-xs font-bold text-[#482A41]"
+                    className="rounded-md border border-[#8E7692]/30 bg-[#CEB2C0]/25 px-2 py-0.5 text-xs font-bold text-[#1A332F]"
                   >
                     {s}
                   </span>

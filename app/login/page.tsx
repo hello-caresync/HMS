@@ -1,21 +1,24 @@
 'use client';
 
 import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 
 import StaffLoginForm from './_components/StaffLoginForm';
 
 /**
- * Dev mock credentials (local only):
- *   Email:    hospital@curasync.com
- *   Password: 123456
- * → Issues session and redirects to /hospital/dashboard
+ * Unified Nexora Hospital login portal.
+ * Dev mock: hospital@curasync.com / 123456
+ * Production: credentials issued via /admin/onboarding
  */
 export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-800">
-          <p className="font-mono text-xs uppercase tracking-wider">Initializing secure gateway…</p>
+        <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-slate-50 text-slate-800">
+          <Loader2 className="h-8 w-8 animate-spin text-teal-800" aria-hidden />
+          <p className="text-sm font-bold uppercase tracking-wider">
+            Initializing secure gateway…
+          </p>
         </div>
       }
     >

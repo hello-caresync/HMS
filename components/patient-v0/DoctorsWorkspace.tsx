@@ -71,7 +71,7 @@ export function DoctorsWorkspace() {
       </header>
 
       {error && (
-        <p className="mb-4 rounded-xl bg-[#D8A657]/20 px-4 py-2 text-sm text-[#482A41]">
+        <p className="mb-4 rounded-xl bg-[#BDE2F5]/20 px-4 py-2 text-sm text-[#1A332F]">
           {error} — showing cached directory.
         </p>
       )}
@@ -111,7 +111,7 @@ export function DoctorsWorkspace() {
 
           {loading ? (
             <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[#8E7692]/40 bg-white/60 py-16 text-sm text-[#8E7692]">
-              <Loader2 className="h-5 w-5 animate-spin text-[#572E54]" />
+              <Loader2 className="h-5 w-5 animate-spin text-[#3B8C7E]" />
               Loading doctors from Supabase…
             </div>
           ) : filtered.length === 0 ? (
@@ -125,7 +125,7 @@ export function DoctorsWorkspace() {
                   key={d.id}
                   className={`${v0Ui.cardHover} cursor-pointer transition ${
                     selectedDoctor?.id === d.id
-                      ? 'ring-2 ring-[#572E54]/50 shadow-md'
+                      ? 'ring-2 ring-[#3B8C7E]/50 shadow-md'
                       : 'border-[#8E7692]/30'
                   }`}
                   onClick={() => setSelectedDoctor(d)}
@@ -134,18 +134,18 @@ export function DoctorsWorkspace() {
                   tabIndex={0}
                 >
                   <div className="flex gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#572E54] text-lg font-black text-white">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#3B8C7E] text-lg font-black text-white">
                       {d.photoInitials}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-black text-[#482A41]">{d.name}</p>
-                      <p className="text-xs font-bold text-[#572E54]">{d.department}</p>
+                      <p className="font-black text-[#1A332F]">{d.name}</p>
+                      <p className="text-xs font-bold text-[#3B8C7E]">{d.department}</p>
                       <p className="mt-1 line-clamp-2 text-xs text-[#8E7692]">{d.specialization}</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                        <span className="inline-flex items-center gap-1 font-bold text-[#D8A657]">
+                        <span className="inline-flex items-center gap-1 font-bold text-[#BDE2F5]">
                           <Star className="h-3 w-3 fill-current" /> {d.rating}
                         </span>
-                        <span className="font-bold text-[#572E54]">₹{d.consultationFee}</span>
+                        <span className="font-bold text-[#3B8C7E]">₹{d.consultationFee}</span>
                         {d.availableToday && (
                           <span className={opdUi.badgeOnTime}>Available</span>
                         )}

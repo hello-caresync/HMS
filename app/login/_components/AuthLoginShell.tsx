@@ -31,7 +31,7 @@ export default function AuthLoginShell({ title, subtitle, children }: AuthLoginS
           </div>
 
           <div>
-            <h1 className="max-w-sm text-3xl font-black leading-tight tracking-tight text-white">
+            <h1 className="max-w-sm text-3xl font-extrabold leading-tight tracking-tight text-white">
               Secure Clinical Gateway
             </h1>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-teal-100/90">
@@ -57,8 +57,8 @@ export default function AuthLoginShell({ title, subtitle, children }: AuthLoginS
 
           <div className="rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm">
             <header className="mb-6 space-y-1">
-              <h2 className="text-xl font-black tracking-tight text-teal-950">{title}</h2>
-              <p className="text-sm font-medium text-slate-600">{subtitle}</p>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900">{title}</h2>
+              <p className="text-base font-medium text-slate-600">{subtitle}</p>
             </header>
 
             {children}
@@ -88,9 +88,7 @@ export function AuthField({
 }) {
   return (
     <label htmlFor={id} className="block space-y-1.5">
-      <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-600">
-        {label}
-      </span>
+      <span className="text-base font-medium text-slate-800">{label}</span>
       <input
         id={id}
         type={type}
@@ -98,7 +96,7 @@ export function AuthField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="w-full rounded-xl border border-slate-200/80 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:bg-white focus:ring-2 focus:ring-teal-600/20"
+        className="w-full rounded-xl border border-slate-200/80 bg-slate-50 px-4 py-3 text-base font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:bg-white focus:ring-2 focus:ring-teal-600/20"
       />
     </label>
   );
@@ -122,9 +120,16 @@ export function AuthPrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className="w-full rounded-xl bg-teal-950 px-4 py-3 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-50"
+      className="w-full rounded-xl bg-teal-950 px-4 py-3 text-sm font-bold uppercase tracking-wider text-white shadow-sm transition-all duration-200 hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-50"
     >
-      {loading ? 'Processing…' : children}
+      {loading ? (
+        <span className="inline-flex items-center justify-center gap-2">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          Processing…
+        </span>
+      ) : (
+        children
+      )}
     </button>
   );
 }

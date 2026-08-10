@@ -70,6 +70,7 @@ const PROTECTED_PREFIXES = [
 const ACTIVITY_PERSIST_INTERVAL_MS = 30_000;
 
 function isProtectedPath(pathname: string): boolean {
+  if (pathname.startsWith('/admin/onboarding')) return false;
   if (pathname === '/') return true;
   return PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
@@ -77,7 +78,7 @@ function isProtectedPath(pathname: string): boolean {
 }
 
 function isPublicAuthPath(pathname: string): boolean {
-  return pathname.startsWith('/login');
+  return pathname.startsWith('/login') || pathname.startsWith('/admin/onboarding');
 }
 
 function shouldUpdateSession(prev: HospitalStaffProfile | null, next: HospitalStaffProfile): boolean {

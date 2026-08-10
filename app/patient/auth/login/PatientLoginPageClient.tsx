@@ -1,156 +1,150 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Lock, Mail, ShieldCheck, Sparkles, User, HeartPulse } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
+import { Building2, Mail, Lock, LogIn, CheckCircle2, ShieldCheck } from 'lucide-react';
+
+interface Hospital {
+  id: string;
+  facility_name: string;
+  facility_type: string;
+  address: string;
+}
+
+const FALLBACK_HOSPITALS: Hospital[] = [
+  {
+    id: 'c1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+    facility_name: 'CuraSync Multi-Specialty Hospital',
+    facility_type: 'hospital',
+    address: '120 Ring Road, Indiranagar, Bengaluru',
+  },
+  {
+    id: 'c2eebc99-9c0b-4ef8-bb6d-6bb9bd380a22',
+    facility_name: 'Nextora Express OPD Clinic',
+    facility_type: 'clinic',
+    address: '88 Koramangala 8th Block, Bengaluru',
+  },
+];
 
 export default function PatientLoginPageClient() {
   const router = useRouter();
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [email, setEmail] = useState('aishwarya@gmail.com');
+  const [password, setPassword] = useState('password123');
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadHospitals() {
+      try {
+        const { data, error } = await supabase.from('hospitals_and_clinics').select('*');
+        if (error || !data || data.length === 0) throw error;
+        setHospitals(data);
+        setSelectedHospital(data[0]);
+      } catch (err) {
+        setHospitals(FALLBACK_HOSPITALS);
+        setSelectedHospital(FALLBACK_HOSPITALS[0]);
+      }
+    }
+    loadHospitals();
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    if (!selectedHospital) return;
+
+    setLoading(true);
+
+    // Store selected hospital context globally in localStorage
+    localStorage.setItem('selected_hospital_id', selectedHospital.id);
+    localStorage.setItem('selected_hospital_name', selectedHospital.facility_name);
+
     setTimeout(() => {
-      setIsLoading(false);
-      router.push('/patient/appointments');
-    }, 1000);
+      setLoading(false);
+      router.push('/patient/appointments/book');
+    }, 600);
   };
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-gradient-to-br from-[#F8F4F1] via-[#E2D2C8]/40 to-[#CEB2C0]/30 p-4 font-sans text-[#2D232A]">
-      
-      {/* Background Glows */}
-      <div className="absolute -left-20 -top-20 h-96 w-96 rounded-full bg-[#572E54]/15 blur-3xl" />
-      <div className="absolute -bottom-20 -right-20 h-96 w-96 rounded-full bg-[#D8A657]/20 blur-3xl" />
+    <div className="flex min-h-screen items-center justify-center bg-[#F7FAF9] p-6 font-sans text-[#1A332F]">
+      <div className="w-full max-w-md rounded-3xl border border-[#BDE2F5] bg-white p-8 shadow-2xl">
+        <div className="text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#3B8C7E] text-[#BDE2F5] shadow-md">
+            <ShieldCheck className="h-6 w-6" />
+          </div>
+          <h1 className="mt-4 text-2xl font-black text-[#1A332F]">Welcome Back</h1>
+          <p className="mt-1 text-xs font-bold text-[#7BA89E]">Select hospital & sign in to continue</p>
+        </div>
 
-      {/* Main Glass Split Card */}
-      <div
-        className={`relative flex min-h-[550px] w-full max-w-4xl items-center justify-between rounded-[2.5rem] border border-white/60 bg-white/70 p-6 shadow-2xl backdrop-blur-xl transition-all duration-700 ease-in-out md:p-10 ${
-          isExpanded ? 'max-w-5xl' : 'max-w-xl'
-        }`}
-      >
-        {/* HERO SECTION */}
-        <div
-          className={`flex flex-col items-center justify-center text-center transition-all duration-700 ease-in-out ${
-            isExpanded ? 'w-full md:w-1/2 md:pr-6' : 'w-full'
-          }`}
-        >
-          {/* Animated Floating Graphic */}
-          <div className="relative mb-6 flex h-48 w-48 animate-bounce items-center justify-center rounded-full bg-gradient-to-br from-[#572E54] to-[#8E7692] shadow-2xl [animation-duration:3s]">
-            <div className="flex h-40 w-40 items-center justify-center rounded-full bg-white/10 backdrop-blur-md">
-              <HeartPulse className="h-20 w-20 text-white" />
-              <Sparkles className="absolute right-4 top-4 h-6 w-6 text-[#D8A657]" />
+        <form onSubmit={handleLogin} className="mt-6 space-y-5">
+          <div>
+            <label className="flex items-center gap-2 text-xs font-black text-[#1A332F] uppercase tracking-wider mb-2">
+              <Building2 className="h-4 w-4 text-[#3B8C7E]" /> Select Hospital / Clinic
+            </label>
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              {hospitals.map((hospital) => {
+                const isSelected = selectedHospital?.id === hospital.id;
+                return (
+                  <button
+                    type="button"
+                    key={hospital.id}
+                    onClick={() => setSelectedHospital(hospital)}
+                    className={`w-full flex items-center justify-between rounded-2xl border p-3.5 text-left transition ${
+                      isSelected
+                        ? 'border-[#3B8C7E] bg-[#3B8C7E]/5 ring-2 ring-[#3B8C7E]'
+                        : 'border-slate-200 hover:border-[#3B8C7E]'
+                    }`}
+                  >
+                    <div>
+                      <h4 className="text-xs font-black text-[#1A332F]">{hospital.facility_name}</h4>
+                      <p className="text-[11px] font-medium text-[#7BA89E]">{hospital.address}</p>
+                    </div>
+                    {isSelected && <CheckCircle2 className="h-4 w-4 text-[#3B8C7E] shrink-0" />}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <h1 className="text-3xl font-black tracking-tight text-[#482A41] md:text-4xl">
-            CuraSync Health
-          </h1>
-          <p className="mt-2 max-w-xs text-sm font-medium text-[#7A6374]">
-            {isExpanded
-              ? 'Access real-time queues, book top specialists, and view records.'
-              : 'Welcome to your smart digital health companion.'}
-          </p>
-
-          {!isExpanded && (
-            <button
-              onClick={() => setIsExpanded(true)}
-              className="mt-8 flex items-center gap-2 rounded-full bg-[#572E54] px-8 py-3.5 text-sm font-bold text-white shadow-xl transition-all hover:bg-[#482A41] hover:shadow-2xl active:scale-95"
-            >
-              Sign In to Portal <ArrowRight className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-
-        {/* SLIDE-IN FORM */}
-        <div
-          className={`transition-all duration-700 ease-in-out ${
-            isExpanded
-              ? 'w-full opacity-100 max-h-[600px] md:w-1/2 md:pl-6'
-              : 'w-0 opacity-0 max-h-0 overflow-hidden pointer-events-none'
-          }`}
-        >
-          <div className="rounded-3xl border border-[#E2D2C8] bg-white p-8 shadow-lg">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-black text-[#482A41]">
-                  {isRegistering ? 'Create Account' : 'Welcome Back'}
-                </h2>
-                <p className="text-xs text-[#7A6374]">
-                  {isRegistering ? 'Register to manage care' : 'Sign in to access your dashboard'}
-                </p>
-              </div>
-              <span className="rounded-full bg-[#572E54]/10 p-2.5 text-[#572E54]">
-                <ShieldCheck className="h-5 w-5" />
-              </span>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {isRegistering && (
-                <div>
-                  <label className="ml-3 mb-1 block text-xs font-bold uppercase text-[#7A6374]">Full Name</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-3 h-4 w-4 text-[#7A6374]" />
-                    <input
-                      type="text"
-                      required
-                      placeholder="Aishwarya D S"
-                      className="w-full rounded-full border border-[#E2D2C8] bg-[#F8F4F1]/50 py-2.5 pl-11 pr-4 text-sm font-medium focus:border-[#572E54] focus:bg-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="ml-3 mb-1 block text-xs font-bold uppercase text-[#7A6374]">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-3 h-4 w-4 text-[#7A6374]" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="patient@curasync.com"
-                    className="w-full rounded-full border border-[#E2D2C8] bg-[#F8F4F1]/50 py-2.5 pl-11 pr-4 text-sm font-medium focus:border-[#572E54] focus:bg-white focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="ml-3 mb-1 block text-xs font-bold uppercase text-[#7A6374]">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-3 h-4 w-4 text-[#7A6374]" />
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    className="w-full rounded-full border border-[#E2D2C8] bg-[#F8F4F1]/50 py-2.5 pl-11 pr-4 text-sm font-medium focus:border-[#572E54] focus:bg-white focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="mt-2 w-full rounded-full bg-[#572E54] py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#482A41] hover:shadow-lg disabled:opacity-50"
-              >
-                {isLoading ? 'Processing...' : isRegistering ? 'Register Account' : 'Sign In'}
-              </button>
-            </form>
-
-            <div className="mt-5 text-center text-xs font-semibold text-[#7A6374]">
-              {isRegistering ? 'Already have an account?' : "Don't have an account?"}{' '}
-              <button
-                type="button"
-                onClick={() => setIsRegistering(!isRegistering)}
-                className="font-bold text-[#572E54] underline hover:text-[#482A41]"
-              >
-                {isRegistering ? 'Sign In' : 'Register now'}
-              </button>
+          <div>
+            <label className="text-[11px] font-black text-[#1A332F] uppercase tracking-wider">Email Address</label>
+            <div className="relative mt-1">
+              <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-[#7BA89E]" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full rounded-2xl border border-slate-200 bg-[#DAF0EB] py-3 pl-10 pr-4 text-xs font-bold text-[#1A332F] focus:border-[#3B8C7E] focus:outline-none"
+              />
             </div>
           </div>
-        </div>
+
+          <div>
+            <label className="text-[11px] font-black text-[#1A332F] uppercase tracking-wider">Password</label>
+            <div className="relative mt-1">
+              <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-[#7BA89E]" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full rounded-2xl border border-slate-200 bg-[#DAF0EB] py-3 pl-10 pr-4 text-xs font-bold text-[#1A332F] focus:border-[#3B8C7E] focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#3B8C7E] py-3.5 text-xs font-extrabold text-white shadow-lg transition hover:bg-[#1A332F] disabled:opacity-50"
+          >
+            {loading ? 'Logging in...' : 'Sign In to Selected Hospital'}
+            <LogIn className="h-4 w-4" />
+          </button>
+        </form>
       </div>
     </div>
   );

@@ -1,40 +1,42 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  Activity,
   Bell,
-  CalendarDays,
-  FileStack,
-  HeartHandshake,
+  Calendar,
+  FileText,
   LayoutDashboard,
-  ScrollText,
+  PlusCircle,
   Stethoscope,
-  UserCog,
+  User,
 } from 'lucide-react';
 
 import { patientTheme } from '@/lib/patient/theme';
 
-/** Nexora Patient App V0 — canonical route map */
+/** Nexora Patient App — canonical route map */
 export const PATIENT_ROUTES = {
   root: '/patient',
   login: '/patient/auth/login',
   dashboard: '/patient/dashboard',
   appointments: '/patient/appointments',
+  bookAppointment: '/patient/appointments/book',
+  queue: '/patient/queue',
   doctors: '/patient/doctors',
   records: '/patient/records',
   prescriptions: '/patient/prescriptions',
   notifications: '/patient/notifications',
   profile: '/patient/profile',
   settings: '/patient/settings',
+  emergency: '/patient/emergency',
   /** Legacy redirects */
   health: '/patient/records',
   medications: '/patient/prescriptions',
   diagnostics: '/patient/records',
   billing: '/patient/dashboard',
   insurance: '/patient/profile',
-  emergency: '/patient/profile',
   telemedicine: '/patient/dashboard',
   teleconsult: '/patient/dashboard',
   communication: '/patient/notifications',
-  messages: '/patient/notifications',
+  messages: '/patient/messages',
   carePlan: '/patient/dashboard',
 } as const;
 
@@ -47,9 +49,11 @@ export type PatientNavItem = {
   icon: LucideIcon;
   mobilePrimary?: boolean;
   description?: string;
+  /** Rose-red SOS styling */
+  highlight?: 'emergency';
 };
 
-/** V0 sidebar — 7 modules only */
+/** Full patient sidebar — core use-case modules (SOS lives on Dashboard) */
 export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
   {
     key: 'dashboard',
@@ -57,37 +61,44 @@ export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
     href: PATIENT_ROUTES.dashboard,
     icon: LayoutDashboard,
     mobilePrimary: true,
-    description: 'Today’s care snapshot and quick actions',
+    description: "Today's care snapshot and quick actions",
   },
   {
     key: 'appointments',
     label: 'Appointments',
     href: PATIENT_ROUTES.appointments,
-    icon: CalendarDays,
+    icon: Calendar,
     mobilePrimary: true,
-    description: 'Book, reschedule, and manage visits',
+    description: 'View and manage your visits',
+  },
+  {
+    key: 'book',
+    label: 'Book Appointment',
+    href: PATIENT_ROUTES.bookAppointment,
+    icon: PlusCircle,
+    description: 'Schedule a new OPD or teleconsult visit',
+  },
+  {
+    key: 'queue',
+    label: 'Live OPD Queue',
+    href: PATIENT_ROUTES.queue,
+    icon: Activity,
+    mobilePrimary: true,
+    description: 'Track your token and wait time in real time',
   },
   {
     key: 'doctors',
-    label: 'Doctors',
+    label: 'Doctors Directory',
     href: PATIENT_ROUTES.doctors,
     icon: Stethoscope,
-    mobilePrimary: true,
     description: 'Find specialists and view profiles',
   },
   {
-    key: 'records',
-    label: 'Medical Records',
-    href: PATIENT_ROUTES.records,
-    icon: FileStack,
-    description: 'Visit history, labs, and imaging',
-  },
-  {
     key: 'prescriptions',
-    label: 'Prescriptions',
+    label: 'Records & Prescriptions',
     href: PATIENT_ROUTES.prescriptions,
-    icon: ScrollText,
-    description: 'Current and previous medicines',
+    icon: FileText,
+    description: 'Medical records, labs, and e-prescriptions',
   },
   {
     key: 'notifications',
@@ -99,16 +110,16 @@ export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
   },
   {
     key: 'profile',
-    label: 'Profile',
+    label: 'Profile & Family',
     href: PATIENT_ROUTES.profile,
-    icon: UserCog,
-    description: 'Account, insurance, and settings',
+    icon: User,
+    description: 'Account, dependents, and insurance',
   },
 ];
 
 export const PATIENT_BRAND = {
   name: 'NEXORA PATIENT',
-  icon: HeartHandshake,
+  icon: Stethoscope,
   ...patientTheme,
 } as const;
 

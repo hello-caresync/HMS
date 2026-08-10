@@ -48,6 +48,9 @@ export const APP_ROUTES = {
   /** Hospital command cockpit */
   hospitalDashboard: '/hospital/dashboard',
 
+  /** First-time hospital admin onboarding wizard */
+  adminOnboarding: '/admin/onboarding',
+
   /** Legacy / admin aliases (still valid) */
   dashboard: '/dashboard',
   patient: '/patient',

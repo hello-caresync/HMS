@@ -1,10 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { EntityEmptyState } from '@/components/nexora-hospital/ui/EntityEmptyState';
 import { Badge, ui } from '@/components/nexora-hospital/ui/primitives';
+import { formatDoctorOptionLabel, useHospitalDoctors } from '@/hooks/useHospitalDoctors';
 import {
   bookHospitalAppointment,
   createOpdFromAppointment,
@@ -17,10 +19,16 @@ const STATUS_FILTERS = ['all', 'Pending', 'Confirmed', 'Cancelled', 'Completed',
 export function AppointmentsWorkspace() {
   const appointments = useHospitalStore((s) => s.appointments);
   const patients = useHospitalStore((s) => s.patients);
-  const staff = useHospitalStore((s) => s.staff);
-  const [view, setView] = useState<'list' | 'calendar'>('list');
+  const { doctors, loading: doctorsLoading } = useHospitalDoctors();
+  const [view, setView] = useState<'list' | 'calendar' | 'book'>('list');
   const [filter, setFilter] = useState('all');
   const [busy, setBusy] = useState<string | null>(null);
+  const [bookForm, setBookForm] = useState({
+    patientId: '',
+    doctorId: '',
+    timeSlot: '15:00',
+    reason: 'Walk-in booking',
+  });
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -49,8 +57,22 @@ export function AppointmentsWorkspace() {
         <div className="flex gap-2">
           <button type="button" className={view === 'list' ? ui.btnPrimary : ui.btnSecondary} onClick={() => setView('list')}>List</button>
           <button type="button" className={view === 'calendar' ? ui.btnPrimary : ui.btnSecondary} onClick={() => setView('calendar')}>Calendar</button>
+          <button type="button" className={view === 'book' ? ui.btnPrimary : ui.btnSecondary} onClick={() => setView('book')}>Book</button>
         </div>
       </div>
+
+      {doctorsLoading && (
+        <div className="mb-4 flex items-center gap-2 text-base font-medium text-slate-800">
+          <Loader2 className="h-4 w-4 animate-spin text-teal-700" />
+          Loading doctors from hospital_members…
+        </div>
+      )}
+
+      {!doctorsLoading && doctors.length > 0 && (
+        <p className="mb-4 text-sm font-bold uppercase tracking-wider text-teal-800">
+          {doctors.length} Regal consultants loaded from Supabase
+        </p>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {STATUS_FILTERS.map((f) => (
@@ -60,7 +82,72 @@ export function AppointmentsWorkspace() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {view === 'book' ? (
+        <div className={`${ui.card} max-w-xl space-y-4`}>
+          <h2 className="text-2xl font-bold text-slate-900">Book Appointment</h2>
+          <label className="block space-y-1.5">
+            <span className="text-base font-medium text-slate-800">Patient</span>
+            <select
+              className={ui.select}
+              value={bookForm.patientId}
+              onChange={(e) => setBookForm((f) => ({ ...f, patientId: e.target.value }))}
+            >
+              <option value="">Select patient</option>
+              {patients.map((p) => (
+                <option key={p.id} value={p.id}>{p.fullName}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block space-y-1.5">
+            <span className="text-base font-medium text-slate-800">Consulting Doctor</span>
+            <select
+              className={ui.select}
+              value={bookForm.doctorId}
+              onChange={(e) => setBookForm((f) => ({ ...f, doctorId: e.target.value }))}
+            >
+              <option value="">Select doctor</option>
+              {doctors.map((d) => (
+                <option key={d.id} value={d.id}>{formatDoctorOptionLabel(d)}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block space-y-1.5">
+            <span className="text-base font-medium text-slate-800">Time Slot</span>
+            <input
+              className={ui.input}
+              value={bookForm.timeSlot}
+              onChange={(e) => setBookForm((f) => ({ ...f, timeSlot: e.target.value }))}
+            />
+          </label>
+          <button
+            type="button"
+            className={ui.btnPrimary}
+            disabled={!bookForm.patientId || !bookForm.doctorId}
+            onClick={() => {
+              const p = patients.find((x) => x.id === bookForm.patientId);
+              const d = doctors.find((x) => x.id === bookForm.doctorId);
+              if (!p || !d) return;
+              void (async () => {
+                await bookHospitalAppointment({
+                  patientId: p.id,
+                  patientName: p.fullName,
+                  doctorId: d.id,
+                  doctorName: d.fullName,
+                  appointmentDate: today,
+                  timeSlot: bookForm.timeSlot,
+                  department: d.department,
+                  token: `C-${String(Date.now()).slice(-3)}`,
+                  reason: bookForm.reason,
+                });
+                toast.success('Appointment booked');
+                setView('list');
+              })();
+            }}
+          >
+            Confirm Booking
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
         <EntityEmptyState preset="appointments" />
       ) : view === 'calendar' ? (
         <div className={`${ui.card} grid grid-cols-7 gap-2`}>
@@ -126,34 +213,6 @@ export function AppointmentsWorkspace() {
           </table>
         </div>
       )}
-
-      <div className="mt-4">
-        <button
-          type="button"
-          className={ui.btnPrimary}
-          onClick={() => {
-            const p = patients[0];
-            const d = staff[0];
-            if (!p || !d) return;
-            void (async () => {
-              await bookHospitalAppointment({
-                patientId: p.id,
-                patientName: p.fullName,
-                doctorId: d.id,
-                doctorName: d.fullName,
-                appointmentDate: today,
-                timeSlot: '15:00',
-                department: p.department,
-                token: `C-${String(Date.now()).slice(-3)}`,
-                reason: 'Walk-in booking',
-              });
-              toast.success('Appointment booked');
-            })();
-          }}
-        >
-          Book Appointment
-        </button>
-      </div>
     </div>
   );
 }

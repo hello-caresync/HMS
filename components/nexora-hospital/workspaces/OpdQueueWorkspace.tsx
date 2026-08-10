@@ -1,9 +1,12 @@
 'use client';
 
+import { useMemo, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { EntityEmptyState } from '@/components/nexora-hospital/ui/EntityEmptyState';
 import { ui } from '@/components/nexora-hospital/ui/primitives';
+import { useHospitalDoctors } from '@/hooks/useHospitalDoctors';
 import { checkInOpdPatient, updateOpdStatus } from '@/lib/nexora-hospital/services/hospital-db';
 import { useHospitalStore } from '@/lib/nexora-hospital/store';
 import type { OpdVisit } from '@/lib/nexora-hospital/types';
@@ -66,9 +69,21 @@ function QueueCard({
 
 export function OpdQueueWorkspace() {
   const opdVisits = useHospitalStore((s) => s.opdVisits);
-  const allEmpty = opdVisits.length === 0;
+  const { doctors, loading: doctorsLoading } = useHospitalDoctors();
+  const [doctorFilter, setDoctorFilter] = useState('all');
 
-  const byStatus = (status: OpdVisit['status']) => opdVisits.filter((v) => v.status === status);
+  const filteredVisits = useMemo(() => {
+    if (doctorFilter === 'all') return opdVisits;
+    const doc = doctors.find((d) => d.id === doctorFilter);
+    if (!doc) return opdVisits;
+    return opdVisits.filter(
+      (v) => v.doctorId === doc.id || v.doctorName.includes(doc.fullName.replace(/^Dr\.\s*/i, '')),
+    );
+  }, [opdVisits, doctorFilter, doctors]);
+
+  const allEmpty = filteredVisits.length === 0;
+
+  const byStatus = (status: OpdVisit['status']) => filteredVisits.filter((v) => v.status === status);
 
   const advance = async (visit: OpdVisit, next: OpdVisit['status'], msg: string) => {
     await updateOpdStatus(visit.id, next);
@@ -77,9 +92,31 @@ export function OpdQueueWorkspace() {
 
   return (
     <div className={ui.pageInner}>
-      <div className="mb-6">
+      <div className="mb-6 space-y-3">
         <h1 className={ui.pageTitle}>OPD Queue</h1>
         <p className={ui.pageSubtitle}>Live kanban · synced with Doctor & Patient apps</p>
+        {doctorsLoading ? (
+          <p className="flex items-center gap-2 text-base font-medium text-slate-800">
+            <Loader2 className="h-4 w-4 animate-spin text-teal-700" />
+            Loading consultant roster…
+          </p>
+        ) : (
+          <label className="block max-w-md space-y-1.5">
+            <span className="text-base font-medium text-slate-800">Filter by Doctor</span>
+            <select
+              className={ui.select}
+              value={doctorFilter}
+              onChange={(e) => setDoctorFilter(e.target.value)}
+            >
+              <option value="all">All doctors ({doctors.length})</option>
+              {doctors.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.fullName} — {d.department}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       {allEmpty ? (

@@ -1,21 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { EntityEmptyState } from '@/components/nexora-hospital/ui/EntityEmptyState';
 import { Badge, Modal, ui } from '@/components/nexora-hospital/ui/primitives';
+import { formatDoctorOptionLabel, useHospitalDoctors } from '@/hooks/useHospitalDoctors';
 import { approveAdmission, processDischarge } from '@/lib/nexora-hospital/services/hospital-db';
 import { useHospitalStore } from '@/lib/nexora-hospital/store';
 
 export function AdmissionsWorkspace() {
   const admissions = useHospitalStore((s) => s.admissions);
   const patients = useHospitalStore((s) => s.patients);
-  const staff = useHospitalStore((s) => s.staff);
+  const { doctors, loading: doctorsLoading } = useHospitalDoctors();
   const [showApprove, setShowApprove] = useState(false);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     patientId: '',
+    doctorId: '',
     wardNumber: 'Ward 2B',
     bedNumber: 'B-08',
     diagnosis: '',
@@ -36,6 +39,16 @@ export function AdmissionsWorkspace() {
         <div>
           <h1 className={ui.pageTitle}>Admissions / IPD</h1>
           <p className={ui.pageSubtitle}>Bed occupancy · inpatient list · discharge workflow</p>
+          {doctorsLoading ? (
+            <p className="mt-2 flex items-center gap-2 text-base font-medium text-slate-800">
+              <Loader2 className="h-4 w-4 animate-spin text-teal-700" />
+              Loading attending physicians…
+            </p>
+          ) : (
+            <p className="mt-2 text-sm font-bold uppercase tracking-wider text-teal-800">
+              {doctors.length} doctors available from hospital_members
+            </p>
+          )}
         </div>
         <button type="button" className={ui.btnPrimary} onClick={() => setShowApprove(true)}>Approve Admission</button>
       </div>
@@ -118,16 +131,29 @@ export function AdmissionsWorkspace() {
             <option value="">Select patient</option>
             {patients.map((p) => <option key={p.id} value={p.id}>{p.fullName}</option>)}
           </select>
+          <label className="block space-y-1.5">
+            <span className="text-base font-medium text-slate-800">Attending Doctor</span>
+            <select
+              className={ui.select}
+              value={form.doctorId}
+              onChange={(e) => setForm({ ...form, doctorId: e.target.value })}
+            >
+              <option value="">Select doctor</option>
+              {doctors.map((d) => (
+                <option key={d.id} value={d.id}>{formatDoctorOptionLabel(d)}</option>
+              ))}
+            </select>
+          </label>
           <input className={ui.input} placeholder="Ward" value={form.wardNumber} onChange={(e) => setForm({ ...form, wardNumber: e.target.value })} />
           <input className={ui.input} placeholder="Bed" value={form.bedNumber} onChange={(e) => setForm({ ...form, bedNumber: e.target.value })} />
           <input className={ui.input} placeholder="Diagnosis" value={form.diagnosis} onChange={(e) => setForm({ ...form, diagnosis: e.target.value })} />
           <button
             type="button"
-            disabled={busy || !form.patientId}
+            disabled={busy || !form.patientId || !form.doctorId}
             className={ui.btnPrimary}
             onClick={() => {
               const p = patients.find((x) => x.id === form.patientId);
-              const d = staff[0];
+              const d = doctors.find((x) => x.id === form.doctorId);
               if (!p || !d) return;
               void (async () => {
                 setBusy(true);

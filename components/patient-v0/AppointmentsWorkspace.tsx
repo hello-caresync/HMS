@@ -1,137 +1,249 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Activity,
+  Calendar,
+  Clock,
+  PlusCircle,
+  Stethoscope,
+  Ticket,
+  XCircle,
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createSupabaseClient(url, key);
-}
+import { resolvePatientDbId } from '@/lib/patient/constants';
+import { usePatientAuth } from '@/lib/patient/auth/PatientAuthProvider';
+import { PATIENT_ROUTES } from '@/lib/patient/navigation';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+
+export type PatientAppointmentRow = {
+  id: string;
+  patient_id: string;
+  doctor_id: string;
+  hospital_id?: string | null;
+  doctor_name: string;
+  department: string;
+  hospital_name?: string | null;
+  appointment_date: string;
+  slot_time: string;
+  token_number: number;
+  current_serving_token: number;
+  avg_consult_minutes: number;
+  queue_status: string;
+  created_at?: string;
+};
+
+type Tab = 'upcoming' | 'history';
+
+const ui = {
+  page: 'mx-auto max-w-3xl space-y-6',
+  title: 'text-2xl font-black text-[#1A332F]',
+  subtitle: 'text-sm font-medium text-[#8E7692]',
+  card: 'rounded-2xl border border-[#BDE2F5] bg-white/80 p-5 shadow-sm backdrop-blur-md',
+  btnPrimary:
+    'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#3B8C7E] px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#1A332F]',
+  btnSecondary:
+    'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#BDE2F5] bg-white px-4 py-2.5 text-sm font-bold text-[#1A332F] transition hover:bg-[#DAF0EB]',
+  tabActive: 'rounded-xl bg-[#3B8C7E] px-4 py-2 text-xs font-bold text-white shadow-sm',
+  tabIdle: 'rounded-xl border border-[#BDE2F5] bg-white/80 px-4 py-2 text-xs font-bold text-[#1A332F] hover:bg-white',
+} as const;
 
 export function AppointmentsWorkspace() {
-  const supabase = getSupabaseClient();
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'Upcoming' | 'Live Queue' | 'History'>('Upcoming');
+  const router = useRouter();
+  const { session } = usePatientAuth();
+  const patientDbId = resolvePatientDbId(session?.patientId);
+
+  const [appointments, setAppointments] = useState<PatientAppointmentRow[]>([]);
+  const [tab, setTab] = useState<Tab>('upcoming');
   const [loading, setLoading] = useState(true);
 
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
     setLoading(true);
+    const supabase = getSupabaseBrowserClient();
     if (!supabase) {
+      setAppointments([]);
       setLoading(false);
       return;
     }
 
     try {
       const { data, error } = await supabase
-        .from('appointments')
+        .from('patient_appointments')
         .select('*')
+        .eq('patient_id', patientDbId)
         .order('created_at', { ascending: false });
 
-      if (data) {
-        setAppointments(data);
-      }
+      if (error) throw error;
+      setAppointments((data ?? []) as PatientAppointmentRow[]);
     } catch (err) {
-      console.error('Error fetching appointments:', err);
+      toast.error('Could not load appointments', {
+        description: err instanceof Error ? err.message : 'Network error',
+      });
+      setAppointments([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [patientDbId]);
 
   useEffect(() => {
-    loadAppointments();
+    void loadAppointments();
+  }, [loadAppointments]);
 
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
 
-    // Realtime Listener
     const channel = supabase
-      .channel('patient-appointments-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
-        loadAppointments();
-      })
+      .channel('patient-appointments-list')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'patient_appointments', filter: `patient_id=eq.${patientDbId}` },
+        () => {
+          void loadAppointments();
+        },
+      )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
-  }, []);
+  }, [patientDbId, loadAppointments]);
+
+  const upcoming = useMemo(
+    () =>
+      appointments.filter(
+        (a) => !['completed', 'cancelled', 'missed'].includes(a.queue_status?.toLowerCase() ?? ''),
+      ),
+    [appointments],
+  );
+
+  const history = useMemo(
+    () =>
+      appointments.filter((a) =>
+        ['completed', 'cancelled', 'missed'].includes(a.queue_status?.toLowerCase() ?? ''),
+      ),
+    [appointments],
+  );
+
+  const displayed = tab === 'upcoming' ? upcoming : history;
+
+  const handleCancel = async (id: string) => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    const { error } = await supabase
+      .from('patient_appointments')
+      .update({ queue_status: 'cancelled' })
+      .eq('id', id);
+    if (error) {
+      toast.error('Cancel failed', { description: error.message });
+      return;
+    }
+    toast.success('Appointment cancelled');
+    void loadAppointments();
+  };
 
   return (
-    <div className="p-6 space-y-6 bg-[#EBE3DB] min-h-screen">
-      <div>
-        <h1 className="text-3xl font-extrabold text-[#3D2638]">Appointments</h1>
-        <p className="text-xs text-[#6B5B68] font-medium mt-1">Book, reschedule, and manage your visits</p>
+    <div className={ui.page}>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className={ui.title}>Appointments</h1>
+          <p className={ui.subtitle}>Book, reschedule, and manage your visits</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link href={PATIENT_ROUTES.bookAppointment} className={ui.btnPrimary}>
+            <PlusCircle className="h-4 w-4" /> Book New Appointment
+          </Link>
+          <Link href={PATIENT_ROUTES.queue} className={ui.btnSecondary}>
+            <Activity className="h-4 w-4" /> Live Queue
+          </Link>
+        </div>
+      </header>
+
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={tab === 'upcoming' ? ui.tabActive : ui.tabIdle} onClick={() => setTab('upcoming')}>
+          Upcoming ({upcoming.length})
+        </button>
+        <button type="button" className={tab === 'history' ? ui.tabActive : ui.tabIdle} onClick={() => setTab('history')}>
+          History ({history.length})
+        </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2">
-        {(['Upcoming', 'Live Queue', 'History'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all ${
-              activeTab === tab
-                ? 'bg-[#4A2E44] text-white shadow-sm'
-                : 'bg-white/80 text-[#3D2638] hover:bg-white'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Appointment List */}
-      <div className="space-y-4">
-        {loading ? (
-          <div className="p-8 text-center text-xs font-bold text-[#6B5B68]">Syncing with Hospital Database...</div>
-        ) : appointments.length === 0 ? (
-          <div className="p-8 bg-white/90 rounded-3xl text-center text-xs font-bold text-[#6B5B68]">
-            No live appointments found.
-          </div>
-        ) : (
-          appointments.map((app) => (
-            <div key={app.id} className="p-6 bg-white rounded-3xl shadow-sm border border-slate-100/60 space-y-3">
-              <div className="flex justify-between items-start">
+      {loading ? (
+        <div className={`${ui.card} space-y-3`}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-[#BDE2F5]/40" />
+          ))}
+        </div>
+      ) : displayed.length === 0 ? (
+        <div className={`${ui.card} flex flex-col items-center py-12 text-center`}>
+          <Calendar className="mb-3 h-10 w-10 text-[#8E7692]/60" />
+          <h3 className="text-lg font-bold text-[#1A332F]">No {tab === 'upcoming' ? 'Upcoming' : 'Past'} Appointments</h3>
+          <p className="mt-2 max-w-sm text-sm text-[#8E7692]">
+            {tab === 'upcoming'
+              ? 'Schedule your first visit with a registered hospital doctor.'
+              : 'Completed visits will appear here.'}
+          </p>
+          {tab === 'upcoming' && (
+            <Link href={PATIENT_ROUTES.bookAppointment} className={`${ui.btnPrimary} mt-6`}>
+              <PlusCircle className="h-4 w-4" /> Book New Appointment
+            </Link>
+          )}
+        </div>
+      ) : (
+        <ul className="space-y-4">
+          {displayed.map((app) => (
+            <li key={app.id} className={ui.card}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-extrabold text-[#2C1D2A]">{app.doctor_name}</h3>
-                  <p className="text-xs text-slate-500 font-medium">{app.department} · Token {app.token_no}</p>
+                  <h3 className="flex items-center gap-2 text-lg font-black text-[#1A332F]">
+                    <Stethoscope className="h-4 w-4 text-[#3B8C7E]" />
+                    {app.doctor_name}
+                  </h3>
+                  <p className="mt-0.5 text-xs font-semibold text-[#3B8C7E]">
+                    {app.department}
+                    {app.hospital_name ? ` · ${app.hospital_name}` : ''}
+                  </p>
                 </div>
-                <span className="px-3 py-1 bg-amber-100/80 text-amber-900 text-[10px] font-black rounded-full uppercase tracking-wider">
-                  {app.status}
+                <span className="rounded-full border border-[#BDE2F5]/40 bg-[#BDE2F5]/15 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#1A332F]">
+                  {app.queue_status}
                 </span>
               </div>
 
-              <div className="text-xs font-semibold text-slate-700 flex items-center gap-4">
-                <span>📅 {app.appointment_date}</span>
-                <span>⏰ {app.appointment_time}</span>
+              <div className="mt-3 flex flex-wrap gap-4 text-xs font-semibold text-[#1A332F]">
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5 text-[#8E7692]" /> {app.appointment_date}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5 text-[#8E7692]" /> {app.slot_time}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Ticket className="h-3.5 w-3.5 text-[#BDE2F5]" /> Token #{app.token_number}
+                </span>
               </div>
 
-              <p className="text-xs text-slate-600 font-medium">{app.reason}</p>
-              <p className="text-xs font-extrabold text-slate-800">Est. ₹{app.estimated_fee}</p>
-
-              <div className="flex gap-2 pt-2">
-                <button className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl">
-                  Live Queue
-                </button>
-                <button className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl">
-                  View Doctor
-                </button>
-                <button 
-                  onClick={async () => {
-                    if (supabase) {
-                      await supabase.from('appointments').update({ status: 'CANCELLED' }).eq('id', app.id);
-                    }
-                  }}
-                  className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl"
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className={ui.btnSecondary}
+                  onClick={() => router.push(`${PATIENT_ROUTES.queue}?id=${app.id}`)}
                 >
-                  Cancel
+                  <Activity className="h-3.5 w-3.5" /> Live Queue
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100"
+                  onClick={() => void handleCancel(app.id)}
+                >
+                  <XCircle className="h-3.5 w-3.5" /> Cancel
                 </button>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

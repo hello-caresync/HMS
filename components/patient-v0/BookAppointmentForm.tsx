@@ -41,23 +41,23 @@ type Props = {
 
 const bookUi = {
   shell: 'overflow-hidden rounded-2xl border border-[#8E7692]/30 bg-[#CEB2C0]/25 shadow-sm',
-  header: 'bg-[#482A41] px-6 py-4 text-white',
-  body: 'bg-[#E2D2C8]/40 p-6',
+  header: 'bg-[#1A332F] px-6 py-4 text-white',
+  body: 'bg-[#BDE2F5]/40 p-6',
   label: 'mb-1.5 block text-xs font-bold uppercase tracking-wide text-[#8E7692]',
   input:
-    'w-full rounded-xl border border-[#8E7692]/35 bg-white px-4 py-2.5 text-sm font-medium text-[#482A41] placeholder:text-[#8E7692]/70 focus:border-[#572E54] focus:outline-none focus:ring-2 focus:ring-[#572E54]/20',
+    'w-full rounded-xl border border-[#8E7692]/35 bg-white px-4 py-2.5 text-sm font-medium text-[#1A332F] placeholder:text-[#8E7692]/70 focus:border-[#3B8C7E] focus:outline-none focus:ring-2 focus:ring-[#3B8C7E]/20',
   select:
-    'w-full appearance-none rounded-xl border border-[#8E7692]/35 bg-white px-4 py-2.5 text-sm font-medium text-[#482A41] focus:border-[#572E54] focus:outline-none focus:ring-2 focus:ring-[#572E54]/20',
+    'w-full appearance-none rounded-xl border border-[#8E7692]/35 bg-white px-4 py-2.5 text-sm font-medium text-[#1A332F] focus:border-[#3B8C7E] focus:outline-none focus:ring-2 focus:ring-[#3B8C7E]/20',
   textarea:
-    'min-h-[120px] w-full resize-y rounded-xl border border-[#8E7692]/35 bg-white px-4 py-3 text-sm font-medium text-[#482A41] placeholder:text-[#8E7692]/70 focus:border-[#572E54] focus:outline-none focus:ring-2 focus:ring-[#572E54]/20',
+    'min-h-[120px] w-full resize-y rounded-xl border border-[#8E7692]/35 bg-white px-4 py-3 text-sm font-medium text-[#1A332F] placeholder:text-[#8E7692]/70 focus:border-[#3B8C7E] focus:outline-none focus:ring-2 focus:ring-[#3B8C7E]/20',
   error: 'mt-1 text-xs font-semibold text-[#B85C5C]',
   familyPanel: 'mt-3 rounded-xl border border-[#8E7692]/30 bg-white/80 p-4',
   slotGrid: 'grid grid-cols-3 gap-2 sm:grid-cols-4',
   slotBtn:
-    'rounded-xl border border-[#8E7692]/35 bg-white px-2 py-2.5 text-center text-xs font-bold text-[#482A41] transition hover:border-[#572E54]/50 hover:bg-[#CEB2C0]/30',
-  slotBtnActive: 'border-[#572E54] bg-[#572E54] text-white shadow-sm ring-2 ring-[#572E54]/25',
-  slotBtnAi: 'border-[#D8A657] bg-[#D8A657]/15 ring-1 ring-[#D8A657]/40',
-  cta: 'mt-2 w-full rounded-xl bg-[#572E54] px-4 py-3.5 text-sm font-black text-white shadow-md transition hover:bg-[#482A41] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#572E54]/40 disabled:cursor-not-allowed disabled:opacity-60',
+    'rounded-xl border border-[#8E7692]/35 bg-white px-2 py-2.5 text-center text-xs font-bold text-[#1A332F] transition hover:border-[#3B8C7E]/50 hover:bg-[#CEB2C0]/30',
+  slotBtnActive: 'border-[#3B8C7E] bg-[#3B8C7E] text-white shadow-sm ring-2 ring-[#3B8C7E]/25',
+  slotBtnAi: 'border-[#BDE2F5] bg-[#BDE2F5]/15 ring-1 ring-[#BDE2F5]/40',
+  cta: 'mt-2 w-full rounded-xl bg-[#3B8C7E] px-4 py-3.5 text-sm font-black text-white shadow-md transition hover:bg-[#1A332F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3B8C7E]/40 disabled:cursor-not-allowed disabled:opacity-60',
   costCard: 'rounded-xl border border-[#8E7692]/30 bg-white/70 px-4 py-3',
 } as const;
 
@@ -290,13 +290,13 @@ export function BookAppointmentForm({ patientId, initialDoctorId, onBooked, onNo
                         onClick={() => selectDoctor(d)}
                         className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-[#CEB2C0]/25"
                       >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#482A41] text-xs font-black text-white">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1A332F] text-xs font-black text-white">
                           {d.photoInitials}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-bold text-[#482A41]">{d.name}</span>
+                          <span className="block truncate text-sm font-bold text-[#1A332F]">{d.name}</span>
                           <span className="block truncate text-xs text-[#8E7692]">{d.specialization}</span>
-                          <span className="mt-0.5 block text-xs font-semibold text-[#572E54]">
+                          <span className="mt-0.5 block text-xs font-semibold text-[#3B8C7E]">
                             ₹{d.consultationFee} · {d.roomNumber}
                           </span>
                         </span>
@@ -307,12 +307,12 @@ export function BookAppointmentForm({ patientId, initialDoctorId, onBooked, onNo
               )}
 
               {selectedDoctor && (
-                <div className="mt-3 flex items-center gap-3 rounded-xl border border-[#572E54]/30 bg-white/90 px-4 py-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#572E54] text-sm font-black text-white">
+                <div className="mt-3 flex items-center gap-3 rounded-xl border border-[#3B8C7E]/30 bg-white/90 px-4 py-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#3B8C7E] text-sm font-black text-white">
                     {selectedDoctor.photoInitials}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-black text-[#482A41]">{selectedDoctor.name}</p>
+                    <p className="truncate text-sm font-black text-[#1A332F]">{selectedDoctor.name}</p>
                     <p className="truncate text-xs text-[#8E7692]">{selectedDoctor.department}</p>
                   </div>
                   <span className="shrink-0 rounded-full bg-[#5E8B7E]/15 px-2 py-0.5 text-[10px] font-bold text-[#5E8B7E]">
@@ -404,11 +404,11 @@ export function BookAppointmentForm({ patientId, initialDoctorId, onBooked, onNo
                     setBookForFamily(e.target.checked);
                     if (!e.target.checked) setFamilyMemberId('');
                   }}
-                  className="mt-0.5 h-4 w-4 rounded border-[#8E7692]/50 text-[#572E54] focus:ring-[#572E54]/30"
+                  className="mt-0.5 h-4 w-4 rounded border-[#8E7692]/50 text-[#3B8C7E] focus:ring-[#3B8C7E]/30"
                 />
                 <span>
-                  <span className="flex items-center gap-1.5 text-sm font-bold text-[#482A41]">
-                    <Users className="h-4 w-4 text-[#572E54]" /> Book for family member
+                  <span className="flex items-center gap-1.5 text-sm font-bold text-[#1A332F]">
+                    <Users className="h-4 w-4 text-[#3B8C7E]" /> Book for family member
                   </span>
                   <span className="mt-0.5 block text-xs text-[#8E7692]">
                     Schedule on behalf of a linked dependent or parent profile
@@ -481,8 +481,8 @@ export function BookAppointmentForm({ patientId, initialDoctorId, onBooked, onNo
             <div className="rounded-2xl border border-[#8E7692]/35 bg-white/80 p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-[#572E54]" />
-                  <h3 className="text-sm font-black text-[#482A41]">AI Smart Slot Recommendation</h3>
+                  <Sparkles className="h-4 w-4 text-[#3B8C7E]" />
+                  <h3 className="text-sm font-black text-[#1A332F]">AI Smart Slot Recommendation</h3>
                 </div>
                 {showSlots && (
                   <span className="rounded-full bg-[#5E8B7E]/15 px-2 py-0.5 text-[10px] font-bold uppercase text-[#5E8B7E]">
@@ -492,7 +492,7 @@ export function BookAppointmentForm({ patientId, initialDoctorId, onBooked, onNo
               </div>
 
               {!showSlots ? (
-                <p className="rounded-xl border border-dashed border-[#8E7692]/40 bg-[#E2D2C8]/30 px-4 py-6 text-center text-xs text-[#8E7692]">
+                <p className="rounded-xl border border-dashed border-[#8E7692]/40 bg-[#BDE2F5]/30 px-4 py-6 text-center text-xs text-[#8E7692]">
                   {!selectedDoctor && !selectedDate
                     ? 'Select a doctor and date to view AI-optimized time slots'
                     : !selectedDoctor
@@ -500,14 +500,14 @@ export function BookAppointmentForm({ patientId, initialDoctorId, onBooked, onNo
                       : 'Pick a visit date to view AI-optimized time slots'}
                 </p>
               ) : loadingSlots && availableTimeSlots.length === 0 ? (
-                <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-[#8E7692]/40 bg-[#E2D2C8]/30 px-4 py-8 text-sm text-[#8E7692]">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#572E54]" />
+                <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-[#8E7692]/40 bg-[#BDE2F5]/30 px-4 py-8 text-sm text-[#8E7692]">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#3B8C7E]" />
                   Fetching live slots from Supabase…
                 </div>
               ) : (
                 <>
                   {slotError && (
-                    <p className="mb-3 rounded-lg bg-[#D8A657]/20 px-3 py-2 text-xs text-[#482A41]">
+                    <p className="mb-3 rounded-lg bg-[#BDE2F5]/20 px-3 py-2 text-xs text-[#1A332F]">
                       {slotError} — showing cached availability.
                     </p>
                   )}
@@ -517,13 +517,13 @@ export function BookAppointmentForm({ patientId, initialDoctorId, onBooked, onNo
                       type="button"
                       onClick={() => setTime(aiSlot.slot)}
                       disabled={availableTimeSlots.some((s) => s.slotTime === aiSlot.slot && s.isBooked)}
-                      className={`${opdUi.aiSlot} mb-4 flex w-full items-center gap-3 px-4 py-3 text-left transition hover:ring-[#572E54]/35 disabled:cursor-not-allowed disabled:opacity-50`}
+                      className={`${opdUi.aiSlot} mb-4 flex w-full items-center gap-3 px-4 py-3 text-left transition hover:ring-[#3B8C7E]/35 disabled:cursor-not-allowed disabled:opacity-50`}
                     >
                       <span className="text-lg" aria-hidden>
                         ⭐
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-black text-[#482A41]">
+                        <span className="block text-sm font-black text-[#1A332F]">
                           AI Recommended Slot: {formatTimeLabel(aiSlot.slot)} (Lowest Waiting Time)
                         </span>
                         <span className="mt-0.5 block text-xs font-medium text-[#8E7692]">
@@ -539,7 +539,7 @@ export function BookAppointmentForm({ patientId, initialDoctorId, onBooked, onNo
                   </p>
 
                   {availableTimeSlots.length === 0 ? (
-                    <p className="rounded-xl border border-[#8E7692]/30 bg-[#E2D2C8]/20 px-4 py-4 text-center text-xs text-[#8E7692]">
+                    <p className="rounded-xl border border-[#8E7692]/30 bg-[#BDE2F5]/20 px-4 py-4 text-center text-xs text-[#8E7692]">
                       No slots configured for this day. Try another date or branch.
                     </p>
                   ) : (
@@ -556,7 +556,7 @@ export function BookAppointmentForm({ patientId, initialDoctorId, onBooked, onNo
                             className={`${bookUi.slotBtn} ${isSelected ? bookUi.slotBtnActive : ''} ${isAi && !isSelected ? bookUi.slotBtnAi : ''} ${slot.isBooked ? 'cursor-not-allowed opacity-40 line-through' : ''}`}
                           >
                             {isAi && !slot.isBooked && (
-                              <span className="mb-0.5 block text-[10px] text-[#D8A657]">★ AI</span>
+                              <span className="mb-0.5 block text-[10px] text-[#BDE2F5]">★ AI</span>
                             )}
                             {slot.isBooked ? (
                               <span className="text-[10px] text-[#B85C5C]">Booked</span>
@@ -578,7 +578,7 @@ export function BookAppointmentForm({ patientId, initialDoctorId, onBooked, onNo
                 <p className="text-xs font-bold uppercase tracking-wide text-[#8E7692]">
                   Estimated Consultation Cost
                 </p>
-                <p className="mt-1 text-2xl font-black text-[#572E54]">₹{selectedDoctor.consultationFee}</p>
+                <p className="mt-1 text-2xl font-black text-[#3B8C7E]">₹{selectedDoctor.consultationFee}</p>
                 <p className="mt-0.5 text-xs text-[#8E7692]">Excludes diagnostics, pharmacy &amp; procedures</p>
               </div>
             )}

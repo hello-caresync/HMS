@@ -10,18 +10,19 @@
   --hub-background: #fdf4f2;
   --hub-border: #f5d5cf;
 
-  /* Nexora Patient — luxury plum & beige (scoped via patient-* utilities) */
-  --patient-plum: #482a41;
-  --patient-canvas: #e2d2c8;
-  --patient-card: #ceb2c0;
-  --patient-lavender: #8e7692;
-  --patient-primary: #572e54;
-  --patient-text: #482a41;
-  --patient-charcoal: #1f2937;
-  --patient-nav-ivory: #f3e8ee;
-  --patient-success: #5e8b7e;
-  --patient-warning: #d8a657;
-  --patient-emergency: #e63946;
+  /* Nexora Patient — deep forest / emerald clinical system */
+  --patient-plum: #113831;
+  --patient-canvas: #f4f8f7;
+  --patient-card: #eaf5f2;
+  --patient-lavender: #4b736b;
+  --patient-primary: #113831;
+  --patient-text: #0e2924;
+  --patient-charcoal: #0e2924;
+  --patient-nav-ivory: #eaf5f2;
+  --patient-success: #227b6b;
+  --patient-warning: #227b6b;
+  --patient-emergency: #e63950;
+  --patient-ice: #d5e8e3;
 
   /* Luxury Gold — primary interactive brand */
   --primary: #d97706;
@@ -77,23 +78,24 @@
   --color-vendor-warning: #d8a657;
   --color-vendor-danger: #e76f51;
 
-  --color-patient-plum: #482a41;
-  --color-patient-canvas: #e2d2c8;
-  --color-patient-card: #ceb2c0;
-  --color-patient-lavender: #8e7692;
-  --color-patient-primary: #572e54;
-  --color-patient-text: #482a41;
-  --color-patient-charcoal: #1f2937;
+  --color-patient-plum: #113831;
+  --color-patient-canvas: #f4f8f7;
+  --color-patient-card: #eaf5f2;
+  --color-patient-lavender: #4b736b;
+  --color-patient-primary: #113831;
+  --color-patient-text: #0e2924;
+  --color-patient-charcoal: #0e2924;
   --color-patient-ivory: #ffffff;
-  --color-patient-ivory-soft: #f3e8ee;
-  --color-patient-success: #5e8b7e;
-  --color-patient-warning: #d8a657;
-  --color-patient-error: #b85c5c;
-  --color-patient-emergency: #e63946;
-  --color-patient-light: #e2d2c8;
-  --color-patient-border: #8e7692;
-  --color-patient-heading: #482a41;
-  --color-patient-muted: #8e7692;
+  --color-patient-ivory-soft: #eaf5f2;
+  --color-patient-success: #227b6b;
+  --color-patient-warning: #227b6b;
+  --color-patient-error: #e63950;
+  --color-patient-emergency: #e63950;
+  --color-patient-light: #eaf5f2;
+  --color-patient-border: #d5e8e3;
+  --color-patient-heading: #0e2924;
+  --color-patient-muted: #4b736b;
+  --color-patient-ice: #d5e8e3;
 
   --color-brand: #7a9a8b;
   --color-brand-hover: #6b8a7c;
@@ -378,5 +380,41 @@ textarea:-webkit-autofill:active {
 
   .erp-badge {
     @apply inline-flex rounded-md border px-2 py-0.5 text-[10px] font-black uppercase;
+  }
+
+  .doctor-canvas {
+    background:
+      radial-gradient(circle at 12% 8%, rgb(189 226 245 / 55%), transparent 28rem),
+      radial-gradient(circle at 88% 24%, rgb(169 197 227 / 38%), transparent 32rem),
+      linear-gradient(145deg, #f2f6fa 0%, #efe8e1 100%);
+  }
+
+  .doctor-glass {
+    @apply border border-white/40 bg-white/70 backdrop-blur-md;
+    box-shadow:
+      0 18px 42px rgb(44 36 59 / 10%),
+      inset 0 1px 0 rgb(255 255 255 / 75%);
+  }
+
+  .doctor-glass-plum {
+    @apply border border-white/25 bg-[#894A66]/85 text-white backdrop-blur-md;
+    box-shadow:
+      0 18px 42px rgb(137 74 102 / 24%),
+      inset 0 1px 0 rgb(255 255 255 / 24%);
+  }
+
+  .doctor-clay {
+    @apply rounded-3xl border border-[#9DA6CD]/30 bg-gradient-to-br from-white to-[#F2F6FA];
+    box-shadow:
+      6px 6px 12px rgb(147 104 142 / 15%),
+      -6px -6px 12px rgb(255 255 255 / 80%),
+      inset 1px 1px 0 rgb(255 255 255 / 70%);
+  }
+
+  .doctor-clay-button {
+    @apply rounded-2xl transition-all duration-200 active:scale-95;
+    box-shadow:
+      4px 4px 10px rgb(137 74 102 / 22%),
+      -3px -3px 8px rgb(255 255 255 / 65%);
   }
 }
