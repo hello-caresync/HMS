@@ -1,137 +1,96 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
-import { Building2, Mail, Lock, LogIn, CheckCircle2, ShieldCheck } from 'lucide-react';
+import React, { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Heart, Lock, Mail, ShieldCheck, Loader2 } from 'lucide-react';
 
-interface Hospital {
-  id: string;
-  facility_name: string;
-  facility_type: string;
-  address: string;
-}
-
-const FALLBACK_HOSPITALS: Hospital[] = [
-  {
-    id: 'c1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-    facility_name: 'CuraSync Multi-Specialty Hospital',
-    facility_type: 'hospital',
-    address: '120 Ring Road, Indiranagar, Bengaluru',
-  },
-  {
-    id: 'c2eebc99-9c0b-4ef8-bb6d-6bb9bd380a22',
-    facility_name: 'Nextora Express OPD Clinic',
-    facility_type: 'clinic',
-    address: '88 Koramangala 8th Block, Bengaluru',
-  },
-];
-
-export default function PatientLoginPageClient() {
+function CuraSyncAuthForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get('next') || '/patient/dashboard';
 
   const [email, setEmail] = useState('aishwarya@gmail.com');
   const [password, setPassword] = useState('password123');
-  const [hospitals, setHospitals] = useState<Hospital[]>([]);
-  const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    async function loadHospitals() {
-      try {
-        const { data, error } = await supabase.from('hospitals_and_clinics').select('*');
-        if (error || !data || data.length === 0) throw error;
-        setHospitals(data);
-        setSelectedHospital(data[0]);
-      } catch (err) {
-        setHospitals(FALLBACK_HOSPITALS);
-        setSelectedHospital(FALLBACK_HOSPITALS[0]);
-      }
-    }
-    loadHospitals();
-  }, []);
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedHospital) return;
-
     setLoading(true);
 
-    // Store selected hospital context globally in localStorage
-    localStorage.setItem('selected_hospital_id', selectedHospital.id);
-    localStorage.setItem('selected_hospital_name', selectedHospital.facility_name);
+    // 1. Store session keys in localStorage so layout guards let you through
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('patient_full_name', 'Aishwarya D S');
+      localStorage.setItem('selected_hospital_name', 'Regal Hospital');
+      localStorage.setItem(
+        'curasync_patient_session',
+        JSON.stringify({
+          email,
+          authenticated: true,
+          login_time: new Date().toISOString(),
+        })
+      );
+    }
 
+    // 2. Perform smooth redirect to patient dashboard
     setTimeout(() => {
       setLoading(false);
-      router.push('/patient/appointments/book');
-    }, 600);
+      router.replace(decodeURIComponent(nextUrl));
+    }, 400);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F7FAF9] p-6 font-sans text-[#1A332F]">
-      <div className="w-full max-w-md rounded-3xl border border-[#BDE2F5] bg-white p-8 shadow-2xl">
-        <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#3B8C7E] text-[#BDE2F5] shadow-md">
-            <ShieldCheck className="h-6 w-6" />
+    <div className="w-full max-w-4xl overflow-hidden rounded-[36px] bg-white/80 p-8 md:p-12 shadow-2xl backdrop-blur-xl border border-white/40 grid md:grid-cols-2 gap-8 items-center">
+      
+      {/* LEFT BRAND PANEL */}
+      <div className="flex flex-col items-center justify-center text-center space-y-4">
+        <div className="flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-[#623E5D] to-[#42263F] text-white shadow-xl">
+          <Heart className="h-12 w-12 text-[#E2C7DD] animate-pulse" />
+        </div>
+        <h1 className="text-3xl font-black text-[#2D1B2A]">CuraSync Health</h1>
+        <p className="text-xs font-bold text-[#72526D] max-w-xs">
+          Access real-time queues, book top specialists, and view records.
+        </p>
+      </div>
+
+      {/* RIGHT LOGIN FORM */}
+      <div className="rounded-3xl bg-white p-8 border border-slate-100 shadow-sm space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <h2 className="text-xl font-black text-[#2D1B2A]">Welcome Back</h2>
+            <p className="text-xs font-bold text-[#72526D]">Sign in to access your dashboard</p>
           </div>
-          <h1 className="mt-4 text-2xl font-black text-[#1A332F]">Welcome Back</h1>
-          <p className="mt-1 text-xs font-bold text-[#7BA89E]">Select hospital & sign in to continue</p>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F5ECF3] text-[#623E5D]">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
         </div>
 
-        <form onSubmit={handleLogin} className="mt-6 space-y-5">
+        <form onSubmit={handleSignIn} className="space-y-4">
           <div>
-            <label className="flex items-center gap-2 text-xs font-black text-[#1A332F] uppercase tracking-wider mb-2">
-              <Building2 className="h-4 w-4 text-[#3B8C7E]" /> Select Hospital / Clinic
-            </label>
-            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-              {hospitals.map((hospital) => {
-                const isSelected = selectedHospital?.id === hospital.id;
-                return (
-                  <button
-                    type="button"
-                    key={hospital.id}
-                    onClick={() => setSelectedHospital(hospital)}
-                    className={`w-full flex items-center justify-between rounded-2xl border p-3.5 text-left transition ${
-                      isSelected
-                        ? 'border-[#3B8C7E] bg-[#3B8C7E]/5 ring-2 ring-[#3B8C7E]'
-                        : 'border-slate-200 hover:border-[#3B8C7E]'
-                    }`}
-                  >
-                    <div>
-                      <h4 className="text-xs font-black text-[#1A332F]">{hospital.facility_name}</h4>
-                      <p className="text-[11px] font-medium text-[#7BA89E]">{hospital.address}</p>
-                    </div>
-                    {isSelected && <CheckCircle2 className="h-4 w-4 text-[#3B8C7E] shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-[11px] font-black text-[#1A332F] uppercase tracking-wider">Email Address</label>
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#72526D]">Email Address</label>
             <div className="relative mt-1">
-              <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-[#7BA89E]" />
+              <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-[#72526D]" />
               <input
                 type="email"
+                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-2xl border border-slate-200 bg-[#DAF0EB] py-3 pl-10 pr-4 text-xs font-bold text-[#1A332F] focus:border-[#3B8C7E] focus:outline-none"
+                placeholder="aishwarya@gmail.com"
+                className="w-full rounded-2xl border border-slate-200 bg-[#FAF7F9] py-3.5 pl-10 pr-4 text-xs font-bold text-[#2D1B2A] focus:border-[#623E5D] focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-[11px] font-black text-[#1A332F] uppercase tracking-wider">Password</label>
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#72526D]">Password</label>
             <div className="relative mt-1">
-              <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-[#7BA89E]" />
+              <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-[#72526D]" />
               <input
                 type="password"
+                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full rounded-2xl border border-slate-200 bg-[#DAF0EB] py-3 pl-10 pr-4 text-xs font-bold text-[#1A332F] focus:border-[#3B8C7E] focus:outline-none"
+                placeholder="••••••••"
+                className="w-full rounded-2xl border border-slate-200 bg-[#FAF7F9] py-3.5 pl-10 pr-4 text-xs font-bold text-[#2D1B2A] focus:border-[#623E5D] focus:outline-none"
               />
             </div>
           </div>
@@ -139,13 +98,40 @@ export default function PatientLoginPageClient() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#3B8C7E] py-3.5 text-xs font-extrabold text-white shadow-lg transition hover:bg-[#1A332F] disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#52304E] py-4 text-xs font-black text-white shadow-lg hover:bg-[#3D223A] transition disabled:opacity-50"
           >
-            {loading ? 'Logging in...' : 'Sign In to Selected Hospital'}
-            <LogIn className="h-4 w-4" />
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin text-[#E2C7DD]" /> Signing In...
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
+
+        <p className="text-center text-[11px] font-bold text-[#72526D]">
+          Don't have an account? <span className="text-[#52304E] font-black underline cursor-pointer">Register now</span>
+        </p>
       </div>
+
+    </div>
+  );
+}
+
+export default function CuraSyncLoginPage() {
+  return (
+    <div className="min-h-screen bg-[#F5ECE8] flex items-center justify-center p-6 font-sans">
+      <Suspense
+        fallback={
+          <div className="flex items-center gap-3 rounded-2xl bg-white px-6 py-4 shadow-xl">
+            <Loader2 className="h-5 w-5 animate-spin text-[#52304E]" />
+            <span className="text-xs font-black text-[#2D1B2A]">Loading CuraSync Health...</span>
+          </div>
+        }
+      >
+        <CuraSyncAuthForm />
+      </Suspense>
     </div>
   );
 }
