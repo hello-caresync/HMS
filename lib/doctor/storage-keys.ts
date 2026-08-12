@@ -12,6 +12,7 @@ export const DOCTOR_STORAGE_KEYS = {
   patientRecords: 'curasync_patient_records',
   opdQueue: 'curasync_opd_queue',
   clinicalNotes: 'curasync_clinical_notes',
+  patientId: 'curasync_patient_id',
 } as const;
 
 export function readJsonStorage<T>(key: string, fallback: T): T {

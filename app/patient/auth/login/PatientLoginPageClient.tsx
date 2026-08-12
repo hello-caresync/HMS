@@ -19,12 +19,15 @@ function CuraSyncAuthForm() {
 
     // 1. Store session keys in localStorage so layout guards let you through
     if (typeof window !== 'undefined') {
+      const patientId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
       localStorage.setItem('patient_full_name', 'Aishwarya D S');
       localStorage.setItem('selected_hospital_name', 'Regal Hospital');
+      localStorage.setItem('curasync_patient_id', patientId);
       localStorage.setItem(
         'curasync_patient_session',
         JSON.stringify({
           email,
+          patient_id: patientId,
           authenticated: true,
           login_time: new Date().toISOString(),
         })
@@ -111,7 +114,7 @@ function CuraSyncAuthForm() {
         </form>
 
         <p className="text-center text-[11px] font-bold text-[#72526D]">
-          Don't have an account? <span className="text-[#52304E] font-black underline cursor-pointer">Register now</span>
+          Don&apos;t have an account? <span className="text-[#52304E] font-black underline cursor-pointer">Register now</span>
         </p>
       </div>
 

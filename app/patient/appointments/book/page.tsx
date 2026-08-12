@@ -10,6 +10,11 @@ import {
 } from '@/lib/doctor/regal-doctors';
 import { supabase } from '@/lib/supabaseClient';
 import {
+  DEFAULT_PATIENT_ID,
+  enqueuePatientForDoctor,
+  ensurePatientIdPersisted,
+} from '@/lib/clinical/bridge';
+import {
   Calendar as CalendarIcon,
   Clock,
   User,
@@ -28,7 +33,7 @@ interface FamilyMember {
   relation: string;
 }
 
-const PATIENT_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+const PATIENT_ID = DEFAULT_PATIENT_ID;
 const DIRECTORY = REGAL_DOCTORS_BY_DEPARTMENT;
 
 const inputClass =
@@ -136,13 +141,20 @@ export default function BookAppointmentPage() {
     setErrorMsg('');
 
     try {
-      // Continuous SmartQ: max(local token, db token) + 1 — avoids duplicate key collisions.
-      const assignedToken = await computeNextSmartQToken(selectedDoctor.name, appointmentDate);
+      const patientId = ensurePatientIdPersisted(PATIENT_ID);
+
+      // Continuous SmartQ: max(local, appointments, opd_queue) + 1 per clinician.
+      const assignedToken = await computeNextSmartQToken(
+        selectedDoctor.name,
+        appointmentDate,
+        selectedDoctor.employeeId,
+      );
 
       const newAppointment = {
         id: `apt_${Date.now()}`,
-        patient_id: PATIENT_ID,
+        patient_id: patientId,
         patient_name: selectedPatient,
+        doctor_id: selectedDoctor.employeeId,
         doctor_name: selectedDoctor.name,
         department: selectedDepartment,
         hospital_name: hospitalName,
@@ -161,10 +173,39 @@ export default function BookAppointmentPage() {
       localStorage.setItem('curasync_appointments', JSON.stringify(localList));
       localStorage.setItem('patient_full_name', selectedPatient);
 
+      // Bi-directional bridge: land token on this clinician's OPD deck
+      await enqueuePatientForDoctor({
+        patientId,
+        patientName: selectedPatient,
+        doctorId: selectedDoctor.employeeId,
+        doctorName: selectedDoctor.name,
+        department: selectedDepartment,
+        hospitalName,
+        appointmentDate,
+        slotTime: selectedSlot,
+        tokenNumber: assignedToken,
+        age: 32,
+        gender: 'Female',
+        bloodGroup:
+          (typeof window !== 'undefined' && localStorage.getItem('patient_blood_group')) || 'O+',
+        allergies: (() => {
+          try {
+            const raw =
+              typeof window !== 'undefined' ? localStorage.getItem('patient_allergies') : null;
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : String(raw).split(',').map((s) => s.trim());
+          } catch {
+            return [];
+          }
+        })(),
+      });
+
       try {
         const { error } = await supabase.from('patient_appointments').insert({
-          patient_id: PATIENT_ID,
+          patient_id: patientId,
           patient_name: selectedPatient,
+          doctor_id: selectedDoctor.employeeId,
           doctor_name: selectedDoctor.name,
           department: selectedDepartment,
           hospital_name: hospitalName,

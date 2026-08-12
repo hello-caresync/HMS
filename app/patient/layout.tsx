@@ -16,6 +16,8 @@ import {
   User,
   Users,
 } from 'lucide-react';
+import { PatientClinicalRealtimeBridge } from '@/components/patient/PatientClinicalRealtimeBridge';
+import { ensurePatientIdPersisted } from '@/lib/clinical/bridge';
 
 const NAV = [
   { label: 'Dashboard', href: '/patient/dashboard', icon: LayoutDashboard },
@@ -56,6 +58,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
         localStorage.getItem('patient_full_name');
       const savedName = localStorage.getItem('patient_full_name');
       if (savedName) setPatientName(savedName);
+      ensurePatientIdPersisted();
 
       if (!session && !savedName) {
         router.replace('/patient/auth/login');
@@ -165,7 +168,8 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
         <main className="flex-1 p-6 md:p-8">{children}</main>
       </div>
 
-      <Toaster position="top-right" closeButton />
+      <PatientClinicalRealtimeBridge />
+      <Toaster position="top-right" closeButton richColors />
     </div>
   );
 }
