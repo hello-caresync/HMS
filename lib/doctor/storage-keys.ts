@@ -5,6 +5,8 @@ export const DOCTOR_STORAGE_KEYS = {
   messages: 'curasync_messages',
   legacyMessages: 'curasync_patient_messages',
   doctorSession: 'active_doctor_session',
+  activeDoctor: 'curasync_active_doctor',
+  rememberedDoctor: 'curasync_remembered_doctor',
   legacyDoctorSession: 'curasync_doctor_session',
   schedule: 'curasync_doctor_schedule',
   patientRecords: 'curasync_patient_records',

@@ -57,6 +57,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('active_doctor_session');
+      localStorage.removeItem('curasync_active_doctor');
     }
     router.push('/doctor/login');
   };

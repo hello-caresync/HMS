@@ -87,6 +87,7 @@ export function setDoctorSession(session: DoctorSession): void {
 export function clearDoctorSession(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(DOCTOR_STORAGE_KEYS.doctorSession);
+  localStorage.removeItem(DOCTOR_STORAGE_KEYS.activeDoctor);
   localStorage.removeItem(DOCTOR_STORAGE_KEYS.legacyDoctorSession);
   window.dispatchEvent(new CustomEvent(DOCTOR_SESSION_CHANGED_EVENT, { detail: null }));
 }
