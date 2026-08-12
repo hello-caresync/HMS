@@ -40,7 +40,7 @@ function formatSupabaseError(err: unknown): string {
 function readRememberedDoctorId(): string {
   if (typeof window === 'undefined') return DEFAULT_REGAL_DOCTOR.employeeId;
   try {
-    const remembered = localStorage.getItem(REMEMBER_KEY);
+    const remembered = window.localStorage.getItem(REMEMBER_KEY);
     if (remembered && findRegalDoctor(remembered)) return remembered;
   } catch {
     /* ignore */
@@ -51,7 +51,7 @@ function readRememberedDoctorId(): string {
 function hasRememberedDoctor(): boolean {
   if (typeof window === 'undefined') return true;
   try {
-    return Boolean(localStorage.getItem(REMEMBER_KEY));
+    return Boolean(window.localStorage.getItem(REMEMBER_KEY));
   } catch {
     return true;
   }
@@ -84,10 +84,12 @@ export default function DoctorLoginPage() {
     // Keep workspace / layout guard key in sync
     writeJsonStorage(DOCTOR_STORAGE_KEYS.doctorSession, session);
 
-    if (remember) {
-      localStorage.setItem(REMEMBER_KEY, doctor.employeeId);
-    } else {
-      localStorage.removeItem(REMEMBER_KEY);
+    if (typeof window !== 'undefined') {
+      if (remember) {
+        window.localStorage.setItem(REMEMBER_KEY, doctor.employeeId);
+      } else {
+        window.localStorage.removeItem(REMEMBER_KEY);
+      }
     }
   };
 

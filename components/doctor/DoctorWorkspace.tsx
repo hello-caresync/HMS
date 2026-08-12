@@ -1,15 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { 
-  Users, Activity, Bell, CheckCircle2, Clock, 
-  AlertTriangle, Send, FileText, Wifi, WifiOff 
+import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import {
+  Users,
+  Activity,
+  Bell,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Send,
+  FileText,
+  Wifi,
+  WifiOff,
+  Stethoscope,
 } from 'lucide-react';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const QUEUE_CACHE_KEY = 'curasync_doctor_queue_cache';
+const SESSION_KEYS = ['curasync_active_doctor', 'active_doctor_session'] as const;
 
 export interface QueueItem {
   id: string;
@@ -23,85 +31,255 @@ export interface QueueItem {
   allergies: string[];
   priority: 'ROUTINE' | 'URGENT' | 'EMERGENCY';
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  created_at?: string;
 }
 
-export default function DoctorWorkspace() {
+type ActiveDoctorProfile = {
+  doctor_name?: string;
+  fullName?: string;
+  employeeId?: string;
+  doctorId?: string;
+  department?: string;
+};
+
+function isBrowser(): boolean {
+  return typeof window !== 'undefined';
+}
+
+function safeGetItem(key: string): string | null {
+  if (!isBrowser()) return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSetItem(key: string, value: string): void {
+  if (!isBrowser()) return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+function readActiveDoctor(): ActiveDoctorProfile | null {
+  for (const key of SESSION_KEYS) {
+    const raw = safeGetItem(key);
+    if (!raw) continue;
+    try {
+      return JSON.parse(raw) as ActiveDoctorProfile;
+    } catch {
+      /* continue */
+    }
+  }
+  return null;
+}
+
+function getSupabaseEnv() {
+  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
+  const anonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
+  const ready =
+    Boolean(url) &&
+    Boolean(anonKey) &&
+    url.startsWith('http') &&
+    !url.includes('placeholder.supabase.co') &&
+    anonKey !== 'placeholder-key';
+  return { url, anonKey, ready };
+}
+
+/** Lazy singleton — never throws when env vars are missing on Cloudflare. */
+let supabaseSingleton: SupabaseClient | null | undefined;
+
+function getSupabase(): SupabaseClient | null {
+  if (supabaseSingleton !== undefined) return supabaseSingleton;
+
+  const { url, anonKey, ready } = getSupabaseEnv();
+  if (!ready) {
+    console.warn(
+      'Supabase env missing or placeholder — DoctorWorkspace running in offline/local mode.',
+    );
+    supabaseSingleton = null;
+    return null;
+  }
+
+  try {
+    supabaseSingleton = createClient(url, anonKey, {
+      auth: {
+        persistSession: isBrowser(),
+        autoRefreshToken: isBrowser(),
+        detectSessionInUrl: false,
+      },
+      global: {
+        fetch: async (...args) => {
+          try {
+            return await fetch(...args);
+          } catch (err) {
+            console.warn('Supabase unreachable; offline mode:', err);
+            return new Response(JSON.stringify({ error: 'Network unavailable' }), {
+              status: 503,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+        },
+      },
+    });
+  } catch (err) {
+    console.warn('Failed to init Supabase client:', err);
+    supabaseSingleton = null;
+  }
+
+  return supabaseSingleton;
+}
+
+function formatError(err: unknown): string {
+  if (!err) return 'Unknown error';
+  if (typeof err === 'string') return err;
+  if (err instanceof Error && err.message) return err.message;
+  if (typeof err === 'object') {
+    const e = err as { message?: string; details?: string; code?: string };
+    return [e.message, e.details, e.code].filter(Boolean).join(' · ') || 'Request failed';
+  }
+  return 'Request failed';
+}
+
+const emptySubscribe = () => () => {};
+
+function useIsClient() {
+  return useSyncExternalStore(emptySubscribe, () => true, () => false);
+}
+
+export function DoctorWorkspace() {
+  const isClient = useIsClient();
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [activePatient, setActivePatient] = useState<QueueItem | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState(false);
   const [prescription, setPrescription] = useState('');
   const [clinicalAdvice, setClinicalAdvice] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  useEffect(() => {
-    fetchQueue();
+  const doctor = useMemo<ActiveDoctorProfile | null>(() => {
+    if (!isClient) return null;
+    return readActiveDoctor();
+  }, [isClient]);
 
-    const channel = supabase
-      .channel('opd_queue_doctor_realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'opd_queue' },
-        (payload) => handleRealtimeUpdate(payload)
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') setIsOnline(true);
-        if (status === 'CLOSED' || status === 'CHANNEL_ERROR') setIsOnline(false);
-      });
+  const doctorLabel = doctor?.doctor_name || doctor?.fullName || 'Clinician';
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+  const loadCache = useCallback(() => {
+    const cached = safeGetItem(QUEUE_CACHE_KEY);
+    if (!cached) return;
+    try {
+      const parsed = JSON.parse(cached) as QueueItem[];
+      if (!Array.isArray(parsed)) return;
+      setQueue(parsed);
+      setActivePatient(parsed.find((i) => i.status === 'IN_PROGRESS') || null);
+    } catch {
+      /* ignore corrupt cache */
+    }
   }, []);
 
-  const fetchQueue = async () => {
+  const fetchQueue = useCallback(async () => {
     setIsLoading(true);
+    const client = getSupabase();
+
+    if (!client) {
+      setIsOnline(false);
+      loadCache();
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('opd_queue')
         .select('*')
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      const queueData = data || [];
+      const queueData = (data || []) as QueueItem[];
       setQueue(queueData);
-      localStorage.setItem('curasync_doctor_queue_cache', JSON.stringify(queueData));
+      safeSetItem(QUEUE_CACHE_KEY, JSON.stringify(queueData));
+      setIsOnline(true);
 
       const currentActive = queueData.find((item) => item.status === 'IN_PROGRESS');
       if (currentActive) setActivePatient(currentActive);
     } catch (err) {
-      console.warn('Backend connection issue, fallback to cache:', err);
+      console.warn('Backend connection issue, fallback to cache:', formatError(err));
       setIsOnline(false);
-      const cached = localStorage.getItem('curasync_doctor_queue_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        setQueue(parsed);
-        setActivePatient(parsed.find((i: QueueItem) => i.status === 'IN_PROGRESS') || null);
-      }
+      loadCache();
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [loadCache]);
 
-  const handleRealtimeUpdate = (payload: any) => {
-    setQueue((prevQueue) => {
-      let updated = [...prevQueue];
-      if (payload.eventType === 'INSERT') {
-        updated.push(payload.new);
-      } else if (payload.eventType === 'UPDATE') {
-        updated = updated.map((item) => (item.id === payload.new.id ? payload.new : item));
-      } else if (payload.eventType === 'DELETE') {
-        updated = updated.filter((item) => item.id === payload.old.id);
+  useEffect(() => {
+    if (!isClient) return;
+
+    let cancelled = false;
+    let channel: ReturnType<SupabaseClient['channel']> | null = null;
+    const client = getSupabase();
+
+    // Defer state updates so this effect stays edge/SSR lint-safe
+    const bootTimer = window.setTimeout(() => {
+      if (cancelled) return;
+      void fetchQueue();
+
+      if (!client) return;
+
+      try {
+        channel = client
+          .channel('opd_queue_doctor_realtime')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'opd_queue' },
+            (payload) => {
+              setQueue((prevQueue) => {
+                let updated = [...prevQueue];
+                if (payload.eventType === 'INSERT' && payload.new) {
+                  updated.push(payload.new as QueueItem);
+                } else if (payload.eventType === 'UPDATE' && payload.new) {
+                  updated = updated.map((item) =>
+                    item.id === (payload.new as QueueItem).id ? (payload.new as QueueItem) : item,
+                  );
+                } else if (payload.eventType === 'DELETE' && payload.old) {
+                  updated = updated.filter((item) => item.id !== (payload.old as QueueItem).id);
+                }
+
+                safeSetItem(QUEUE_CACHE_KEY, JSON.stringify(updated));
+
+                const next = payload.new as QueueItem | undefined;
+                if (next?.status === 'IN_PROGRESS') {
+                  setActivePatient(next);
+                }
+                return updated;
+              });
+            },
+          )
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') setIsOnline(true);
+            if (status === 'CLOSED' || status === 'CHANNEL_ERROR') setIsOnline(false);
+          });
+      } catch (err) {
+        console.warn('Realtime subscribe skipped:', formatError(err));
+        setIsOnline(false);
       }
-      localStorage.setItem('curasync_doctor_queue_cache', JSON.stringify(updated));
-      
-      if (payload.new && payload.new.status === 'IN_PROGRESS') {
-        setActivePatient(payload.new);
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(bootTimer);
+      if (channel && client) {
+        try {
+          void client.removeChannel(channel);
+        } catch {
+          /* ignore */
+        }
       }
-      return updated;
-    });
-  };
+    };
+  }, [fetchQueue, isClient]);
 
   const updatePatientStatus = async (id: string, newStatus: QueueItem['status']) => {
     const updatedQueue = queue.map((p) => {
@@ -113,14 +291,20 @@ export default function DoctorWorkspace() {
     });
 
     setQueue(updatedQueue);
+    safeSetItem(QUEUE_CACHE_KEY, JSON.stringify(updatedQueue));
+
     const target = updatedQueue.find((p) => p.id === id) || null;
     if (newStatus === 'IN_PROGRESS') setActivePatient(target);
     if (newStatus === 'COMPLETED' && activePatient?.id === id) setActivePatient(null);
 
+    const client = getSupabase();
+    if (!client) return;
+
     try {
-      await supabase.from('opd_queue').update({ status: newStatus }).eq('id', id);
+      const { error } = await client.from('opd_queue').update({ status: newStatus }).eq('id', id);
+      if (error) console.warn('Failed to update state on backend:', formatError(error));
     } catch (err) {
-      console.error('Failed to update state on backend:', err);
+      console.warn('Failed to update state on backend:', formatError(err));
     }
   };
 
@@ -128,73 +312,109 @@ export default function DoctorWorkspace() {
     if (!activePatient) return;
     setIsSending(true);
 
-    try {
-      const { error } = await supabase.from('clinical_notes').insert({
-        patient_id: activePatient.patient_id,
-        doctor_id: '11111111-1111-1111-1111-111111111111',
-        prescription,
-        clinical_advice: clinicalAdvice,
-      });
+    const client = getSupabase();
+    const payload = {
+      patient_id: activePatient.patient_id,
+      doctor_id: doctor?.employeeId || doctor?.doctorId || 'local-doctor',
+      prescription,
+      clinical_advice: clinicalAdvice,
+      created_at: new Date().toISOString(),
+    };
 
-      if (error) throw error;
+    try {
+      if (client) {
+        const { error } = await client.from('clinical_notes').insert(payload);
+        if (error) throw error;
+      } else {
+        // Offline: stash locally so the workspace never hard-crashes
+        const key = 'curasync_clinical_notes';
+        const existingRaw = safeGetItem(key);
+        const existing = existingRaw ? (JSON.parse(existingRaw) as unknown[]) : [];
+        safeSetItem(key, JSON.stringify([...existing, payload]));
+      }
 
       await updatePatientStatus(activePatient.id, 'COMPLETED');
       setPrescription('');
       setClinicalAdvice('');
-      alert('Prescription successfully sent to Patient App!');
+      if (isBrowser()) window.alert('Prescription successfully sent to Patient App!');
     } catch (err) {
-      console.error('Error dispatching prescription:', err);
-      alert('Failed to send prescription');
+      console.warn('Error dispatching prescription:', formatError(err));
+      if (isBrowser()) window.alert('Failed to send prescription — saved locally if possible.');
     } finally {
       setIsSending(false);
     }
   };
 
+  if (!isClient) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-900 text-slate-300">
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950 px-6 py-4 text-xs font-semibold">
+          <Activity className="h-4 w-4 animate-pulse text-purple-400" />
+          Loading clinical workspace…
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-slate-900 text-slate-100 font-sans h-full min-h-screen">
-      {/* Header */}
-      <header className="h-16 border-b border-slate-800 px-6 flex items-center justify-between bg-slate-900/50 backdrop-blur">
+    <div className="flex min-h-screen h-full min-w-0 flex-1 flex-col bg-slate-900 font-sans text-slate-100">
+      <header className="flex h-16 items-center justify-between border-b border-slate-800 bg-slate-900/50 px-6 backdrop-blur">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-semibold text-white">OPD Clinical Suite</h2>
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2C1929] text-[#D8A657]">
+            <Stethoscope className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-white">OPD Clinical Suite</h2>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              {doctorLabel}
+              {doctor?.employeeId ? ` · ${doctor.employeeId}` : ''}
+              {doctor?.department ? ` · ${doctor.department}` : ''}
+            </p>
+          </div>
+          <span className="rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-xs font-semibold text-purple-400">
             Active Queue: {queue.filter((q) => q.status !== 'COMPLETED').length} Patients
           </span>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-xs">
-            {isOnline ? <Wifi className="w-4 h-4 text-emerald-400" /> : <WifiOff className="w-4 h-4 text-amber-400" />}
-            <span className={isOnline ? 'text-emerald-400 font-medium' : 'text-amber-400 font-medium'}>
+            {isOnline ? (
+              <Wifi className="h-4 w-4 text-emerald-400" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-amber-400" />
+            )}
+            <span className={isOnline ? 'font-medium text-emerald-400' : 'font-medium text-amber-400'}>
               {isOnline ? 'Supabase Live' : 'Offline Cache'}
             </span>
           </div>
 
-          <button className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-purple-500 rounded-full" />
+          <button
+            type="button"
+            className="relative rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            aria-label="Notifications"
+          >
+            <Bell className="h-5 w-5" />
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-purple-500" />
           </button>
         </div>
       </header>
 
-      {/* Main Grid Layout */}
-      <div className="flex-1 grid grid-cols-12 overflow-hidden min-h-0">
-        
-        {/* Left SmartQ Column */}
-        <div className="col-span-4 border-r border-slate-800 flex flex-col bg-slate-950/40">
-          <div className="p-4 border-b border-slate-800 flex justify-between items-center">
-            <h3 className="font-semibold text-slate-200 text-sm flex items-center gap-2">
-              <Clock className="w-4 h-4 text-purple-400" /> Live SmartQ Deck
+      <div className="grid min-h-0 flex-1 grid-cols-12 overflow-hidden">
+        <div className="col-span-12 flex flex-col border-r border-slate-800 bg-slate-950/40 md:col-span-4">
+          <div className="flex items-center justify-between border-b border-slate-800 p-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+              <Clock className="h-4 w-4 text-purple-400" /> Live SmartQ Deck
             </h3>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+          <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
             {isLoading ? (
-              <div className="h-40 flex items-center justify-center text-xs text-slate-400">
+              <div className="flex h-40 items-center justify-center text-xs text-slate-400">
                 Loading SmartQ deck...
               </div>
             ) : queue.length === 0 ? (
-              <div className="h-40 flex flex-col items-center justify-center text-center p-4 text-slate-500">
-                <Users className="w-8 h-8 stroke-1 text-slate-600 mb-1" />
+              <div className="flex h-40 flex-col items-center justify-center p-4 text-center text-slate-500">
+                <Users className="mb-1 h-8 w-8 stroke-1 text-slate-600" />
                 <p className="text-xs">No patients currently in queue.</p>
               </div>
             ) : (
@@ -204,50 +424,62 @@ export default function DoctorWorkspace() {
                   <div
                     key={item.id}
                     onClick={() => setActivePatient(item)}
-                    className={`p-3.5 rounded-xl border transition cursor-pointer ${
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') setActivePatient(item);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className={`cursor-pointer rounded-xl border p-3.5 transition ${
                       isActive
-                        ? 'bg-purple-950/40 border-purple-500 shadow-lg shadow-purple-950/50'
+                        ? 'border-purple-500 bg-purple-950/40 shadow-lg shadow-purple-950/50'
                         : item.status === 'COMPLETED'
-                        ? 'bg-slate-900/30 border-slate-800/50 opacity-60'
-                        : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                          ? 'border-slate-800/50 bg-slate-900/30 opacity-60'
+                          : 'border-slate-800 bg-slate-900 hover:border-slate-700'
                     }`}
                   >
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="mb-2 flex items-start justify-between">
                       <div>
-                        <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">{item.token_number}</span>
-                        <h4 className="font-semibold text-slate-100 text-sm leading-tight mt-0.5">{item.patient_name}</h4>
+                        <span className="text-xs font-bold uppercase tracking-wider text-purple-400">
+                          {item.token_number}
+                        </span>
+                        <h4 className="mt-0.5 text-sm font-semibold leading-tight text-slate-100">
+                          {item.patient_name}
+                        </h4>
                       </div>
 
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           item.priority === 'EMERGENCY'
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            ? 'border border-red-500/30 bg-red-500/20 text-red-400'
                             : item.priority === 'URGENT'
-                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                            : 'bg-slate-800 text-slate-400'
+                              ? 'border border-amber-500/30 bg-amber-500/20 text-amber-400'
+                              : 'bg-slate-800 text-slate-400'
                         }`}
                       >
                         {item.priority}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center text-xs text-slate-400">
-                      <span>{item.age} yrs • {item.gender}</span>
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span>
+                        {item.age} yrs • {item.gender}
+                      </span>
                       <div className="flex gap-1.5">
                         {item.status !== 'IN_PROGRESS' && item.status !== 'COMPLETED' && (
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              updatePatientStatus(item.id, 'IN_PROGRESS');
+                              void updatePatientStatus(item.id, 'IN_PROGRESS');
                             }}
-                            className="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded text-[11px] font-medium transition"
+                            className="rounded bg-purple-600 px-2 py-1 text-[11px] font-medium text-white transition hover:bg-purple-500"
                           >
                             Call Deck
                           </button>
                         )}
                         {item.status === 'IN_PROGRESS' && (
-                          <span className="flex items-center gap-1 text-emerald-400 font-medium text-xs">
-                            <Activity className="w-3 h-3 animate-pulse" /> On Deck
+                          <span className="flex items-center gap-1 text-xs font-medium text-emerald-400">
+                            <Activity className="h-3 w-3 animate-pulse" /> On Deck
                           </span>
                         )}
                       </div>
@@ -259,96 +491,108 @@ export default function DoctorWorkspace() {
           </div>
         </div>
 
-        {/* Right Active Patient Column */}
-        <div className="col-span-8 flex flex-col overflow-y-auto p-6 bg-slate-900/30">
+        <div className="col-span-12 flex flex-col overflow-y-auto bg-slate-900/30 p-6 md:col-span-8">
           {activePatient ? (
             <div className="space-y-6">
-              <div className="p-5 bg-slate-950 rounded-2xl border border-slate-800 flex justify-between items-center">
+              <div className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950 p-5">
                 <div>
                   <div className="flex items-center gap-3">
                     <h2 className="text-xl font-bold text-white">{activePatient.patient_name}</h2>
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-slate-800 text-slate-300">
+                    <span className="rounded bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-300">
                       {activePatient.token_number}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {activePatient.age} Yrs • {activePatient.gender} • Blood Group: <span className="text-slate-200 font-semibold">{activePatient.blood_group}</span>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {activePatient.age} Yrs • {activePatient.gender} • Blood Group:{' '}
+                    <span className="font-semibold text-slate-200">{activePatient.blood_group}</span>
                   </p>
                 </div>
 
                 <button
-                  onClick={() => updatePatientStatus(activePatient.id, 'COMPLETED')}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded-xl flex items-center gap-2 transition"
+                  type="button"
+                  onClick={() => void updatePatientStatus(activePatient.id, 'COMPLETED')}
+                  className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-medium text-white transition hover:bg-emerald-500"
                 >
-                  <CheckCircle2 className="w-4 h-4" /> Finish Consultation
+                  <CheckCircle2 className="h-4 w-4" /> Finish Consultation
                 </button>
               </div>
 
-              <div className="grid grid-cols-4 gap-4">
-                <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
-                  <p className="text-xs text-slate-400 font-medium">Blood Pressure</p>
-                  <p className="text-lg font-bold text-purple-400 mt-1">{activePatient.vitals?.bp || '120/80'}</p>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-4">
+                  <p className="text-xs font-medium text-slate-400">Blood Pressure</p>
+                  <p className="mt-1 text-lg font-bold text-purple-400">
+                    {activePatient.vitals?.bp || '120/80'}
+                  </p>
                 </div>
-                <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
-                  <p className="text-xs text-slate-400 font-medium">Heart Rate</p>
-                  <p className="text-lg font-bold text-emerald-400 mt-1">{activePatient.vitals?.hr || '72 bpm'}</p>
+                <div className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-4">
+                  <p className="text-xs font-medium text-slate-400">Heart Rate</p>
+                  <p className="mt-1 text-lg font-bold text-emerald-400">
+                    {activePatient.vitals?.hr || '72 bpm'}
+                  </p>
                 </div>
-                <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
-                  <p className="text-xs text-slate-400 font-medium">Spo2</p>
-                  <p className="text-lg font-bold text-cyan-400 mt-1">{activePatient.vitals?.spo2 || '98%'}</p>
+                <div className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-4">
+                  <p className="text-xs font-medium text-slate-400">Spo2</p>
+                  <p className="mt-1 text-lg font-bold text-cyan-400">
+                    {activePatient.vitals?.spo2 || '98%'}
+                  </p>
                 </div>
-                <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
-                  <p className="text-xs text-slate-400 font-medium">Known Allergies</p>
-                  <div className="flex items-center gap-1 text-amber-400 text-xs font-semibold mt-1">
-                    <AlertTriangle className="w-3 h-3" />
+                <div className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-4">
+                  <p className="text-xs font-medium text-slate-400">Known Allergies</p>
+                  <div className="mt-1 flex items-center gap-1 text-xs font-semibold text-amber-400">
+                    <AlertTriangle className="h-3 w-3" />
                     {activePatient.allergies?.length ? activePatient.allergies.join(', ') : 'None'}
                   </div>
                 </div>
               </div>
 
-              <div className="p-5 bg-slate-950 rounded-2xl border border-slate-800 space-y-4">
-                <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-purple-400" /> Rx & Direct Guidance Dispatcher
+              <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-950 p-5">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                  <FileText className="h-4 w-4 text-purple-400" /> Rx & Direct Guidance Dispatcher
                 </h3>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1">e-Prescription</label>
+                    <label className="mb-1 block text-xs text-slate-400">e-Prescription</label>
                     <textarea
                       rows={3}
                       value={prescription}
                       onChange={(e) => setPrescription(e.target.value)}
                       placeholder="Tab Paracetamol 500mg 1-0-1..."
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded-xl border border-slate-800 bg-slate-900 p-3 text-xs text-slate-100 focus:border-purple-500 focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1">Direct Advice to Patient App</label>
+                    <label className="mb-1 block text-xs text-slate-400">
+                      Direct Advice to Patient App
+                    </label>
                     <textarea
                       rows={2}
                       value={clinicalAdvice}
                       onChange={(e) => setClinicalAdvice(e.target.value)}
                       placeholder="Drink warm water, rest for 2 days..."
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded-xl border border-slate-800 bg-slate-900 p-3 text-xs text-slate-100 focus:border-purple-500 focus:outline-none"
                     />
                   </div>
 
                   <button
-                    onClick={handleSendPrescription}
+                    type="button"
+                    onClick={() => void handleSendPrescription()}
                     disabled={isSending}
-                    className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 transition"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 py-2.5 text-xs font-semibold text-white transition hover:bg-purple-500 disabled:bg-purple-800"
                   >
-                    <Send className="w-3.5 h-3.5" />
+                    <Send className="h-3.5 w-3.5" />
                     {isSending ? 'Syncing...' : 'Send Direct to Patient App'}
                   </button>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center text-slate-500">
-              <Users className="w-12 h-12 stroke-1 text-slate-600 mb-2" />
-              <p className="text-sm">Select or call a patient from the SmartQ deck to start consultation.</p>
+            <div className="flex h-full flex-col items-center justify-center text-center text-slate-500">
+              <Users className="mb-2 h-12 w-12 stroke-1 text-slate-600" />
+              <p className="text-sm">
+                Select or call a patient from the SmartQ deck to start consultation.
+              </p>
             </div>
           )}
         </div>
@@ -356,3 +600,5 @@ export default function DoctorWorkspace() {
     </div>
   );
 }
+
+export default DoctorWorkspace;

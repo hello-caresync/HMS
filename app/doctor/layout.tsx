@@ -37,16 +37,24 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
         return;
       }
 
-      const savedSession = localStorage.getItem('active_doctor_session');
-      if (!savedSession) {
-        router.replace('/doctor/login');
+      if (typeof window === 'undefined') {
+        setInitializing(false);
         return;
       }
 
       try {
+        const savedSession =
+          window.localStorage.getItem('active_doctor_session') ||
+          window.localStorage.getItem('curasync_active_doctor');
+        if (!savedSession) {
+          router.replace('/doctor/login');
+          return;
+        }
         setDoctorSession(JSON.parse(savedSession) as LayoutDoctorSession);
       } catch {
         console.warn('Session parse notice');
+        router.replace('/doctor/login');
+        return;
       }
       setInitializing(false);
     }, 0);
@@ -56,8 +64,8 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('active_doctor_session');
-      localStorage.removeItem('curasync_active_doctor');
+      window.localStorage.removeItem('active_doctor_session');
+      window.localStorage.removeItem('curasync_active_doctor');
     }
     router.push('/doctor/login');
   };
