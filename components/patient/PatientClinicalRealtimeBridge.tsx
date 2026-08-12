@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import {
   CLINICAL_STORAGE,
   readJsonLocal,
@@ -26,7 +27,7 @@ export function PatientClinicalRealtimeBridge() {
           table: 'clinical_notes',
           filter: `patient_id=eq.${patientId}`,
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const note = payload.new as ClinicalNote;
           const notes = readJsonLocal<ClinicalNote[]>(CLINICAL_STORAGE.clinicalNotes, []);
           writeJsonLocal(CLINICAL_STORAGE.clinicalNotes, [note, ...notes.filter((n) => n.id !== note.id)]);
@@ -52,7 +53,7 @@ export function PatientClinicalRealtimeBridge() {
           table: 'patient_messages',
           filter: `patient_id=eq.${patientId}`,
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const msg = payload.new as ClinicalAdviceMessage;
           if (msg.sender_type && msg.sender_type !== 'doctor') return;
 

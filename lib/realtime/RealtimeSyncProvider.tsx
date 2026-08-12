@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useDoctorAuth } from '@/lib/doctor/auth/DoctorAuthProvider';
 import { usePatientAuth } from '@/lib/patient/auth/PatientAuthProvider';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 import {
   fetchAppointmentsForDoctor,
@@ -54,7 +55,7 @@ function useRealtimeSync(actorId: string | null | undefined, app: 'doctor' | 'pa
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'appointments' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const row = (payload.new ?? payload.old) as Record<string, string | null> | undefined;
           if (!row) return;
           if (app === 'doctor' && row.doctor_id !== actorId) return;
@@ -79,7 +80,7 @@ function useRealtimeSync(actorId: string | null | undefined, app: 'doctor' | 'pa
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'ecosystem_appointments' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const row = (payload.new ?? payload.old) as Record<string, string | null> | undefined;
           if (!row) return;
           if (app === 'doctor' && row.doctor_id !== actorId) return;
@@ -90,7 +91,7 @@ function useRealtimeSync(actorId: string | null | undefined, app: 'doctor' | 'pa
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const row = payload.new as NotificationRow;
           if (app === 'doctor') {
             if (row.doctor_id && row.doctor_id !== actorId && row.target_audience !== 'both') return;
@@ -110,7 +111,7 @@ function useRealtimeSync(actorId: string | null | undefined, app: 'doctor' | 'pa
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'ecosystem_notifications' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           if (app !== 'patient') return;
           const row = payload.new as {
             id: string;

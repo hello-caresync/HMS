@@ -21,6 +21,7 @@ import {
   type RegalDoctor,
 } from '@/lib/doctor/regal-doctors';
 import { doctorToSession, setDoctorSession } from '@/lib/doctor/session';
+import { resolveDoctorContext } from '@/lib/doctor/command-center/doctor-context';
 import { DOCTOR_STORAGE_KEYS, writeJsonStorage } from '@/lib/doctor/storage-keys';
 
 const REMEMBER_KEY = DOCTOR_STORAGE_KEYS.rememberedDoctor;
@@ -105,6 +106,12 @@ export default function DoctorLoginPage() {
 
     // Zero-latency local session first — workspace can read immediately
     persistDoctorSession(selectedDoctor);
+
+    try {
+      await resolveDoctorContext(doctorToSession(selectedDoctor));
+    } catch {
+      /* UUID map warms on first dashboard load */
+    }
 
     try {
       // Best-effort audit ping; never block clinical access on network/schema issues

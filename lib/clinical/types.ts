@@ -51,6 +51,7 @@ export type ClinicalAdviceMessage = {
 export type BookOpdInput = {
   patientId: string;
   patientName: string;
+  /** Canonical `doctors.doctor_id` UUID — never RH-Dxx or display name */
   doctorId: string;
   doctorName: string;
   department: string;
@@ -58,6 +59,8 @@ export type BookOpdInput = {
   appointmentDate: string;
   slotTime: string;
   tokenNumber: string | number;
+  reasonForVisit?: string;
+  appointmentId?: string;
   age?: number;
   gender?: string;
   bloodGroup?: string;

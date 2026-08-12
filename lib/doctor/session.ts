@@ -22,12 +22,13 @@ export const REGAL_HOSPITAL_ID = 'a1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 export const DOCTOR_SESSION_CHANGED_EVENT = 'nexora:doctor-session-changed';
 
 export function doctorToSession(doctor: RegalDoctor, email?: string): DoctorSession {
+  const resolvedEmail = email ?? `${doctor.employeeId.toLowerCase()}@regal.local`;
   return {
     employeeId: doctor.employeeId,
     fullName: doctor.name,
     doctor_name: doctor.name,
     department: doctor.department,
-    email,
+    email: resolvedEmail,
     specialization: doctor.specialization,
     qualification: doctor.specialization,
     consultationFee: doctor.fee,

@@ -4,61 +4,71 @@ import type { OpdQueueItem } from '@/lib/clinical/types';
 import { DOCTOR_STORAGE_KEYS, readJsonStorage } from './storage-keys';
 
 type LocalAppointment = {
-  doctor_name?: string;
   doctor_id?: string;
   appointment_date?: string;
   token_number?: number | string;
 };
 
-function maxToken(values: Array<number | string | undefined | null>): number {
-  return values.reduce<number>((max, value) => Math.max(max, Number(value) || 0), 0);
-}
-
-/** SmartQ sequential token: max(local, appointments, opd_queue) + 1 per clinician per date */
+/** SmartQ sequential token: max(appointments, opd_tokens, local) + 1 per doctor_id UUID per date */
 export async function computeNextSmartQToken(
-  doctorName: string,
   appointmentDate: string,
-  doctorId?: string,
+  doctorId: string,
 ): Promise<number> {
   let dbMax = 0;
 
+  if (!doctorId) return 1;
+
   try {
-    let appointmentsQuery = supabase
-      .from('patient_appointments')
-      .select('token_number')
+    const { data: apptTokens } = await supabase
+      .from('appointments')
+      .select('appointment_id')
+      .eq('doctor_id', doctorId)
       .eq('appointment_date', appointmentDate);
 
-    if (doctorId) {
-      appointmentsQuery = appointmentsQuery.or(
-        `doctor_id.eq.${doctorId},doctor_name.eq.${doctorName}`,
-      );
-    } else {
-      appointmentsQuery = appointmentsQuery.eq('doctor_name', doctorName);
+    if (apptTokens?.length) {
+      const ids = apptTokens.map((a: { appointment_id?: string }) => a.appointment_id).filter(Boolean);
+      if (ids.length) {
+        const { data: tokens } = await supabase
+          .from('opd_tokens')
+          .select('token_number, sequence_number')
+          .eq('doctor_id', doctorId)
+          .in('appointment_id', ids);
+        if (tokens?.length) {
+          dbMax = Math.max(
+            dbMax,
+            ...tokens.map((t: { token_number?: number | string; sequence_number?: number | string }) => Number(t.sequence_number ?? t.token_number) || 0),
+          );
+        }
+      }
     }
 
-    const { data, error } = await appointmentsQuery;
-    if (!error && data?.length) {
-      dbMax = Math.max(dbMax, maxToken(data.map((row) => row.token_number)));
+    const { data: directTokens } = await supabase
+      .from('opd_tokens')
+      .select('token_number, sequence_number')
+      .eq('doctor_id', doctorId);
+
+    if (directTokens?.length) {
+      dbMax = Math.max(
+        dbMax,
+        ...directTokens.map((t: { token_number?: number | string; sequence_number?: number | string }) => Number(t.sequence_number ?? t.token_number) || 0),
+      );
     }
   } catch {
     /* offline */
   }
 
   try {
-    let queueQuery = supabase
+    const { data } = await supabase
       .from('opd_queue')
       .select('token_number')
+      .eq('doctor_id', doctorId)
       .eq('appointment_date', appointmentDate);
 
-    if (doctorId) queueQuery = queueQuery.eq('doctor_id', doctorId);
-    else queueQuery = queueQuery.eq('doctor_name', doctorName);
-
-    const { data, error } = await queueQuery;
-    if (!error && data?.length) {
-      dbMax = Math.max(dbMax, maxToken(data.map((row) => row.token_number)));
+    if (data?.length) {
+      dbMax = Math.max(dbMax, ...data.map((row: { token_number?: number | string }) => Number(row.token_number) || 0));
     }
   } catch {
-    /* offline */
+    /* legacy table optional */
   }
 
   const localAppointments = readJsonStorage<LocalAppointment[]>(
@@ -66,20 +76,12 @@ export async function computeNextSmartQToken(
     [],
   );
   const localApptMax = localAppointments
-    .filter(
-      (a) =>
-        a.appointment_date === appointmentDate &&
-        (doctorId ? a.doctor_id === doctorId || a.doctor_name === doctorName : a.doctor_name === doctorName),
-    )
+    .filter((a) => a.appointment_date === appointmentDate && a.doctor_id === doctorId)
     .reduce((max, a) => Math.max(max, Number(a.token_number) || 0), 0);
 
   const localQueue = readJsonLocal<OpdQueueItem[]>(CLINICAL_STORAGE.opdQueue, []);
   const localQueueMax = localQueue
-    .filter(
-      (q) =>
-        q.appointment_date === appointmentDate &&
-        (doctorId ? q.doctor_id === doctorId : q.doctor_name === doctorName),
-    )
+    .filter((q) => q.appointment_date === appointmentDate && q.doctor_id === doctorId)
     .reduce((max, q) => Math.max(max, Number(q.token_number) || 0), 0);
 
   return Math.max(dbMax, localApptMax, localQueueMax) + 1;

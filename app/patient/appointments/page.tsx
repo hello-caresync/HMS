@@ -1,242 +1,192 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import {
   Calendar,
-  Clock,
+  Activity,
   PlusCircle,
-  User,
+  CheckCircle2,
   RefreshCw,
-  Loader2,
-  Trash2,
+  Building2,
 } from 'lucide-react';
 
-interface Appointment {
+interface PatientAppointment {
   id: string;
+  patient_id?: string;
   patient_name: string;
   doctor_name: string;
   department: string;
-  hospital_name: string;
-  appointment_date: string;
+  hospital_name?: string;
   slot_time: string;
   token_number: number;
+  appointment_date: string;
   queue_status?: string;
 }
 
-function slotMinutes(slot: string): number {
-  const match = slot.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
-  if (!match) return 0;
-  let hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  const meridiem = match[3]?.toUpperCase();
-  if (meridiem === 'PM' && hours < 12) hours += 12;
-  if (meridiem === 'AM' && hours === 12) hours = 0;
-  return hours * 60 + minutes;
-}
-
-function mergeAndSort(local: Appointment[], remote: Appointment[]): Appointment[] {
-  const map = new Map<string, Appointment>();
-  for (const item of local) {
-    map.set(item.id || `${item.doctor_name}-${item.appointment_date}-${item.token_number}`, item);
-  }
-  for (const item of remote) {
-    const key = item.id || `${item.doctor_name}-${item.appointment_date}-${item.token_number}`;
-    map.set(key, { ...map.get(key), ...item, id: item.id || key });
-  }
-  return Array.from(map.values()).sort((a, b) => {
-    const dateCompare = (a.appointment_date || '').localeCompare(b.appointment_date || '');
-    if (dateCompare !== 0) return dateCompare;
-    return slotMinutes(a.slot_time || '') - slotMinutes(b.slot_time || '');
-  });
-}
-
-export default function AppointmentsPage() {
+export default function PatientAppointmentsPage() {
   const router = useRouter();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [appointments, setAppointments] = useState<PatientAppointment[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
-    let allAppointments: Appointment[] = [];
+    let list: PatientAppointment[] = [];
 
+    // 1. Check Local Cache First
     if (typeof window !== 'undefined') {
-      const savedLocal = localStorage.getItem('curasync_appointments');
-      if (savedLocal) {
+      const saved = localStorage.getItem('curasync_appointments');
+      if (saved) {
         try {
-          allAppointments = JSON.parse(savedLocal) as Appointment[];
-          setAppointments(allAppointments);
-        } catch {
-          console.warn('Local appointments parse notice');
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            list = parsed;
+          }
+        } catch (e) {
+          console.warn('Local storage parse notice');
         }
       }
     }
 
+    // 2. Query Supabase (Specify exact existing columns to avoid schema mismatch)
     try {
-      const { data, error } = await supabase.from('patient_appointments').select('*');
-      if (!error && data) {
-        allAppointments = mergeAndSort(allAppointments, data as Appointment[]);
+      const { data, error } = await supabase
+        .from('patient_appointments')
+        .select('id, patient_id, patient_name, doctor_name, department, hospital_name, slot_time, token_number, appointment_date, queue_status')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('Supabase query notice:', error.message);
+      } else if (data && data.length > 0) {
+        list = data as unknown as PatientAppointment[];
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('curasync_appointments', JSON.stringify(data));
+        }
       }
-    } catch (err) {
-      console.warn('Database fetch notice:', err);
+    } catch (err: any) {
+      console.warn('Backend sync fallback active:', err?.message || err);
     } finally {
-      allAppointments = mergeAndSort(allAppointments, []).map((apt) => ({
-        ...apt,
-        token_number: apt.token_number || 1,
-        queue_status: apt.queue_status || 'SCHEDULED',
-      }));
-      localStorage.setItem('curasync_appointments', JSON.stringify(allAppointments));
-      setAppointments(allAppointments);
+      setAppointments(list);
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void fetchAppointments(), 0);
+    fetchAppointments();
+
     const channel = supabase
-      .channel('patient_appointments_page')
+      .channel('realtime_patient_appointments_page')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'patient_appointments' },
-        () => void fetchAppointments(),
+        () => {
+          fetchAppointments();
+        }
       )
       .subscribe();
 
     return () => {
-      window.clearTimeout(timer);
-      void supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [fetchAppointments]);
 
-  const handleCancelAppointment = async (id: string) => {
-    setCancellingId(id);
-    const updated = appointments.map((apt) =>
-      apt.id === id ? { ...apt, queue_status: 'CANCELLED' } : apt,
-    );
-    setAppointments(updated);
-    localStorage.setItem('curasync_appointments', JSON.stringify(updated));
-
-    try {
-      await supabase
-        .from('patient_appointments')
-        .update({ queue_status: 'CANCELLED' })
-        .eq('id', id);
-    } catch {
-      console.warn('Cancelled locally.');
-    } finally {
-      setCancellingId(null);
-    }
-  };
-
-  const visible = appointments.filter((apt) => apt.queue_status !== 'CANCELLED');
-
   return (
-    <div className="mx-auto max-w-6xl space-y-8 font-sans text-[#0E2924]">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-8 font-sans text-[#0E2924]">
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#D5E8E3] pb-4">
         <div>
-          <h1 className="text-3xl font-black text-[#0E2924]">Your Scheduled Appointments</h1>
-          <p className="mt-1 text-xs font-bold text-[#4B736B]">
-            Active SmartQ tokens synced with the Doctor App in real time.
+          <h1 className="text-2xl font-black text-[#0E2924]">Your Scheduled Appointments</h1>
+          <p className="text-xs font-bold text-[#227B6B]">
+            Live status sync with your assigned doctor via Supabase Realtime.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
-            type="button"
-            onClick={() => void fetchAppointments()}
-            className="rounded-full bg-white p-3 text-[#227B6B] shadow-sm transition duration-300 hover:rotate-180"
-            title="Refresh Appointments"
+            onClick={fetchAppointments}
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D5E8E3] bg-white text-[#227B6B] hover:bg-[#EAF5F2] transition shadow-sm"
           >
             <RefreshCw className="h-4 w-4" />
           </button>
+
           <button
-            type="button"
             onClick={() => router.push('/patient/appointments/book')}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-[#113831] px-5 py-3 text-xs font-black text-white shadow-md transition hover:bg-[#0E2924]"
+            className="flex items-center gap-2 rounded-2xl bg-[#113831] px-5 py-3 text-xs font-black text-white shadow-md hover:bg-[#227B6B] transition"
           >
-            <PlusCircle className="h-4 w-4 text-[#EAF5F2]" />
-            Book New Appointment
+            <PlusCircle className="h-4 w-4 text-[#A6E2D8]" /> Book New Appointment
           </button>
         </div>
       </div>
 
+      {/* APPOINTMENTS LIST GRID */}
       {loading ? (
-        <div className="flex h-64 items-center justify-center rounded-3xl border border-[#D5E8E3] bg-white">
-          <Loader2 className="h-8 w-8 animate-spin text-[#227B6B]" />
+        <div className="rounded-3xl border border-[#D5E8E3] bg-white p-12 text-center text-xs font-bold text-[#227B6B]">
+          Fetching active appointments and tokens...
         </div>
-      ) : visible.length > 0 ? (
-        <div className="space-y-4">
-          {visible.map((apt, index) => (
-            <div
-              key={apt.id || index}
-              className="flex flex-col gap-6 rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-[#EAF5F2] px-3 py-1 text-[10px] font-black uppercase text-[#113831]">
-                    {apt.department || 'General Consultation'}
-                  </span>
-                  <span className="rounded-full bg-[#D5E8E3] px-3 py-1 text-[10px] font-black uppercase text-[#227B6B]">
-                    {apt.queue_status || 'SCHEDULED'}
-                  </span>
-                  <span className="text-xs font-bold text-[#4B736B]">
-                    {apt.hospital_name || 'Regal Hospital'}
-                  </span>
-                </div>
-                <h3 className="text-lg font-black text-[#0E2924]">{apt.doctor_name}</h3>
-                <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-[#4B736B]">
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4 text-[#227B6B]" /> {apt.appointment_date}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4 text-[#227B6B]" /> {apt.slot_time}
-                  </span>
-                  <span className="flex items-center gap-1.5 font-black text-[#113831]">
-                    <User className="h-4 w-4" /> Patient: {apt.patient_name}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="rounded-2xl bg-[#113831] px-6 py-4 text-white shadow-md">
-                  <span className="text-[10px] font-black uppercase text-[#EAF5F2]">SmartQ Token</span>
-                  <div className="text-2xl font-black text-white">#{apt.token_number}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void handleCancelAppointment(apt.id)}
-                  disabled={cancellingId === apt.id}
-                  className="rounded-2xl bg-[#EAF5F2] p-3 text-[#E63950] transition hover:bg-[#D5E8E3] disabled:opacity-50"
-                  title="Cancel Appointment"
-                >
-                  {cancellingId === apt.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4 rounded-3xl border border-[#D5E8E3] bg-white p-10 text-center">
-          <Calendar className="mx-auto h-12 w-12 text-[#227B6B]/40" />
-          <h3 className="text-base font-black text-[#0E2924]">No Booked Appointments Found</h3>
-          <p className="text-xs font-bold text-[#4B736B]">
+      ) : appointments.length === 0 ? (
+        <div className="rounded-3xl border border-[#D5E8E3] bg-white p-12 text-center space-y-4 shadow-sm">
+          <Calendar className="mx-auto h-12 w-12 text-[#227B6B]" />
+          <h3 className="text-lg font-black text-[#0E2924]">No Booked Appointments Found</h3>
+          <p className="text-xs font-bold text-[#227B6B]">
             Book a consultation to generate your live OPD SmartQ token.
           </p>
           <button
-            type="button"
             onClick={() => router.push('/patient/appointments/book')}
-            className="rounded-2xl bg-[#113831] px-6 py-3 text-xs font-black text-white shadow-md hover:bg-[#0E2924]"
+            className="rounded-2xl bg-[#113831] px-6 py-3 text-xs font-black text-white shadow-md hover:bg-[#227B6B] transition"
           >
             Book Consultation Now
           </button>
         </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2">
+          {appointments.map((apt) => (
+            <div
+              key={apt.id}
+              className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm hover:border-[#113831] transition space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-[#EAF5F2] pb-3">
+                <span className="rounded-full bg-[#EAF5F2] px-3.5 py-1 text-[10px] font-black uppercase text-[#113831]">
+                  {apt.department}
+                </span>
+
+                <div className="flex items-center gap-1.5 rounded-full bg-[#113831] px-3.5 py-1 text-xs font-black text-white shadow-sm">
+                  <Activity className="h-3.5 w-3.5 text-[#A6E2D8]" /> SmartQ #{apt.token_number}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-lg font-black text-[#0E2924]">{apt.doctor_name}</h3>
+                <p className="text-xs font-bold text-[#227B6B] flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5" /> {apt.hospital_name || 'Regal Hospital'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 bg-[#F4F8F7] p-3.5 rounded-2xl border border-[#D5E8E3] text-xs font-bold">
+                <div>
+                  <span className="text-[10px] uppercase text-[#227B6B] font-black block">Slot Time</span>
+                  <span className="text-[#0E2924]">{apt.slot_time}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase text-[#227B6B] font-black block">Date</span>
+                  <span className="text-[#0E2924]">{apt.appointment_date}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-[#EAF5F2] pt-3 text-xs font-bold">
+                <span className="text-[#227B6B]">
+                  Status: <span className="text-[#0E2924] font-black uppercase">{apt.queue_status || 'SCHEDULED'}</span>
+                </span>
+                <span className="text-emerald-700 flex items-center gap-1 font-black">
+                  <CheckCircle2 className="h-4 w-4" /> Desk Verified
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
+
     </div>
   );
 }

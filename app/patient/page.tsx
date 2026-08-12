@@ -1,5 +1,7 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import { PatientApp } from '@/components/patient/PatientApp';
 
 export default function PatientRootPage() {
-  redirect('/patient/dashboard');
+  return <PatientApp />;
 }

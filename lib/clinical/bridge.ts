@@ -120,13 +120,14 @@ function normalizeQueueRow(row: Record<string, unknown>): OpdQueueItem {
 /** Dual-write booking into opd_queue (+ local cache) for the selected clinician. */
 export async function enqueuePatientForDoctor(input: BookOpdInput): Promise<OpdQueueItem> {
   const token = String(input.tokenNumber);
+  const doctorUuid = input.doctorId;
   const localId = `opq_${Date.now()}`;
   const row: OpdQueueItem = {
     id: localId,
     token_number: token,
     patient_id: input.patientId,
     patient_name: input.patientName,
-    doctor_id: input.doctorId,
+    doctor_id: doctorUuid,
     doctor_name: input.doctorName,
     age: input.age ?? 32,
     gender: input.gender ?? 'Female',
@@ -146,6 +147,45 @@ export async function enqueuePatientForDoctor(input: BookOpdInput): Promise<OpdQ
   const local = readJsonLocal<OpdQueueItem[]>(CLINICAL_STORAGE.opdQueue, []);
   writeJsonLocal(CLINICAL_STORAGE.opdQueue, [row, ...local]);
 
+  if (input.appointmentId) {
+    return row;
+  }
+
+  const syncCanonicalOpd = async (source: OpdQueueItem, uuid: string) => {
+    try {
+      let appointmentId = input.appointmentId;
+
+      if (!appointmentId) {
+        const { data: appt } = await supabase
+          .from('appointments')
+          .insert({
+            patient_id: source.patient_id,
+            doctor_id: uuid,
+            department: source.department,
+            reason_for_visit: input.reasonForVisit || 'OPD consultation',
+            appointment_date: source.appointment_date,
+            appointment_time: source.slot_time,
+            status: 'WAITING',
+          })
+          .select('appointment_id')
+          .maybeSingle();
+        appointmentId = appt?.appointment_id ? String(appt.appointment_id) : undefined;
+      }
+
+      await supabase.from('opd_tokens').insert({
+        appointment_id: appointmentId,
+        token_number: source.token_number,
+        patient_id: source.patient_id,
+        doctor_id: uuid,
+        sequence_number: Number(source.token_number) || 1,
+        status: 'ISSUED',
+        estimated_wait_minutes: 15,
+      });
+    } catch (canonicalErr) {
+      console.warn('Canonical OPD sync notice:', formatError(canonicalErr));
+    }
+  };
+
   try {
     const { data, error } = await supabase
       .from('opd_queue')
@@ -153,7 +193,7 @@ export async function enqueuePatientForDoctor(input: BookOpdInput): Promise<OpdQ
         token_number: row.token_number,
         patient_id: row.patient_id,
         patient_name: row.patient_name,
-        doctor_id: row.doctor_id,
+        doctor_id: doctorUuid,
         doctor_name: row.doctor_name,
         age: row.age,
         gender: row.gender,
@@ -172,18 +212,19 @@ export async function enqueuePatientForDoctor(input: BookOpdInput): Promise<OpdQ
 
     if (error) {
       console.warn('opd_queue sync notice:', formatError(error));
-      return row;
-    }
-    if (data) {
+      await syncCanonicalOpd(row, doctorUuid);
+    } else if (data) {
       const normalized = normalizeQueueRow(data as Record<string, unknown>);
       writeJsonLocal(
         CLINICAL_STORAGE.opdQueue,
         [normalized, ...local.filter((x) => x.id !== localId)],
       );
+      await syncCanonicalOpd(normalized, doctorUuid);
       return normalized;
     }
   } catch (err) {
     console.warn('opd_queue sync notice:', formatError(err));
+    await syncCanonicalOpd(row, doctorUuid);
   }
 
   return row;
@@ -202,7 +243,7 @@ export async function fetchDoctorOpdQueue(doctorId: string): Promise<OpdQueueIte
       .order('created_at', { ascending: true });
 
     if (!error && data) {
-      const remote = data.map((row) => normalizeQueueRow(row as Record<string, unknown>));
+      const remote = data.map((row: Record<string, unknown>) => normalizeQueueRow(row));
       const map = new Map<string, OpdQueueItem>();
       for (const item of [...list, ...remote]) map.set(item.id, item);
       list = Array.from(map.values()).sort((a, b) =>

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { useVendorAppStore } from '@/lib/vendor/store/vendor-app-store';
 
 /** Supabase realtime for Vendor ↔ Hospital PO sync */
@@ -30,7 +31,7 @@ export function useVendorRealtime() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'purchase_orders' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const row = (payload.new ?? payload.old) as { status?: string; vendor_name?: string } | null;
           if (payload.eventType === 'INSERT') {
             toast.info('New purchase order', {
@@ -43,7 +44,7 @@ export function useVendorRealtime() {
           debounceRef.current = setTimeout(bump, 300);
         },
       )
-      .subscribe((status) => {
+      .subscribe((status: string) => {
         setConnected(status === 'SUBSCRIBED');
       });
 

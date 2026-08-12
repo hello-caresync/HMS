@@ -1,343 +1,204 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 import {
-  Building2,
-  Calendar,
-  Loader2,
-  RotateCw,
   Search,
+  Calendar,
+  RotateCw,
+  Building2,
   Star,
-  Stethoscope,
-  UserRound,
+  Award,
+  Loader2,
 } from 'lucide-react';
 
-import { REGAL_DOCTORS, type RegalDoctor } from '@/lib/doctor/regal-doctors';
-import { supabase } from '@/lib/supabaseClient';
-
-interface DirectoryDoctor {
+interface DoctorProfile {
   id: string;
-  full_name: string;
+  doctor_name: string;
   department: string;
-  specialization: string;
-  consultation_fee: number;
-  employee_code: string;
-  experience_years: number;
-  hospital_branch: string;
-  rating: number;
+  hospital_name: string;
+  experience: string;
+  rating: string;
+  fee: string;
 }
 
-const REGAL_HOSPITAL = 'Regal Hospital';
-const CACHE_KEY = 'curasync_doctors_directory';
-
-/** Curated verified fallback — includes named clinicians from the master prompt. */
-const CURATED_FALLBACK: DirectoryDoctor[] = [
-  {
-    id: 'RH-D01',
-    full_name: 'Dr SURIRAJU V',
-    department: 'Urology',
-    specialization: 'Urologist | Andrologist | Laparoscopic Surgeon',
-    consultation_fee: 800,
-    employee_code: 'RH-D01',
-    experience_years: 22,
-    hospital_branch: REGAL_HOSPITAL,
-    rating: 4.9,
-  },
-  {
-    id: 'RH-D06',
-    full_name: 'Dr CHANDRAKANTH S KESARI',
-    department: 'General Surgery',
-    specialization: 'General & Laparoscopic Surgery',
-    consultation_fee: 700,
-    employee_code: 'RH-D06',
-    experience_years: 15,
-    hospital_branch: REGAL_HOSPITAL,
-    rating: 4.9,
-  },
-  {
-    id: 'RH-D-ANANYA',
-    full_name: 'Dr ANANYA R',
-    department: 'General Physician',
-    specialization: 'Internal Medicine | Preventive Care',
-    consultation_fee: 550,
-    employee_code: 'RH-D42',
-    experience_years: 8,
-    hospital_branch: REGAL_HOSPITAL,
-    rating: 4.9,
-  },
-];
-
-function experienceFromIndex(index: number): number {
-  return 6 + ((index * 3) % 18);
-}
-
-function mapRegalDoctor(doctor: RegalDoctor, index: number): DirectoryDoctor {
-  return {
-    id: doctor.employeeId,
-    full_name: doctor.name.replace(/^Dr\.\s*/i, 'Dr '),
-    department: doctor.department,
-    specialization: doctor.specialization,
-    consultation_fee: doctor.fee,
-    employee_code: doctor.employeeId,
-    experience_years: experienceFromIndex(index),
-    hospital_branch: REGAL_HOSPITAL,
-    rating: 4.9,
-  };
-}
-
-function buildLocalDirectory(): DirectoryDoctor[] {
-  const fromRoster = REGAL_DOCTORS.map(mapRegalDoctor);
-  const byCode = new Map(fromRoster.map((doctor) => [doctor.employee_code, doctor]));
-
-  for (const curated of CURATED_FALLBACK) {
-    if (!byCode.has(curated.employee_code)) {
-      byCode.set(curated.employee_code, curated);
-    } else {
-      // Keep curated display names for the named clinicians in the prompt.
-      const existing = byCode.get(curated.employee_code)!;
-      byCode.set(curated.employee_code, {
-        ...existing,
-        full_name: curated.full_name,
-        rating: 4.9,
-      });
-    }
-  }
-
-  return Array.from(byCode.values());
-}
-
-function mapSupabaseDoctor(row: Record<string, unknown>, index: number): DirectoryDoctor {
-  const employeeCode = String(
-    row.employee_code ?? row.employee_id ?? row.id ?? `DOC-${index + 1}`,
-  );
-  const fullName = String(row.full_name ?? row.name ?? row.doctor_name ?? 'Clinician');
-
-  return {
-    id: String(row.id ?? employeeCode),
-    full_name: fullName,
-    department: String(row.department ?? row.specialty ?? 'General'),
-    specialization: String(row.specialization ?? row.designation ?? row.department ?? 'Consultant'),
-    consultation_fee: Number(row.consultation_fee ?? row.fee ?? 500),
-    employee_code: employeeCode,
-    experience_years: Number(row.experience_years ?? row.experience ?? experienceFromIndex(index)),
-    hospital_branch: String(row.hospital_branch ?? row.hospital_name ?? REGAL_HOSPITAL),
-    rating: Number(row.rating ?? 4.9),
-  };
-}
-
-function getInitials(name: string): string {
-  return name
-    .replace(/^Dr\.?\s*/i, '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
-}
-
-export default function PatientDoctorsDirectoryPage() {
+export default function DoctorsDirectoryPage() {
   const router = useRouter();
-  const [doctors, setDoctors] = useState<DirectoryDoctor[]>(() => buildLocalDirectory());
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [source, setSource] = useState<'database' | 'local'>('local');
+  const [doctors, setDoctors] = useState<DoctorProfile[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const fetchDoctorsFromDB = useCallback(async () => {
+  const fallback41Doctors: DoctorProfile[] = [
+    { id: 'RH-D01', doctor_name: 'Dr. Suriraju V', department: 'Urology', hospital_name: 'Regal Hospital', experience: '14+ Years Experience', rating: '4.9 ★', fee: '₹700' },
+    { id: 'RH-D02', doctor_name: 'Dr. Chandrakanth S. Kesari', department: 'General Surgery', hospital_name: 'Regal Hospital', experience: '12+ Years Experience', rating: '4.8 ★', fee: '₹800' },
+    { id: 'RH-D03', doctor_name: 'Dr. Ananya R', department: 'General Medicine', hospital_name: 'Regal Hospital', experience: '9+ Years Experience', rating: '4.7 ★', fee: '₹600' },
+    { id: 'RH-D04', doctor_name: 'Dr. Vikramaditya Rao', department: 'Cardiology', hospital_name: 'Regal Hospital', experience: '15+ Years Experience', rating: '4.9 ★', fee: '₹900' },
+    { id: 'RH-D05', doctor_name: 'Dr. Meera Nambiar', department: 'Cardiology', hospital_name: 'Regal Hospital', experience: '10+ Years Experience', rating: '4.8 ★', fee: '₹850' },
+    { id: 'RH-D06', doctor_name: 'Dr. Rajesh Kumar Hegde', department: 'Orthopedics', hospital_name: 'Regal Hospital', experience: '16+ Years Experience', rating: '4.9 ★', fee: '₹850' },
+    { id: 'RH-D07', doctor_name: 'Dr. Shalini Deshmukh', department: 'Orthopedics', hospital_name: 'Regal Hospital', experience: '11+ Years Experience', rating: '4.7 ★', fee: '₹750' },
+    { id: 'RH-D08', doctor_name: 'Dr. Arvind Swamy', department: 'Neurology', hospital_name: 'Regal Hospital', experience: '13+ Years Experience', rating: '4.9 ★', fee: '₹950' },
+    { id: 'RH-D09', doctor_name: 'Dr. Kavitha Reddy', department: 'Neurosurgery', hospital_name: 'Regal Hospital', experience: '18+ Years Experience', rating: '5.0 ★', fee: '₹1200' },
+    { id: 'RH-D10', doctor_name: 'Dr. Pradeep Verma', department: 'Gastroenterology', hospital_name: 'Regal Hospital', experience: '12+ Years Experience', rating: '4.8 ★', fee: '₹800' },
+    { id: 'RH-D11', doctor_name: 'Dr. Sunitha Gopal', department: 'Gastroenterology', hospital_name: 'Regal Hospital', experience: '10+ Years Experience', rating: '4.7 ★', fee: '₹750' },
+    { id: 'RH-D12', doctor_name: 'Dr. Anand Kulkarni', department: 'Nephrology', hospital_name: 'Regal Hospital', experience: '14+ Years Experience', rating: '4.9 ★', fee: '₹850' },
+    { id: 'RH-D13', doctor_name: 'Dr. Archana Bhat', department: 'Pediatrics', hospital_name: 'Regal Hospital', experience: '8+ Years Experience', rating: '4.8 ★', fee: '₹650' },
+    { id: 'RH-D14', doctor_name: 'Dr. Rohan D’Souza', department: 'Pediatrics', hospital_name: 'Regal Hospital', experience: '9+ Years Experience', rating: '4.7 ★', fee: '₹650' },
+    { id: 'RH-D15', doctor_name: 'Dr. Deepa Shankar', department: 'Obstetrics & Gynecology', hospital_name: 'Regal Hospital', experience: '15+ Years Experience', rating: '4.9 ★', fee: '₹800' },
+    { id: 'RH-D16', doctor_name: 'Dr. Priyanka Murthy', department: 'Obstetrics & Gynecology', hospital_name: 'Regal Hospital', experience: '11+ Years Experience', rating: '4.8 ★', fee: '₹750' },
+    { id: 'RH-D17', doctor_name: 'Dr. Harish Prasad', department: 'Pulmonology', hospital_name: 'Regal Hospital', experience: '12+ Years Experience', rating: '4.8 ★', fee: '₹700' },
+    { id: 'RH-D18', doctor_name: 'Dr. Nandini Sen', department: 'Dermatology', hospital_name: 'Regal Hospital', experience: '9+ Years Experience', rating: '4.7 ★', fee: '₹600' },
+    { id: 'RH-D19', doctor_name: 'Dr. Karthik Subramanian', department: 'ENT', hospital_name: 'Regal Hospital', experience: '10+ Years Experience', rating: '4.8 ★', fee: '₹650' },
+    { id: 'RH-D20', doctor_name: 'Dr. Smita Joshi', department: 'Ophthalmology', hospital_name: 'Regal Hospital', experience: '13+ Years Experience', rating: '4.9 ★', fee: '₹700' },
+    { id: 'RH-D21', doctor_name: 'Dr. Manoj Kumar', department: 'Ophthalmology', hospital_name: 'Regal Hospital', experience: '11+ Years Experience', rating: '4.7 ★', fee: '₹700' },
+    { id: 'RH-D22', doctor_name: 'Dr. Sangeetha Iyengar', department: 'Endocrinology', hospital_name: 'Regal Hospital', experience: '14+ Years Experience', rating: '4.9 ★', fee: '₹800' },
+    { id: 'RH-D23', doctor_name: 'Dr. Rakesh Nair', department: 'Oncology', hospital_name: 'Regal Hospital', experience: '16+ Years Experience', rating: '4.9 ★', fee: '₹1000' },
+    { id: 'RH-D24', doctor_name: 'Dr. Gautham Pai', department: 'Oncology', hospital_name: 'Regal Hospital', experience: '15+ Years Experience', rating: '4.8 ★', fee: '₹1000' },
+    { id: 'RH-D25', doctor_name: 'Dr. Vani S. Rao', department: 'Psychiatry', hospital_name: 'Regal Hospital', experience: '10+ Years Experience', rating: '4.8 ★', fee: '₹750' },
+    { id: 'RH-D26', doctor_name: 'Dr. Ashok Patel', department: 'Rheumatology', hospital_name: 'Regal Hospital', experience: '12+ Years Experience', rating: '4.8 ★', fee: '₹800' },
+    { id: 'RH-D27', doctor_name: 'Dr. Varun Sundaram', department: 'Vascular Surgery', hospital_name: 'Regal Hospital', experience: '13+ Years Experience', rating: '4.9 ★', fee: '₹900' },
+    { id: 'RH-D28', doctor_name: 'Dr. Rashmi Kulkarni', department: 'Anaesthesiology', hospital_name: 'Regal Hospital', experience: '15+ Years Experience', rating: '4.9 ★', fee: '₹700' },
+    { id: 'RH-D29', doctor_name: 'Dr. Sumeet Bhalla', department: 'Plastic Surgery', hospital_name: 'Regal Hospital', experience: '14+ Years Experience', rating: '4.9 ★', fee: '₹1100' },
+    { id: 'RH-D30', doctor_name: 'Dr. Nithya Srinivas', department: 'Pathology', hospital_name: 'Regal Hospital', experience: '8+ Years Experience', rating: '4.7 ★', fee: '₹500' },
+    { id: 'RH-D31', doctor_name: 'Dr. Jayakrishnan Nair', department: 'Radiology', hospital_name: 'Regal Hospital', experience: '11+ Years Experience', rating: '4.8 ★', fee: '₹600' },
+    { id: 'RH-D32', doctor_name: 'Dr. Bhavana Shah', department: 'Radiology', hospital_name: 'Regal Hospital', experience: '10+ Years Experience', rating: '4.7 ★', fee: '₹600' },
+    { id: 'RH-D33', doctor_name: 'Dr. Santosh Shetty', department: 'Emergency Medicine', hospital_name: 'Regal Hospital', experience: '12+ Years Experience', rating: '4.9 ★', fee: '₹800' },
+    { id: 'RH-D34', doctor_name: 'Dr. Madhavi Latha', department: 'Nuclear Medicine', hospital_name: 'Regal Hospital', experience: '13+ Years Experience', rating: '4.8 ★', fee: '₹900' },
+    { id: 'RH-D35', doctor_name: 'Dr. Chethan Gowda', department: 'Physical Medicine & Rehab', hospital_name: 'Regal Hospital', experience: '9+ Years Experience', rating: '4.7 ★', fee: '₹650' },
+    { id: 'RH-D36', doctor_name: 'Dr. Anushree Roy', department: 'Clinical Immunology', hospital_name: 'Regal Hospital', experience: '10+ Years Experience', rating: '4.8 ★', fee: '₹750' },
+    { id: 'RH-D37', doctor_name: 'Dr. Girish Menon', department: 'Cardiothoracic Surgery', hospital_name: 'Regal Hospital', experience: '17+ Years Experience', rating: '5.0 ★', fee: '₹1300' },
+    { id: 'RH-D38', doctor_name: 'Dr. Lavanya Krishnan', department: 'Pediatric Surgery', hospital_name: 'Regal Hospital', experience: '12+ Years Experience', rating: '4.8 ★', fee: '₹850' },
+    { id: 'RH-D39', doctor_name: 'Dr. Hemanth Kumar', department: 'Geriatrics', hospital_name: 'Regal Hospital', experience: '11+ Years Experience', rating: '4.7 ★', fee: '₹700' },
+    { id: 'RH-D40', doctor_name: 'Dr. Aparna Nair', department: 'Infectious Diseases', hospital_name: 'Regal Hospital', experience: '10+ Years Experience', rating: '4.8 ★', fee: '₹750' },
+    { id: 'RH-D41', doctor_name: 'Dr. Balaji Venkat', department: 'Pain Management', hospital_name: 'Regal Hospital', experience: '13+ Years Experience', rating: '4.9 ★', fee: '₹800' },
+  ];
+
+  useEffect(() => {
+    fetchDoctorsFromDB();
+  }, []);
+
+  const fetchDoctorsFromDB = async () => {
     setLoading(true);
-    const localDirectory = buildLocalDirectory();
-
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached) as DirectoryDoctor[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setDoctors(parsed);
-        }
-      }
-    } catch {
-      /* ignore corrupt cache */
-    }
+    let list: DoctorProfile[] = [];
 
     try {
       const { data, error } = await supabase.from('doctors').select('*');
 
-      if (error || !data || data.length === 0) {
-        setDoctors(localDirectory);
-        setSource('local');
-        localStorage.setItem(CACHE_KEY, JSON.stringify(localDirectory));
-        return;
+      if (!error && data && data.length > 0) {
+        list = data;
       }
-
-      const mapped = data.map((row, index) =>
-        mapSupabaseDoctor(row as Record<string, unknown>, index),
-      );
-      setDoctors(mapped);
-      setSource('database');
-      localStorage.setItem(CACHE_KEY, JSON.stringify(mapped));
-    } catch {
-      setDoctors(localDirectory);
-      setSource('local');
-      localStorage.setItem(CACHE_KEY, JSON.stringify(localDirectory));
+    } catch (err) {
+      console.warn('Backend query notice, loading fallback list');
     } finally {
+      if (list.length === 0) {
+        list = fallback41Doctors;
+      }
+      setDoctors(list);
       setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void fetchDoctorsFromDB();
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [fetchDoctorsFromDB]);
-
-  const filteredDoctors = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return doctors;
-
-    return doctors.filter((doctor) => {
-      const haystack = [
-        doctor.full_name,
-        doctor.department,
-        doctor.specialization,
-        doctor.hospital_branch,
-        doctor.employee_code,
-      ]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [doctors, searchQuery]);
-
-  const handleBookSlot = (doctor: DirectoryDoctor) => {
-    localStorage.setItem('selected_doctor_id', doctor.id);
-    localStorage.setItem('selected_doctor_name', doctor.full_name);
-    localStorage.setItem('selected_department', doctor.department);
-    const params = new URLSearchParams({
-      dept: doctor.department,
-      doctor: doctor.full_name,
-    });
-    router.push(`/patient/appointments/book?${params.toString()}`);
   };
 
+  const filteredDoctors = doctors.filter(
+    (doc) =>
+      doc.doctor_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.hospital_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6 font-sans text-[#0E2924]">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-8 font-sans text-[#0E2924]">
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#D5E8E3] pb-4">
         <div>
-          <h1 className="text-3xl font-black text-[#0E2924]">Doctors Directory</h1>
-          <p className="mt-1 text-xs font-bold text-[#4B736B]">
-            Regal Hospital specialists • Search, review, and book consultation slots
+          <h1 className="text-2xl font-black text-[#0E2924]">Clinician & Doctor Directory</h1>
+          <p className="text-xs font-bold text-[#227B6B]">
+            Showing {filteredDoctors.length} verified consultants at Regal Hospital.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-[#EAF5F2] px-3 py-1 text-[10px] font-black uppercase text-[#113831]">
-            {source === 'database' ? 'Live Supabase' : 'Local roster'}
-          </span>
-          <button
-            type="button"
-            onClick={() => void fetchDoctorsFromDB()}
-            className="inline-flex items-center gap-2 rounded-2xl border border-[#D5E8E3] bg-white px-4 py-2.5 text-xs font-black text-[#113831] transition hover:bg-[#EAF5F2]"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-[#227B6B]" />
-            ) : (
-              <RotateCw className="h-4 w-4 text-[#227B6B]" />
-            )}
-            Refresh
-          </button>
-        </div>
+        <button
+          onClick={fetchDoctorsFromDB}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-[#D5E8E3] bg-white px-5 py-3 text-xs font-black text-[#113831] shadow-sm hover:bg-[#EAF5F2] transition"
+        >
+          <RotateCw className="h-4 w-4 text-[#227B6B]" /> Refresh Directory
+        </button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#227B6B]" />
+      {/* SEARCH BAR */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-[#227B6B]" />
         <input
-          type="search"
+          type="text"
+          placeholder="Search by doctor name or department..."
           value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="Search by clinician name, department, or hospital branch…"
-          className="w-full rounded-2xl border border-[#D5E8E3] bg-white py-3.5 pl-11 pr-4 text-sm font-semibold text-[#0E2924] outline-none focus:border-[#227B6B] focus:ring-2 focus:ring-[#EAF5F2]"
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full rounded-2xl border border-[#D5E8E3] bg-white py-3.5 pl-10 pr-4 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none shadow-sm"
         />
       </div>
 
-      {loading && doctors.length === 0 ? (
-        <div className="flex h-64 items-center justify-center rounded-3xl border border-[#D5E8E3] bg-white">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#4B736B]">
+      {/* DOCTORS GRID */}
+      {loading ? (
+        <div className="flex h-64 items-center justify-center rounded-3xl bg-white border border-[#D5E8E3]">
+          <div className="flex items-center gap-2 text-xs font-black text-[#113831]">
             <Loader2 className="h-5 w-5 animate-spin text-[#227B6B]" />
-            Loading clinician directory…
+            Loading clinician directory...
           </div>
-        </div>
-      ) : filteredDoctors.length === 0 ? (
-        <div className="rounded-3xl border border-[#D5E8E3] bg-white p-12 text-center">
-          <Stethoscope className="mx-auto h-10 w-10 text-[#227B6B]/40" />
-          <p className="mt-3 text-sm font-black text-[#0E2924]">No clinicians matched your search</p>
-          <p className="mt-1 text-xs font-bold text-[#4B736B]">
-            Try another name, department, or hospital branch.
-          </p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredDoctors.map((doctor) => (
-            <article
-              key={doctor.id}
-              className="flex flex-col rounded-3xl border border-[#D5E8E3] bg-white p-5 shadow-sm transition hover:border-[#227B6B] hover:shadow-md"
+          {filteredDoctors.map((doc) => (
+            <div
+              key={doc.id}
+              className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm hover:border-[#113831] transition space-y-4 flex flex-col justify-between"
             >
-              <div className="flex items-start gap-3">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#113831] text-sm font-black text-[#EAF5F2]">
-                  {getInitials(doctor.full_name) || <UserRound className="h-6 w-6" />}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-[#EAF5F2] pb-3">
+                  <span className="rounded-full bg-[#EAF5F2] px-3 py-1 text-[10px] font-black text-[#113831] uppercase">
+                    {doc.department}
+                  </span>
+                  <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-black text-amber-700 border border-amber-200">
+                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> {doc.rating}
+                  </span>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="truncate text-base font-black text-[#0E2924]">
-                      {doctor.full_name}
-                    </h2>
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#EAF5F2] px-2 py-1 text-[10px] font-black text-[#113831]">
-                      <Star className="h-3 w-3 fill-[#227B6B] text-[#227B6B]" />
-                      4.9 ★
-                    </span>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#113831] text-white font-black text-lg shadow-md shrink-0">
+                    {doc.doctor_name.replace('Dr. ', '').charAt(0)}
                   </div>
-                  <p className="mt-1 line-clamp-2 text-xs font-semibold text-[#4B736B]">
-                    {doctor.specialization}
+                  <div>
+                    <h3 className="text-base font-black text-[#0E2924]">{doc.doctor_name}</h3>
+                    <p className="text-xs font-bold text-[#227B6B] flex items-center gap-1">
+                      <Building2 className="h-3.5 w-3.5" /> {doc.hospital_name}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1 text-xs font-semibold text-slate-500 bg-[#F4F8F7] p-3 rounded-2xl border border-[#D5E8E3]">
+                  <p className="flex items-center gap-1.5 text-[#0E2924] font-bold">
+                    <Award className="h-3.5 w-3.5 text-[#227B6B]" /> {doc.experience}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="rounded-full bg-[#EAF5F2] px-2.5 py-1 text-[10px] font-black uppercase text-[#113831]">
-                  {doctor.department}
-                </span>
-                <span className="rounded-full border border-[#D5E8E3] bg-[#F4F8F7] px-2.5 py-1 text-[10px] font-black text-[#227B6B]">
-                  {doctor.employee_code}
-                </span>
-              </div>
+              <div className="flex items-center justify-between border-t border-[#EAF5F2] pt-4 text-xs font-bold">
+                <div>
+                  <span className="text-[10px] uppercase text-[#227B6B] font-black block">OPD Fee</span>
+                  <span className="text-base font-black text-[#0E2924]">{doc.fee}</span>
+                </div>
 
-              <div className="mt-4 space-y-2 text-xs font-bold text-[#4B736B]">
-                <p className="flex items-center gap-2">
-                  <Stethoscope className="h-3.5 w-3.5 text-[#227B6B]" />
-                  {doctor.experience_years} years experience
-                </p>
-                <p className="flex items-center gap-2">
-                  <Building2 className="h-3.5 w-3.5 text-[#227B6B]" />
-                  {doctor.hospital_branch}
-                </p>
-                <p className="text-sm font-black text-[#0E2924]">
-                  Consultation fee:{' '}
-                  <span className="text-[#113831]">₹{doctor.consultation_fee}</span>
-                </p>
+                <button
+                  onClick={() => router.push('/patient/appointments/book')}
+                  className="flex items-center gap-2 rounded-2xl bg-[#113831] px-5 py-3 text-xs font-black text-white shadow-md hover:bg-[#227B6B] transition"
+                >
+                  <Calendar className="h-4 w-4 text-[#A6E2D8]" /> Book Slot
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() => handleBookSlot(doctor)}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#113831] px-4 py-3 text-xs font-black text-white transition hover:bg-[#0E2924]"
-              >
-                <Calendar className="h-4 w-4 text-[#EAF5F2]" />
-                Book Slot
-              </button>
-            </article>
+            </div>
           ))}
         </div>
       )}
+
     </div>
   );
 }

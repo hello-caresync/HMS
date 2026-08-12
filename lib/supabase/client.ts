@@ -1,44 +1,34 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+import { createClient as createSupabaseJSClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-let browserClient: SupabaseClient | null = null;
+let browserClient: ReturnType<typeof createBrowserClient> | ReturnType<typeof createSupabaseJSClient> | null =
+  null;
 
-/**
- * Creates or retrieves a single browser-side Supabase client instance.
- * Includes a custom fetch wrapper to gracefully handle network failures.
- */
-export function getSupabaseBrowserClient(): SupabaseClient {
-  if (browserClient) {
-    return browserClient;
+export function createClient() {
+  if (browserClient) return browserClient;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error(
+      'CRITICAL: Missing Supabase environment variables! Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in .env.local',
+    );
   }
 
-  browserClient = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-    global: {
-      fetch: async (...args) => {
-        try {
-          return await fetch(...args);
-        } catch (err) {
-          console.warn('Supabase fetch notice (operating in offline/fallback mode):', err);
-          return new Response(JSON.stringify({ error: 'Network connection unavailable' }), {
-            status: 503,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        }
-      },
-    },
-  });
+  try {
+    browserClient = createBrowserClient(supabaseUrl, supabaseAnonKey);
+  } catch (err) {
+    browserClient = createSupabaseJSClient(supabaseUrl, supabaseAnonKey);
+  }
 
   return browserClient;
 }
 
-// Named export for convenience
-export const supabase = getSupabaseBrowserClient();
+/** Shared browser singleton for realtime subscriptions and legacy imports. */
+export const supabase = createClient();
 
-// Default export
-export default supabase;
+export function getSupabaseBrowserClient() {
+  if (typeof window === 'undefined') return null;
+  return supabase;
+}

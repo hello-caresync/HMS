@@ -15,7 +15,10 @@ import {
   Loader2,
   LayoutDashboard,
   Activity,
+  Users,
+  Siren,
 } from 'lucide-react';
+import DoctorProviders from '@/components/doctor/DoctorProviders';
 
 type LayoutDoctorSession = {
   doctor_name?: string;
@@ -24,7 +27,14 @@ type LayoutDoctorSession = {
   department?: string;
 };
 
-export default function DoctorLayout({ children }: { children: React.ReactNode }) {
+function isActivePath(pathname: string | null, href: string) {
+  if (!pathname) return false;
+  const normalized = pathname.replace(/\/$/, '') || '/';
+  const target = href.replace(/\/$/, '') || '/';
+  return normalized === target || normalized.startsWith(`${target}/`);
+}
+
+function DoctorShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [initializing, setInitializing] = useState(true);
@@ -47,13 +57,12 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
           window.localStorage.getItem('active_doctor_session') ||
           window.localStorage.getItem('curasync_active_doctor');
         if (!savedSession) {
-          router.replace('/doctor/login');
+          router.replace('/doctor/login/');
           return;
         }
         setDoctorSession(JSON.parse(savedSession) as LayoutDoctorSession);
       } catch {
-        console.warn('Session parse notice');
-        router.replace('/doctor/login');
+        router.replace('/doctor/login/');
         return;
       }
       setInitializing(false);
@@ -67,7 +76,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
       window.localStorage.removeItem('active_doctor_session');
       window.localStorage.removeItem('curasync_active_doctor');
     }
-    router.push('/doctor/login');
+    router.push('/doctor/login/');
   };
 
   if (pathname.includes('/login')) {
@@ -76,155 +85,116 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
 
   if (initializing) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F4F6F9]">
-        <div className="flex items-center gap-3 rounded-2xl bg-[#2C1929] px-6 py-4 text-white shadow-2xl">
-          <Loader2 className="h-5 w-5 animate-spin text-[#D8A657]" />
-          <span className="text-xs font-black">Initializing Workspace...</span>
+      <div className="flex min-h-screen items-center justify-center bg-[#F6F9FB]">
+        <div className="flex items-center gap-3 rounded-2xl bg-[#173F5F] px-6 py-4 text-white shadow-2xl">
+          <Loader2 className="h-5 w-5 animate-spin text-[#2A9D8F]" />
+          <span className="text-xs font-black">Initializing Command Center…</span>
         </div>
       </div>
     );
   }
 
-  // DoctorWorkspace owns its deep-plum chrome — avoid a nested sidebar shell.
-  if (pathname === '/doctor/dashboard') {
-    return <>{children}</>;
-  }
+  const nav = [
+    { href: '/doctor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/doctor/queue', label: 'SmartQ OPD', icon: Clock },
+    { href: '/doctor/patients', label: 'Patients', icon: Users },
+    { href: '/doctor/records', label: 'Records', icon: ClipboardList },
+    { href: '/doctor/messages', label: 'Messages', icon: MessageSquare },
+    { href: '/doctor/emergency', label: 'Emergency SOS', icon: Siren },
+    { href: '/doctor/schedule', label: 'Schedule', icon: Calendar },
+    { href: '/doctor/profile', label: 'Profile', icon: User },
+  ] as const;
 
   return (
-    <div className="min-h-screen bg-[#F4F6F9] text-[#2C243B] font-sans flex">
-      
-      {/* STATIC FIXED SIDEBAR */}
-      <aside className="sticky top-0 h-screen w-64 bg-[#2C1929] text-white p-6 flex flex-col justify-between shrink-0 shadow-2xl z-30 border-r border-[#482A41] overflow-y-auto">
+    <div className="flex min-h-screen bg-[#F6F9FB] font-sans text-[#173F5F]">
+      <aside className="sticky top-0 z-30 flex h-screen w-64 shrink-0 flex-col justify-between overflow-y-auto border-r border-[#E8F1F8] bg-[#173F5F] p-6 text-white shadow-xl">
         <div className="space-y-8">
-          
-          {/* BRAND HEADER */}
-          <div className="flex items-center gap-3 border-b border-[#482A41] pb-5">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#894A66] to-[#572E54] text-[#D8A657] font-black shadow-lg shrink-0">
-              <Stethoscope className="h-6 w-6" />
+          <div className="flex items-center gap-3 border-b border-[#20639B]/40 pb-5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#20639B] font-black shadow-lg">
+              <Stethoscope className="h-6 w-6 text-[#2A9D8F]" />
             </div>
             <div>
-              <h2 className="text-base font-black tracking-wide text-white leading-tight">Regal Hospital</h2>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#D8A657]">Doctor Portal</p>
+              <h2 className="text-base font-black leading-tight tracking-wide">Regal Hospital</h2>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#2A9D8F]">
+                Doctor Command Center
+              </p>
             </div>
           </div>
 
-          {/* CLINICIAN PROFILE BADGE */}
-          <div className="rounded-2xl bg-[#3D2339] p-3.5 border border-[#572E54] space-y-1">
+          <div className="space-y-1 rounded-2xl border border-[#20639B]/40 bg-[#20639B]/20 p-3.5">
             <div className="flex items-center justify-between">
-              <span className="text-[9px] font-black uppercase tracking-wider text-[#D8A657]">Active Clinician</span>
-              <Activity className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
+              <span className="text-[9px] font-black uppercase tracking-wider text-[#2A9D8F]">
+                Active Clinician
+              </span>
+              <Activity className="h-3.5 w-3.5 animate-pulse text-emerald-400" />
             </div>
-            <p className="text-xs font-black text-white truncate">{doctorSession?.doctor_name || 'Dr SURIRAJU V'}</p>
-            <p className="text-[10px] font-bold text-[#A9C5E3]">{doctorSession?.employeeId || 'RH-D01'} • {doctorSession?.department || 'Urology'}</p>
+            <p className="truncate text-xs font-black">{doctorSession?.doctor_name || 'Clinician'}</p>
+            <p className="text-[10px] font-bold text-[#E8F1F8]/80">
+              {doctorSession?.employeeId || 'RH-D01'} • {doctorSession?.department || 'OPD'}
+            </p>
           </div>
 
-          {/* NAVIGATION MENU */}
-          <nav className="space-y-1.5 text-xs font-extrabold">
-            <button
-              onClick={() => router.push('/doctor/dashboard')}
-              className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition ${
-                pathname === '/doctor/dashboard'
-                  ? 'bg-gradient-to-r from-[#894A66] to-[#572E54] text-white shadow-lg border border-[#894A66]'
-                  : 'text-[#9DA6CD] hover:bg-[#3D2339] hover:text-white'
-              }`}
-            >
-              <LayoutDashboard className="h-4 w-4 text-[#D8A657]" /> Dashboard
-            </button>
-
-            <button
-              onClick={() => router.push('/doctor/queue')}
-              className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition ${
-                pathname === '/doctor/queue'
-                  ? 'bg-gradient-to-r from-[#894A66] to-[#572E54] text-white shadow-lg border border-[#894A66]'
-                  : 'text-[#9DA6CD] hover:bg-[#3D2339] hover:text-white'
-              }`}
-            >
-              <Clock className="h-4 w-4 text-[#D8A657]" /> Live OPD Queue
-            </button>
-
-            <button
-              onClick={() => router.push('/doctor/records')}
-              className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition ${
-                pathname === '/doctor/records'
-                  ? 'bg-gradient-to-r from-[#894A66] to-[#572E54] text-white shadow-lg border border-[#894A66]'
-                  : 'text-[#9DA6CD] hover:bg-[#3D2339] hover:text-white'
-              }`}
-            >
-              <ClipboardList className="h-4 w-4 text-[#D8A657]" /> Patient Records
-            </button>
-
-            <button
-              onClick={() => router.push('/doctor/messages')}
-              className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition ${
-                pathname === '/doctor/messages'
-                  ? 'bg-gradient-to-r from-[#894A66] to-[#572E54] text-white shadow-lg border border-[#894A66]'
-                  : 'text-[#9DA6CD] hover:bg-[#3D2339] hover:text-white'
-              }`}
-            >
-              <MessageSquare className="h-4 w-4 text-[#D8A657]" /> Messages
-            </button>
-
-            <button
-              onClick={() => router.push('/doctor/schedule')}
-              className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition ${
-                pathname === '/doctor/schedule'
-                  ? 'bg-gradient-to-r from-[#894A66] to-[#572E54] text-white shadow-lg border border-[#894A66]'
-                  : 'text-[#9DA6CD] hover:bg-[#3D2339] hover:text-white'
-              }`}
-            >
-              <Calendar className="h-4 w-4 text-[#D8A657]" /> Schedule & Slots
-            </button>
-
-            <button
-              onClick={() => router.push('/doctor/profile')}
-              className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition ${
-                pathname === '/doctor/profile'
-                  ? 'bg-gradient-to-r from-[#894A66] to-[#572E54] text-white shadow-lg border border-[#894A66]'
-                  : 'text-[#9DA6CD] hover:bg-[#3D2339] hover:text-white'
-              }`}
-            >
-              <User className="h-4 w-4 text-[#D8A657]" /> Doctor Profile
-            </button>
+          <nav className="space-y-1 text-xs font-extrabold">
+            {nav.map(({ href, label, icon: Icon }) => (
+              <button
+                key={href}
+                type="button"
+                onClick={() => router.push(`${href}/`)}
+                className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 transition ${
+                  isActivePath(pathname, href)
+                    ? 'border border-[#2A9D8F]/40 bg-[#20639B] text-white shadow-lg'
+                    : 'text-[#E8F1F8]/70 hover:bg-[#20639B]/30 hover:text-white'
+                }`}
+              >
+                <Icon className="h-4 w-4 text-[#2A9D8F]" /> {label}
+              </button>
+            ))}
           </nav>
-
         </div>
 
-        {/* LOGOUT */}
-        <div className="pt-6 border-t border-[#482A41]">
+        <div className="border-t border-[#20639B]/40 pt-6">
           <button
+            type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#3D2339] px-4 py-3 text-xs font-black text-rose-300 hover:bg-rose-900/40 hover:text-rose-200 transition border border-rose-900/30"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-900/40 bg-[#20639B]/20 px-4 py-3 text-xs font-black text-rose-200 transition hover:bg-rose-950/40"
           >
             <LogOut className="h-4 w-4" /> End Session
           </button>
         </div>
       </aside>
 
-      {/* MAIN CONTENT CANVAS */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 p-4 px-8 flex items-center justify-between shadow-sm">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[#E8F1F8] bg-white/95 px-6 py-4 shadow-sm backdrop-blur-md md:px-8">
           <div className="flex items-center gap-3">
-            <ShieldCheck className="h-5 w-5 text-[#894A66]" />
-            <span className="text-xs font-black text-[#2C243B]">
-              HIPAA Compliant Session • OPD Consultation Desk
+            <ShieldCheck className="h-5 w-5 text-[#2A9D8F]" />
+            <span className="text-xs font-black text-[#173F5F]">
+              HIPAA Compliant Session • Clinical Command Center
             </span>
           </div>
-
           <div className="flex items-center gap-3">
-            <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F4F6F9] text-[#894A66] hover:bg-slate-200 transition">
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E8F1F8] text-[#173F5F] transition hover:bg-[#20639B]/10"
+              aria-label="Notifications"
+            >
               <Bell className="h-4 w-4" />
             </button>
-            <span className="rounded-full bg-[#894A66] px-3.5 py-1 text-[10px] font-black uppercase text-white shadow-sm">
+            <span className="rounded-full bg-[#173F5F] px-3.5 py-1 text-[10px] font-black uppercase text-white shadow-sm">
               {doctorSession?.employeeId || 'RH-D01'}
             </span>
           </div>
         </header>
 
-        <main className="flex-1 p-6 md:p-8">
-          {children}
-        </main>
+        <main className="flex-1 p-6 md:p-8">{children}</main>
       </div>
-
     </div>
+  );
+}
+
+export default function DoctorLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <DoctorProviders>
+      <DoctorShell>{children}</DoctorShell>
+    </DoctorProviders>
   );
 }

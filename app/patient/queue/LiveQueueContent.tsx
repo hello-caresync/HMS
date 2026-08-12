@@ -17,6 +17,7 @@ import { resolvePatientDbId } from '@/lib/patient/constants';
 import { usePatientAuth } from '@/lib/patient/auth/PatientAuthProvider';
 import { PATIENT_ROUTES } from '@/lib/patient/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 type QueueData = {
   id: string;
@@ -77,7 +78,7 @@ export default function LiveQueueContent() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'patient_appointments' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const updated = (payload.new ?? payload.old) as QueueData | undefined;
           if (!updated) return;
           if (updated.patient_id !== patientDbId && !appointmentId) return;

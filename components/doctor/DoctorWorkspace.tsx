@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore 
 import {
   Users,
   Activity,
-  Bell,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -12,8 +11,10 @@ import {
   FileText,
   Wifi,
   WifiOff,
+  RefreshCw,
+  Play,
   Stethoscope,
-  LogOut,
+  Loader2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
@@ -24,7 +25,7 @@ import {
   updateOpdQueueStatus,
 } from '@/lib/clinical/bridge';
 import type { OpdQueueItem, QueueStatus } from '@/lib/clinical/types';
-import { clearDoctorSession, getActiveDoctorSession, type DoctorSession } from '@/lib/doctor/session';
+import { getActiveDoctorSession, type DoctorSession } from '@/lib/doctor/session';
 
 const emptySubscribe = () => () => {};
 
@@ -37,6 +38,17 @@ function readDoctorSession(): DoctorSession | null {
   return getActiveDoctorSession();
 }
 
+const glassCard =
+  'rounded-3xl border border-white/70 bg-white/55 shadow-[12px_12px_28px_rgba(157,166,205,0.22),-9px_-9px_24px_white] backdrop-blur-2xl';
+const glassSoft =
+  'rounded-3xl border border-white/70 bg-gradient-to-br from-white/85 to-[#BDE2F5]/35 shadow-[9px_9px_20px_rgba(157,166,205,0.25),-8px_-8px_18px_white]';
+const btnPrimary =
+  'inline-flex active:scale-95 items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-[#894A66] to-[#93688E] px-5 py-2.5 text-sm font-bold text-white shadow-[7px_7px_16px_rgba(137,74,102,0.28),-5px_-5px_14px_white] transition disabled:opacity-50';
+const btnGhost =
+  'inline-flex active:scale-95 items-center gap-2 rounded-2xl border border-white/80 bg-white/60 px-4 py-2.5 text-sm font-bold text-[#894A66] shadow-[5px_5px_12px_rgba(44,36,59,0.1),-5px_-5px_12px_white] transition disabled:opacity-50';
+const fieldClass =
+  'mt-1.5 w-full rounded-2xl border border-white/80 bg-[#F2F6FA]/75 px-4 py-3 text-xs font-bold text-[#2C243B] outline-none ring-[#93688E]/30 focus:ring-4';
+
 export function DoctorWorkspace() {
   const router = useRouter();
   const isClient = useIsClient();
@@ -44,6 +56,7 @@ export function DoctorWorkspace() {
   const [queue, setQueue] = useState<OpdQueueItem[]>([]);
   const [activePatient, setActivePatient] = useState<OpdQueueItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const [diagnosis, setDiagnosis] = useState('');
   const [prescription, setPrescription] = useState('');
@@ -55,19 +68,26 @@ export function DoctorWorkspace() {
   const doctorName = session?.doctor_name || session?.fullName || 'Clinician';
   const department = session?.department || 'OPD';
 
-  const activeCount = useMemo(
-    () => queue.filter((q) => q.status !== 'COMPLETED' && q.status !== 'CANCELLED').length,
-    [queue],
-  );
+  const stats = useMemo(() => {
+    const nowServing = queue.filter((q) => q.status === 'IN_PROGRESS').length;
+    const waiting = queue.filter((q) => q.status === 'SCHEDULED').length;
+    const completed = queue.filter((q) => q.status === 'COMPLETED').length;
+    return [
+      ['NOW SERVING', nowServing, Play],
+      ['WAITING', waiting, Clock],
+      ['COMPLETED', completed, CheckCircle2],
+    ] as const;
+  }, [queue]);
 
   const showToast = (message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(null), 3200);
   };
 
-  const loadQueue = useCallback(async (clinicianId: string) => {
+  const loadQueue = useCallback(async (clinicianId: string, quiet = false) => {
     if (!clinicianId) return;
-    setIsLoading(true);
+    if (!quiet) setIsLoading(true);
+    else setSyncing(true);
     try {
       const rows = await fetchDoctorOpdQueue(clinicianId);
       setQueue(rows);
@@ -84,6 +104,7 @@ export function DoctorWorkspace() {
       setIsOnline(false);
     } finally {
       setIsLoading(false);
+      setSyncing(false);
     }
   }, []);
 
@@ -121,10 +142,10 @@ export function DoctorWorkspace() {
               filter: `doctor_id=eq.${doctorId}`,
             },
             () => {
-              void loadQueue(doctorId);
+              void loadQueue(doctorId, true);
             },
           )
-          .subscribe((status) => {
+          .subscribe((status: string) => {
             if (status === 'SUBSCRIBED') setIsOnline(true);
             if (status === 'CLOSED' || status === 'CHANNEL_ERROR') setIsOnline(false);
           });
@@ -156,6 +177,15 @@ export function DoctorWorkspace() {
       setPrescription('');
       setClinicalAdvice('');
     }
+  };
+
+  const callNext = () => {
+    const next = queue.find((q) => q.status === 'SCHEDULED');
+    if (!next) {
+      showToast('No waiting patients');
+      return;
+    }
+    void updateStatus(next.id, 'IN_PROGRESS');
   };
 
   const handleSendPrescription = async () => {
@@ -200,16 +230,11 @@ export function DoctorWorkspace() {
     }
   };
 
-  const handleLogout = () => {
-    clearDoctorSession();
-    router.push('/doctor/login/');
-  };
-
   if (!isClient || !session) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-900 text-slate-300">
-        <div className="flex items-center gap-3 rounded-2xl border border-purple-900/30 bg-slate-950 px-6 py-4 text-xs font-semibold">
-          <Activity className="h-4 w-4 animate-pulse text-purple-400" />
+      <div className="flex min-h-72 items-center justify-center text-[#894A66]">
+        <div className="flex items-center gap-3 text-sm font-bold">
+          <Loader2 className="h-5 w-5 animate-spin" />
           Loading clinical workspace…
         </div>
       </div>
@@ -217,104 +242,88 @@ export function DoctorWorkspace() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-900 font-sans text-slate-100">
-      {/* Obsidian plum sidebar */}
-      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col justify-between border-r border-purple-900/30 bg-[#2C1929] p-5">
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 border-b border-purple-900/30 pb-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-600 text-white shadow-lg">
-              <Stethoscope className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-black text-white">Regal Hospital</p>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-purple-300">
-                Doctor Portal
-              </p>
-            </div>
-          </div>
+    <section className="relative min-h-full overflow-hidden bg-[#F2F6FA] text-[#2C243B]">
+      <div className="pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-[#BDE2F5]/70 blur-3xl" />
+      <div className="pointer-events-none absolute right-0 top-0 h-96 w-96 rounded-full bg-[#9887B1]/25 blur-3xl" />
 
-          <div className="space-y-1 rounded-2xl border border-purple-900/30 bg-slate-950/40 p-3.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] font-black uppercase tracking-wider text-purple-300">
-                Active Clinician
-              </span>
-              <Activity className="h-3.5 w-3.5 animate-pulse text-emerald-400" />
+      <div className="relative mx-auto max-w-7xl space-y-6">
+        <header className={`flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7 ${glassCard}`}>
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[#894A66]">
+              <Stethoscope className="h-4 w-4" /> OPD Clinical Suite
             </div>
-            <p className="truncate text-xs font-black text-white">{doctorName}</p>
-            <p className="text-[10px] font-bold text-slate-300">
-              {doctorId} • {department}
+            <h1 className="text-2xl font-black tracking-tight sm:text-4xl">SmartQ consultation desk</h1>
+            <p className="mt-1 text-sm text-[#2C243B]/60">
+              {doctorName} · {department} · {doctorId}
             </p>
           </div>
-
-          <div className="rounded-2xl border border-purple-900/30 bg-slate-950/30 p-3 text-[11px] font-bold text-slate-300">
-            SmartQ stream filtered to <span className="text-purple-300">{doctorId}</span> only.
-            Switching login profile swaps this deck.
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-900/40 bg-slate-950/50 px-4 py-3 text-xs font-black text-rose-300 transition hover:bg-rose-950/40"
-        >
-          <LogOut className="h-4 w-4" /> End Session
-        </button>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-purple-900/30 bg-slate-950/80 px-6 backdrop-blur">
-          <div className="flex items-center gap-4">
-            <h2 className="text-lg font-semibold text-white">OPD Clinical Suite</h2>
-            <span className="rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-xs font-semibold text-purple-400">
-              Active Queue: {activeCount} Patients
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-white/80 bg-white/60 px-3 py-2 text-xs font-bold text-[#2C243B]/70">
               {isOnline ? (
-                <Wifi className="h-4 w-4 text-emerald-400" />
+                <Wifi className="h-3.5 w-3.5 text-emerald-600" />
               ) : (
-                <WifiOff className="h-4 w-4 text-amber-400" />
+                <WifiOff className="h-3.5 w-3.5 text-amber-600" />
               )}
-              <span className={isOnline ? 'font-medium text-emerald-400' : 'font-medium text-amber-400'}>
-                {isOnline ? 'Supabase Live' : 'Offline Cache'}
-              </span>
+              {isOnline ? 'Supabase Live' : 'Offline Cache'}
             </div>
             <button
               type="button"
-              className="relative rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white"
-              aria-label="Notifications"
+              onClick={() => void loadQueue(doctorId, true)}
+              disabled={syncing}
+              className={btnGhost}
             >
-              <Bell className="h-5 w-5" />
+              <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} /> Refresh
+            </button>
+            <button type="button" onClick={callNext} className={btnPrimary}>
+              <Play className="h-4 w-4" /> Call next
             </button>
           </div>
         </header>
 
         {toast ? (
-          <div className="mx-6 mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs font-bold text-emerald-300">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">
             {toast}
           </div>
         ) : null}
 
-        <div className="grid min-h-0 flex-1 grid-cols-12 overflow-hidden">
-          <div className="col-span-12 flex flex-col border-r border-purple-900/30 bg-slate-950/40 md:col-span-4">
-            <div className="flex items-center justify-between border-b border-purple-900/30 p-4">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-                <Clock className="h-4 w-4 text-purple-400" /> Live SmartQ Deck
-              </h3>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {stats.map(([label, value, Icon], index) => (
+            <div key={label} className={`p-5 ${glassSoft}`}>
+              <div className="flex items-start justify-between">
+                <Icon className="h-6 w-6 text-[#93688E]" />
+                <span className="text-xs font-black text-[#9887B1]">0{index + 1}</span>
+              </div>
+              <p className="mt-5 text-xs font-bold uppercase tracking-wider text-[#2C243B]/50">
+                {label}
+              </p>
+              <p className="mt-1 text-3xl font-black text-[#894A66]">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
+          {/* Live SmartQ Deck */}
+          <aside className={`flex min-h-[420px] flex-col overflow-hidden ${glassCard}`}>
+            <div className="flex items-center justify-between border-b border-white/60 px-5 py-4">
+              <h2 className="flex items-center gap-2 text-sm font-black text-[#2C243B]">
+                <Clock className="h-4 w-4 text-[#894A66]" /> Live SmartQ Deck
+              </h2>
+              <span className="rounded-full bg-[#BDE2F5]/55 px-2.5 py-1 text-[10px] font-black text-[#894A66]">
+                {doctorId}
+              </span>
             </div>
 
             <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
               {isLoading ? (
-                <div className="flex h-40 items-center justify-center text-xs text-slate-400">
-                  Loading SmartQ deck...
+                <div className="flex h-48 flex-col items-center justify-center gap-2 text-sm text-[#2C243B]/60">
+                  <Loader2 className="h-6 w-6 animate-spin text-[#894A66]" />
+                  Loading SmartQ deck…
                 </div>
               ) : queue.length === 0 ? (
-                <div className="flex h-40 flex-col items-center justify-center p-4 text-center text-slate-500">
-                  <Users className="mb-1 h-8 w-8 stroke-1 text-slate-600" />
-                  <p className="text-xs">No patients in your queue yet.</p>
-                  <p className="mt-1 text-[10px] text-slate-600">
+                <div className="flex h-48 flex-col items-center justify-center p-6 text-center">
+                  <Users className="mb-3 h-10 w-10 text-[#9887B1]" />
+                  <h3 className="font-bold">No patients in your queue yet</h3>
+                  <p className="mt-1 text-sm text-[#2C243B]/55">
                     Bookings for {doctorId} appear here in real time.
                   </p>
                 </div>
@@ -330,39 +339,52 @@ export function DoctorWorkspace() {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') setActivePatient(item);
                       }}
-                      className={`cursor-pointer rounded-xl border p-3.5 transition ${
+                      className={`cursor-pointer rounded-3xl border p-4 transition ${
                         isActive
-                          ? 'border-purple-500 bg-purple-950/40 shadow-lg shadow-purple-950/50'
+                          ? 'border-[#894A66]/45 bg-gradient-to-r from-[#894A66]/12 to-white/75 shadow-[6px_6px_15px_rgba(137,74,102,0.18)]'
                           : item.status === 'COMPLETED'
-                            ? 'border-slate-800/50 bg-slate-900/30 opacity-60'
-                            : 'border-slate-800 bg-slate-950 hover:border-slate-700'
+                            ? 'border-white/60 bg-white/40 opacity-70'
+                            : 'border-white/80 bg-gradient-to-r from-white/85 to-[#BDE2F5]/25 shadow-[6px_6px_15px_rgba(157,166,205,0.19),-5px_-5px_13px_white]'
                       }`}
                     >
-                      <div className="mb-2 flex items-start justify-between">
-                        <div>
-                          <span className="text-xs font-bold uppercase tracking-wider text-purple-400">
-                            Token {item.token_number}
-                          </span>
-                          <h4 className="mt-0.5 text-sm font-semibold leading-tight text-slate-100">
-                            {item.patient_name}
-                          </h4>
+                      <div className="mb-2 flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#A9C5E3] to-[#BDE2F5] text-sm font-black text-[#894A66] shadow-[inset_2px_2px_5px_white,inset_-3px_-3px_7px_rgba(137,74,102,0.14)]">
+                            #{item.token_number}
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black leading-tight text-[#2C243B]">
+                              {item.patient_name}
+                            </h4>
+                            <p className="mt-0.5 text-xs font-bold text-[#2C243B]/55">
+                              {item.age} yrs • {item.gender}
+                            </p>
+                          </div>
                         </div>
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
                             item.priority === 'EMERGENCY'
-                              ? 'border border-red-500/30 bg-red-500/20 text-red-400'
+                              ? 'bg-rose-100 text-rose-800'
                               : item.priority === 'URGENT'
-                                ? 'border border-amber-500/30 bg-amber-500/20 text-amber-400'
-                                : 'bg-slate-800 text-slate-400'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-[#9887B1]/15 text-[#894A66]'
                           }`}
                         >
                           {item.priority}
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs text-slate-400">
-                        <span>
-                          {item.age} yrs • {item.gender}
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
+                            item.status === 'IN_PROGRESS'
+                              ? 'bg-[#BDE2F5] text-[#2C243B]'
+                              : item.status === 'COMPLETED'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-[#9887B1]/15 text-[#894A66]'
+                          }`}
+                        >
+                          {item.status.replace('_', ' ')}
                         </span>
                         <div className="flex gap-1.5">
                           {item.status !== 'IN_PROGRESS' && item.status !== 'COMPLETED' && (
@@ -372,13 +394,13 @@ export function DoctorWorkspace() {
                                 e.stopPropagation();
                                 void updateStatus(item.id, 'IN_PROGRESS');
                               }}
-                              className="rounded bg-purple-600 px-2 py-1 text-[11px] font-medium text-white transition hover:bg-purple-500"
+                              className="rounded-xl bg-gradient-to-r from-[#894A66] to-[#93688E] px-3 py-1.5 text-[11px] font-bold text-white transition active:scale-95"
                             >
                               Call Deck
                             </button>
                           )}
                           {item.status === 'IN_PROGRESS' && (
-                            <span className="flex items-center gap-1 text-xs font-medium text-emerald-400">
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700">
                               <Activity className="h-3 w-3 animate-pulse" /> On Deck
                             </span>
                           )}
@@ -389,59 +411,59 @@ export function DoctorWorkspace() {
                 })
               )}
             </div>
-          </div>
+          </aside>
 
-          <div className="col-span-12 flex flex-col overflow-y-auto bg-slate-900 p-6 md:col-span-8">
+          {/* Consultation canvas */}
+          <div className={`min-h-[420px] overflow-hidden ${glassCard}`}>
             {activePatient ? (
-              <div className="space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-900/30 bg-slate-950 p-5">
+              <div className="space-y-5 p-5 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/80 bg-gradient-to-r from-white/90 to-[#BDE2F5]/30 p-5 shadow-[6px_6px_15px_rgba(157,166,205,0.16)]">
                   <div>
-                    <div className="flex items-center gap-3">
-                      <h2 className="text-xl font-bold text-white">{activePatient.patient_name}</h2>
-                      <span className="rounded bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-300">
-                        Token {activePatient.token_number}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-xl font-black text-[#2C243B]">{activePatient.patient_name}</h2>
+                      <span className="rounded-full bg-[#BDE2F5] px-2.5 py-1 text-[10px] font-black text-[#2C243B]">
+                        Token #{activePatient.token_number}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-sm text-[#2C243B]/60">
                       {activePatient.age} Yrs • {activePatient.gender} • Blood Group:{' '}
-                      <span className="font-semibold text-slate-200">
+                      <span className="font-bold text-[#894A66]">
                         {activePatient.blood_group || '—'}
                       </span>
                     </p>
                   </div>
-
                   <button
                     type="button"
                     onClick={() => void updateStatus(activePatient.id, 'COMPLETED')}
-                    className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-medium text-white transition hover:bg-emerald-500"
+                    className="inline-flex items-center gap-2 rounded-2xl bg-[#2C243B] px-4 py-2.5 text-sm font-bold text-white shadow-[6px_6px_14px_rgba(44,36,59,0.22)] transition active:scale-95"
                   >
                     <CheckCircle2 className="h-4 w-4" /> Finish Consultation
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  <div className="rounded-xl border border-purple-900/30 bg-slate-950 p-4">
-                    <p className="text-xs font-medium text-slate-400">Blood Pressure</p>
-                    <p className="mt-1 text-lg font-bold text-purple-400">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  <div className={`p-4 ${glassSoft}`}>
+                    <p className="text-xs font-bold text-[#2C243B]/50">Blood Pressure</p>
+                    <p className="mt-1 text-lg font-black text-[#894A66]">
                       {activePatient.vitals?.bp || '120/80'}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-purple-900/30 bg-slate-950 p-4">
-                    <p className="text-xs font-medium text-slate-400">Heart Rate</p>
-                    <p className="mt-1 text-lg font-bold text-emerald-400">
+                  <div className={`p-4 ${glassSoft}`}>
+                    <p className="text-xs font-bold text-[#2C243B]/50">Heart Rate</p>
+                    <p className="mt-1 text-lg font-black text-emerald-700">
                       {activePatient.vitals?.hr || '72 bpm'}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-purple-900/30 bg-slate-950 p-4">
-                    <p className="text-xs font-medium text-slate-400">Spo2</p>
-                    <p className="mt-1 text-lg font-bold text-cyan-400">
+                  <div className={`p-4 ${glassSoft}`}>
+                    <p className="text-xs font-bold text-[#2C243B]/50">Spo2</p>
+                    <p className="mt-1 text-lg font-black text-cyan-700">
                       {activePatient.vitals?.spo2 || '98%'}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-purple-900/30 bg-slate-950 p-4">
-                    <p className="text-xs font-medium text-slate-400">Known Allergies</p>
-                    <div className="mt-1 flex items-center gap-1 text-xs font-semibold text-amber-400">
-                      <AlertTriangle className="h-3 w-3" />
+                  <div className={`p-4 ${glassSoft}`}>
+                    <p className="text-xs font-bold text-[#2C243B]/50">Known Allergies</p>
+                    <div className="mt-1 flex items-center gap-1 text-xs font-bold text-amber-700">
+                      <AlertTriangle className="h-3.5 w-3.5" />
                       {activePatient.allergies?.length
                         ? activePatient.allergies.join(', ')
                         : 'None'}
@@ -449,74 +471,71 @@ export function DoctorWorkspace() {
                   </div>
                 </div>
 
-                <div className="space-y-4 rounded-2xl border border-purple-900/30 bg-slate-950 p-5">
-                  <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-                    <FileText className="h-4 w-4 text-purple-400" /> Rx & Direct Guidance Dispatcher
+                <div className="space-y-4 rounded-3xl border border-white/80 bg-white/60 p-5 shadow-[6px_6px_15px_rgba(157,166,205,0.14)]">
+                  <h3 className="flex items-center gap-2 text-sm font-black text-[#2C243B]">
+                    <FileText className="h-4 w-4 text-[#894A66]" /> Rx & Direct Guidance Dispatcher
                   </h3>
 
-                  <div className="space-y-3">
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-400">
-                        Diagnosis / Disease
-                      </label>
-                      <input
-                        value={diagnosis}
-                        onChange={(e) => setDiagnosis(e.target.value)}
-                        placeholder="e.g. Acute pharyngitis"
-                        className="w-full rounded-xl border border-slate-800 bg-slate-900 p-3 text-xs text-slate-100 focus:border-purple-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-400">
-                        e-Prescription (medications & dosage)
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={prescription}
-                        onChange={(e) => setPrescription(e.target.value)}
-                        placeholder="Tab Paracetamol 500mg 1-0-1 × 3 days..."
-                        className="w-full rounded-xl border border-slate-800 bg-slate-900 p-3 text-xs text-slate-100 focus:border-purple-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-400">
-                        Direct Advice to Patient App
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={clinicalAdvice}
-                        onChange={(e) => setClinicalAdvice(e.target.value)}
-                        placeholder="Drink warm water, rest for 2 days..."
-                        className="w-full rounded-xl border border-slate-800 bg-slate-900 p-3 text-xs text-slate-100 focus:border-purple-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => void handleSendPrescription()}
-                      disabled={isSending}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 py-2.5 text-xs font-semibold text-white transition hover:bg-purple-500 disabled:bg-purple-800"
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      {isSending ? 'Syncing…' : 'Send Direct to Patient App'}
-                    </button>
+                  <div>
+                    <label className="text-xs font-bold text-[#2C243B]/60">Diagnosis / Disease</label>
+                    <input
+                      value={diagnosis}
+                      onChange={(e) => setDiagnosis(e.target.value)}
+                      placeholder="e.g. Acute pharyngitis"
+                      className={fieldClass}
+                    />
                   </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[#2C243B]/60">
+                      e-Prescription (medications & dosage)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={prescription}
+                      onChange={(e) => setPrescription(e.target.value)}
+                      placeholder="Tab Paracetamol 500mg 1-0-1 × 3 days..."
+                      className={fieldClass}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-[#2C243B]/60">
+                      Direct Advice to Patient App
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={clinicalAdvice}
+                      onChange={(e) => setClinicalAdvice(e.target.value)}
+                      placeholder="Drink warm water, rest for 2 days..."
+                      className={fieldClass}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => void handleSendPrescription()}
+                    disabled={isSending}
+                    className={`${btnPrimary} w-full`}
+                  >
+                    <Send className="h-4 w-4" />
+                    {isSending ? 'Syncing…' : 'Send Direct to Patient App'}
+                  </button>
                 </div>
               </div>
             ) : (
-              <div className="flex h-full flex-col items-center justify-center text-center text-slate-500">
-                <Users className="mb-2 h-12 w-12 stroke-1 text-slate-600" />
-                <p className="text-sm">
-                  Select or call a patient from the SmartQ deck to start consultation.
+              <div className="flex min-h-[420px] flex-col items-center justify-center p-8 text-center">
+                <Users className="mb-3 h-10 w-10 text-[#9887B1]" />
+                <h2 className="font-bold">Select a patient to start consultation</h2>
+                <p className="mt-1 text-sm text-[#2C243B]/55">
+                  Call a token from the Live SmartQ Deck to open vitals and e-prescription tools.
                 </p>
               </div>
             )}
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 

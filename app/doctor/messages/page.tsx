@@ -153,7 +153,7 @@ export default function DoctorMessagesPage() {
         },
         () => void loadMessages(true),
       )
-      .subscribe((status) => {
+      .subscribe((status: string) => {
         if (status === 'CHANNEL_ERROR') setOffline(true);
       });
 

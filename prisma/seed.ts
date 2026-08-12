@@ -138,7 +138,7 @@ async function main() {
   );
 
   await Promise.all(
-    patients.map((p) =>
+    patients.map((p: { id: string }) =>
       prisma.doctorPatientAssignment.create({
         data: { doctorId: doctor.id, patientId: p.id },
       }),

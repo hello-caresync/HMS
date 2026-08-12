@@ -202,20 +202,20 @@ export async function fetchHospitalData(): Promise<void> {
         .limit(50),
     ]);
 
-  if (patients.data?.length) store.setPatients(patients.data.map((r) => mapPatientRow(r as Record<string, unknown>)));
+  if (patients.data?.length) store.setPatients(patients.data.map((r: Record<string, unknown>) => mapPatientRow(r)));
   if (appointments.data?.length)
-    store.setAppointments(appointments.data.map((r) => mapAppointmentRow(r as Record<string, unknown>)));
-  if (opd.data?.length) store.setOpdVisits(opd.data.map((r) => mapOpdRow(r as Record<string, unknown>)));
+    store.setAppointments(appointments.data.map((r: Record<string, unknown>) => mapAppointmentRow(r)));
+  if (opd.data?.length) store.setOpdVisits(opd.data.map((r: Record<string, unknown>) => mapOpdRow(r)));
   if (admissions.data?.length)
-    store.setAdmissions(admissions.data.map((r) => mapAdmissionRow(r as Record<string, unknown>)));
+    store.setAdmissions(admissions.data.map((r: Record<string, unknown>) => mapAdmissionRow(r)));
   if (invoices.data?.length)
-    store.setInvoices(invoices.data.map((r) => mapInvoiceRow(r as Record<string, unknown>)));
+    store.setInvoices(invoices.data.map((r: Record<string, unknown>) => mapInvoiceRow(r)));
   if (inventory.data?.length)
-    store.setInventory(inventory.data.map((r) => mapInventoryRow(r as Record<string, unknown>)));
-  if (vendors.data?.length) store.setVendors(vendors.data.map((r) => mapVendorRow(r as Record<string, unknown>)));
-  if (pos.data?.length) store.setPurchaseOrders(pos.data.map((r) => mapPoRow(r as Record<string, unknown>)));
+    store.setInventory(inventory.data.map((r: Record<string, unknown>) => mapInventoryRow(r)));
+  if (vendors.data?.length) store.setVendors(vendors.data.map((r: Record<string, unknown>) => mapVendorRow(r)));
+  if (pos.data?.length) store.setPurchaseOrders(pos.data.map((r: Record<string, unknown>) => mapPoRow(r)));
   if (notifications.data?.length)
-    store.setNotifications(notifications.data.map((r) => mapNotificationRow(r as Record<string, unknown>)));
+    store.setNotifications(notifications.data.map((r: Record<string, unknown>) => mapNotificationRow(r)));
 
   store.recomputeMetrics();
 }

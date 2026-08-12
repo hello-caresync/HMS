@@ -1,4 +1,5 @@
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 import { getSelectedHospital, type SelectedHospital } from '../hospital-context';
 
@@ -152,7 +153,7 @@ export function subscribeEmergencyAlert(
         table: 'emergency_alerts',
         filter: `id=eq.${alertId}`,
       },
-      (payload) => {
+      (payload: RealtimePostgresChangesPayload<any>) => {
         if (payload.new) onUpdate(payload.new as EmergencyAlert);
       },
     )

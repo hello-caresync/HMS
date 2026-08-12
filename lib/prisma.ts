@@ -3,7 +3,7 @@
  * Doctor APIs use mock clinical data + optional Supabase (@/lib/supabase/client).
  */
 
-export { getSupabase } from '@/lib/supabase/client';
+export { createClient as getSupabase } from '@/lib/supabase/client';
 
 /** @deprecated Prisma removed — use mock services in lib/doctor/server/clinical-service.ts */
 export async function getPrisma(): Promise<never> {

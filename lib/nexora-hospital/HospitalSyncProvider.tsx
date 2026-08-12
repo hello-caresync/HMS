@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 import { fetchHospitalData } from './services/hospital-db';
 import { useHospitalStore } from './store';
@@ -107,7 +108,7 @@ export function HospitalSyncProvider() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'appointments' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           appointmentToast(payload as RealtimePayload);
           scheduleRefresh();
         },
@@ -120,7 +121,7 @@ export function HospitalSyncProvider() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'ecosystem_appointments' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           appointmentToast(payload as RealtimePayload);
           scheduleRefresh();
         },
@@ -133,7 +134,7 @@ export function HospitalSyncProvider() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'purchase_orders' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           purchaseOrderToast(payload as RealtimePayload);
           scheduleRefresh();
         },
@@ -141,7 +142,7 @@ export function HospitalSyncProvider() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'pharmacy_inventory' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const row = rowFrom(payload as RealtimePayload);
           if (row && payload.eventType !== 'DELETE') {
             const qty = Number(row.quantity_in_stock ?? 0);
@@ -163,7 +164,7 @@ export function HospitalSyncProvider() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'billing_invoices' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           billingToast(payload as RealtimePayload);
           scheduleRefresh();
         },
@@ -171,7 +172,7 @@ export function HospitalSyncProvider() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'invoices' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           billingToast(payload as RealtimePayload);
           scheduleRefresh();
         },
@@ -184,7 +185,7 @@ export function HospitalSyncProvider() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const row = payload.new as {
             title?: string;
             body?: string;
@@ -212,7 +213,7 @@ export function HospitalSyncProvider() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'ecosystem_activity' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const row = payload.new as {
             id: string;
             event_type: string;

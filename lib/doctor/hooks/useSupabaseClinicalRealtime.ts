@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { getSupabaseBrowserClient } from '@/lib/supabase';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 /** Subscribes to Supabase Realtime for ER alerts and STAT lab orders. */
 export function useSupabaseClinicalRealtime() {
@@ -19,7 +20,7 @@ export function useSupabaseClinicalRealtime() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'emergency_alerts' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           toast.error('Emergency alert', {
             description: String((payload.new as { title?: string }).title ?? 'New ER case'),
           });
@@ -30,7 +31,7 @@ export function useSupabaseClinicalRealtime() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'lab_orders' },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const row = payload.new as { urgency?: string };
           if (row.urgency === 'STAT') {
             toast.warning('STAT lab order', { description: 'New STAT lab order received' });

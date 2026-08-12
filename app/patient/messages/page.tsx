@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, MessageSquare, RefreshCw, Send, BellRing } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import {
   CLINICAL_STORAGE,
   readJsonLocal,
@@ -98,7 +99,7 @@ export default function PatientMessagesPage() {
           table: 'patient_messages',
           filter: `patient_id=eq.${patientId}`,
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           const row = payload.new as Record<string, unknown>;
           if (row.sender_type && row.sender_type !== 'doctor') {
             void loadMessages();
