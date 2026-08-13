@@ -690,26 +690,29 @@ export async function savePatientClinicalEncounter(
   }
 
   // Step 3: prescriptions
+  const medicineList = meds.length > 0 ? meds : [];
   const instructions =
-    input.special_instructions ?? input.clinical.clinical_notes ?? null;
+    input.special_instructions?.trim() ||
+    input.clinical.clinical_notes?.trim() ||
+    '';
+
+  const prescriptionPayload = {
+    consultation_id: createdConsultationId || null,
+    appointment_id: appointmentId || createdConsultationId || null,
+    patient_id: patientId || null,
+    doctor_id: doctorId || DEFAULT_ACTIVE_DOCTOR_ID,
+    medicines: medicineList,
+    instructions: instructions || '',
+  };
 
   const { data: prescription, error: rxError } = await client
     .from('prescriptions')
-    .insert([
-      {
-        consultation_id: createdConsultationId,
-        appointment_id: appointmentId,
-        doctor_id: doctorId,
-        patient_id: patientId,
-        medications: JSON.stringify(meds),
-        special_instructions: instructions,
-      },
-    ])
-    .select('id')
+    .insert([prescriptionPayload])
+    .select('*')
     .single();
 
   if (rxError) {
-    throwSaveError('[Consultation Save Error] prescriptions insert failed:', rxError);
+    throw new Error(rxError.message || rxError.details || 'Prescription insert failed');
   }
 
   if (appointmentId) {
@@ -718,7 +721,12 @@ export async function savePatientClinicalEncounter(
 
   return {
     consultation_id: createdConsultationId,
-    prescription_id: prescription?.id ? String(prescription.id) : undefined,
+    prescription_id:
+      prescription?.id != null
+        ? String(prescription.id)
+        : prescription?.prescription_id != null
+          ? String(prescription.prescription_id)
+          : undefined,
   };
 }
 
