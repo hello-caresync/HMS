@@ -652,18 +652,25 @@ export async function savePatientClinicalEncounter(
   const consultationId = String(recordId);
 
   // Step 2: vitals (linked to consultation)
-  const { error: vitalsError } = await client.from('vitals').insert([
-    {
-      consultation_id: consultationId,
-      patient_id: patientId,
-      temperature_f: input.vitals.temperature_f ?? null,
-      bp_systolic: input.vitals.bp_systolic ?? null,
-      bp_diastolic: input.vitals.bp_diastolic ?? null,
-      pulse_bpm: input.vitals.pulse_bpm ?? null,
-      spo2_percent: input.vitals.spo2_percent ?? null,
-      weight_kg: input.vitals.weight_kg ?? null,
-    },
-  ]);
+  const temp = input.vitals.temperature_f;
+  const bpSystolic = input.vitals.bp_systolic;
+  const bpDiastolic = input.vitals.bp_diastolic;
+  const pulse = input.vitals.pulse_bpm;
+  const spo2 = input.vitals.spo2_percent;
+  const weight = input.vitals.weight_kg;
+
+  const vitalsPayload = {
+    consultation_id: consultationId,
+    patient_id: patientId,
+    temperature: temp ? parseFloat(String(temp)) : null,
+    bp_systolic: bpSystolic ? parseInt(String(bpSystolic), 10) : null,
+    bp_diastolic: bpDiastolic ? parseInt(String(bpDiastolic), 10) : null,
+    pulse: pulse ? parseInt(String(pulse), 10) : null,
+    spo2: spo2 ? parseInt(String(spo2), 10) : null,
+    weight: weight ? parseFloat(String(weight)) : null,
+  };
+
+  const { error: vitalsError } = await client.from('vitals').insert([vitalsPayload]);
 
   if (vitalsError) {
     throwSaveError('[Consultation Save Error] vitals insert failed:', vitalsError);
