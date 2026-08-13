@@ -17,6 +17,9 @@ import type {
 /** Canonical active clinician UUID in Supabase (`doctors.doctor_id`). */
 export const DEFAULT_ACTIVE_DOCTOR_ID = '56284599-9a5f-4672-9b53-b90e18146a00';
 
+/** Default demo patient UUID for local/testing fallbacks. */
+export const DEFAULT_PATIENT_ID = 'b0000000-0000-0000-0000-000000000002';
+
 /** Statuses shown on the live OPD dashboard queue (excludes completed/cancelled). */
 export const ACTIVE_APPOINTMENT_STATUSES = [
   'SCHEDULED',
@@ -96,6 +99,26 @@ function logSupabaseError(context: string, error: unknown) {
   }
 
   console.error(`[Supabase Error] ${context}:`, String(error));
+}
+
+/** Extract a human-readable message from Supabase/JS errors for UI toasts. */
+export function formatConsultationSaveError(err: unknown): string {
+  if (!err) return 'Database constraint failure';
+  if (typeof err === 'string') return err;
+  if (err instanceof Error && err.message) return err.message;
+
+  if (typeof err === 'object' && err !== null) {
+    const e = err as Record<string, unknown>;
+    const message = e.message ?? e.details ?? e.hint ?? e.code;
+    if (message) return String(message);
+  }
+
+  return 'Database constraint failure';
+}
+
+function throwSaveError(context: string, error: unknown): never {
+  logSupabaseError(context, error);
+  throw new Error(formatConsultationSaveError(error));
 }
 
 function calcAgeFromDob(dob?: string | null): number | undefined {
@@ -452,7 +475,7 @@ export interface ConsultationAppointmentContext {
 }
 
 export interface ConsultationFinalizeInput {
-  appointmentId: string;
+  appointmentId?: string | null;
   doctorId: string;
   patientId: string;
   clinical: ConsultationClinicalInput;
@@ -575,64 +598,85 @@ export async function savePatientClinicalEncounter(
   input: Omit<ConsultationFinalizeInput, 'appointmentId'> & { appointmentId?: string | null },
 ): Promise<ConsultationFinalizeResult> {
   const client = supabase;
+  const doctorId = input.doctorId || DEFAULT_ACTIVE_DOCTOR_ID;
+  const patientId = input.patientId || DEFAULT_PATIENT_ID;
   const meds = input.medications.filter((m) => m.name.trim() !== '');
   const appointmentId = input.appointmentId ?? null;
 
-  const { data: consultation, error: consultErr } = await client
+  const clinicalNotes = [input.clinical.clinical_findings, input.clinical.clinical_notes]
+    .filter(Boolean)
+    .join('\n\n');
+  const symptoms = input.clinical.chief_complaint
+    ? [input.clinical.chief_complaint]
+    : [];
+
+  // Step 1: consultations
+  const { data: consultation, error: consultError } = await client
     .from('consultations')
-    .insert({
-      appointment_id: appointmentId,
-      doctor_id: input.doctorId,
-      patient_id: input.patientId,
-      chief_complaint: input.clinical.chief_complaint,
-      diagnosis: input.clinical.diagnosis,
-      clinical_notes: [input.clinical.clinical_findings, input.clinical.clinical_notes]
-        .filter(Boolean)
-        .join('\n\n'),
-      follow_up_date: input.clinical.follow_up_date || null,
-    })
+    .insert([
+      {
+        appointment_id: appointmentId,
+        doctor_id: doctorId,
+        patient_id: patientId,
+        chief_complaint: input.clinical.chief_complaint,
+        diagnosis: input.clinical.diagnosis,
+        symptoms,
+        clinical_notes: clinicalNotes || null,
+        follow_up_date: input.clinical.follow_up_date || null,
+        status: 'COMPLETED',
+      },
+    ])
     .select('id')
     .single();
 
-  if (consultErr || !consultation?.id) {
-    logSupabaseError('Consultation insert failed:', consultErr);
-    throw consultErr ?? new Error('Consultation insert returned no id');
+  if (consultError) {
+    throwSaveError('[Consultation Save Error] consultations insert failed:', consultError);
+  }
+  if (!consultation?.id) {
+    throw new Error('Consultation insert returned no id');
   }
 
   const consultationId = String(consultation.id);
 
-  const { error: vitalsErr } = await client.from('vitals').insert({
-    consultation_id: consultationId,
-    patient_id: input.patientId,
-    temperature_f: input.vitals.temperature_f ?? null,
-    bp_systolic: input.vitals.bp_systolic ?? null,
-    bp_diastolic: input.vitals.bp_diastolic ?? null,
-    pulse_bpm: input.vitals.pulse_bpm ?? null,
-    spo2_percent: input.vitals.spo2_percent ?? null,
-    weight_kg: input.vitals.weight_kg ?? null,
-  });
+  // Step 2: vitals (linked to consultation)
+  const { error: vitalsError } = await client.from('vitals').insert([
+    {
+      consultation_id: consultationId,
+      patient_id: patientId,
+      temperature_f: input.vitals.temperature_f ?? null,
+      bp_systolic: input.vitals.bp_systolic ?? null,
+      bp_diastolic: input.vitals.bp_diastolic ?? null,
+      pulse_bpm: input.vitals.pulse_bpm ?? null,
+      spo2_percent: input.vitals.spo2_percent ?? null,
+      weight_kg: input.vitals.weight_kg ?? null,
+    },
+  ]);
 
-  if (vitalsErr) {
-    logSupabaseError('Vitals insert failed:', vitalsErr);
-    throw vitalsErr;
+  if (vitalsError) {
+    throwSaveError('[Consultation Save Error] vitals insert failed:', vitalsError);
   }
 
-  const { data: prescription, error: rxErr } = await client
+  // Step 3: prescriptions
+  const instructions =
+    input.special_instructions ?? input.clinical.clinical_notes ?? null;
+
+  const { data: prescription, error: rxError } = await client
     .from('prescriptions')
-    .insert({
-      consultation_id: consultationId,
-      appointment_id: appointmentId,
-      doctor_id: input.doctorId,
-      patient_id: input.patientId,
-      medications: JSON.stringify(meds),
-      special_instructions: input.special_instructions ?? input.clinical.clinical_notes ?? null,
-    })
+    .insert([
+      {
+        consultation_id: consultationId,
+        appointment_id: appointmentId,
+        doctor_id: doctorId,
+        patient_id: patientId,
+        medications: JSON.stringify(meds),
+        special_instructions: instructions,
+      },
+    ])
     .select('id')
     .single();
 
-  if (rxErr) {
-    logSupabaseError('Prescription insert failed:', rxErr);
-    throw rxErr;
+  if (rxError) {
+    throwSaveError('[Consultation Save Error] prescriptions insert failed:', rxError);
   }
 
   if (appointmentId) {

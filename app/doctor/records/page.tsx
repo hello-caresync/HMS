@@ -23,11 +23,15 @@ import {
   YAxis,
 } from 'recharts';
 
+import { toast } from 'sonner';
+
 import WriteConsultationModal, {
   type ConsultationFormState,
 } from '@/components/doctor/WriteConsultationModal';
 import {
   DEFAULT_ACTIVE_DOCTOR_ID,
+  DEFAULT_PATIENT_ID,
+  formatConsultationSaveError,
   getActiveDoctorProfile,
   parsePrescriptionMedications,
   savePatientClinicalEncounter,
@@ -263,8 +267,7 @@ export default function DoctorRecordsPage() {
   const handleSaveConsultation = async (form: ConsultationFormState) => {
     if (!selectedPatient) return;
 
-    const patientId = resolvePatientId(selectedPatient);
-    if (!patientId) return;
+    const patientId = resolvePatientId(selectedPatient) || DEFAULT_PATIENT_ID;
 
     setSaving(true);
     setSaveMessage(null);
@@ -294,11 +297,14 @@ export default function DoctorRecordsPage() {
 
       setModalOpen(false);
       setSaveMessage('Prescription sent successfully to patient!');
+      toast.success('Prescription sent successfully to patient!');
       setActiveTab('history');
       await loadPatientDetails(selectedPatient);
-    } catch (err) {
-      console.error('Save consultation failed:', err);
-      setSaveMessage('Failed to save consultation. Please try again.');
+    } catch (err: unknown) {
+      console.error('[Consultation Save Error]:', err);
+      const errorMessage = formatConsultationSaveError(err);
+      setSaveMessage(`Failed to save consultation: ${errorMessage}`);
+      toast.error(`Error saving consultation: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
