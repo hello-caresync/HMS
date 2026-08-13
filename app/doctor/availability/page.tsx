@@ -137,7 +137,7 @@ function resolveSlotStatus(slot: ScheduleSlot): 'AVAILABLE' | 'BOOKED' {
   return 'AVAILABLE';
 }
 
-export default function DoctorSchedulePage() {
+export default function DoctorAvailabilityPage() {
   const supabase = createClient();
 
   const [activeDoctorId, setActiveDoctorId] = useState<string>(DEFAULT_ACTIVE_DOCTOR_ID);
@@ -182,15 +182,14 @@ export default function DoctorSchedulePage() {
   }, [supabase]);
 
   const fetchSchedule = useCallback(async () => {
-    if (!activeDoctorId) return;
+    const doctorId = activeDoctorId || DEFAULT_ACTIVE_DOCTOR_ID;
 
     setLoading(true);
-    setErrorMessage(null);
 
     const { data, error } = await supabase
       .from('doctor_schedules')
       .select('*')
-      .eq('doctor_id', activeDoctorId)
+      .eq('doctor_id', doctorId)
       .eq('shift_date', selectedDateStr)
       .order('start_time', { ascending: true });
 
@@ -198,10 +197,10 @@ export default function DoctorSchedulePage() {
       setSlots((data ?? []) as ScheduleSlot[]);
       setIsLiveSync(true);
     } else {
-      console.warn('Schedule fetch failed:', error.message ?? error);
+      console.warn('Availability fetch failed:', formatSupabaseError(error));
       setSlots([]);
       setIsLiveSync(false);
-      setErrorMessage(error.message ?? 'Unable to load schedule from Supabase.');
+      setErrorMessage(formatSupabaseError(error));
     }
 
     setLoading(false);
@@ -212,17 +211,18 @@ export default function DoctorSchedulePage() {
   }, [fetchSchedule]);
 
   useEffect(() => {
-    if (!activeDoctorId) return;
+    const doctorId = activeDoctorId || DEFAULT_ACTIVE_DOCTOR_ID;
+    if (!doctorId) return;
 
     const channel = supabase
-      .channel(`doctor-schedules-${activeDoctorId}-${selectedDateStr}`)
+      .channel(`doctor-availability-${doctorId}-${selectedDateStr}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'doctor_schedules',
-          filter: `doctor_id=eq.${activeDoctorId}`,
+          filter: `doctor_id=eq.${doctorId}`,
         },
         () => {
           void fetchSchedule();
@@ -234,15 +234,6 @@ export default function DoctorSchedulePage() {
       void supabase.removeChannel(channel);
     };
   }, [activeDoctorId, selectedDateStr, supabase, fetchSchedule]);
-
-  const buildInsertPayload = (start: string, end: string, capacity: number) => ({
-    doctor_id: activeDoctorId || DEFAULT_ACTIVE_DOCTOR_ID,
-    shift_date: selectedDateStr,
-    start_time: start,
-    end_time: end,
-    is_booked: false,
-    max_capacity: capacity,
-  });
 
   const handleStartTimeChange = (value: string) => {
     setStartTime(value);
@@ -282,7 +273,7 @@ export default function DoctorSchedulePage() {
     setSaving(true);
     setErrorMessage(null);
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('doctor_schedules')
       .insert([
         {
@@ -301,6 +292,10 @@ export default function DoctorSchedulePage() {
       setErrorMessage(formatSupabaseError(error));
       setSaving(false);
       return;
+    }
+
+    if (data?.length) {
+      setEndTime(resolvedEndTime);
     }
 
     await fetchSchedule();
@@ -328,9 +323,14 @@ export default function DoctorSchedulePage() {
     setBulkSaving(preset);
     setErrorMessage(null);
 
-    const payload = generated.map((slot) =>
-      buildInsertPayload(slot.start_time, slot.end_time, maxCapacity),
-    );
+    const payload = generated.map((slot) => ({
+      doctor_id: activeDoctorId || DEFAULT_ACTIVE_DOCTOR_ID,
+      shift_date: selectedDateStr,
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      is_booked: false,
+      max_capacity: maxCapacity,
+    }));
 
     const { error } = await supabase.from('doctor_schedules').insert(payload);
 
@@ -372,9 +372,9 @@ export default function DoctorSchedulePage() {
       <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600">
-            Live Availability Management
+            Doctor Availability
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">Doctor Schedule</h1>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">Manage Availability</h1>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
             <UserRound className="h-4 w-4" />
             {doctorName}
@@ -424,10 +424,10 @@ export default function DoctorSchedulePage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+      <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
           <Plus className="h-4 w-4 text-emerald-600" />
-          Create Consultation Slot
+          Create Availability Slot
         </h2>
 
         <form onSubmit={handleAddSlot} className="grid gap-4 lg:grid-cols-[1fr_1fr_160px_auto]">
@@ -529,7 +529,7 @@ export default function DoctorSchedulePage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-16 text-sm text-slate-500">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading live schedule...
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading availability...
           </div>
         ) : slots.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-200 py-16 text-center text-sm text-slate-500">
@@ -561,9 +561,7 @@ export default function DoctorSchedulePage() {
                     </div>
                     <span
                       className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide ${
-                        isBooked
-                          ? 'bg-red-600 text-white'
-                          : 'bg-emerald-600 text-white'
+                        isBooked ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'
                       }`}
                     >
                       {status}
