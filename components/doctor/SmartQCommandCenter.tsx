@@ -13,6 +13,7 @@ import {
   UserCheck,
   Users,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import {
   DEFAULT_ACTIVE_DOCTOR_ID,
@@ -152,9 +153,17 @@ export default function SmartQCommandCenter({
 
   const calledFromQueue = queue.find((q) => q.raw.status === 'CALLED') ?? null;
   const spotlight = activePatient ?? calledFromQueue;
-  const canStartEncounter = Boolean(spotlight && spotlight.raw.status === 'CALLED');
+
+  const hasWaitingPatients = queue.some((q) => q.status === 'WAITING');
+  const canCallNext = hasWaitingPatients && !calling;
+  const canStartEncounter = Boolean(spotlight && spotlight.raw.status === 'CALLED' && !starting);
 
   const handleCallNext = async () => {
+    if (!hasWaitingPatients) {
+      toast.info('No patients currently waiting in queue');
+      return;
+    }
+
     setCalling(true);
     try {
       const next = await rpcCallNextPatient(doctorId);
@@ -190,12 +199,12 @@ export default function SmartQCommandCenter({
   };
 
   return (
-    <div className="grid w-full grid-cols-1 gap-6 p-1 lg:grid-cols-12">
+    <div className="grid h-auto w-full grid-cols-1 gap-5 p-0 lg:grid-cols-12">
       {/* LEFT PANEL: Live SmartQ Queue */}
-      <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-md transition-all hover:shadow-md lg:col-span-6">
+      <div className="flex h-auto flex-col rounded-2xl border border-slate-200/80 bg-white/80 p-5 shadow-sm backdrop-blur-md lg:col-span-6">
         <div>
           {/* Header & Live Status */}
-          <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="rounded-xl bg-teal-50 p-2 text-teal-600">
                 <Megaphone className="h-5 w-5" />
@@ -218,7 +227,7 @@ export default function SmartQCommandCenter({
           </div>
 
           {/* Quick Metrics Bar */}
-          <div className="mb-6 grid grid-cols-3 gap-3">
+          <div className="mb-4 grid grid-cols-3 gap-3">
             <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
               <div className="rounded-lg bg-blue-100/60 p-2 text-blue-600">
                 <Users className="h-4 w-4" />
@@ -267,7 +276,7 @@ export default function SmartQCommandCenter({
               Syncing live queue...
             </div>
           ) : queue.length === 0 ? (
-            <div className="my-8 rounded-xl border border-dashed border-slate-200 bg-gradient-to-b from-slate-50/80 to-indigo-50/40 px-4 py-10 text-center">
+            <div className="rounded-xl border border-dashed border-slate-200 bg-gradient-to-b from-slate-50/80 to-indigo-50/40 px-4 py-8 text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-100/60 bg-indigo-50/80 backdrop-blur-sm">
                 <Stethoscope className="h-7 w-7 text-indigo-400" />
               </div>
@@ -278,7 +287,7 @@ export default function SmartQCommandCenter({
               </p>
             </div>
           ) : (
-            <div className="max-h-[380px] space-y-2.5 overflow-y-auto pr-1">
+            <div className="max-h-[260px] space-y-2.5 overflow-y-auto pr-1">
               {queue.map((item, index) => (
                 <article
                   key={item.id}
@@ -320,8 +329,8 @@ export default function SmartQCommandCenter({
       </div>
 
       {/* RIGHT PANEL: Action Bar & On-Deck Spotlight */}
-      <div className="flex flex-col rounded-2xl border border-slate-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-md transition-all hover:shadow-md lg:col-span-6">
-        <div className="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-4">
+      <div className="flex h-auto flex-col rounded-2xl border border-slate-200/80 bg-white/80 p-5 shadow-sm backdrop-blur-md lg:col-span-6">
+        <div className="mb-4 flex items-center gap-2.5 border-b border-slate-100 pb-3">
           <div className="rounded-xl bg-indigo-50 p-2 text-indigo-600">
             <UserCheck className="h-5 w-5" />
           </div>
@@ -331,13 +340,16 @@ export default function SmartQCommandCenter({
           </div>
         </div>
 
-        {/* Hero Actions */}
-        <div className="mb-6 grid gap-3">
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <button
             type="button"
             onClick={() => void handleCallNext()}
-            disabled={calling || queue.length === 0}
-            className="inline-flex transform items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-teal-600 to-cyan-600 px-5 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg disabled:scale-100 disabled:opacity-50"
+            disabled={calling}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all ${
+              canCallNext
+                ? 'bg-teal-600 text-white shadow-sm hover:bg-teal-700'
+                : 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 opacity-60 shadow-none'
+            }`}
           >
             {calling ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -350,8 +362,12 @@ export default function SmartQCommandCenter({
           <button
             type="button"
             onClick={() => void handleStartEncounter()}
-            disabled={!canStartEncounter || starting}
-            className="inline-flex items-center justify-center gap-2.5 rounded-2xl border-2 border-indigo-300 bg-white px-5 py-3 text-sm font-bold text-indigo-700 transition-all hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={!canStartEncounter}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all ${
+              canStartEncounter
+                ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'
+                : 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 opacity-60 shadow-none'
+            }`}
           >
             {starting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -360,11 +376,18 @@ export default function SmartQCommandCenter({
             )}
             Start Encounter
           </button>
+        </div>
 
+        <div className="mb-4">
           <button
             type="button"
             onClick={handleEmergencyBypass}
-            className="inline-flex items-center justify-center gap-2.5 rounded-2xl border border-rose-200/80 bg-rose-50/70 px-5 py-3 text-sm font-bold text-rose-700 backdrop-blur-sm transition-all hover:bg-rose-100/80"
+            disabled={!hasWaitingPatients}
+            className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2 text-xs font-semibold transition-all ${
+              hasWaitingPatients
+                ? 'border-rose-200/80 bg-rose-50/70 text-rose-700 hover:bg-rose-100/80'
+                : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-60'
+            }`}
           >
             <span className="relative flex h-2 w-2">
               <span
@@ -415,8 +438,12 @@ export default function SmartQCommandCenter({
             <button
               type="button"
               onClick={() => void handleStartEncounter()}
-              disabled={starting}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-indigo-700 disabled:opacity-50"
+              disabled={!canStartEncounter}
+              className={`mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-all ${
+                canStartEncounter
+                  ? 'bg-indigo-600 text-white shadow-md hover:bg-indigo-700'
+                  : 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 opacity-60 shadow-none'
+              }`}
             >
               {starting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -427,16 +454,21 @@ export default function SmartQCommandCenter({
             </button>
           </div>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-indigo-50/50 px-6 py-10 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/80 bg-white/60 shadow-inner backdrop-blur-sm">
-              <Clock className="h-7 w-7 text-slate-400" />
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-indigo-50/50 px-4 py-8 text-center">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/80 bg-white/60 shadow-inner backdrop-blur-sm">
+              <Clock className="h-6 w-6 text-slate-400" />
             </div>
-            <h4 className="text-sm font-bold text-slate-700">No Patient On Deck</h4>
+            <h4 className="text-sm font-bold text-slate-700">
+              {queue.length === 0
+                ? 'No Patient On Deck — Queue is clear for today'
+                : 'No Patient On Deck'}
+            </h4>
             <p className="mx-auto mt-1.5 max-w-xs text-xs leading-relaxed text-slate-400">
-              Call the next patient from the queue to populate the spotlight and begin the
-              encounter workflow.
+              {queue.length === 0
+                ? 'New check-ins from the patient app will appear in the live queue automatically.'
+                : 'Call the next patient from the queue to populate the spotlight and begin the encounter workflow.'}
             </p>
-            <UserCheck className="mt-4 h-5 w-5 text-indigo-300" />
+            <UserCheck className="mt-3 h-5 w-5 text-indigo-300" />
           </div>
         )}
       </div>

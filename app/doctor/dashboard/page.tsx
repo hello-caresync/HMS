@@ -97,7 +97,7 @@ export default function DoctorDashboardPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 bg-slate-50 min-h-screen font-sans">
+    <div className="mx-auto max-w-7xl space-y-4 bg-slate-50 p-5 min-h-screen font-sans">
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-xl border border-slate-200 shadow-sm gap-4">
         <div>
@@ -175,7 +175,7 @@ export default function DoctorDashboardPage() {
       />
 
       {/* Main Grid Content */}
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-4">
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all hover:shadow-md">
             <div className="flex justify-between items-center mb-4">

@@ -15,6 +15,7 @@ import {
   UserCheck,
   Users,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -165,7 +166,16 @@ export default function DoctorQueuePage() {
   const calledFromQueue = queue.find((q) => q.raw.status === 'CALLED') ?? null;
   const onDeck = activePatient ?? calledFromQueue;
 
+  const hasWaitingPatients = queue.some((q) => q.status === 'WAITING');
+  const canCallNext = hasWaitingPatients && !calling;
+  const canStartEncounter = Boolean(onDeck && onDeck.raw.status === 'CALLED' && !starting);
+
   const handleCallNext = async () => {
+    if (!hasWaitingPatients) {
+      toast.info('No patients currently waiting in queue');
+      return;
+    }
+
     setCalling(true);
     try {
       const next = await rpcCallNextPatient(doctorId);
@@ -196,7 +206,7 @@ export default function DoctorQueuePage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-5rem)] w-full space-y-6 bg-slate-50/50 p-6">
+    <div className="h-auto w-full space-y-4 bg-slate-50/50 p-5">
       {/* Top Banner / Header Context */}
       <div className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm md:flex-row md:items-center">
         <div>
@@ -231,12 +241,12 @@ export default function DoctorQueuePage() {
       </div>
 
       {/* Main Grid Content */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid h-auto grid-cols-1 gap-5 lg:grid-cols-12">
         {/* LEFT PANEL: Live SmartQ Queue */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all hover:shadow-md lg:col-span-6">
+        <div className="flex h-auto flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-6">
           <div>
             {/* Panel Header */}
-            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
+            <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-3">
                 <div className="rounded-xl border border-teal-100 bg-teal-50 p-2.5 text-teal-600">
                   <Megaphone className="h-5 w-5" />
@@ -251,7 +261,7 @@ export default function DoctorQueuePage() {
             </div>
 
             {/* Metrics Row */}
-            <div className="mb-6 grid grid-cols-3 gap-3">
+            <div className="mb-4 grid grid-cols-3 gap-3">
               <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
                 <div className="rounded-lg bg-blue-100/70 p-2 text-blue-600">
                   <Users className="h-4 w-4" />
@@ -300,7 +310,7 @@ export default function DoctorQueuePage() {
                 Syncing live queue...
               </div>
             ) : queue.length === 0 ? (
-              <div className="my-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-gradient-to-b from-slate-50/60 to-teal-50/20 px-4 py-12 text-center">
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-gradient-to-b from-slate-50/60 to-teal-50/20 px-4 py-8 text-center">
                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-white text-teal-600 shadow-sm">
                   <Activity className="h-6 w-6" />
                 </div>
@@ -311,7 +321,7 @@ export default function DoctorQueuePage() {
                 </p>
               </div>
             ) : (
-              <div className="max-h-[320px] space-y-2.5 overflow-y-auto pr-1">
+              <div className="max-h-[260px] space-y-2.5 overflow-y-auto pr-1">
                 {queue.map((item) => (
                   <div
                     key={item.id}
@@ -341,10 +351,9 @@ export default function DoctorQueuePage() {
         </div>
 
         {/* RIGHT PANEL: Action Bar & On Deck */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all hover:shadow-md lg:col-span-6">
+        <div className="flex h-auto flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-6">
           <div>
-            {/* Panel Header */}
-            <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
+            <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-3">
               <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-2.5 text-indigo-600">
                 <Stethoscope className="h-5 w-5" />
               </div>
@@ -354,18 +363,21 @@ export default function DoctorQueuePage() {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => void handleCallNext()}
-                disabled={calling || queue.length === 0}
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow active:scale-[0.98] disabled:opacity-50"
+                disabled={calling}
+                className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all ${
+                  canCallNext
+                    ? 'bg-teal-600 text-white shadow-sm hover:bg-teal-700'
+                    : 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 opacity-60 shadow-none'
+                }`}
               >
                 {calling ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <UserCheck className="h-4 w-4 text-teal-400" />
+                  <UserCheck className="h-4 w-4" />
                 )}
                 Call Next Patient
               </button>
@@ -373,11 +385,11 @@ export default function DoctorQueuePage() {
               <button
                 type="button"
                 onClick={() => void handleStartEncounter()}
-                disabled={!onDeck || onDeck.raw.status !== 'CALLED' || starting}
-                className={`flex w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all ${
-                  onDeck && onDeck.raw.status === 'CALLED'
-                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm hover:bg-emerald-700'
-                    : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+                disabled={!canStartEncounter}
+                className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all ${
+                  canStartEncounter
+                    ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'
+                    : 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 opacity-60 shadow-none'
                 }`}
               >
                 {starting ? (
@@ -385,14 +397,21 @@ export default function DoctorQueuePage() {
                 ) : (
                   <Play className="h-4 w-4" />
                 )}
-                Start Encounter
+                Start Consultation
               </button>
+            </div>
 
+            <div className="mb-4">
               <button
                 type="button"
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-rose-200/80 bg-rose-50 px-3 py-2.5 text-xs font-semibold text-rose-700 transition-all hover:bg-rose-100"
+                disabled={!hasWaitingPatients}
+                className={`flex w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
+                  hasWaitingPatients
+                    ? 'border-rose-200/80 bg-rose-50 text-rose-700 hover:bg-rose-100'
+                    : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-60'
+                }`}
               >
-                <AlertTriangle className="h-4 w-4 text-rose-600" />
+                <AlertTriangle className="h-4 w-4" />
                 Emergency Bypass
               </button>
             </div>
@@ -412,27 +431,35 @@ export default function DoctorQueuePage() {
                 <p className="mt-1 text-xs text-slate-500">
                   {onDeck.ageGender} • Chief Complaint: {onDeck.chiefComplaint}
                 </p>
-                <div className="mt-4 flex justify-end border-t border-teal-100/80 pt-3">
+                <div className="mt-3 flex justify-end border-t border-teal-100/80 pt-3">
                   <button
                     type="button"
                     onClick={() => void handleStartEncounter()}
-                    disabled={starting}
-                    className="flex items-center gap-1 text-xs font-bold text-teal-700 hover:text-teal-800 disabled:opacity-50"
+                    disabled={!canStartEncounter}
+                    className={`flex items-center gap-1 text-xs font-bold ${
+                      canStartEncounter
+                        ? 'text-teal-700 hover:text-teal-800'
+                        : 'cursor-not-allowed text-slate-400 opacity-60'
+                    }`}
                   >
                     Open Clinical File <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="my-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-gradient-to-b from-slate-50/60 to-indigo-50/20 px-4 py-12 text-center">
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-gradient-to-b from-slate-50/60 to-indigo-50/20 px-4 py-8 text-center">
                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-white text-indigo-600 shadow-sm">
                   <Stethoscope className="h-6 w-6" />
                 </div>
-                <h4 className="text-sm font-bold text-slate-800">No Active Patient On Deck</h4>
+                <h4 className="text-sm font-bold text-slate-800">
+                  {queue.length === 0
+                    ? 'No Patient On Deck — Queue is clear for today'
+                    : 'No Active Patient On Deck'}
+                </h4>
                 <p className="mt-1 max-w-xs text-xs leading-relaxed text-slate-400">
-                  Click{' '}
-                  <span className="font-semibold text-slate-700">&quot;Call Next Patient&quot;</span>{' '}
-                  above to load a patient into the clinical workstation.
+                  {queue.length === 0
+                    ? 'New check-ins from the patient app will appear in the live queue automatically.'
+                    : 'Click "Call Next Patient" above to load a patient into the clinical workstation.'}
                 </p>
               </div>
             )}
