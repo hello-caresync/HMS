@@ -603,29 +603,33 @@ export async function savePatientClinicalEncounter(
   const meds = input.medications.filter((m) => m.name.trim() !== '');
   const appointmentId = input.appointmentId ?? null;
 
-  const clinicalNotes = [input.clinical.clinical_findings, input.clinical.clinical_notes]
-    .filter(Boolean)
-    .join('\n\n');
-  const symptoms = input.clinical.chief_complaint
-    ? [input.clinical.chief_complaint]
-    : [];
+  const diagnosis = input.clinical.diagnosis?.trim() || '';
+  const symptoms =
+    input.clinical.chief_complaint?.trim() ||
+    input.clinical.clinical_findings?.trim() ||
+    '';
+  const notes =
+    [input.clinical.clinical_findings, input.clinical.clinical_notes]
+      .filter(Boolean)
+      .join('\n\n')
+      .trim() ||
+    input.clinical.clinical_notes?.trim() ||
+    '';
+
+  const consultationPayload = {
+    appointment_id: appointmentId,
+    doctor_id: doctorId,
+    patient_id: patientId,
+    diagnosis,
+    symptoms,
+    notes,
+    status: 'COMPLETED',
+  };
 
   // Step 1: consultations
   const { data: consultation, error: consultError } = await client
     .from('consultations')
-    .insert([
-      {
-        appointment_id: appointmentId,
-        doctor_id: doctorId,
-        patient_id: patientId,
-        chief_complaint: input.clinical.chief_complaint,
-        diagnosis: input.clinical.diagnosis,
-        symptoms,
-        clinical_notes: clinicalNotes || null,
-        follow_up_date: input.clinical.follow_up_date || null,
-        status: 'COMPLETED',
-      },
-    ])
+    .insert([consultationPayload])
     .select('id')
     .single();
 
