@@ -604,8 +604,9 @@ export async function savePatientClinicalEncounter(
   const appointmentId = input.appointmentId ?? null;
 
   const diagnosis = input.clinical.diagnosis?.trim() || '';
+  const chiefComplaint = input.clinical.chief_complaint?.trim() || '';
   const symptoms =
-    input.clinical.chief_complaint?.trim() ||
+    chiefComplaint ||
     input.clinical.clinical_findings?.trim() ||
     '';
   const notes =
@@ -620,6 +621,7 @@ export async function savePatientClinicalEncounter(
     appointment_id: appointmentId,
     doctor_id: doctorId,
     patient_id: patientId,
+    chief_complaint: chiefComplaint || symptoms || 'General Consultation',
     diagnosis,
     symptoms,
     notes,
