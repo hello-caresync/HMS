@@ -1,192 +1,217 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import {
   Calendar,
-  Activity,
-  PlusCircle,
-  CheckCircle2,
-  RefreshCw,
+  Clock,
+  User,
+  Stethoscope,
   Building2,
+  Ticket,
+  Plus,
+  RotateCw,
+  FileText,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 
-interface PatientAppointment {
+interface AppointmentRecord {
   id: string;
-  patient_id?: string;
   patient_name: string;
   doctor_name: string;
   department: string;
-  hospital_name?: string;
-  slot_time: string;
-  token_number: number;
+  hospital_name: string;
   appointment_date: string;
-  queue_status?: string;
+  slot_time: string;
+  fee?: string;
+  reason?: string;
+  token_number: number;
+  queue_status: string;
+  created_at?: string;
 }
 
-export default function PatientAppointmentsPage() {
+export default function MyAppointmentsPage() {
   const router = useRouter();
-  const [appointments, setAppointments] = useState<PatientAppointment[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const fetchAppointments = useCallback(async () => {
-    setLoading(true);
-    let list: PatientAppointment[] = [];
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
 
-    // 1. Check Local Cache First
+  const fetchAppointments = async () => {
+    setLoading(true);
+    let list: AppointmentRecord[] = [];
+
+    // 1. Read from Local Storage (Primary Instant Source)
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('curasync_appointments');
       if (saved) {
         try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            list = parsed;
-          }
-        } catch (e) {
-          console.warn('Local storage parse notice');
-        }
+          list = JSON.parse(saved);
+        } catch (e) {}
       }
     }
 
-    // 2. Query Supabase (Specify exact existing columns to avoid schema mismatch)
+    // 2. Fetch from Supabase Database
     try {
       const { data, error } = await supabase
         .from('patient_appointments')
-        .select('id, patient_id, patient_name, doctor_name, department, hospital_name, slot_time, token_number, appointment_date, queue_status')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.warn('Supabase query notice:', error.message);
-      } else if (data && data.length > 0) {
-        list = data as unknown as PatientAppointment[];
+      if (!error && data && data.length > 0) {
+        list = data;
         if (typeof window !== 'undefined') {
           localStorage.setItem('curasync_appointments', JSON.stringify(data));
         }
       }
-    } catch (err: any) {
-      console.warn('Backend sync fallback active:', err?.message || err);
+    } catch (err) {
+      console.warn('DB load notice, using local cache');
     } finally {
       setAppointments(list);
       setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchAppointments();
-
-    const channel = supabase
-      .channel('realtime_patient_appointments_page')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'patient_appointments' },
-        () => {
-          fetchAppointments();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchAppointments]);
+  };
 
   return (
-    <div className="space-y-8 font-sans text-[#0E2924]">
-      
-      {/* HEADER SECTION */}
+    <div className="max-w-5xl mx-auto space-y-8 font-sans text-[#0E2924]">
+      {/* HEADER BAR */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#D5E8E3] pb-4">
         <div>
-          <h1 className="text-2xl font-black text-[#0E2924]">Your Scheduled Appointments</h1>
+          <h1 className="text-2xl font-black text-[#0E2924]">My OPD Consultations</h1>
           <p className="text-xs font-bold text-[#227B6B]">
-            Live status sync with your assigned doctor via Supabase Realtime.
+            Showing {appointments.length} active OPD booking details and live SmartQ tokens.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={fetchAppointments}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D5E8E3] bg-white text-[#227B6B] hover:bg-[#EAF5F2] transition shadow-sm"
+            className="flex items-center gap-2 rounded-2xl border border-[#D5E8E3] bg-white px-4 py-3 text-xs font-black text-[#113831] hover:bg-[#EAF5F2] transition shadow-sm"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RotateCw className="h-4 w-4 text-[#227B6B]" /> Refresh
           </button>
 
           <button
-            onClick={() => router.push('/patient/appointments/book')}
-            className="flex items-center gap-2 rounded-2xl bg-[#113831] px-5 py-3 text-xs font-black text-white shadow-md hover:bg-[#227B6B] transition"
+            onClick={() => router.push('/patient/doctors')}
+            className="flex items-center gap-2 rounded-2xl bg-[#113831] px-5 py-3 text-xs font-black text-white hover:bg-[#227B6B] transition shadow-md"
           >
-            <PlusCircle className="h-4 w-4 text-[#A6E2D8]" /> Book New Appointment
+            <Plus className="h-4 w-4 text-[#A6E2D8]" /> Book New OPD
           </button>
         </div>
       </div>
 
-      {/* APPOINTMENTS LIST GRID */}
+      {/* APPOINTMENTS CARDS GRID */}
       {loading ? (
-        <div className="rounded-3xl border border-[#D5E8E3] bg-white p-12 text-center text-xs font-bold text-[#227B6B]">
-          Fetching active appointments and tokens...
+        <div className="flex h-64 items-center justify-center rounded-3xl bg-white border border-[#D5E8E3]">
+          <div className="flex items-center gap-2 text-xs font-black text-[#113831]">
+            <Loader2 className="h-5 w-5 animate-spin text-[#227B6B]" />
+            Loading your appointment history...
+          </div>
         </div>
       ) : appointments.length === 0 ? (
-        <div className="rounded-3xl border border-[#D5E8E3] bg-white p-12 text-center space-y-4 shadow-sm">
-          <Calendar className="mx-auto h-12 w-12 text-[#227B6B]" />
-          <h3 className="text-lg font-black text-[#0E2924]">No Booked Appointments Found</h3>
-          <p className="text-xs font-bold text-[#227B6B]">
-            Book a consultation to generate your live OPD SmartQ token.
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-[#D5E8E3] bg-white p-12 text-center space-y-4">
+          <Calendar className="h-12 w-12 text-[#227B6B]/40" />
+          <h3 className="text-base font-black text-[#0E2924]">No Booked Consultations Found</h3>
+          <p className="text-xs font-bold text-slate-500 max-w-sm">
+            You haven't scheduled any OPD consultations yet. Pick a consultant from the doctor directory to book a token.
           </p>
           <button
-            onClick={() => router.push('/patient/appointments/book')}
-            className="rounded-2xl bg-[#113831] px-6 py-3 text-xs font-black text-white shadow-md hover:bg-[#227B6B] transition"
+            onClick={() => router.push('/patient/doctors')}
+            className="flex items-center gap-2 rounded-2xl bg-[#113831] px-6 py-3.5 text-xs font-black text-white shadow-md hover:bg-[#227B6B] transition"
           >
-            Book Consultation Now
+            Browse Doctor Directory
           </button>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
-          {appointments.map((apt) => (
+          {appointments.map((appt) => (
             <div
-              key={apt.id}
-              className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm hover:border-[#113831] transition space-y-5"
+              key={appt.id || appt.created_at}
+              className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-5 hover:border-[#113831] transition"
             >
+              {/* TOP TOKEN & STATUS BADGE */}
               <div className="flex items-center justify-between border-b border-[#EAF5F2] pb-3">
-                <span className="rounded-full bg-[#EAF5F2] px-3.5 py-1 text-[10px] font-black uppercase text-[#113831]">
-                  {apt.department}
-                </span>
-
-                <div className="flex items-center gap-1.5 rounded-full bg-[#113831] px-3.5 py-1 text-xs font-black text-white shadow-sm">
-                  <Activity className="h-3.5 w-3.5 text-[#A6E2D8]" /> SmartQ #{apt.token_number}
+                <div className="flex items-center gap-2 text-[#113831]">
+                  <Ticket className="h-4 w-4 text-[#227B6B]" />
+                  <span className="text-xs font-black">
+                    SmartQ Token: <span className="text-sm font-black text-[#227B6B]">#{appt.token_number || 1}</span>
+                  </span>
                 </div>
+
+                <span className="flex items-center gap-1 rounded-full bg-[#EAF5F2] px-3 py-1 text-[10px] font-black text-[#113831] border border-[#227B6B]/20 uppercase">
+                  <CheckCircle2 className="h-3 w-3 text-[#227B6B]" /> {appt.queue_status || 'SCHEDULED'}
+                </span>
               </div>
 
-              <div className="space-y-2">
-                <h3 className="text-lg font-black text-[#0E2924]">{apt.doctor_name}</h3>
-                <p className="text-xs font-bold text-[#227B6B] flex items-center gap-1.5">
-                  <Building2 className="h-3.5 w-3.5" /> {apt.hospital_name || 'Regal Hospital'}
-                </p>
+              {/* CLINICIAN & PATIENT DETAILS */}
+              <div className="space-y-3">
+                {/* DOCTOR NAME */}
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#113831] text-white font-black text-sm shrink-0">
+                    {appt.doctor_name ? appt.doctor_name.replace('Dr. ', '').charAt(0) : 'D'}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-[#0E2924]">
+                      {appt.doctor_name || 'Dr. Suriraju V'}
+                    </h3>
+                    <p className="text-xs font-bold text-[#227B6B] flex items-center gap-1">
+                      <Stethoscope className="h-3.5 w-3.5" /> {appt.department || 'General Medicine'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* PATIENT NAME & FACILITY */}
+                <div className="grid grid-cols-2 gap-2 text-xs font-semibold bg-[#F4F8F7] p-3 rounded-2xl border border-[#D5E8E3]">
+                  <div>
+                    <span className="text-[10px] uppercase text-[#227B6B] font-black block">Patient Name</span>
+                    <span className="font-bold text-[#0E2924] flex items-center gap-1">
+                      <User className="h-3 w-3 text-[#227B6B]" /> {appt.patient_name || 'Aishwarya D S'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase text-[#227B6B] font-black block">Facility</span>
+                    <span className="font-bold text-[#0E2924] flex items-center gap-1">
+                      <Building2 className="h-3 w-3 text-[#227B6B]" /> {appt.hospital_name || 'Regal Hospital'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* REASON FOR VISIT (IF PROVIDED) */}
+                {appt.reason && (
+                  <div className="text-xs bg-amber-50/60 p-3 rounded-2xl border border-amber-200/60">
+                    <span className="text-[10px] uppercase text-amber-800 font-black flex items-center gap-1 mb-0.5">
+                      <FileText className="h-3 w-3" /> Reason for Visit
+                    </span>
+                    <p className="font-bold text-amber-950">{appt.reason}</p>
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3 bg-[#F4F8F7] p-3.5 rounded-2xl border border-[#D5E8E3] text-xs font-bold">
-                <div>
-                  <span className="text-[10px] uppercase text-[#227B6B] font-black block">Slot Time</span>
-                  <span className="text-[#0E2924]">{apt.slot_time}</span>
+              {/* DATE, TIME & FEE FOOTER */}
+              <div className="flex items-center justify-between border-t border-[#EAF5F2] pt-4 text-xs font-bold">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1 text-[#0E2924]">
+                    <Calendar className="h-3.5 w-3.5 text-[#227B6B]" /> {appt.appointment_date}
+                  </span>
+                  <span className="flex items-center gap-1 text-[#0E2924]">
+                    <Clock className="h-3.5 w-3.5 text-[#227B6B]" /> {appt.slot_time}
+                  </span>
                 </div>
-                <div>
-                  <span className="text-[10px] uppercase text-[#227B6B] font-black block">Date</span>
-                  <span className="text-[#0E2924]">{apt.appointment_date}</span>
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between border-t border-[#EAF5F2] pt-3 text-xs font-bold">
-                <span className="text-[#227B6B]">
-                  Status: <span className="text-[#0E2924] font-black uppercase">{apt.queue_status || 'SCHEDULED'}</span>
-                </span>
-                <span className="text-emerald-700 flex items-center gap-1 font-black">
-                  <CheckCircle2 className="h-4 w-4" /> Desk Verified
-                </span>
+                {appt.fee && (
+                  <span className="rounded-xl bg-[#113831] px-3 py-1.5 text-xs font-black text-white">
+                    {appt.fee}
+                  </span>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
-
     </div>
   );
 }
