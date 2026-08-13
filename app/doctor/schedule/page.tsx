@@ -47,24 +47,64 @@ function localDateString(date = new Date()): string {
   return local.toISOString().split('T')[0];
 }
 
-function parseTimeToMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number);
-  return h * 60 + (m || 0);
+function parseTimeToMinutes(timeStr: string): number {
+  if (!timeStr) return 0;
+
+  if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) {
+    const isPM = timeStr.toLowerCase().includes('pm');
+    const cleanTime = timeStr.replace(/(am|pm|\s)/gi, '');
+    let [hours, minutes] = cleanTime.split(':').map(Number);
+    if (Number.isNaN(hours)) hours = 0;
+    if (Number.isNaN(minutes)) minutes = 0;
+    if (isPM && hours < 12) hours += 12;
+    if (!isPM && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  }
+
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return (hours || 0) * 60 + (minutes || 0);
 }
 
 function minutesToTime(total: number): string {
-  const h = Math.floor(total / 60);
-  const m = total % 60;
+  const clamped = Math.max(0, Math.min(total, 23 * 60 + 59));
+  const h = Math.floor(clamped / 60);
+  const m = clamped % 60;
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 }
 
+function addMinutesToTime(timeStr: string, minutesToAdd: number): string {
+  return minutesToTime(parseTimeToMinutes(timeStr) + minutesToAdd);
+}
+
 function formatTimeDisplay(time: string): string {
-  const [hRaw, mRaw] = time.split(':');
-  const h = Number(hRaw);
-  const m = Number(mRaw || 0);
+  const total = parseTimeToMinutes(time);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
   const period = h >= 12 ? 'PM' : 'AM';
   const hour12 = h % 12 || 12;
   return `${hour12.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${period}`;
+}
+
+function slotsOverlap(startA: number, endA: number, startB: number, endB: number): boolean {
+  return startA < endB && startB < endA;
+}
+
+function findOverlappingSlot(
+  existing: ScheduleSlot[],
+  start: string,
+  end: string,
+): ScheduleSlot | undefined {
+  const startMinutes = parseTimeToMinutes(start);
+  const endMinutes = parseTimeToMinutes(end);
+
+  return existing.find((slot) =>
+    slotsOverlap(
+      startMinutes,
+      endMinutes,
+      parseTimeToMinutes(slot.start_time),
+      parseTimeToMinutes(slot.end_time),
+    ),
+  );
 }
 
 function generateHalfHourSlots(
@@ -208,10 +248,33 @@ export default function DoctorSchedulePage() {
     booked_count: 0,
   });
 
+  const handleStartTimeChange = (value: string) => {
+    setStartTime(value);
+
+    const startMinutes = parseTimeToMinutes(value);
+    const endMinutes = parseTimeToMinutes(endTime);
+
+    if (!endTime || endMinutes <= startMinutes) {
+      setEndTime(addMinutesToTime(value, 30));
+    }
+  };
+
   const handleAddSlot = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!startTime || !endTime || startTime >= endTime) {
+
+    const startMinutes = parseTimeToMinutes(startTime);
+    const endMinutes = parseTimeToMinutes(endTime);
+
+    if (!startTime || !endTime || endMinutes <= startMinutes) {
       setErrorMessage('End time must be after start time.');
+      return;
+    }
+
+    const overlap = findOverlappingSlot(slots, startTime, endTime);
+    if (overlap) {
+      setErrorMessage(
+        `This slot overlaps with ${formatTimeDisplay(overlap.start_time)} – ${formatTimeDisplay(overlap.end_time)}.`,
+      );
       return;
     }
 
@@ -219,22 +282,21 @@ export default function DoctorSchedulePage() {
     setErrorMessage(null);
 
     try {
-      const { data: newSlot, error } = await supabase
-        .from('doctor_schedules')
-        .insert([buildInsertPayload(startTime, endTime, maxCapacity)])
-        .select()
-        .single();
+      const { error } = await supabase.from('doctor_schedules').insert([
+        {
+          doctor_id: activeDoctorId,
+          shift_date: selectedDateStr,
+          start_time: startTime,
+          end_time: endTime,
+          max_capacity: maxCapacity,
+          status: 'AVAILABLE',
+          booked_count: 0,
+        },
+      ]);
 
       if (error) throw error;
 
-      if (newSlot) {
-        setSlots((prev) =>
-          [...prev, newSlot as ScheduleSlot].sort((a, b) =>
-            a.start_time.localeCompare(b.start_time),
-          ),
-        );
-      }
-
+      await fetchSchedule();
       setStartTime('09:00');
       setEndTime('09:30');
       setIsLiveSync(true);
@@ -252,8 +314,14 @@ export default function DoctorSchedulePage() {
         ? { start: '09:00', end: '13:00', label: 'Morning Shift' }
         : { start: '16:00', end: '20:00', label: 'Evening Shift' };
 
-    const generated = generateHalfHourSlots(range.start, range.end);
-    if (generated.length === 0) return;
+    const generated = generateHalfHourSlots(range.start, range.end).filter(
+      (slot) => !findOverlappingSlot(slots, slot.start_time, slot.end_time),
+    );
+
+    if (generated.length === 0) {
+      setErrorMessage('All preset slots already exist or overlap with current schedule.');
+      return;
+    }
 
     setBulkSaving(preset);
     setErrorMessage(null);
@@ -263,25 +331,11 @@ export default function DoctorSchedulePage() {
         buildInsertPayload(slot.start_time, slot.end_time, maxCapacity),
       );
 
-      const { data, error } = await supabase
-        .from('doctor_schedules')
-        .insert(payload)
-        .select();
+      const { error } = await supabase.from('doctor_schedules').insert(payload);
 
       if (error) throw error;
 
-      if (data?.length) {
-        setSlots((prev) => {
-          const merged = [...prev, ...(data as ScheduleSlot[])];
-          const unique = new Map(merged.map((s) => [s.id, s]));
-          return Array.from(unique.values()).sort((a, b) =>
-            a.start_time.localeCompare(b.start_time),
-          );
-        });
-      } else {
-        await fetchSchedule();
-      }
-
+      await fetchSchedule();
       setIsLiveSync(true);
     } catch (err) {
       console.error(`Failed to add ${range.label}:`, err);
@@ -304,7 +358,7 @@ export default function DoctorSchedulePage() {
 
       if (error) throw error;
 
-      setSlots((prev) => prev.filter((s) => s.id !== slotId));
+      await fetchSchedule();
     } catch (err) {
       console.error('Failed to delete slot:', err);
       setErrorMessage('Could not delete slot. Please try again.');
@@ -385,7 +439,7 @@ export default function DoctorSchedulePage() {
               type="time"
               required
               value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              onChange={(e) => handleStartTimeChange(e.target.value)}
               className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-500"
             />
           </div>
