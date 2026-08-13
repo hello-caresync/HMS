@@ -701,7 +701,8 @@ export async function savePatientClinicalEncounter(
     appointment_id: appointmentId || createdConsultationId || null,
     patient_id: patientId || null,
     doctor_id: doctorId || DEFAULT_ACTIVE_DOCTOR_ID,
-    medicines: medicineList,
+    medications: medicineList || [],
+    medicines: medicineList || [],
     instructions: instructions || '',
   };
 
