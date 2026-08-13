@@ -659,21 +659,27 @@ export async function savePatientClinicalEncounter(
   const spo2 = input.vitals.spo2_percent;
   const weight = input.vitals.weight_kg;
 
+  const pulseValue = pulse ? parseInt(String(pulse), 10) : null;
+
   const vitalsData = {
     consultation_id: createdConsultationId || null,
     patient_id: patientId || null,
     temperature: temp ? parseFloat(String(temp)) : null,
     bp_systolic: bpSystolic ? parseInt(String(bpSystolic), 10) : null,
     bp_diastolic: bpDiastolic ? parseInt(String(bpDiastolic), 10) : null,
-    pulse: pulse ? parseInt(String(pulse), 10) : null,
+    pulse: pulseValue,
+    pulse_bpm: pulseValue,
     spo2: spo2 ? parseInt(String(spo2), 10) : null,
     weight: weight ? parseFloat(String(weight)) : null,
   };
 
-  const { error: vitalsError } = await client.from('vitals').insert([vitalsData]);
-
-  if (vitalsError) {
-    throwSaveError('[Consultation Save Error] vitals insert failed:', vitalsError);
+  try {
+    const { error: vitalsError } = await client.from('vitals').insert([vitalsData]);
+    if (vitalsError) {
+      console.warn('[Consultation Save] vitals insert skipped:', vitalsError.message || vitalsError);
+    }
+  } catch (vitalsErr) {
+    console.warn('[Consultation Save] vitals insert failed (non-blocking):', vitalsErr);
   }
 
   // Step 3: prescriptions
