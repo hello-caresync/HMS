@@ -8,8 +8,8 @@ import {
   updateAppointmentStatus,
   DoctorDashboardMetrics,
   DoctorAppointment,
-  OPDToken,
 } from '@/lib/doctor/command-center/supabase-service';
+import SmartQCommandCenter from '@/components/doctor/SmartQCommandCenter';
 
 export default function DoctorDashboardPage() {
   const router = useRouter();
@@ -164,11 +164,20 @@ export default function DoctorDashboardPage() {
         </div>
       </div>
 
+      {/* SmartQ Live Queue + Action Bar */}
+      <SmartQCommandCenter
+        doctorId={metrics.doctorId}
+        queueTokens={metrics.liveQueueTokens}
+        waitingCount={metrics.waitingQueue}
+        completedCount={metrics.completed}
+        loading={loading}
+        onRefresh={() => void loadDashboardData()}
+      />
+
       {/* Main Grid Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Today's Appointments Section (2 Columns) */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div className="grid grid-cols-1 gap-6">
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all hover:shadow-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold text-slate-900">Today&apos;s Appointments</h2>
               <span className="text-xs text-slate-500 font-medium">
@@ -251,42 +260,6 @@ export default function DoctorDashboardPage() {
                         </button>
                       )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* SmartQ Live Queue Sidebar (1 Column) */}
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">SmartQ Live OPD Queue</h2>
-
-            {loading ? (
-              <p className="text-sm text-slate-500 py-8 text-center">Loading live queue...</p>
-            ) : metrics.liveQueueTokens.length === 0 ? (
-              <p className="text-sm text-slate-500 py-8 text-center">
-                Queue empty — waiting for patient bookings.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {metrics.liveQueueTokens.map((token: OPDToken) => (
-                  <div
-                    key={token.id}
-                    className="p-3.5 border border-slate-200 rounded-lg flex items-center justify-between bg-slate-50/50"
-                  >
-                    <div>
-                      <span className="text-sm font-bold text-slate-900 block">
-                        {token.token_number}
-                      </span>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {token.patient_profiles?.full_name || 'Patient'}
-                      </p>
-                    </div>
-                    <span className="text-xs font-medium px-2.5 py-1 bg-white border border-slate-200 rounded-md text-slate-600 shadow-2xs">
-                      Est. {token.estimated_wait_minutes ?? 10} min
-                    </span>
                   </div>
                 ))}
               </div>
