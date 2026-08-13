@@ -2,7 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import {
+  bookAppointmentWithDoctor,
+  DEFAULT_DOCTOR_ID,
+  DEFAULT_PATIENT_ID,
+} from '@/lib/patient/book-appointment';
 import {
   Stethoscope,
   Calendar,
@@ -11,6 +15,7 @@ import {
   CheckCircle2,
   ArrowRight,
   Loader2,
+  AlertCircle,
 } from 'lucide-react';
 
 interface SpecialityOption {
@@ -61,13 +66,16 @@ export default function BookAppointmentPage() {
   const [selectedDept, setSelectedDept] = useState<string>('Urology');
   const [assignedDoctor, setAssignedDoctor] = useState<string>('Dr. Suriraju V');
   const [consultationFee, setConsultationFee] = useState<string>('₹700');
-  
+
   const [appointmentDate, setAppointmentDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
   const [slotTime, setSlotTime] = useState<string>('10:30 AM');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSpecialtyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const dept = e.target.value;
@@ -83,82 +91,104 @@ export default function BookAppointmentPage() {
   const handleBookAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
     const patientName =
       typeof window !== 'undefined'
         ? localStorage.getItem('patient_full_name') || 'Aishwarya D S'
         : 'Aishwarya D S';
 
-    let existingAppts: any[] = [];
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('curasync_appointments');
-      if (saved) {
-        try {
-          existingAppts = JSON.parse(saved);
-        } catch (e) {}
-      }
-    }
-
-    const calculatedToken = existingAppts.length + 1;
-
-    const newAppt = {
-      id: 'apt_' + Date.now(),
-      patient_id: 'NEX_9021',
-      patient_name: patientName,
-      doctor_name: assignedDoctor,
-      department: selectedDept,
-      hospital_name: 'Regal Hospital',
-      appointment_date: appointmentDate,
-      slot_time: slotTime,
-      token_number: calculatedToken,
-      queue_status: 'SCHEDULED',
-      created_at: new Date().toISOString(),
-    };
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(
-        'curasync_appointments',
-        JSON.stringify([newAppt, ...existingAppts])
-      );
-    }
-
     try {
-      await supabase.from('patient_appointments').insert(newAppt);
-    } catch (err) {
-      console.warn('Backend insert notice');
-    } finally {
-      setIsSubmitting(false);
+      const result = await bookAppointmentWithDoctor({
+        doctor_id: DEFAULT_DOCTOR_ID,
+        doctorId: DEFAULT_DOCTOR_ID,
+        appointment_date: appointmentDate,
+        appointment_time: slotTime,
+        department: selectedDept,
+        reason_for_visit: `${selectedDept} consultation with ${assignedDoctor}`,
+        reason: `${selectedDept} consultation with ${assignedDoctor}`,
+      });
+
+      const cacheEntry = {
+        id: result.appointment_id,
+        patient_id: DEFAULT_PATIENT_ID,
+        patient_name: patientName,
+        doctor_name: assignedDoctor,
+        department: selectedDept,
+        hospital_name: 'Regal Hospital',
+        appointment_date: appointmentDate,
+        slot_time: slotTime,
+        token_number: result.token_number,
+        queue_status: 'SCHEDULED',
+        created_at: new Date().toISOString(),
+      };
+
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('curasync_appointments');
+        let existingAppts: unknown[] = [];
+        if (saved) {
+          try {
+            existingAppts = JSON.parse(saved) as unknown[];
+          } catch {
+            existingAppts = [];
+          }
+        }
+        localStorage.setItem(
+          'curasync_appointments',
+          JSON.stringify([cacheEntry, ...existingAppts]),
+        );
+      }
+
+      setSuccessMessage(result.message ?? `Token ${result.token_label} generated successfully.`);
       setSuccess(true);
+
       setTimeout(() => {
         router.push('/patient/appointments');
       }, 1200);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to book appointment.';
+      setErrorMessage(msg);
+      setSuccess(false);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 font-sans text-[#0E2924]">
-      
       {/* HEADER */}
       <div className="border-b border-[#D5E8E3] pb-4">
         <h1 className="text-2xl font-black text-[#0E2924]">Book OPD Consultation</h1>
         <p className="text-xs font-bold text-[#227B6B]">
-          Select specialty, auto-assign consultant, choose time slot, and generate SmartQ token.
+          Facility: <span className="text-[#113831] font-black">Regal Hospital</span>
         </p>
       </div>
 
+      {/* SUCCESS BANNER */}
       {success && (
-        <div className="flex items-center gap-3 rounded-2xl bg-[#EAF5F2] p-4 text-xs font-bold text-[#113831] border border-[#227B6B]/30">
+        <div className="flex items-center gap-3 rounded-2xl bg-[#EAF5F2] p-4 text-xs font-bold text-[#113831] border border-[#227B6B]/30 shadow-sm">
           <CheckCircle2 className="h-5 w-5 text-[#227B6B] shrink-0" />
-          <span>Appointment booked successfully! Redirecting to active tokens...</span>
+          <span>{successMessage ?? 'Appointment booked successfully! Redirecting to live token dashboard...'}</span>
         </div>
       )}
 
-      {/* FORM */}
-      <form onSubmit={handleBookAppointment} className="rounded-3xl border border-[#D5E8E3] bg-white p-8 shadow-sm space-y-6">
-        
+      {/* ERROR BANNER */}
+      {errorMessage && (
+        <div className="flex items-center gap-3 rounded-2xl bg-rose-50 p-4 text-xs font-bold text-rose-800 border border-rose-200">
+          <AlertCircle className="h-5 w-5 text-rose-600 shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {/* BOOKING FORM */}
+      <form
+        onSubmit={handleBookAppointment}
+        className="rounded-3xl border border-[#D5E8E3] bg-white p-8 shadow-sm space-y-6"
+      >
         {/* MEDICAL SPECIALTY DROPDOWN */}
         <div>
-          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1">
+          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
             <Stethoscope className="h-3.5 w-3.5 text-[#227B6B]" /> MEDICAL SPECIALTY *
           </label>
           <select
@@ -177,7 +207,7 @@ export default function BookAppointmentPage() {
         {/* ASSIGNED DOCTOR & FEE DISPLAY */}
         <div className="grid gap-6 md:grid-cols-2">
           <div>
-            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1">
+            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
               <User className="h-3.5 w-3.5" /> ASSIGNED CONSULTANT
             </label>
             <input
@@ -189,7 +219,7 @@ export default function BookAppointmentPage() {
           </div>
 
           <div>
-            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1">
+            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
               OPD CONSULTATION FEE
             </label>
             <input
@@ -204,7 +234,7 @@ export default function BookAppointmentPage() {
         {/* DATE & TIME SLOTS */}
         <div className="grid gap-6 md:grid-cols-2">
           <div>
-            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1">
+            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
               <Calendar className="h-3.5 w-3.5" /> APPOINTMENT DATE *
             </label>
             <input
@@ -217,7 +247,7 @@ export default function BookAppointmentPage() {
           </div>
 
           <div>
-            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1">
+            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
               <Clock className="h-3.5 w-3.5" /> TIME SLOT *
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -255,9 +285,7 @@ export default function BookAppointmentPage() {
             </>
           )}
         </button>
-
       </form>
-
     </div>
   );
 }

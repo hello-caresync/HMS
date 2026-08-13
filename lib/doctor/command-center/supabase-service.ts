@@ -14,6 +14,20 @@ import type {
 // Dashboard service — typed models, doctor resolution, KPI fetch, status updates
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/** Canonical active clinician UUID in Supabase (`doctors.doctor_id`). */
+export const DEFAULT_ACTIVE_DOCTOR_ID = '56284599-9a5f-4672-9b53-b90e18146a00';
+
+/** Statuses shown on the live OPD dashboard queue (excludes completed/cancelled). */
+export const ACTIVE_APPOINTMENT_STATUSES = [
+  'SCHEDULED',
+  'WAITING',
+  'CONFIRMED',
+  'confirmed',
+  'requested',
+  'IN_CONSULTATION',
+  'in_progress',
+] as const;
+
 export interface DoctorAppointment {
   appointment_id: string;
   patient_id: string;
@@ -66,7 +80,22 @@ export interface DoctorDashboardMetrics {
 
 function logSupabaseError(context: string, error: unknown) {
   if (!error) return;
-  console.error(context, JSON.stringify(error, Object.getOwnPropertyNames(error as object), 2));
+
+  if (typeof error === 'string') {
+    console.error(`[Supabase Error] ${context}:`, error);
+    return;
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    const errObj = error as Record<string, unknown>;
+    const message = errObj.message ?? errObj.details ?? errObj.hint ?? errObj.code;
+    if (message) {
+      console.error(`[Supabase Error] ${context}:`, message);
+    }
+    return;
+  }
+
+  console.error(`[Supabase Error] ${context}:`, String(error));
 }
 
 function calcAgeFromDob(dob?: string | null): number | undefined {
@@ -77,8 +106,13 @@ function calcAgeFromDob(dob?: string | null): number | undefined {
 }
 
 function isWaitingStatus(status: unknown): boolean {
-  const s = String(status ?? '');
-  return s === 'SCHEDULED' || s === 'WAITING' || s === 'confirmed' || s === 'requested';
+  const s = String(status ?? '').toUpperCase();
+  return (
+    s === 'SCHEDULED' ||
+    s === 'WAITING' ||
+    s === 'CONFIRMED' ||
+    s === 'REQUESTED'
+  );
 }
 
 function isCompletedStatus(status: unknown): boolean {
@@ -124,6 +158,7 @@ function mapViewRowToDoctorAppointment(row: Record<string, unknown>): DoctorAppo
 function mapFallbackAppointmentRow(item: Record<string, unknown>): DoctorAppointment {
   const profile = item.patient_profiles as Record<string, unknown> | Record<string, unknown>[] | null;
   const p = Array.isArray(profile) ? profile[0] : profile;
+  const dob = (p?.date_of_birth ?? p?.dob) as string | undefined;
 
   return {
     appointment_id: String(item.appointment_id ?? ''),
@@ -137,7 +172,7 @@ function mapFallbackAppointmentRow(item: Record<string, unknown>): DoctorAppoint
     patient_name: String(p?.full_name ?? 'Patient'),
     patient_phone: p?.phone ? String(p.phone) : undefined,
     patient_gender: p?.gender ? String(p.gender) : undefined,
-    patient_age: calcAgeFromDob(p?.dob as string | undefined),
+    patient_age: calcAgeFromDob(dob),
     blood_group: p?.blood_group ? String(p.blood_group) : undefined,
   };
 }
@@ -182,7 +217,7 @@ export async function getActiveDoctorProfile(emailOrCode?: string) {
     if (authUser?.user?.email) {
       query = query.eq('email', authUser.user.email);
     } else {
-      query = query.or('registration_number.eq.RH-D06,full_name.ilike.%CHANDRAKANTH%');
+      query = query.eq('doctor_id', DEFAULT_ACTIVE_DOCTOR_ID);
     }
   }
 
@@ -191,15 +226,58 @@ export async function getActiveDoctorProfile(emailOrCode?: string) {
 
   if (error) {
     logSupabaseError('Error resolving active doctor profile:', error);
-    return null;
   }
 
-  return data && data.length > 0 ? data[0] : null;
+  if (data && data.length > 0) {
+    return data[0];
+  }
+
+  const { data: fallbackDoctor, error: fallbackErr } = await client
+    .from('doctors')
+    .select('*')
+    .eq('doctor_id', DEFAULT_ACTIVE_DOCTOR_ID)
+    .limit(1);
+
+  if (fallbackErr) {
+    logSupabaseError('Error resolving default active doctor profile:', fallbackErr);
+  }
+
+  if (fallbackDoctor && fallbackDoctor.length > 0) {
+    return fallbackDoctor[0];
+  }
+
+  return { doctor_id: DEFAULT_ACTIVE_DOCTOR_ID, full_name: 'Dr. CHANDRAKANTH S KESARI' };
+}
+
+/** Safe 2-step patient profile lookup — `patient_profiles.id` is the primary key. */
+async function fetchPatientProfileMap(
+  patientIds: string[],
+): Promise<Record<string, Record<string, unknown>>> {
+  const map: Record<string, Record<string, unknown>> = {};
+  const uniqueIds = Array.from(new Set(patientIds.filter(Boolean)));
+  if (uniqueIds.length === 0) return map;
+
+  const { data: patients, error: patientErr } = await supabase
+    .from('patient_profiles')
+    .select('id, full_name, phone, gender, date_of_birth, dob, blood_group')
+    .in('id', uniqueIds);
+
+  if (patientErr) {
+    logSupabaseError('Fetch Error (Patient Profiles):', patientErr);
+    return map;
+  }
+
+  for (const p of (patients ?? []) as Record<string, unknown>[]) {
+    if (p.id) map[String(p.id)] = p;
+  }
+
+  return map;
 }
 
 /**
  * Fetches dashboard KPIs, appointments, and live OPD tokens.
- * Falls back to direct `appointments` query when the view is unavailable.
+ * Uses a 2-step appointments fetch (no nested joins) so missing FK relationships
+ * in the schema cache never block the dashboard. No appointment_date filter.
  */
 export async function getDoctorDashboardData(doctorId?: string): Promise<DoctorDashboardMetrics> {
   const client = supabase;
@@ -207,47 +285,43 @@ export async function getDoctorDashboardData(doctorId?: string): Promise<DoctorD
 
   if (!targetDoctorId) {
     const doctor = await getActiveDoctorProfile();
-    targetDoctorId = doctor?.doctor_id ? String(doctor.doctor_id) : undefined;
+    targetDoctorId = doctor?.doctor_id ? String(doctor.doctor_id) : DEFAULT_ACTIVE_DOCTOR_ID;
   }
 
-  let appointmentsQuery = client
-    .from('doctor_appointments_view')
-    .select('*')
+  let apptRows: Record<string, unknown>[] = [];
+
+  const { data: rawApptRows, error: apptError } = await client
+    .from('appointments')
+    .select(
+      'appointment_id, patient_id, doctor_id, appointment_date, appointment_time, status, reason_for_visit, department, created_at',
+    )
+    .eq('doctor_id', targetDoctorId)
+    .in('status', ['SCHEDULED', 'WAITING', 'CONFIRMED', 'PENDING', 'IN_CONSULTATION', 'in_progress'])
     .order('created_at', { ascending: false });
 
-  if (targetDoctorId) {
-    appointmentsQuery = appointmentsQuery.eq('doctor_id', targetDoctorId);
+  if (apptError) {
+    logSupabaseError('Fetch Error (Appointments) in getDoctorDashboardData:', apptError);
+  } else {
+    apptRows = (rawApptRows ?? []) as Record<string, unknown>[];
   }
 
-  let { data: appointments, error: appErr } = await appointmentsQuery;
+  const patientIds = Array.from(
+    new Set(apptRows.map((a) => String(a.patient_id ?? '')).filter(Boolean)),
+  );
 
-  if (appErr) {
-    console.warn(
-      'Falling back to direct "appointments" table query:',
-      appErr.message ?? appErr.code ?? appErr,
-    );
+  const patientMap = await fetchPatientProfileMap(patientIds);
 
-    let fallbackQuery = client
-      .from('appointments')
-      .select('*, patient_profiles(*)')
-      .order('created_at', { ascending: false });
-
-    if (targetDoctorId) {
-      fallbackQuery = fallbackQuery.eq('doctor_id', targetDoctorId);
-    }
-
-    const fallbackRes = await fallbackQuery;
-    if (!fallbackRes.error && fallbackRes.data) {
-      appointments = fallbackRes.data;
-      appErr = null;
-    } else if (fallbackRes.error) {
-      logSupabaseError('Appointments fallback query failed:', fallbackRes.error);
-    }
-  }
+  const formattedAppointments = apptRows.map((appt) => ({
+    ...appt,
+    patient_profiles: patientMap[String(appt.patient_id ?? '')] ?? {
+      full_name: 'Patient Record',
+      phone: 'N/A',
+    },
+  }));
 
   let tokensQuery = client
     .from('opd_tokens')
-    .select('*, patient_profiles(full_name, phone, gender, dob, blood_group)')
+    .select('*')
     .order('sequence_number', { ascending: true });
 
   if (targetDoctorId) {
@@ -256,32 +330,47 @@ export async function getDoctorDashboardData(doctorId?: string): Promise<DoctorD
 
   const { data: tokens, error: tokErr } = await tokensQuery;
 
-  if (appErr) logSupabaseError('Fetch Error (Appointments) in getDoctorDashboardData:', appErr);
   if (tokErr) logSupabaseError('Fetch Error (OPD Tokens) in getDoctorDashboardData:', tokErr);
 
-  const rawAppointments = (appointments ?? []) as Record<string, unknown>[];
-  const appList = rawAppointments.map((row) =>
-    row.patient_profiles || row.reason_for_visit !== undefined
-      ? mapFallbackAppointmentRow(row)
-      : mapViewRowToDoctorAppointment(row),
+  const appList = formattedAppointments.map((row) => mapFallbackAppointmentRow(row));
+
+  const tokenPatientIds = Array.from(
+    new Set(
+      ((tokens ?? []) as Record<string, unknown>[])
+        .map((t) => String(t.patient_id ?? ''))
+        .filter(Boolean)
+        .filter((id) => !patientMap[id]),
+    ),
   );
 
-  const tokenList = ((tokens ?? []) as Record<string, unknown>[]).map(mapTokenRowToOpdToken);
+  const tokenPatientMap = await fetchPatientProfileMap(tokenPatientIds);
+  const mergedPatientMap = { ...patientMap, ...tokenPatientMap };
+
+  const tokenList = ((tokens ?? []) as Record<string, unknown>[]).map((row) =>
+    mapTokenRowToOpdToken({
+      ...row,
+      patient_profiles:
+        mergedPatientMap[String(row.patient_id ?? '')] ??
+        ({ full_name: 'Patient Record', phone: 'N/A' } as OPDToken['patient_profiles']),
+    }),
+  );
 
   let criticalAlerts = 0;
-  if (targetDoctorId) {
-    try {
+  try {
+    if (targetDoctorId) {
       const { count, error: alertErr } = await client
         .from('emergency_alerts')
         .select('*', { count: 'exact', head: true })
         .eq('doctor_id', targetDoctorId)
         .eq('status', 'ACTIVE')
         .eq('severity', 'CRITICAL');
-      if (alertErr) logSupabaseError('Critical alerts count failed:', alertErr);
-      criticalAlerts = count ?? 0;
-    } catch {
-      /* optional table */
+
+      if (!alertErr) {
+        criticalAlerts = count ?? 0;
+      }
     }
+  } catch {
+    criticalAlerts = 0;
   }
 
   return {
@@ -450,7 +539,7 @@ export async function fetchConsultationAppointmentContext(
 
   const { data: appt, error: apptErr } = await client
     .from('appointments')
-    .select('*, patient_profiles(full_name, gender, dob, blood_group)')
+    .select('*')
     .eq('appointment_id', appointmentId)
     .maybeSingle();
 
@@ -459,11 +548,8 @@ export async function fetchConsultationAppointmentContext(
     return null;
   }
 
-  const profile = appt.patient_profiles as
-    | Record<string, unknown>
-    | Record<string, unknown>[]
-    | null;
-  const p = Array.isArray(profile) ? profile[0] : profile;
+  const patientMap = await fetchPatientProfileMap([String(appt.patient_id ?? '')]);
+  const p = patientMap[String(appt.patient_id ?? '')];
 
   return {
     appointment_id: String(appt.appointment_id),
@@ -471,7 +557,7 @@ export async function fetchConsultationAppointmentContext(
     patient_id: String(appt.patient_id),
     patient_name: p?.full_name ? String(p.full_name) : undefined,
     patient_gender: p?.gender ? String(p.gender) : undefined,
-    patient_age: calcAgeFromDob(p?.dob as string | undefined),
+    patient_age: calcAgeFromDob((p?.date_of_birth ?? p?.dob) as string | undefined),
     blood_group: p?.blood_group ? String(p.blood_group) : undefined,
     reason: appt.reason_for_visit
       ? String(appt.reason_for_visit)
@@ -482,19 +568,20 @@ export async function fetchConsultationAppointmentContext(
 }
 
 /**
- * Finalize consultation: consultations → vitals → prescriptions → appointment COMPLETED.
- * Triggers Supabase Realtime so the patient prescriptions page updates instantly.
+ * Saves consultation + vitals + prescription for a patient (appointment optional).
+ * Triggers Supabase Realtime so the patient app updates instantly.
  */
-export async function finalizeConsultationAndPrescription(
-  input: ConsultationFinalizeInput,
+export async function savePatientClinicalEncounter(
+  input: Omit<ConsultationFinalizeInput, 'appointmentId'> & { appointmentId?: string | null },
 ): Promise<ConsultationFinalizeResult> {
   const client = supabase;
   const meds = input.medications.filter((m) => m.name.trim() !== '');
+  const appointmentId = input.appointmentId ?? null;
 
   const { data: consultation, error: consultErr } = await client
     .from('consultations')
     .insert({
-      appointment_id: input.appointmentId,
+      appointment_id: appointmentId,
       doctor_id: input.doctorId,
       patient_id: input.patientId,
       chief_complaint: input.clinical.chief_complaint,
@@ -534,7 +621,7 @@ export async function finalizeConsultationAndPrescription(
     .from('prescriptions')
     .insert({
       consultation_id: consultationId,
-      appointment_id: input.appointmentId,
+      appointment_id: appointmentId,
       doctor_id: input.doctorId,
       patient_id: input.patientId,
       medications: JSON.stringify(meds),
@@ -548,12 +635,24 @@ export async function finalizeConsultationAndPrescription(
     throw rxErr;
   }
 
-  await updateAppointmentStatus(input.appointmentId, 'COMPLETED');
+  if (appointmentId) {
+    await updateAppointmentStatus(appointmentId, 'COMPLETED');
+  }
 
   return {
     consultation_id: consultationId,
     prescription_id: prescription?.id ? String(prescription.id) : undefined,
   };
+}
+
+/**
+ * Finalize consultation: consultations → vitals → prescriptions → appointment COMPLETED.
+ * Triggers Supabase Realtime so the patient prescriptions page updates instantly.
+ */
+export async function finalizeConsultationAndPrescription(
+  input: ConsultationFinalizeInput,
+): Promise<ConsultationFinalizeResult> {
+  return savePatientClinicalEncounter(input);
 }
 
 function mapOpdTokenToLiveQueueRow(token: OPDToken): LiveQueueRow {
@@ -831,25 +930,25 @@ async function fetchAppointmentsFallback(doctorUuid: string): Promise<LiveQueueR
   try {
     const { data: appointments, error } = await supabase
       .from('appointments')
-      .select('*, patient_profiles(full_name, gender, dob, blood_group)')
+      .select('*')
       .eq('doctor_id', doctorUuid)
       .in('status', ['SCHEDULED', 'WAITING', 'requested', 'confirmed', 'in_progress']);
 
-    if (error || !appointments?.length) {
-      const { data: plain } = await supabase
-        .from('appointments')
-        .select('*')
-        .eq('doctor_id', doctorUuid)
-        .in('status', ['SCHEDULED', 'WAITING', 'requested', 'confirmed', 'in_progress']);
+    if (error || !appointments?.length) return [];
 
-      if (!plain?.length) return [];
-      return plain.map((a: Record<string, unknown>, i: number) =>
-        normalizeAppointmentFallbackRow(a, doctorUuid, i),
-      );
-    }
+    const patientMap = await fetchPatientProfileMap(
+      appointments.map((a: Record<string, unknown>) => String(a.patient_id ?? '')),
+    );
 
     return appointments.map((a: Record<string, unknown>, i: number) =>
-      normalizeAppointmentFallbackRow(a, doctorUuid, i),
+      normalizeAppointmentFallbackRow(
+        {
+          ...a,
+          patient_profiles: patientMap[String(a.patient_id ?? '')],
+        },
+        doctorUuid,
+        i,
+      ),
     );
   } catch {
     return [];

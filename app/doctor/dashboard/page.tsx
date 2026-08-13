@@ -28,6 +28,7 @@ export default function DoctorDashboardPage() {
 
   // Fetch initial dashboard metrics and lists
   const loadDashboardData = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await getDoctorDashboardData();
       setMetrics(data);
@@ -39,8 +40,10 @@ export default function DoctorDashboardPage() {
   }, []);
 
   useEffect(() => {
-    loadDashboardData();
+    void loadDashboardData();
+  }, [loadDashboardData]);
 
+  useEffect(() => {
     // Subscribe to real-time changes on appointments and opd_tokens
     const supabase = createClient();
     const channel = supabase
@@ -50,7 +53,7 @@ export default function DoctorDashboardPage() {
         { event: '*', schema: 'public', table: 'appointments' },
         () => {
           console.log('Realtime appointment event received — refreshing dashboard...');
-          loadDashboardData();
+          void loadDashboardData();
         }
       )
       .on(
@@ -58,13 +61,13 @@ export default function DoctorDashboardPage() {
         { event: '*', schema: 'public', table: 'opd_tokens' },
         () => {
           console.log('Realtime OPD token event received — refreshing queue...');
-          loadDashboardData();
+          void loadDashboardData();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [loadDashboardData]);
 

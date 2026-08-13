@@ -1,324 +1,342 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   AlertCircle,
-  CalendarDays,
-  Droplets,
+  ClipboardList,
   FileText,
-  FlaskConical,
   FolderHeart,
-  HeartPulse,
   Loader2,
-  Paperclip,
+  Pill,
+  Plus,
   Search,
-  ShieldAlert,
-  Upload,
+  Stethoscope,
   UserRound,
-  UsersRound,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { toast } from 'sonner';
-
 import {
-  fetchPatientClinicalBundle,
-  type FamilyMemberRecord,
-  type PatientProfileRecord,
-} from '@/lib/doctor/patient-records.service';
-import { getDoctorSession } from '@/lib/doctor/session';
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+import WriteConsultationModal, {
+  type ConsultationFormState,
+} from '@/components/doctor/WriteConsultationModal';
+import {
+  DEFAULT_ACTIVE_DOCTOR_ID,
+  getActiveDoctorProfile,
+  parsePrescriptionMedications,
+  savePatientClinicalEncounter,
+} from '@/lib/doctor/command-center/supabase-service';
 import { supabase } from '@/lib/supabaseClient';
 
-const RECORDS_KEY = 'curasync_patient_records';
-
-type MedicalRecord = {
-  id: string;
-  patient_id: string;
-  patient_name: string;
-  file_name: string;
-  file_path?: string;
-  file_url?: string;
-  uploaded_by?: string;
-  created_at: string;
-  source?: 'database' | 'local';
-};
-
-type PatientVisit = {
-  id: string;
+type PatientProfile = {
+  id?: string;
   patient_id?: string;
-  patient_name: string;
-  doctor_name: string;
-  department?: string;
-  hospital_name?: string;
-  appointment_date: string;
-  slot_time?: string;
-  queue_status?: string;
-  diagnosis?: string | null;
-  clinical_notes?: string | null;
-  notes?: string | null;
-  reason?: string | null;
+  full_name: string;
+  phone?: string | null;
+  gender?: string | null;
+  dob?: string | null;
+  date_of_birth?: string | null;
+  blood_group?: string | null;
+  chronic_conditions?: string | null;
+  known_allergies?: string | null;
 };
+
+type ConsultationRow = {
+  id: string;
+  created_at?: string;
+  chief_complaint?: string;
+  diagnosis?: string;
+  clinical_notes?: string;
+  follow_up_date?: string | null;
+};
+
+type VitalsRow = {
+  id?: string;
+  created_at?: string;
+  temperature_f?: number | null;
+  bp_systolic?: number | null;
+  bp_diastolic?: number | null;
+  pulse_bpm?: number | null;
+  spo2_percent?: number | null;
+  weight_kg?: number | null;
+};
+
+type PrescriptionRow = {
+  id: string;
+  created_at?: string;
+  medications?: unknown;
+  special_instructions?: string | null;
+  consultations?: { diagnosis?: string } | { diagnosis?: string }[] | null;
+};
+
+type DetailTab = 'overview' | 'history' | 'vitals' | 'prescriptions' | 'diagnostics';
 
 const clayCard =
   'rounded-3xl border border-white/80 bg-gradient-to-br from-white via-white/95 to-[#F2F6FA] shadow-[10px_10px_24px_rgba(137,74,102,0.12),-8px_-8px_20px_rgba(255,255,255,0.95)]';
 const glassPanel =
   'rounded-3xl border border-white/70 bg-white/55 backdrop-blur-xl shadow-[0_18px_45px_rgba(44,36,59,0.10)]';
 
-function readLocalRecords(): MedicalRecord[] {
-  try {
-    return JSON.parse(localStorage.getItem(RECORDS_KEY) ?? '[]') as MedicalRecord[];
-  } catch {
-    return [];
-  }
+function resolvePatientId(patient: PatientProfile): string {
+  return String(patient.id ?? patient.patient_id ?? '');
 }
 
-function saveLocalRecords(records: MedicalRecord[]) {
-  localStorage.setItem(RECORDS_KEY, JSON.stringify(records));
+function calcAge(dob?: string | null): number | undefined {
+  if (!dob) return undefined;
+  const born = new Date(dob);
+  if (Number.isNaN(born.getTime())) return undefined;
+  return Math.floor((Date.now() - born.getTime()) / (365.25 * 24 * 3600 * 1000));
 }
 
-function mergeRecords(local: MedicalRecord[], remote: MedicalRecord[]) {
-  const records = new Map<string, MedicalRecord>();
-  local.forEach((record) => records.set(record.id, { ...record, source: 'local' }));
-  remote.forEach((record) => records.set(record.id, { ...record, source: 'database' }));
-  return [...records.values()].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+function patientInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+function SearchSkeleton() {
+  return (
+    <div className="space-y-3 p-4">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="animate-pulse rounded-2xl border border-[#9DA6CD]/20 bg-white/60 p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-[#BDE2F5]/60" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-2/3 rounded bg-[#BDE2F5]/60" />
+              <div className="h-2 w-1/2 rounded bg-[#F2F6FA]" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DetailSkeleton() {
+  return (
+    <div className={`${glassPanel} min-h-96 space-y-4 p-6`}>
+      <div className="animate-pulse space-y-3">
+        <div className="h-6 w-48 rounded bg-[#BDE2F5]/60" />
+        <div className="h-4 w-32 rounded bg-[#F2F6FA]" />
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 rounded-2xl bg-[#F2F6FA]" />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
 export default function DoctorRecordsPage() {
-  const [session] = useState(getDoctorSession);
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<PatientProfileRecord[]>([]);
-  const [selected, setSelected] = useState<PatientProfileRecord | null>(null);
-  const [family, setFamily] = useState<FamilyMemberRecord[]>([]);
-  const [records, setRecords] = useState<MedicalRecord[]>([]);
-  const [visits, setVisits] = useState<PatientVisit[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<PatientProfile[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<PatientProfile | null>(null);
+  const [activeTab, setActiveTab] = useState<DetailTab>('overview');
+
+  const [consultations, setConsultations] = useState<ConsultationRow[]>([]);
+  const [vitals, setVitals] = useState<VitalsRow[]>([]);
+  const [prescriptions, setPrescriptions] = useState<PrescriptionRow[]>([]);
+
   const [searching, setSearching] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [offline, setOffline] = useState(false);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
-  const loadRecords = useCallback(async (patient: PatientProfileRecord) => {
-    const local = readLocalRecords().filter((record) => record.patient_id === patient.patient_id);
-    const localAppointments = (() => {
-      try {
-        return (JSON.parse(localStorage.getItem('curasync_appointments') ?? '[]') as PatientVisit[])
-          .filter(
-            (visit) =>
-              visit.patient_id === patient.patient_id || visit.patient_name === patient.full_name,
-          )
-          .sort(
-            (a, b) =>
-              new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime(),
-          );
-      } catch {
-        return [];
-      }
-    })();
-    try {
-      const [recordsResult, visitsResult] = await Promise.all([
-        supabase
-          .from('medical_records')
-          .select('*')
-          .eq('patient_id', patient.patient_id)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('patient_appointments')
-          .select('*')
-          .eq('patient_id', patient.patient_id)
-          .order('appointment_date', { ascending: false }),
-      ]);
-      if (recordsResult.error) throw recordsResult.error;
-      const merged = mergeRecords(local, (recordsResult.data ?? []) as MedicalRecord[]);
-      setRecords(merged);
-      saveLocalRecords(
-        mergeRecords(readLocalRecords(), (recordsResult.data ?? []) as MedicalRecord[]),
-      );
-      if (visitsResult.error) {
-        setVisits(localAppointments);
-        setOffline(true);
-      } else {
-        const visitMap = new Map(localAppointments.map((visit) => [visit.id, visit]));
-        ((visitsResult.data ?? []) as PatientVisit[]).forEach((visit) =>
-          visitMap.set(visit.id, visit),
-        );
-        setVisits(
-          [...visitMap.values()].sort(
-            (a, b) =>
-              new Date(b.appointment_date).getTime() -
-              new Date(a.appointment_date).getTime(),
-          ),
-        );
-        setOffline(false);
-      }
-    } catch {
-      setRecords(local);
-      setVisits(localAppointments);
-      setOffline(true);
-    }
-  }, []);
-
-  const choosePatient = useCallback(
-    async (patient: PatientProfileRecord) => {
-      setSelected(patient);
-      setDetailsLoading(true);
-      try {
-        const bundle = await fetchPatientClinicalBundle(patient.full_name);
-        setSelected(bundle.profile ?? patient);
-        setFamily(bundle.familyMembers);
-        await loadRecords(bundle.profile ?? patient);
-      } catch (error) {
-        setFamily([]);
-        setRecords(
-          readLocalRecords().filter((record) => record.patient_id === patient.patient_id),
-        );
-        setVisits([]);
-        setOffline(true);
-        toast.error('Could not load the complete record', {
-          description: error instanceof Error ? error.message : 'Local information is shown.',
-        });
-      } finally {
-        setDetailsLoading(false);
-      }
-    },
-    [loadRecords],
-  );
-
-  const searchPatients = useCallback(async () => {
-    const term = query.trim();
+  const searchPatients = useCallback(async (term: string) => {
     if (term.length < 2) {
-      setResults([]);
+      setSearchResults([]);
       return;
     }
+
     setSearching(true);
     try {
       const { data, error } = await supabase
         .from('patient_profiles')
         .select(
-          'patient_id, full_name, phone, blood_group, known_allergies, chronic_conditions, emergency_contact_name, emergency_contact_phone, date_of_birth, gender',
+          'id, full_name, phone, gender, date_of_birth, dob, blood_group, chronic_conditions, known_allergies',
         )
         .ilike('full_name', `%${term}%`)
         .limit(20);
+
       if (error) throw error;
-      setResults((data ?? []) as PatientProfileRecord[]);
-      setOffline(false);
-    } catch (error) {
-      setOffline(true);
-      const cachedProfile = localStorage.getItem('curasync_patient_profile');
-      try {
-        const profile = cachedProfile ? (JSON.parse(cachedProfile) as PatientProfileRecord) : null;
-        setResults(
-          profile?.full_name.toLowerCase().includes(term.toLowerCase()) ? [profile] : [],
-        );
-      } catch {
-        setResults([]);
-      }
-      toast.warning('Patient search is offline', {
-        description: error instanceof Error ? error.message : 'Showing cached results only.',
-      });
+      setSearchResults((data ?? []) as PatientProfile[]);
+    } catch (err) {
+      console.warn('Patient search failed:', err);
+      setSearchResults([]);
     } finally {
       setSearching(false);
     }
-  }, [query]);
+  }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void searchPatients(), 350);
+    const timer = window.setTimeout(() => {
+      void searchPatients(searchTerm.trim());
+    }, 300);
     return () => window.clearTimeout(timer);
-  }, [searchPatients]);
+  }, [searchTerm, searchPatients]);
 
-  const uploadRecord = async (file: File) => {
-    if (!selected) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File is too large', { description: 'Choose a file smaller than 10 MB.' });
-      return;
-    }
+  const loadPatientDetails = useCallback(async (patient: PatientProfile) => {
+    const patientId = resolvePatientId(patient);
+    if (!patientId) return;
 
-    setUploading(true);
-    const id = crypto.randomUUID();
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const filePath = `${selected.patient_id}/${Date.now()}-${safeName}`;
-    const localRecord: MedicalRecord = {
-      id,
-      patient_id: selected.patient_id,
-      patient_name: selected.full_name,
-      file_name: file.name,
-      file_path: filePath,
-      uploaded_by: session.employeeId,
-      created_at: new Date().toISOString(),
-      source: 'local',
-    };
-
-    const local = [localRecord, ...readLocalRecords()];
-    saveLocalRecords(local);
-    setRecords((current) => [localRecord, ...current]);
+    setDetailsLoading(true);
 
     try {
-      const { error: uploadError } = await supabase.storage
-        .from('medical-records')
-        .upload(filePath, file, { upsert: false });
-      if (uploadError) throw uploadError;
+      const [consultationsRes, vitalsRes, prescriptionsRes] = await Promise.all([
+        supabase
+          .from('consultations')
+          .select('*')
+          .eq('patient_id', patientId)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('vitals')
+          .select('*')
+          .eq('patient_id', patientId)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('prescriptions')
+          .select('*, consultations(diagnosis)')
+          .eq('patient_id', patientId)
+          .order('created_at', { ascending: false }),
+      ]);
 
-      const { data: publicData } = supabase.storage.from('medical-records').getPublicUrl(filePath);
-      const metadata = {
-        id,
-        patient_id: selected.patient_id,
-        patient_name: selected.full_name,
-        file_name: file.name,
-        file_path: filePath,
-        file_url: publicData.publicUrl,
-        uploaded_by: session.employeeId,
-        created_at: localRecord.created_at,
-      };
-      const { error: metadataError } = await supabase.from('medical_records').insert(metadata);
-      if (metadataError) throw metadataError;
-
-      saveLocalRecords(
-        readLocalRecords().map((record) =>
-          record.id === id ? { ...record, ...metadata, source: 'database' } : record,
-        ),
-      );
-      await loadRecords(selected);
-      setOffline(false);
-      toast.success('Medical record uploaded');
-    } catch (error) {
-      setOffline(true);
-      toast.warning('Record saved locally', {
-        description:
-          error instanceof Error ? error.message : 'Upload will need to be retried when online.',
-      });
+      setConsultations((consultationsRes.data ?? []) as ConsultationRow[]);
+      setVitals((vitalsRes.data ?? []) as VitalsRow[]);
+      setPrescriptions((prescriptionsRes.data ?? []) as PrescriptionRow[]);
+    } catch (err) {
+      console.warn('Failed to load patient clinical bundle:', err);
+      setConsultations([]);
+      setVitals([]);
+      setPrescriptions([]);
     } finally {
-      setUploading(false);
-      if (fileInput.current) fileInput.current.value = '';
+      setDetailsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!selectedPatient) return;
+
+    const patientId = resolvePatientId(selectedPatient);
+    if (!patientId) return;
+
+    const channel = supabase
+      .channel(`doctor-records-${patientId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'consultations', filter: `patient_id=eq.${patientId}` },
+        () => void loadPatientDetails(selectedPatient),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'vitals', filter: `patient_id=eq.${patientId}` },
+        () => void loadPatientDetails(selectedPatient),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'prescriptions', filter: `patient_id=eq.${patientId}` },
+        () => void loadPatientDetails(selectedPatient),
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [selectedPatient, loadPatientDetails]);
+
+  const handleSelectPatient = (patient: PatientProfile) => {
+    setSelectedPatient(patient);
+    setActiveTab('overview');
+    setSaveMessage(null);
+    void loadPatientDetails(patient);
+  };
+
+  const handleSaveConsultation = async (form: ConsultationFormState) => {
+    if (!selectedPatient) return;
+
+    const patientId = resolvePatientId(selectedPatient);
+    if (!patientId) return;
+
+    setSaving(true);
+    setSaveMessage(null);
+
+    try {
+      const doctor = await getActiveDoctorProfile();
+      const doctorId = doctor?.doctor_id ? String(doctor.doctor_id) : DEFAULT_ACTIVE_DOCTOR_ID;
+
+      await savePatientClinicalEncounter({
+        doctorId,
+        patientId,
+        clinical: {
+          chief_complaint: form.chiefComplaint,
+          diagnosis: form.diagnosis,
+          clinical_notes: form.clinicalNotes,
+        },
+        vitals: {
+          temperature_f: form.temperature ? Number(form.temperature) : null,
+          bp_systolic: form.bpSystolic ? Number(form.bpSystolic) : null,
+          bp_diastolic: form.bpDiastolic ? Number(form.bpDiastolic) : null,
+          pulse_bpm: form.pulse ? Number(form.pulse) : null,
+          spo2_percent: form.spo2 ? Number(form.spo2) : null,
+        },
+        medications: form.medications.map(({ id: _id, ...med }) => med),
+        special_instructions: form.clinicalNotes || undefined,
+      });
+
+      setModalOpen(false);
+      setSaveMessage('Prescription sent successfully to patient!');
+      setActiveTab('history');
+      await loadPatientDetails(selectedPatient);
+    } catch (err) {
+      console.error('Save consultation failed:', err);
+      setSaveMessage('Failed to save consultation. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const history = useMemo<Array<[string, string | null | undefined, LucideIcon]>>(
-    () => [
-      ['Blood group', selected?.blood_group, Droplets],
-      ['Allergies', selected?.known_allergies, ShieldAlert],
-      ['Chronic conditions', selected?.chronic_conditions, HeartPulse],
-      ['Date of birth', selected?.date_of_birth, CalendarDays],
-      ['Gender', selected?.gender, UserRound],
-      [
-        'Emergency contact',
-        [selected?.emergency_contact_name, selected?.emergency_contact_phone]
-          .filter(Boolean)
-          .join(' · '),
-        FileText,
-      ],
-    ],
-    [selected],
+  const latestVitals = vitals[0];
+  const uniqueDiagnoses = useMemo(
+    () =>
+      [...new Set(consultations.map((c) => c.diagnosis).filter(Boolean))] as string[],
+    [consultations],
   );
 
-  const diagnoses = useMemo(
+  const vitalsChartData = useMemo(
     () =>
-      visits
-        .map((visit) => visit.diagnosis?.trim())
-        .filter((diagnosis): diagnosis is string => Boolean(diagnosis))
-        .filter((diagnosis, index, all) => all.indexOf(diagnosis) === index),
-    [visits],
+      [...vitals]
+        .reverse()
+        .map((v, index) => ({
+          label: v.created_at
+            ? new Date(v.created_at).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+              })
+            : `#${index + 1}`,
+          systolic: v.bp_systolic ?? 0,
+          diastolic: v.bp_diastolic ?? 0,
+          spo2: v.spo2_percent ?? 0,
+          pulse: v.pulse_bpm ?? 0,
+        })),
+    [vitals],
   );
+
+  const tabs: { id: DetailTab; label: string; icon: typeof FileText }[] = [
+    { id: 'overview', label: 'Overview', icon: ClipboardList },
+    { id: 'history', label: 'History & Diagnoses', icon: FileText },
+    { id: 'vitals', label: 'Vitals Logs', icon: Activity },
+    { id: 'prescriptions', label: 'Prescriptions', icon: Pill },
+    { id: 'diagnostics', label: 'Diagnostics', icon: Stethoscope },
+  ];
 
   return (
     <section className="min-h-full bg-[radial-gradient(circle_at_top_left,_#BDE2F5_0,_#F2F6FA_38%,_#F2F6FA_100%)] p-4 text-[#2C243B] sm:p-6 lg:p-8">
@@ -329,231 +347,437 @@ export default function DoctorRecordsPage() {
               <FolderHeart className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Patient records</h1>
+              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+                Patient Consultation & Clinical Records
+              </h1>
               <p className="mt-1 text-sm text-[#2C243B]/60">
-                Search verified profiles and review clinical history.
+                Search patients, review history, and dispatch prescriptions to the patient app.
               </p>
             </div>
           </div>
-          <div className="relative mt-6">
-            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#9887B1]" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search patient name…"
-              className="w-full rounded-2xl border border-white/80 bg-white/65 py-3.5 pl-12 pr-12 text-sm shadow-inner outline-none backdrop-blur transition focus:border-[#894A66] focus:ring-2 focus:ring-[#894A66]/15"
-            />
-            {searching && (
-              <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-[#894A66]" />
-            )}
-          </div>
         </header>
 
-        {offline && (
-          <div className="flex items-center gap-2 rounded-2xl border border-[#93688E]/35 bg-[#BDE2F5]/45 px-4 py-3 text-sm text-[#2C243B]">
-            <AlertCircle className="h-4 w-4 shrink-0" /> Some data is being shown from this device.
-          </div>
-        )}
-
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <aside className={`${clayCard} overflow-hidden`}>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <aside className={`${clayCard} overflow-hidden lg:col-span-1`}>
             <div className="border-b border-[#9DA6CD]/25 px-5 py-4">
-              <h2 className="font-bold">Search results</h2>
+              <h2 className="font-bold">Patient Search</h2>
             </div>
-            {query.trim().length < 2 ? (
-              <p className="p-6 text-sm text-[#2C243B]/55">Enter at least two characters.</p>
-            ) : results.length === 0 && !searching ? (
+
+            <div className="relative border-b border-[#9DA6CD]/20 p-4">
+              <Search className="absolute left-7 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9887B1]" />
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name (min. 2 chars)…"
+                className="w-full rounded-xl border border-white/80 bg-white/65 py-2.5 pl-10 pr-10 text-sm shadow-inner outline-none focus:border-[#894A66] focus:ring-2 focus:ring-[#894A66]/15"
+              />
+              {searching && (
+                <Loader2 className="absolute right-7 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#894A66]" />
+              )}
+            </div>
+
+            {searchTerm.trim().length < 2 ? (
+              <p className="p-6 text-sm text-[#2C243B]/55">Type at least 2 characters to search.</p>
+            ) : searching ? (
+              <SearchSkeleton />
+            ) : searchResults.length === 0 ? (
               <div className="p-8 text-center">
                 <UserRound className="mx-auto mb-3 h-8 w-8 text-[#9887B1]" />
-                <p className="text-sm font-semibold">No patient profiles found</p>
+                <p className="text-sm font-semibold">No patients found</p>
+                <p className="mt-1 text-xs text-[#2C243B]/55">Try a different name spelling.</p>
               </div>
             ) : (
-              <div className="divide-y divide-[#9DA6CD]/20">
-                {results.map((patient) => (
-                  <button
-                    key={patient.patient_id}
-                    type="button"
-                    onClick={() => void choosePatient(patient)}
-                    className={`w-full p-4 text-left transition hover:bg-[#BDE2F5]/25 active:scale-95 ${
-                      selected?.patient_id === patient.patient_id ? 'bg-[#BDE2F5]/45' : ''
-                    }`}
-                  >
-                    <p className="font-bold">{patient.full_name}</p>
-                    <p className="mt-1 text-xs text-[#2C243B]/55">
-                      {patient.phone || 'Phone not provided'}
-                    </p>
-                  </button>
-                ))}
+              <div className="max-h-[520px] divide-y divide-[#9DA6CD]/20 overflow-y-auto">
+                {searchResults.map((patient) => {
+                  const patientId = resolvePatientId(patient);
+                  const age = calcAge(patient.dob ?? patient.date_of_birth);
+                  const isSelected =
+                    selectedPatient && resolvePatientId(selectedPatient) === patientId;
+
+                  return (
+                    <button
+                      key={patientId || patient.full_name}
+                      type="button"
+                      onClick={() => handleSelectPatient(patient)}
+                      className={`w-full p-4 text-left transition hover:bg-[#BDE2F5]/25 active:scale-[0.99] ${
+                        isSelected ? 'bg-[#BDE2F5]/45' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#894A66]/15 text-xs font-black text-[#894A66]">
+                          {patientInitials(patient.full_name)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-bold">{patient.full_name}</p>
+                          <p className="mt-0.5 text-xs text-[#2C243B]/55">
+                            {age != null ? `${age} yrs` : 'Age N/A'} · {patient.gender || '—'}
+                          </p>
+                          <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-semibold">
+                            <span className="rounded-md bg-[#894A66]/10 px-1.5 py-0.5 text-[#894A66]">
+                              {patient.blood_group || 'BG N/A'}
+                            </span>
+                            <span className="truncate text-[#2C243B]/45">
+                              {patient.phone || 'No phone'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </aside>
 
-          <main className="space-y-6">
-            {!selected ? (
+          <main className="space-y-4 lg:col-span-2">
+            {!selectedPatient ? (
               <div className={`${clayCard} flex min-h-96 flex-col items-center justify-center p-8 text-center`}>
                 <FolderHeart className="mb-4 h-12 w-12 text-[#9887B1]" />
                 <h2 className="text-lg font-bold">Select a patient</h2>
                 <p className="mt-1 max-w-md text-sm text-[#2C243B]/55">
-                  Clinical history and uploaded documents will appear here.
+                  Choose a profile from the search panel to view clinical history, vitals, and
+                  prescriptions.
                 </p>
               </div>
             ) : detailsLoading ? (
-              <div className={`${glassPanel} flex min-h-96 items-center justify-center`}>
-                <Loader2 className="h-8 w-8 animate-spin text-[#894A66]" />
-              </div>
+              <DetailSkeleton />
             ) : (
               <>
+                {saveMessage && (
+                  <div
+                    className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                      saveMessage.includes('success')
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                        : 'border-red-200 bg-red-50 text-red-800'
+                    }`}
+                  >
+                    {saveMessage}
+                  </div>
+                )}
+
                 <div className={`${clayCard} p-5 sm:p-6`}>
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-[#93688E]">Clinical profile</p>
-                      <h2 className="mt-1 text-xl font-black">{selected.full_name}</h2>
-                      <p className="mt-1 text-sm text-[#2C243B]/55">{selected.phone || 'No phone recorded'}</p>
-                    </div>
-                    <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#894A66] to-[#93688E] px-4 py-2.5 text-sm font-bold text-white shadow-[5px_5px_12px_rgba(137,74,102,0.28),-3px_-3px_9px_white] transition active:scale-95">
-                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                      Upload record
-                      <input
-                        ref={fileInput}
-                        type="file"
-                        className="sr-only"
-                        disabled={uploading}
-                        accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) void uploadRecord(file);
-                        }}
-                      />
-                    </label>
-                  </div>
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {history.map(([label, value, Icon]) => (
-                      <div key={String(label)} className="rounded-2xl border border-white/80 bg-gradient-to-br from-white to-[#BDE2F5]/35 p-4 shadow-[5px_5px_13px_rgba(157,166,205,0.20),-4px_-4px_10px_white]">
-                        <p className="flex items-center gap-2 text-xs font-bold text-[#93688E]">
-                          {Icon && <Icon className="h-4 w-4" />} {label}
-                        </p>
-                        <p className="mt-1 text-sm font-semibold">{value || 'Not recorded'}</p>
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#894A66]/15 text-lg font-black text-[#894A66]">
+                        {patientInitials(selectedPatient.full_name)}
                       </div>
-                    ))}
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-[#93688E]">
+                          Patient Demographics
+                        </p>
+                        <h2 className="mt-1 text-xl font-black">{selectedPatient.full_name}</h2>
+                        <p className="mt-1 text-sm text-[#2C243B]/55">
+                          {calcAge(selectedPatient.dob ?? selectedPatient.date_of_birth) ?? '—'} yrs ·{' '}
+                          {selectedPatient.gender || '—'} · Blood group{' '}
+                          {selectedPatient.blood_group || 'N/A'}
+                        </p>
+                        <p className="mt-0.5 text-sm text-[#2C243B]/55">
+                          {selectedPatient.phone || 'No phone on file'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setModalOpen(true)}
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#894A66] px-4 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-[#7a3f5a]"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Write New Consultation / Prescription
+                    </button>
                   </div>
                 </div>
 
-                <div className="grid gap-6 xl:grid-cols-2">
-                  <div className={`${clayCard} p-5`}>
-                    <h3 className="flex items-center gap-2 font-bold">
-                      <Activity className="h-5 w-5 text-[#894A66]" /> Diagnoses & conditions
-                    </h3>
-                    <div className="mt-4 space-y-3">
-                      <div className="rounded-2xl bg-[#F2F6FA]/80 p-4">
-                        <p className="text-xs font-bold uppercase tracking-wide text-[#93688E]">
-                          Present chronic conditions
-                        </p>
-                        <p className="mt-1 text-sm font-semibold">
-                          {selected.chronic_conditions || 'No chronic conditions recorded.'}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-[#BDE2F5]/35 p-4">
-                        <p className="text-xs font-bold uppercase tracking-wide text-[#93688E]">
-                          Visit diagnoses
-                        </p>
-                        <p className="mt-1 text-sm font-semibold">
-                          {diagnoses.length ? diagnoses.join(' · ') : 'No diagnosis recorded in visits.'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  {tabs.map(({ id, label, icon: Icon }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setActiveTab(id)}
+                      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black transition ${
+                        activeTab === id
+                          ? 'bg-[#894A66] text-white'
+                          : 'border border-white/80 bg-white/70 text-[#2C243B] hover:bg-[#BDE2F5]/30'
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
 
-                  <div className={`${clayCard} p-5`}>
-                    <h3 className="flex items-center gap-2 font-bold">
-                      <CalendarDays className="h-5 w-5 text-[#93688E]" /> Past OPD visits
-                    </h3>
-                    {visits.length ? (
-                      <div className="mt-4 max-h-72 space-y-3 overflow-y-auto pr-1">
-                        {visits.map((visit) => (
-                          <div key={visit.id} className="rounded-2xl border border-white/80 bg-white/70 p-4 backdrop-blur">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="text-sm font-bold">{visit.department || 'General OPD'}</p>
-                                <p className="mt-1 text-xs text-[#2C243B]/55">
-                                  {visit.doctor_name} · {visit.hospital_name || 'Hospital not recorded'}
+                <div className={`${clayCard} p-5 sm:p-6`}>
+                  {activeTab === 'overview' && (
+                    <div className="space-y-4">
+                      <h3 className="flex items-center gap-2 font-bold">
+                        <ClipboardList className="h-5 w-5 text-[#894A66]" /> Overview
+                      </h3>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-2xl border border-white/80 bg-white/70 p-4">
+                          <p className="text-xs font-bold uppercase text-[#93688E]">Consultations</p>
+                          <p className="mt-1 text-2xl font-black">{consultations.length}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/80 bg-white/70 p-4">
+                          <p className="text-xs font-bold uppercase text-[#93688E]">Prescriptions</p>
+                          <p className="mt-1 text-2xl font-black">{prescriptions.length}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/80 bg-white/70 p-4">
+                          <p className="text-xs font-bold uppercase text-[#93688E]">Vitals Logs</p>
+                          <p className="mt-1 text-2xl font-black">{vitals.length}</p>
+                        </div>
+                      </div>
+
+                      {latestVitals && (
+                        <div className="rounded-2xl border border-[#9DA6CD]/20 bg-[#F2F6FA]/80 p-4">
+                          <p className="text-xs font-bold text-[#93688E]">Latest Vitals</p>
+                          <p className="mt-1 text-sm font-semibold">
+                            Temp {latestVitals.temperature_f ?? '—'}°F · BP{' '}
+                            {latestVitals.bp_systolic ?? '—'}/{latestVitals.bp_diastolic ?? '—'} ·
+                            Pulse {latestVitals.pulse_bpm ?? '—'} · SpO₂{' '}
+                            {latestVitals.spo2_percent ?? '—'}%
+                          </p>
+                        </div>
+                      )}
+
+                      {consultations[0] && (
+                        <div className="rounded-2xl border border-white/80 bg-white/70 p-4">
+                          <p className="text-xs font-bold text-[#93688E]">Most Recent Visit</p>
+                          <p className="mt-1 font-bold">
+                            {consultations[0].diagnosis || 'General consultation'}
+                          </p>
+                          <p className="mt-1 text-sm text-[#2C243B]/65">
+                            {consultations[0].chief_complaint || 'No chief complaint recorded'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'history' && (
+                    <div className="space-y-4">
+                      <h3 className="flex items-center gap-2 font-bold">
+                        <FileText className="h-5 w-5 text-[#894A66]" /> History & Diagnoses
+                      </h3>
+                      {consultations.length === 0 ? (
+                        <p className="text-sm text-[#2C243B]/55">No consultations recorded yet.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {consultations.map((visit) => (
+                            <article
+                              key={visit.id}
+                              className="rounded-2xl border border-white/80 bg-white/70 p-4"
+                            >
+                              <p className="text-xs font-bold text-[#93688E]">
+                                {visit.created_at
+                                  ? new Date(visit.created_at).toLocaleString('en-IN')
+                                  : 'Date unknown'}
+                              </p>
+                              <p className="mt-1 font-bold">
+                                {visit.diagnosis || 'General consultation'}
+                              </p>
+                              <p className="mt-1 text-sm text-[#2C243B]/65">
+                                Chief complaint: {visit.chief_complaint || 'N/A'}
+                              </p>
+                              {visit.clinical_notes && (
+                                <p className="mt-2 text-xs text-[#2C243B]/55">{visit.clinical_notes}</p>
+                              )}
+                            </article>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'prescriptions' && (
+                    <div className="space-y-4">
+                      <h3 className="flex items-center gap-2 font-bold">
+                        <Pill className="h-5 w-5 text-[#894A66]" /> Prescriptions
+                      </h3>
+                      {prescriptions.length === 0 ? (
+                        <p className="text-sm text-[#2C243B]/55">No prescriptions on file.</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {prescriptions.map((rx) => {
+                            const meds = parsePrescriptionMedications(rx.medications);
+                            const consult = Array.isArray(rx.consultations)
+                              ? rx.consultations[0]
+                              : rx.consultations;
+
+                            return (
+                              <article
+                                key={rx.id}
+                                className="rounded-2xl border border-white/80 bg-white/70 p-4"
+                              >
+                                <p className="text-xs font-bold text-[#93688E]">
+                                  {rx.created_at
+                                    ? new Date(rx.created_at).toLocaleDateString('en-IN')
+                                    : 'Date unknown'}
+                                  {consult?.diagnosis ? ` · ${consult.diagnosis}` : ''}
+                                </p>
+                                {meds.length > 0 ? (
+                                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                    {meds.map((med, idx) => (
+                                      <div
+                                        key={`${rx.id}-${idx}`}
+                                        className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3"
+                                      >
+                                        <p className="font-bold text-emerald-900">{med.name}</p>
+                                        <p className="mt-0.5 text-xs text-emerald-800">
+                                          {med.dosage} · {med.frequency} · {med.duration}
+                                        </p>
+                                        {med.instructions && (
+                                          <p className="mt-1 text-[10px] text-emerald-700">
+                                            {med.instructions}
+                                          </p>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="mt-2 text-sm text-[#2C243B]/55">No medications listed.</p>
+                                )}
+                                {rx.special_instructions && (
+                                  <p className="mt-3 text-xs italic text-[#2C243B]/60">
+                                    {rx.special_instructions}
+                                  </p>
+                                )}
+                              </article>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'vitals' && (
+                    <div className="space-y-4">
+                      <h3 className="flex items-center gap-2 font-bold">
+                        <Activity className="h-5 w-5 text-[#894A66]" /> Vitals Logs
+                      </h3>
+                      {vitals.length === 0 ? (
+                        <p className="text-sm text-[#2C243B]/55">No vitals recorded yet.</p>
+                      ) : (
+                        <>
+                          <div className="h-64 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={vitalsChartData}>
+                                <XAxis dataKey="label" stroke="#9887B1" fontSize={11} />
+                                <YAxis stroke="#9887B1" fontSize={11} />
+                                <Tooltip />
+                                <Line
+                                  type="monotone"
+                                  dataKey="systolic"
+                                  name="Systolic"
+                                  stroke="#894A66"
+                                  strokeWidth={2}
+                                  dot={false}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="diastolic"
+                                  name="Diastolic"
+                                  stroke="#20639B"
+                                  strokeWidth={2}
+                                  dot={false}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="spo2"
+                                  name="SpO₂"
+                                  stroke="#2E8B70"
+                                  strokeWidth={2}
+                                  dot={false}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {vitals.slice(0, 8).map((v, idx) => (
+                              <div
+                                key={v.id ?? idx}
+                                className="rounded-xl border border-[#9DA6CD]/20 bg-[#F2F6FA]/80 p-3 text-xs"
+                              >
+                                <p className="font-bold text-[#93688E]">
+                                  {v.created_at
+                                    ? new Date(v.created_at).toLocaleString('en-IN')
+                                    : 'Reading'}
+                                </p>
+                                <p className="mt-1 font-semibold">
+                                  Temp {v.temperature_f ?? '—'}°F · BP {v.bp_systolic ?? '—'}/
+                                  {v.bp_diastolic ?? '—'} · Pulse {v.pulse_bpm ?? '—'} · SpO₂{' '}
+                                  {v.spo2_percent ?? '—'}%
                                 </p>
                               </div>
-                              <span className="rounded-full bg-[#A9C5E3]/40 px-2.5 py-1 text-[10px] font-bold">
-                                {visit.queue_status || 'VISIT'}
-                              </span>
-                            </div>
-                            <p className="mt-3 text-xs font-semibold text-[#93688E]">
-                              {new Date(visit.appointment_date).toLocaleDateString()}
-                              {visit.slot_time ? ` · ${visit.slot_time}` : ''}
-                            </p>
-                            <p className="mt-1 text-xs text-[#2C243B]/65">
-                              {visit.diagnosis || visit.clinical_notes || visit.notes || visit.reason || 'No clinical note recorded.'}
-                            </p>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-5 text-sm text-[#2C243B]/55">No past OPD visits found.</p>
-                    )}
-                  </div>
+                        </>
+                      )}
+                    </div>
+                  )}
 
-                  <div className={`${clayCard} p-5`}>
-                    <h3 className="flex items-center gap-2 font-bold">
-                      <UsersRound className="h-5 w-5 text-[#93688E]" /> Family members
-                    </h3>
-                    {family.length ? (
-                      <div className="mt-4 space-y-2">
-                        {family.map((member) => (
-                          <div key={member.id} className="rounded-xl bg-[#F2F6FA] p-3">
-                            <p className="text-sm font-bold">{member.full_name}</p>
-                            <p className="text-xs text-[#2C243B]/55">{member.relation}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-5 text-sm text-[#2C243B]/55">No family members recorded.</p>
-                    )}
-                  </div>
+                  {activeTab === 'diagnostics' && (
+                    <div className="space-y-4">
+                      <h3 className="flex items-center gap-2 font-bold">
+                        <Stethoscope className="h-5 w-5 text-[#894A66]" /> Diagnostics
+                      </h3>
 
-                  <div className={`${clayCard} p-5`}>
-                    <h3 className="flex items-center gap-2 font-bold">
-                      <FlaskConical className="h-5 w-5 text-[#93688E]" /> Lab & medical attachments
-                    </h3>
-                    {records.length ? (
-                      <div className="mt-4 space-y-2">
-                        {records.map((record) => (
-                          <a
-                            key={record.id}
-                            href={record.file_url}
-                            target={record.file_url ? '_blank' : undefined}
-                            rel="noreferrer"
-                            className={`block rounded-2xl border border-white/80 bg-white/60 p-3 ${
-                              record.file_url ? 'transition hover:bg-[#BDE2F5]/25 active:scale-95' : 'cursor-default'
-                            }`}
-                            onClick={(event) => {
-                              if (!record.file_url) event.preventDefault();
-                            }}
-                          >
-                            <p className="flex items-center gap-2 truncate text-sm font-bold">
-                              <Paperclip className="h-4 w-4 shrink-0 text-[#894A66]" />
-                              {record.file_name}
-                            </p>
-                            <p className="mt-1 text-xs text-[#2C243B]/50">
-                              {new Date(record.created_at).toLocaleString()} · {record.source}
-                            </p>
-                          </a>
-                        ))}
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+                          <p className="flex items-center gap-1 text-xs font-bold uppercase text-amber-800">
+                            <AlertCircle className="h-3.5 w-3.5" /> Chronic Conditions
+                          </p>
+                          <p className="mt-2 text-sm">
+                            {selectedPatient.chronic_conditions || 'None recorded'}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-red-100 bg-red-50/70 p-4">
+                          <p className="flex items-center gap-1 text-xs font-bold uppercase text-red-800">
+                            <AlertCircle className="h-3.5 w-3.5" /> Known Allergies
+                          </p>
+                          <p className="mt-2 text-sm">
+                            {selectedPatient.known_allergies || 'None recorded'}
+                          </p>
+                        </div>
                       </div>
-                    ) : (
-                      <p className="mt-5 text-sm text-[#2C243B]/55">No medical documents uploaded.</p>
-                    )}
-                  </div>
+
+                      <div>
+                        <p className="mb-2 text-xs font-bold uppercase text-[#93688E]">
+                          Diagnosis History
+                        </p>
+                        {uniqueDiagnoses.length === 0 ? (
+                          <p className="text-sm text-[#2C243B]/55">No diagnoses logged yet.</p>
+                        ) : (
+                          <ul className="flex flex-wrap gap-2">
+                            {uniqueDiagnoses.map((dx) => (
+                              <li
+                                key={dx}
+                                className="rounded-full border border-[#894A66]/20 bg-[#894A66]/10 px-3 py-1 text-xs font-semibold text-[#894A66]"
+                              >
+                                {dx}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
           </main>
         </div>
       </div>
+
+      {selectedPatient && (
+        <WriteConsultationModal
+          open={modalOpen}
+          patientName={selectedPatient.full_name}
+          saving={saving}
+          onClose={() => setModalOpen(false)}
+          onSave={handleSaveConsultation}
+        />
+      )}
     </section>
   );
 }

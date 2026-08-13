@@ -1,132 +1,106 @@
-import { computeNextSmartQToken } from '@/lib/doctor/smartq-token.service';
-import type { BookableDoctor } from '@/lib/doctor/bookable-doctors';
-import { enqueuePatientForDoctor, ensurePatientIdPersisted } from '@/lib/clinical/bridge';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
 
-export type BookAppointmentInput = {
-  patientId: string;
-  patientName: string;
-  doctor: BookableDoctor;
-  appointmentDate: string;
-  slotTime: string;
-  reasonForVisit: string;
-  hospitalName: string;
-};
+export interface BookAppointmentPayload {
+  patient_id?: string;
+  patientId?: string;
+  doctor_id?: string;
+  doctorId?: string;
+  appointment_date?: string;
+  appointment_time?: string;
+  reason?: string;
+  reason_for_visit?: string;
+  department?: string;
+}
 
-export type BookAppointmentResult = {
-  appointmentId: string;
-  tokenNumber: number;
-  tokenLabel: string;
-};
+export interface BookAppointmentResponse {
+  success: boolean;
+  appointment_id: string;
+  token_number: number;
+  token_label: string;
+  message?: string;
+}
 
-/** Insert appointment bound to `doctors.doctor_id` UUID; token from DB trigger or client fallback. */
+export const DEFAULT_DOCTOR_ID = '56284599-9a5f-4672-9b53-b90e18146a00';
+export const DEFAULT_PATIENT_ID = 'b0000000-0000-0000-0000-000000000002';
+export const DEFAULT_DEPARTMENT = 'General Surgery';
+export const DEFAULT_REASON = 'General Health Consultation';
+
+const ACTIVE_BOOKING_STATUSES = ['SCHEDULED', 'WAITING', 'CONFIRMED', 'PENDING'];
+
+/** Local calendar date YYYY-MM-DD (avoids UTC midnight drift). */
+function localDateString(date = new Date()): string {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().split('T')[0];
+}
+
 export async function bookAppointmentWithDoctor(
-  input: BookAppointmentInput,
-): Promise<BookAppointmentResult> {
-  const patientId = ensurePatientIdPersisted(input.patientId);
-  const doctorUuid = input.doctor.doctor_id;
+  payload: BookAppointmentPayload,
+): Promise<BookAppointmentResponse> {
+  const supabase = createClient();
 
-  if (!doctorUuid) {
-    throw new Error('Clinician UUID not loaded. Please refresh and try again.');
+  const { data: authData } = await supabase.auth.getUser();
+  const patientId =
+    payload.patient_id || payload.patientId || authData?.user?.id || DEFAULT_PATIENT_ID;
+  const doctorId = payload.doctor_id || payload.doctorId || DEFAULT_DOCTOR_ID;
+  const department = payload.department || DEFAULT_DEPARTMENT;
+  const reasonForVisit = payload.reason_for_visit || payload.reason || DEFAULT_REASON;
+  const appointmentDate = payload.appointment_date || localDateString();
+  const appointmentTime = payload.appointment_time || '10:00 AM';
+
+  let tokenNumber = 1;
+  try {
+    const { count, error: countError } = await supabase
+      .from('appointments')
+      .select('appointment_id', { count: 'exact', head: true })
+      .eq('doctor_id', doctorId)
+      .eq('appointment_date', appointmentDate)
+      .in('status', ACTIVE_BOOKING_STATUSES);
+
+    if (!countError && count !== null) {
+      tokenNumber = count + 1;
+    }
+  } catch (err) {
+    console.warn('Failed to calculate daily token count, defaulting to T-01:', err);
   }
 
-  const { data: appointment, error: apptError } = await supabase
-    .from('appointments')
-    .insert({
-      patient_id: patientId,
-      doctor_id: doctorUuid,
-      department: input.doctor.department,
-      reason_for_visit: input.reasonForVisit,
-      appointment_date: input.appointmentDate,
-      appointment_time: input.slotTime,
-      status: 'requested',
-    })
-    .select()
-    .single();
+  const tokenLabel = `T-${tokenNumber.toString().padStart(2, '0')}`;
 
-  if (apptError) throw new Error(apptError.message);
-
-  let tokenNumber = 0;
-  let tokenLabel = '';
-
-  const { data: triggerToken } = await supabase
-    .from('opd_tokens')
-    .select('token_number, sequence_number')
-    .eq('appointment_id', appointment.appointment_id)
-    .maybeSingle();
-
-  if (triggerToken) {
-    tokenNumber = Number(triggerToken.sequence_number ?? triggerToken.token_number) || 1;
-    tokenLabel = String(triggerToken.token_number);
-  } else {
-    tokenNumber = await computeNextSmartQToken(input.appointmentDate, doctorUuid);
-    tokenLabel = `#${tokenNumber}`;
-
-    const { error: tokenError } = await supabase.from('opd_tokens').insert({
-      appointment_id: appointment.appointment_id,
-      doctor_id: doctorUuid,
-      patient_id: patientId,
-      token_number: tokenLabel,
-      sequence_number: tokenNumber,
-      status: 'ISSUED',
-      estimated_wait_minutes: 15,
-    });
-
-    if (tokenError) console.warn('opd_tokens fallback notice:', tokenError.message);
-  }
-
-  const newAppointment = {
-    id: String(appointment.appointment_id),
+  const insertPayload = {
     patient_id: patientId,
-    patient_name: input.patientName,
-    doctor_id: doctorUuid,
-    doctor_name: input.doctor.name,
-    department: input.doctor.department,
-    hospital_name: input.hospitalName,
-    appointment_date: input.appointmentDate,
-    slot_time: input.slotTime,
-    token_number: tokenNumber,
-    current_serving_token: 0,
-    queue_status: 'requested',
+    doctor_id: doctorId,
+    department,
+    reason_for_visit: reasonForVisit,
+    appointment_date: appointmentDate,
+    appointment_time: appointmentTime,
+    status: 'SCHEDULED',
   };
 
-  const localList = JSON.parse(
-    localStorage.getItem('curasync_appointments') || '[]',
-  ) as Record<string, unknown>[];
-  localList.unshift(newAppointment);
-  localStorage.setItem('curasync_appointments', JSON.stringify(localList));
-  localStorage.setItem('patient_full_name', input.patientName);
+  const { data: apptData, error: apptError } = await supabase
+    .from('appointments')
+    .insert([insertPayload])
+    .select('appointment_id, id')
+    .single();
 
-  await enqueuePatientForDoctor({
-    patientId,
-    patientName: input.patientName,
-    doctorId: doctorUuid,
-    doctorName: input.doctor.name,
-    department: input.doctor.department,
-    hospitalName: input.hospitalName,
-    appointmentDate: input.appointmentDate,
-    slotTime: input.slotTime,
-    tokenNumber,
-    reasonForVisit: input.reasonForVisit,
-    appointmentId: String(appointment.appointment_id),
-    age: 32,
-    gender: 'Female',
-    bloodGroup: localStorage.getItem('patient_blood_group') || 'O+',
-    allergies: (() => {
-      try {
-        const raw = localStorage.getItem('patient_allergies');
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : String(raw).split(',').map((s) => s.trim());
-      } catch {
-        return [];
-      }
-    })(),
-  });
+  if (apptError) {
+    const msg =
+      typeof apptError === 'object' && apptError !== null && 'message' in apptError
+        ? String((apptError as { message?: string }).message)
+        : 'Failed to insert appointment record.';
+    console.error('[Supabase Booking Error]:', msg);
+    throw new Error(msg);
+  }
+
+  if (!apptData) {
+    throw new Error('No appointment data returned from database.');
+  }
+
+  const appointmentId = String(apptData.appointment_id ?? apptData.id ?? '');
 
   return {
-    appointmentId: String(appointment.appointment_id),
-    tokenNumber,
-    tokenLabel,
+    success: true,
+    appointment_id: appointmentId,
+    token_number: tokenNumber,
+    token_label: tokenLabel,
+    message: `Appointment successfully booked! Your queue token is ${tokenLabel}.`,
   };
 }
