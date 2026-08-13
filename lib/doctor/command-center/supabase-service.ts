@@ -20,6 +20,9 @@ export const DEFAULT_ACTIVE_DOCTOR_ID = '56284599-9a5f-4672-9b53-b90e18146a00';
 /** Default demo patient UUID for local/testing fallbacks. */
 export const DEFAULT_PATIENT_ID = 'b0000000-0000-0000-0000-000000000002';
 
+/** Fallback display name when doctor_name is required by prescriptions schema. */
+export const DEFAULT_ACTIVE_DOCTOR_NAME = 'Dr. Chandrakanth S';
+
 /** Statuses shown on the live OPD dashboard queue (excludes completed/cancelled). */
 export const ACTIVE_APPOINTMENT_STATUSES = [
   'SCHEDULED',
@@ -478,6 +481,8 @@ export interface ConsultationFinalizeInput {
   appointmentId?: string | null;
   doctorId: string;
   patientId: string;
+  patientName?: string;
+  doctorName?: string;
   clinical: ConsultationClinicalInput;
   vitals: ConsultationVitalsInput;
   medications: ConsultationMedicationItem[];
@@ -696,11 +701,17 @@ export async function savePatientClinicalEncounter(
     input.clinical.clinical_notes?.trim() ||
     '';
 
+  const patientName = input.patientName?.trim();
+  const activeDoctorName = input.doctorName?.trim();
+  const activeDoctorId = doctorId;
+
   const prescriptionPayload = {
     consultation_id: createdConsultationId || null,
     appointment_id: appointmentId || createdConsultationId || null,
     patient_id: patientId || null,
-    doctor_id: doctorId || DEFAULT_ACTIVE_DOCTOR_ID,
+    patient_name: patientName || 'Patient',
+    doctor_id: activeDoctorId || DEFAULT_ACTIVE_DOCTOR_ID,
+    doctor_name: activeDoctorName || DEFAULT_ACTIVE_DOCTOR_NAME,
     medications: medicineList || [],
     medicines: medicineList || [],
     special_instructions: instructionsInput || '',

@@ -104,6 +104,7 @@ export default function ConsultationWorkspaceClient() {
         appointmentId,
         doctorId,
         patientId,
+        patientName: appointment.patient_name,
         clinical: {
           chief_complaint: chiefComplaint,
           clinical_findings: clinicalFindings,

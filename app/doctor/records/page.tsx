@@ -279,6 +279,8 @@ export default function DoctorRecordsPage() {
       await savePatientClinicalEncounter({
         doctorId,
         patientId,
+        patientName: selectedPatient.full_name,
+        doctorName: doctor?.full_name ? String(doctor.full_name) : undefined,
         clinical: {
           chief_complaint: form.chiefComplaint,
           diagnosis: form.diagnosis,
