@@ -4,19 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import {
   User,
-  HeartPulse,
-  Save,
+  Heart,
   Users,
-  Plus,
-  Trash2,
   CheckCircle2,
+  Trash2,
+  Plus,
+  Save,
   Loader2,
-  Phone,
-  Mail,
-  MapPin,
-  ShieldCheck,
-  Activity,
-  AlertCircle,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface FamilyMember {
@@ -24,520 +19,358 @@ interface FamilyMember {
   name: string;
   relation: string;
   age: string;
-  blood_group: string;
+  blood: string;
 }
 
-const BLOOD_GROUP_OPTIONS = [
-  'O Positive (O+)',
-  'O Negative (O-)',
-  'A Positive (A+)',
-  'A Negative (A-)',
-  'B Positive (B+)',
-  'B Negative (B-)',
-  'AB Positive (AB+)',
-  'AB Negative (AB-)',
-] as const;
-
-export default function ComprehensivePatientProfilePage() {
-  const [patientId] = useState<string>('NEX_9021');
-
-  // 1. Personal & Identity Details
+export default function PatientProfilePage() {
   const [fullName, setFullName] = useState<string>('Aishwarya D S');
-  const [email, setEmail] = useState<string>('aishwarya@gmail.com');
-  const [phone, setPhone] = useState<string>('+91 98765 43210');
-  const [gender, setGender] = useState<string>('Female');
-  const [dob, setDob] = useState<string>('2002-05-15');
-  const [address, setAddress] = useState<string>('Bengaluru, Karnataka, India');
-
-  // 2. Physical Vitals & Medical Information
   const [bloodGroup, setBloodGroup] = useState<string>('O Positive (O+)');
   const [height, setHeight] = useState<string>('165 cm');
   const [weight, setWeight] = useState<string>('58 kg');
-  const [knownAllergies, setKnownAllergies] = useState<string>('Penicillin, Dust');
-  const [chronicConditions, setChronicConditions] = useState<string>('Asthma (Mild), Type 2 Diabetes');
+  const [allergies, setAllergies] = useState<string>('Penicillin');
+  const [emergencyContact, setEmergencyContact] = useState<string>('+91 9876543210');
 
-  // 3. Emergency Contact Details
-  const [emergencyContactName, setEmergencyContactName] = useState<string>('Nagarathna');
-  const [emergencyContactPhone, setEmergencyContactPhone] = useState<string>('+91 98765 12345');
-  const [emergencyRelation, setEmergencyRelation] = useState<string>('Mother');
+  // LINKED FAMILY MEMBERS STATE
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [memberName, setMemberName] = useState<string>('');
+  const [memberRelation, setMemberRelation] = useState<string>('Parent');
+  const [memberAge, setMemberAge] = useState<string>('');
+  const [memberBlood, setMemberBlood] = useState<string>('');
 
-  // 4. Family Members Management State
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([
-    { id: 'fam_1', name: 'Ananya D S', relation: 'Sister', age: '20', blood_group: 'O Positive (O+)' },
-  ]);
-  const [newFamName, setNewFamName] = useState<string>('');
-  const [newFamRelation, setNewFamRelation] = useState<string>('Sibling');
-  const [newFamAge, setNewFamAge] = useState<string>('');
-  const [newFamBlood, setNewFamBlood] = useState<string>('');
-
-  // System States
-  const [loading, setLoading] = useState<boolean>(true);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [success, setSuccess] = useState<boolean>(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchProfileDetails();
+    loadProfileData();
   }, []);
 
-  const fetchProfileDetails = async () => {
-    setLoading(true);
-
-    // Read from local storage for instant loading
+  const loadProfileData = async () => {
+    // 1. Try Local Storage
     if (typeof window !== 'undefined') {
-      const cached = localStorage.getItem('curasync_full_patient_profile');
-      if (cached) {
+      const saved = localStorage.getItem('curasync_patient_profile');
+      if (saved) {
         try {
-          const parsed = JSON.parse(cached);
-          populateState(parsed);
+          const parsed = JSON.parse(saved);
+          setFullName(parsed.full_name || 'Aishwarya D S');
+          setBloodGroup(parsed.blood_group || 'O Positive (O+)');
+          setHeight(parsed.height || '165 cm');
+          setWeight(parsed.weight || '58 kg');
+          setAllergies(parsed.allergies || 'Penicillin');
+          setEmergencyContact(parsed.emergency_contact || '+91 9876543210');
+          if (Array.isArray(parsed.family_members)) {
+            setFamilyMembers(parsed.family_members);
+          }
         } catch (e) {}
       }
     }
 
-    // Query Supabase database
+    // 2. Try Supabase Sync
     try {
       const { data, error } = await supabase
         .from('patient_profiles')
         .select('*')
-        .eq('patient_id', patientId)
+        .eq('patient_id', 'NEX_9021')
         .single();
 
       if (!error && data) {
-        populateState(data);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('curasync_full_patient_profile', JSON.stringify(data));
+        setFullName(data.full_name || 'Aishwarya D S');
+        setBloodGroup(data.blood_group || 'O Positive (O+)');
+        setHeight(data.height || '165 cm');
+        setWeight(data.weight || '58 kg');
+        setAllergies(data.allergies || 'Penicillin');
+        setEmergencyContact(data.emergency_contact || '+91 9876543210');
+        if (Array.isArray(data.family_members)) {
+          setFamilyMembers(data.family_members);
         }
       }
     } catch (err) {
-      console.warn('Backend fetch notice');
-    } finally {
-      setLoading(false);
+      console.warn('Profile DB load fallback active');
     }
   };
 
-  const populateState = (data: any) => {
-    if (data.full_name) setFullName(data.full_name);
-    if (data.email) setEmail(data.email);
-    if (data.phone) setPhone(data.phone);
-    if (data.gender) setGender(data.gender);
-    if (data.dob) setDob(data.dob);
-    if (data.address) setAddress(data.address);
-    if (data.blood_group) setBloodGroup(data.blood_group);
-    if (data.height) setHeight(data.height);
-    if (data.weight) setWeight(data.weight);
-    if (data.known_allergies) setKnownAllergies(data.known_allergies);
-    if (data.chronic_conditions) setChronicConditions(data.chronic_conditions);
-    if (data.emergency_contact_name) setEmergencyContactName(data.emergency_contact_name);
-    if (data.emergency_contact_phone) setEmergencyContactPhone(data.emergency_contact_phone);
-    if (data.emergency_relation) setEmergencyRelation(data.emergency_relation);
-    if (data.family_members && Array.isArray(data.family_members)) {
-      setFamilyMembers(data.family_members);
-    }
-  };
-
-  const handleAddFamilyMember = (e: React.FormEvent) => {
+  // ADD MEMBER ONLY VALIDATES WHEN CLICKING "+ ADD MEMBER"
+  const handleAddMember = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!newFamName.trim() || !newFamBlood) return;
+    setAddError(null);
 
-    const member: FamilyMember = {
-      id: 'fam_' + Date.now(),
-      name: newFamName,
-      relation: newFamRelation,
-      age: newFamAge || 'N/A',
-      blood_group: newFamBlood,
+    if (!memberName.trim()) {
+      setAddError('Please enter member name.');
+      return;
+    }
+    if (!memberAge.trim()) {
+      setAddError('Please enter member age.');
+      return;
+    }
+    if (!memberBlood) {
+      setAddError('Please select a blood group for the family member.');
+      return;
+    }
+
+    const newMember: FamilyMember = {
+      id: 'mem_' + Date.now(),
+      name: memberName.trim(),
+      relation: memberRelation,
+      age: memberAge.trim(),
+      blood: memberBlood,
     };
 
-    setFamilyMembers([...familyMembers, member]);
-    setNewFamName('');
-    setNewFamAge('');
-    setNewFamBlood('');
+    const updatedList = [...familyMembers, newMember];
+    setFamilyMembers(updatedList);
+
+    // Reset member inputs
+    setMemberName('');
+    setMemberAge('');
+    setMemberBlood('');
   };
 
-  const handleRemoveFamilyMember = (id: string) => {
-    setFamilyMembers(familyMembers.filter((m) => m.id !== id));
+  const handleRemoveMember = (id: string) => {
+    const updated = familyMembers.filter((m) => m.id !== id);
+    setFamilyMembers(updated);
   };
 
-  const handleSaveFullProfile = async (e: React.FormEvent) => {
+  // SAVE ENTIRE PROFILE TO BACKEND SUPABASE & LOCALSTORAGE
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
-    setSaveSuccess(false);
+    setSaving(true);
+    setSuccess(false);
 
-    const payload = {
-      patient_id: patientId,
+    const profileData = {
+      patient_id: 'NEX_9021',
       full_name: fullName,
-      email,
-      phone,
-      gender,
-      dob,
-      address,
       blood_group: bloodGroup,
       height,
       weight,
-      known_allergies: knownAllergies,
-      chronic_conditions: chronicConditions,
-      emergency_contact_name: emergencyContactName,
-      emergency_contact_phone: emergencyContactPhone,
-      emergency_relation: emergencyRelation,
+      allergies,
+      emergency_contact: emergencyContact,
       family_members: familyMembers,
       updated_at: new Date().toISOString(),
     };
 
-    // 1. Instant Local Storage Sync
+    // Save locally
     if (typeof window !== 'undefined') {
+      localStorage.setItem('curasync_patient_profile', JSON.stringify(profileData));
       localStorage.setItem('patient_full_name', fullName);
-      localStorage.setItem('curasync_full_patient_profile', JSON.stringify(payload));
     }
 
-    // 2. Supabase Backend Sync
+    // Upsert to Supabase backend
     try {
-      const { error } = await supabase
-        .from('patient_profiles')
-        .upsert(payload, { onConflict: 'patient_id' });
-
-      if (error) {
-        console.warn('Database save notice:', error.message);
-      }
+      await supabase.from('patient_profiles').upsert(profileData, { onConflict: 'patient_id' });
     } catch (err) {
-      console.warn('Backend sync fallback active');
+      console.warn('Backend profile upsert fallback active');
     } finally {
-      setIsSaving(false);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3500);
+      setSaving(false);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 font-sans text-[#0E2924]">
-      
-      {/* PAGE HEADER */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-[#D5E8E3] pb-4">
-        <div>
-          <h1 className="text-2xl font-black text-[#0E2924]">Comprehensive Patient & Family Records</h1>
-          <p className="text-xs font-bold text-[#227B6B]">
-            Manage complete identity details, physical vitals, emergency contacts, and linked family profiles.
-          </p>
-        </div>
-
-        <span className="rounded-full bg-[#EAF5F2] px-4 py-1.5 text-xs font-black text-[#113831] border border-[#227B6B]/20">
-          ID: {patientId}
-        </span>
+      <div className="border-b border-[#D5E8E3] pb-4">
+        <h1 className="text-2xl font-black text-[#0E2924]">Patient Profile & Vitals</h1>
+        <p className="text-xs font-bold text-[#227B6B]">
+          Manage your clinical identity, physical vitals, emergency contacts, and linked family members.
+        </p>
       </div>
 
-      {saveSuccess && (
-        <div className="flex items-center gap-3 rounded-2xl bg-[#EAF5F2] p-4 text-xs font-bold text-[#113831] border border-[#227B6B]/30 shadow-sm animate-in fade-in">
+      {success && (
+        <div className="flex items-center gap-3 rounded-2xl bg-[#EAF5F2] p-4 text-xs font-bold text-[#113831] border border-[#227B6B]/30 shadow-sm">
           <CheckCircle2 className="h-5 w-5 text-[#227B6B] shrink-0" />
-          <span>All profile details and family member records have been saved to backend database!</span>
+          <span>Profile and family records saved successfully to backend database!</span>
         </div>
       )}
 
-      {loading ? (
-        <div className="flex h-64 items-center justify-center rounded-3xl bg-white border border-[#D5E8E3]">
-          <Loader2 className="h-8 w-8 animate-spin text-[#113831]" />
+      {/* FORM WITHOUT ACCIDENTAL REQUIRED FIELD BLOCKS */}
+      <form onSubmit={handleSaveProfile} className="space-y-8">
+        {/* 1. PERSONAL IDENTITY */}
+        <div className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-4">
+          <h2 className="text-base font-black text-[#0E2924] flex items-center gap-2">
+            <User className="h-4 w-4 text-[#227B6B]" /> 1. Personal Details
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="text-[10px] font-black uppercase text-[#227B6B] block mb-1">Full Name</label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase text-[#227B6B] block mb-1">Blood Group</label>
+              <input
+                type="text"
+                value={bloodGroup}
+                onChange={(e) => setBloodGroup(e.target.value)}
+                className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:outline-none"
+              />
+            </div>
+          </div>
         </div>
-      ) : (
-        <form onSubmit={handleSaveFullProfile} className="space-y-8">
-          
-          {/* SECTION 1: PERSONAL IDENTITY */}
-          <div className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-6">
-            <div className="flex items-center gap-2 border-b border-[#EAF5F2] pb-3 text-[#113831]">
-              <User className="h-5 w-5 text-[#227B6B]" />
-              <h2 className="text-base font-black">1. Personal Identity & Contact</h2>
+
+        {/* 2. PHYSICAL VITALS & ALLERGIES */}
+        <div className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-4">
+          <h2 className="text-base font-black text-[#0E2924] flex items-center gap-2">
+            <Heart className="h-4 w-4 text-[#227B6B]" /> 2. Vitals & Allergies
+          </h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <label className="text-[10px] font-black uppercase text-[#227B6B] block mb-1">Height</label>
+              <input
+                type="text"
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+                className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:outline-none"
+              />
             </div>
+            <div>
+              <label className="text-[10px] font-black uppercase text-[#227B6B] block mb-1">Weight</label>
+              <input
+                type="text"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase text-[#227B6B] block mb-1">Known Allergies</label>
+              <input
+                type="text"
+                value={allergies}
+                onChange={(e) => setAllergies(e.target.value)}
+                className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
 
-            <div className="grid gap-6 md:grid-cols-3">
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                />
-              </div>
+        {/* 3. EMERGENCY CONTACT */}
+        <div className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-4">
+          <h2 className="text-base font-black text-[#0E2924] flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-[#227B6B]" /> 3. Emergency Contact Protocol
+          </h2>
+          <div>
+            <label className="text-[10px] font-black uppercase text-[#227B6B] block mb-1">Emergency Contact Number</label>
+            <input
+              type="text"
+              value={emergencyContact}
+              onChange={(e) => setEmergencyContact(e.target.value)}
+              className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:outline-none"
+            />
+          </div>
+        </div>
 
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Email Address *</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                />
-              </div>
+        {/* 4. LINKED FAMILY MEMBERS (NO HTML5 REQUIRED ATTRIBUTES ON DROPDOWNS) */}
+        <div className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-6">
+          <div className="flex items-center justify-between border-b border-[#EAF5F2] pb-3">
+            <h2 className="text-base font-black text-[#0E2924] flex items-center gap-2">
+              <Users className="h-4 w-4 text-[#227B6B]" /> 4. Linked Family Members
+            </h2>
+            <span className="text-xs font-bold text-[#227B6B]">Total Linked: {familyMembers.length}</span>
+          </div>
 
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Phone Number *</label>
-                <input
-                  type="text"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                />
-              </div>
+          {addError && (
+            <div className="rounded-2xl bg-rose-50 p-3 text-xs font-bold text-rose-700 border border-rose-200">
+              {addError}
+            </div>
+          )}
 
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Gender</label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                >
-                  <option value="Female">Female</option>
-                  <option value="Male">Male</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Date of Birth</label>
-                <input
-                  type="date"
-                  value={dob}
-                  onChange={(e) => setDob(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Residential Address</label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                />
-              </div>
+          {/* INPUT FIELDS HAVE NO 'REQUIRED' ATTRIBUTE TO PREVENT FORM SUBMISSION BLOCKS */}
+          <div className="rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-4 space-y-3">
+            <p className="text-[10px] font-black uppercase text-[#227B6B]">Add New Family Member</p>
+            <div className="grid gap-3 sm:grid-cols-5">
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={memberName}
+                onChange={(e) => setMemberName(e.target.value)}
+                className="rounded-xl border border-[#D5E8E3] bg-white p-3 text-xs font-bold text-[#0E2924] focus:outline-none sm:col-span-1"
+              />
+              <select
+                value={memberRelation}
+                onChange={(e) => setMemberRelation(e.target.value)}
+                className="rounded-xl border border-[#D5E8E3] bg-white p-3 text-xs font-bold text-[#0E2924] focus:outline-none"
+              >
+                <option value="Parent">Parent</option>
+                <option value="Sibling">Sibling</option>
+                <option value="Spouse">Spouse</option>
+                <option value="Child">Child</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Age"
+                value={memberAge}
+                onChange={(e) => setMemberAge(e.target.value)}
+                className="rounded-xl border border-[#D5E8E3] bg-white p-3 text-xs font-bold text-[#0E2924] focus:outline-none"
+              />
+              {/* REMOVED REQUIRED ATTRIBUTE SO IT DOESN'T BLOCK MAIN PROFILE SAVE */}
+              <select
+                value={memberBlood}
+                onChange={(e) => setMemberBlood(e.target.value)}
+                className="rounded-xl border border-[#D5E8E3] bg-white p-3 text-xs font-bold text-[#0E2924] focus:outline-none"
+              >
+                <option value="">Select Blood Group</option>
+                <option value="O Positive (O+)">O Positive (O+)</option>
+                <option value="O Negative (O-)">O Negative (O-)</option>
+                <option value="A Positive (A+)">A Positive (A+)</option>
+                <option value="A Negative (A-)">A Negative (A-)</option>
+                <option value="B Positive (B+)">B Positive (B+)</option>
+                <option value="B Negative (B-)">B Negative (B-)</option>
+                <option value="AB Positive (AB+)">AB Positive (AB+)</option>
+                <option value="AB Negative (AB-)">AB Negative (AB-)</option>
+              </select>
+              <button
+                type="button"
+                onClick={handleAddMember}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-[#113831] px-4 py-3 text-xs font-black text-white hover:bg-[#227B6B] transition shadow-sm"
+              >
+                <Plus className="h-4 w-4 text-[#A6E2D8]" /> Add Member
+              </button>
             </div>
           </div>
 
-          {/* SECTION 2: PHYSICAL VITALS & MEDICAL HISTORY */}
-          <div className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-6">
-            <div className="flex items-center gap-2 border-b border-[#EAF5F2] pb-3 text-[#113831]">
-              <HeartPulse className="h-5 w-5 text-[#227B6B]" />
-              <h2 className="text-base font-black">2. Clinical Vitals & Medical History</h2>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Blood Group *</label>
-                <select
-                  value={bloodGroup}
-                  onChange={(e) => setBloodGroup(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                >
-                  {BLOOD_GROUP_OPTIONS.map((group) => (
-                    <option key={group} value={group}>
-                      {group}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Height</label>
-                <input
-                  type="text"
-                  value={height}
-                  onChange={(e) => setHeight(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Weight</label>
-                <input
-                  type="text"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                />
-              </div>
-
-              <div className="md:col-span-3 grid gap-6 md:grid-cols-2">
-                <div>
-                  <label className="text-[10px] font-black uppercase text-[#227B6B]">Known Allergies</label>
-                  <textarea
-                    rows={2}
-                    value={knownAllergies}
-                    onChange={(e) => setKnownAllergies(e.target.value)}
-                    placeholder="e.g. Penicillin, Peanuts, Latex"
-                    className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase text-[#227B6B]">Chronic Medical Conditions</label>
-                  <textarea
-                    rows={2}
-                    value={chronicConditions}
-                    onChange={(e) => setChronicConditions(e.target.value)}
-                    placeholder="e.g. Asthma, Hypertension, Diabetes"
-                    className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 3: EMERGENCY CONTACT */}
-          <div className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-6">
-            <div className="flex items-center gap-2 border-b border-[#EAF5F2] pb-3 text-[#113831]">
-              <Phone className="h-5 w-5 text-rose-600" />
-              <h2 className="text-base font-black">3. Emergency Contact Person</h2>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Contact Person Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={emergencyContactName}
-                  onChange={(e) => setEmergencyContactName(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Emergency Phone *</label>
-                <input
-                  type="text"
-                  required
-                  value={emergencyContactPhone}
-                  onChange={(e) => setEmergencyContactPhone(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black uppercase text-[#227B6B]">Relationship *</label>
-                <input
-                  type="text"
-                  required
-                  value={emergencyRelation}
-                  onChange={(e) => setEmergencyRelation(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 4: FAMILY MEMBERS MANAGER */}
-          <div className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-6">
-            <div className="flex items-center justify-between border-b border-[#EAF5F2] pb-3 text-[#113831]">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-[#227B6B]" />
-                <h2 className="text-base font-black">4. Linked Family Members</h2>
-              </div>
-              <span className="text-xs font-bold text-[#227B6B]">
-                Total Linked: {familyMembers.length}
-              </span>
-            </div>
-
-            {/* ADD FAMILY MEMBER FORM */}
-            <div className="rounded-2xl bg-[#F4F8F7] p-4 border border-[#D5E8E3] space-y-3">
-              <span className="text-xs font-black uppercase text-[#113831]">Add New Family Member</span>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <input
-                  type="text"
-                  placeholder="Full Name"
-                  value={newFamName}
-                  onChange={(e) => setNewFamName(e.target.value)}
-                  className="rounded-xl border border-[#D5E8E3] bg-white p-2.5 text-xs font-bold text-[#0E2924] focus:outline-none"
-                />
-
-                <select
-                  value={newFamRelation}
-                  onChange={(e) => setNewFamRelation(e.target.value)}
-                  className="rounded-xl border border-[#D5E8E3] bg-white p-2.5 text-xs font-bold text-[#0E2924] focus:outline-none"
-                >
-                  <option value="Parent">Parent</option>
-                  <option value="Spouse">Spouse</option>
-                  <option value="Sibling">Sibling</option>
-                  <option value="Child">Child</option>
-                </select>
-
-                <input
-                  type="text"
-                  placeholder="Age"
-                  value={newFamAge}
-                  onChange={(e) => setNewFamAge(e.target.value)}
-                  className="rounded-xl border border-[#D5E8E3] bg-white p-2.5 text-xs font-bold text-[#0E2924] focus:outline-none"
-                />
-
-                <select
-                  required
-                  value={newFamBlood}
-                  onChange={(e) => setNewFamBlood(e.target.value)}
-                  className="rounded-xl border border-[#D5E8E3] bg-white p-2.5 text-xs font-bold text-[#0E2924] focus:outline-none"
-                >
-                  <option value="">Blood Group *</option>
-                  {BLOOD_GROUP_OPTIONS.map((group) => (
-                    <option key={group} value={group}>
-                      {group}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  type="button"
-                  onClick={handleAddFamilyMember}
-                  disabled={!newFamName.trim() || !newFamBlood}
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#113831] py-2.5 text-xs font-black text-white hover:bg-[#227B6B] transition disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Plus className="h-4 w-4" /> Add Member
-                </button>
-              </div>
-            </div>
-
-            {/* FAMILY MEMBERS LIST */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              {familyMembers.map((member) => (
+          {/* LIST OF ADDED FAMILY MEMBERS */}
+          {familyMembers.length > 0 && (
+            <div className="grid gap-3 md:grid-cols-2">
+              {familyMembers.map((m) => (
                 <div
-                  key={member.id}
-                  className="flex items-center justify-between rounded-2xl border border-[#D5E8E3] bg-[#EAF5F2]/50 p-4"
+                  key={m.id}
+                  className="flex items-center justify-between rounded-2xl border border-[#D5E8E3] bg-[#EAF5F2]/40 p-4"
                 >
                   <div>
-                    <h4 className="text-xs font-black text-[#0E2924]">{member.name}</h4>
+                    <h4 className="text-xs font-black text-[#0E2924]">{m.name}</h4>
                     <p className="text-[11px] font-bold text-[#227B6B]">
-                      {member.relation} • Age: {member.age} • Blood: {member.blood_group}
+                      {m.relation} • Age: {m.age} • Blood: <span className="text-[#113831] font-black">{m.blood}</span>
                     </p>
                   </div>
-
                   <button
                     type="button"
-                    onClick={() => handleRemoveFamilyMember(member.id)}
-                    className="rounded-xl p-2 text-rose-600 hover:bg-rose-100 transition"
+                    onClick={() => handleRemoveMember(m.id)}
+                    className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               ))}
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* SUBMIT BUTTON */}
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#113831] py-4 text-xs font-black text-white shadow-xl hover:bg-[#227B6B] transition disabled:opacity-50"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin text-[#A6E2D8]" /> Saving All Profile Records to Backend...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 text-[#A6E2D8]" /> Save Complete Patient & Family Profile
-              </>
-            )}
-          </button>
-
-        </form>
-      )}
-
+        {/* SAVE BUTTON */}
+        <button
+          type="submit"
+          disabled={saving}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#113831] py-4 text-xs font-black text-white shadow-lg hover:bg-[#227B6B] transition disabled:opacity-50"
+        >
+          {saving ? (
+            <><Loader2 className="h-4 w-4 animate-spin text-[#A6E2D8]" /> Saving Profile to Backend...</>
+          ) : (
+            <><Save className="h-4 w-4 text-[#A6E2D8]" /> Save Complete Patient & Family Profile</>
+          )}
+        </button>
+      </form>
     </div>
   );
 }
