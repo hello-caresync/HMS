@@ -27,6 +27,17 @@ interface FamilyMember {
   blood_group: string;
 }
 
+const BLOOD_GROUP_OPTIONS = [
+  'O Positive (O+)',
+  'O Negative (O-)',
+  'A Positive (A+)',
+  'A Negative (A-)',
+  'B Positive (B+)',
+  'B Negative (B-)',
+  'AB Positive (AB+)',
+  'AB Negative (AB-)',
+] as const;
+
 export default function ComprehensivePatientProfilePage() {
   const [patientId] = useState<string>('NEX_9021');
 
@@ -57,7 +68,7 @@ export default function ComprehensivePatientProfilePage() {
   const [newFamName, setNewFamName] = useState<string>('');
   const [newFamRelation, setNewFamRelation] = useState<string>('Sibling');
   const [newFamAge, setNewFamAge] = useState<string>('');
-  const [newFamBlood, setNewFamBlood] = useState<string>('O Positive (O+)');
+  const [newFamBlood, setNewFamBlood] = useState<string>('');
 
   // System States
   const [loading, setLoading] = useState<boolean>(true);
@@ -125,7 +136,7 @@ export default function ComprehensivePatientProfilePage() {
 
   const handleAddFamilyMember = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFamName.trim()) return;
+    if (!newFamName.trim() || !newFamBlood) return;
 
     const member: FamilyMember = {
       id: 'fam_' + Date.now(),
@@ -138,6 +149,7 @@ export default function ComprehensivePatientProfilePage() {
     setFamilyMembers([...familyMembers, member]);
     setNewFamName('');
     setNewFamAge('');
+    setNewFamBlood('');
   };
 
   const handleRemoveFamilyMember = (id: string) => {
@@ -315,11 +327,11 @@ export default function ComprehensivePatientProfilePage() {
                   onChange={(e) => setBloodGroup(e.target.value)}
                   className="mt-1 w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
                 >
-                  <option value="O Positive (O+)">O Positive (O+)</option>
-                  <option value="A Positive (A+)">A Positive (A+)</option>
-                  <option value="B Positive (B+)">B Positive (B+)</option>
-                  <option value="AB Positive (AB+)">AB Positive (AB+)</option>
-                  <option value="O Negative (O-)">O Negative (O-)</option>
+                  {BLOOD_GROUP_OPTIONS.map((group) => (
+                    <option key={group} value={group}>
+                      {group}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -427,7 +439,7 @@ export default function ComprehensivePatientProfilePage() {
             {/* ADD FAMILY MEMBER FORM */}
             <div className="rounded-2xl bg-[#F4F8F7] p-4 border border-[#D5E8E3] space-y-3">
               <span className="text-xs font-black uppercase text-[#113831]">Add New Family Member</span>
-              <div className="grid gap-3 sm:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <input
                   type="text"
                   placeholder="Full Name"
@@ -455,10 +467,25 @@ export default function ComprehensivePatientProfilePage() {
                   className="rounded-xl border border-[#D5E8E3] bg-white p-2.5 text-xs font-bold text-[#0E2924] focus:outline-none"
                 />
 
+                <select
+                  required
+                  value={newFamBlood}
+                  onChange={(e) => setNewFamBlood(e.target.value)}
+                  className="rounded-xl border border-[#D5E8E3] bg-white p-2.5 text-xs font-bold text-[#0E2924] focus:outline-none"
+                >
+                  <option value="">Blood Group *</option>
+                  {BLOOD_GROUP_OPTIONS.map((group) => (
+                    <option key={group} value={group}>
+                      {group}
+                    </option>
+                  ))}
+                </select>
+
                 <button
                   type="button"
                   onClick={handleAddFamilyMember}
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#113831] py-2.5 text-xs font-black text-white hover:bg-[#227B6B] transition"
+                  disabled={!newFamName.trim() || !newFamBlood}
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#113831] py-2.5 text-xs font-black text-white hover:bg-[#227B6B] transition disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus className="h-4 w-4" /> Add Member
                 </button>
