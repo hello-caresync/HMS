@@ -1,260 +1,358 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, MessageSquare, RefreshCw, Send, BellRing } from 'lucide-react';
-import { toast } from 'sonner';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import {
-  CLINICAL_STORAGE,
-  readJsonLocal,
-  resolveActivePatientId,
-  writeJsonLocal,
-} from '@/lib/clinical/bridge';
-import type { ClinicalAdviceMessage } from '@/lib/clinical/types';
+  Send,
+  Stethoscope,
+  User,
+  RotateCw,
+  MessageSquare,
+  CheckCircle2,
+} from 'lucide-react';
 
-function mergeMessages(
-  local: ClinicalAdviceMessage[],
-  remote: ClinicalAdviceMessage[],
-): ClinicalAdviceMessage[] {
-  const map = new Map<string, ClinicalAdviceMessage>();
-  for (const item of [...local, ...remote]) {
-    map.set(item.id || `${item.created_at}-${item.message}`, item);
-  }
-  return Array.from(map.values()).sort((a, b) =>
-    (b.created_at || '').localeCompare(a.created_at || ''),
-  );
+interface DoctorOption {
+  name: string;
+  department: string;
 }
 
-export default function PatientMessagesPage() {
-  const [messages, setMessages] = useState<ClinicalAdviceMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [draft, setDraft] = useState('');
-  const [sending, setSending] = useState(false);
-  const [patientId, setPatientId] = useState(resolveActivePatientId());
-  const [patientName, setPatientName] = useState('Patient');
+interface ChatMessage {
+  id: string;
+  patient_id: string;
+  patient_name: string;
+  doctor_name: string;
+  department: string;
+  sender_role: 'patient' | 'doctor';
+  message: string;
+  created_at: string;
+}
 
-  const loadMessages = useCallback(async () => {
-    setLoading(true);
-    const id = resolveActivePatientId();
-    setPatientId(id);
-    const name =
-      typeof window !== 'undefined'
-        ? window.localStorage.getItem('patient_full_name') || 'Patient'
-        : 'Patient';
-    setPatientName(name);
+const DOCTORS_DATABASE: DoctorOption[] = [
+  { name: 'Dr. Suriraju V', department: 'Urology' },
+  { name: 'Dr. Chandrakanth S. Kesari', department: 'General Surgery' },
+  { name: 'Dr. Ananya R', department: 'General Medicine' },
+  { name: 'Dr. Vikramaditya Rao', department: 'Cardiology' },
+  { name: 'Dr. Meera Nambiar', department: 'Cardiology' },
+  { name: 'Dr. Rajesh Kumar Hegde', department: 'Orthopedics' },
+  { name: 'Dr. Shalini Deshmukh', department: 'Orthopedics' },
+  { name: 'Dr. Arvind Swamy', department: 'Neurology' },
+  { name: 'Dr. Kavitha Reddy', department: 'Neurosurgery' },
+  { name: 'Dr. Pradeep Verma', department: 'Gastroenterology' },
+  { name: 'Dr. Sunitha Gopal', department: 'Gastroenterology' },
+  { name: 'Dr. Anand Kulkarni', department: 'Nephrology' },
+  { name: 'Dr. Archana Bhat', department: 'Pediatrics' },
+  { name: 'Dr. Rohan D’Souza', department: 'Pediatrics' },
+  { name: 'Dr. Deepa Shankar', department: 'Obstetrics & Gynecology' },
+  { name: 'Dr. Priyanka Murthy', department: 'Obstetrics & Gynecology' },
+  { name: 'Dr. Harish Prasad', department: 'Pulmonology' },
+  { name: 'Dr. Nandini Sen', department: 'Dermatology' },
+  { name: 'Dr. Karthik Subramanian', department: 'ENT' },
+  { name: 'Dr. Smita Joshi', department: 'Ophthalmology' },
+  { name: 'Dr. Manoj Kumar', department: 'Ophthalmology' },
+  { name: 'Dr. Sangeetha Iyengar', department: 'Endocrinology' },
+  { name: 'Dr. Rakesh Nair', department: 'Oncology' },
+  { name: 'Dr. Gautham Pai', department: 'Oncology' },
+  { name: 'Dr. Vani S. Rao', department: 'Psychiatry' },
+  { name: 'Dr. Ashok Patel', department: 'Rheumatology' },
+  { name: 'Dr. Varun Sundaram', department: 'Vascular Surgery' },
+  { name: 'Dr. Rashmi Kulkarni', department: 'Anaesthesiology' },
+  { name: 'Dr. Sumeet Bhalla', department: 'Plastic Surgery' },
+  { name: 'Dr. Nithya Srinivas', department: 'Pathology' },
+  { name: 'Dr. Jayakrishnan Nair', department: 'Radiology' },
+  { name: 'Dr. Bhavana Shah', department: 'Radiology' },
+  { name: 'Dr. Santosh Shetty', department: 'Emergency Medicine' },
+  { name: 'Dr. Madhavi Latha', department: 'Nuclear Medicine' },
+  { name: 'Dr. Chethan Gowda', department: 'Physical Medicine & Rehab' },
+  { name: 'Dr. Anushree Roy', department: 'Clinical Immunology' },
+  { name: 'Dr. Girish Menon', department: 'Cardiothoracic Surgery' },
+  { name: 'Dr. Lavanya Krishnan', department: 'Pediatric Surgery' },
+  { name: 'Dr. Hemanth Kumar', department: 'Geriatrics' },
+  { name: 'Dr. Aparna Nair', department: 'Infectious Diseases' },
+  { name: 'Dr. Balaji Venkat', department: 'Pain Management' },
+];
 
-    let local = readJsonLocal<ClinicalAdviceMessage[]>(CLINICAL_STORAGE.messages, []);
-    local = local.filter((m) => !m.patient_id || m.patient_id === id || m.patient_name === name);
-    setMessages(local);
+export default function ClinicalMessagingPage() {
+  const uniqueDepartments = Array.from(
+    new Set(DOCTORS_DATABASE.map((d) => d.department))
+  );
 
-    try {
-      const { data, error } = await supabase
-        .from('patient_messages')
-        .select('*')
-        .or(`patient_id.eq.${id},patient_name.eq.${name}`)
-        .order('created_at', { ascending: false });
+  const [selectedDept, setSelectedDept] = useState<string>('Cardiology');
+  const [availableDoctors, setAvailableDoctors] = useState<DoctorOption[]>([]);
+  const [selectedDoctor, setSelectedDoctor] = useState<string>('Dr. Vikramaditya Rao');
 
-      if (!error && data) {
-        const remote = (data as Record<string, unknown>[]).map((row) => ({
-          id: String(row.id),
-          patient_id: String(row.patient_id || id),
-          patient_name: String(row.patient_name || name),
-          doctor_id: String(row.doctor_id || row.doctor_employee_id || ''),
-          doctor_name: String(row.doctor_name || 'Care Team'),
-          message: String(row.message || ''),
-          priority: String(row.priority || 'normal'),
-          sender_type: (row.sender_type as 'doctor' | 'patient') || 'doctor',
-          created_at: String(row.created_at || new Date().toISOString()),
-        }));
-        local = mergeMessages(local, remote);
-        writeJsonLocal(CLINICAL_STORAGE.messages, local);
-      }
-    } catch {
-      console.warn('Message sync notice');
-    } finally {
-      setMessages(local);
-      setLoading(false);
-    }
-  }, []);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputMessage, setInputMessage] = useState<string>('');
+  const [sending, setSending] = useState<boolean>(false);
 
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  // 1. UPDATE AVAILABLE DOCTORS WHEN DEPARTMENT CHANGES
   useEffect(() => {
-    const timer = window.setTimeout(() => void loadMessages(), 0);
+    const matchingDocs = DOCTORS_DATABASE.filter((d) => d.department === selectedDept);
+    setAvailableDoctors(matchingDocs);
 
-    const onDoctorMessage = (event: Event) => {
-      const msg = (event as CustomEvent<ClinicalAdviceMessage>).detail;
-      if (!msg) return;
-      setMessages((prev) => mergeMessages(prev, [msg as ClinicalAdviceMessage]));
-      toast.message('New clinical alert', { description: msg.message });
-    };
-    window.addEventListener('curasync:doctor-message', onDoctorMessage);
+    if (matchingDocs.length > 0) {
+      setSelectedDoctor(matchingDocs[0].name);
+    }
+  }, [selectedDept]);
+
+  // 2. FETCH MESSAGES & SUBSCRIBE TO REALTIME updates (EXPLICITLY TYPED PAYLOAD)
+  useEffect(() => {
+    fetchMessages();
 
     const channel = supabase
-      .channel(`patient_messages_${patientId}`)
+      .channel('clinical_messages_realtime')
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'patient_messages',
-          filter: `patient_id=eq.${patientId}`,
-        },
-        (payload: RealtimePostgresChangesPayload<any>) => {
-          const row = payload.new as Record<string, unknown>;
-          if (row.sender_type && row.sender_type !== 'doctor') {
-            void loadMessages();
-            return;
-          }
-          const msg: ClinicalAdviceMessage = {
-            id: String(row.id),
-            patient_id: String(row.patient_id || patientId),
-            patient_name: String(row.patient_name || patientName),
-            doctor_id: String(row.doctor_id || row.doctor_employee_id || ''),
-            doctor_name: String(row.doctor_name || 'Doctor'),
-            message: String(row.message || ''),
-            priority: String(row.priority || 'high'),
-            sender_type: 'doctor',
-            created_at: String(row.created_at || new Date().toISOString()),
-          };
-          setMessages((prev) => {
-            const next = mergeMessages(prev, [msg]);
-            writeJsonLocal(CLINICAL_STORAGE.messages, next);
-            return next;
-          });
-          toast.success('Doctor advice received', {
-            description: msg.message,
-            icon: <BellRing className="h-4 w-4" />,
-          });
-        },
+        { event: '*', schema: 'public', table: 'clinical_messages' },
+        (_payload: any) => {
+          fetchMessages();
+        }
       )
       .subscribe();
 
     return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener('curasync:doctor-message', onDoctorMessage);
-      void supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
-  }, [loadMessages, patientId, patientName]);
+  }, [selectedDoctor]);
 
-  const visible = useMemo(() => messages, [messages]);
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  const handleSend = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!draft.trim()) return;
+  const fetchMessages = async () => {
+    let list: ChatMessage[] = [];
+
+    // Local Storage Read
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`curasync_chat_${selectedDoctor}`);
+      if (saved) {
+        try {
+          list = JSON.parse(saved);
+        } catch (e) {}
+      }
+    }
+
+    // Supabase DB Read
+    try {
+      const { data, error } = await supabase
+        .from('clinical_messages')
+        .select('*')
+        .eq('doctor_name', selectedDoctor)
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        list = data;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`curasync_chat_${selectedDoctor}`, JSON.stringify(data));
+        }
+      }
+    } catch (err) {
+      console.warn('DB read notice');
+    } finally {
+      setMessages(list);
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputMessage.trim()) return;
+
     setSending(true);
 
-    const record: ClinicalAdviceMessage = {
-      id: `msg_${Date.now()}`,
-      patient_id: patientId,
+    const patientName =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('patient_full_name') || 'Aishwarya D S'
+        : 'Aishwarya D S';
+
+    const newMsg: ChatMessage = {
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'msg_' + Date.now(),
+      patient_id: 'NEX_9021',
       patient_name: patientName,
-      doctor_id: '',
-      doctor_name: 'Care Team',
-      message: draft.trim(),
-      priority: 'normal',
-      sender_type: 'patient',
+      doctor_name: selectedDoctor,
+      department: selectedDept,
+      sender_role: 'patient',
+      message: inputMessage.trim(),
       created_at: new Date().toISOString(),
     };
 
-    const next = [record, ...messages];
-    setMessages(next);
-    writeJsonLocal(CLINICAL_STORAGE.messages, next);
-    setDraft('');
+    const updated = [...messages, newMsg];
+    setMessages(updated);
+    setInputMessage('');
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`curasync_chat_${selectedDoctor}`, JSON.stringify(updated));
+    }
 
     try {
-      await supabase.from('patient_messages').insert({
-        patient_id: record.patient_id,
-        patient_name: record.patient_name,
-        doctor_name: record.doctor_name,
-        message: record.message,
-        priority: record.priority,
-        sender_type: 'patient',
-      });
-    } catch {
-      console.warn('Message saved locally');
+      await supabase.from('clinical_messages').insert(newMsg);
+    } catch (err) {
+      console.warn('Message sync fallback active');
     } finally {
       setSending(false);
     }
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 font-sans text-[#0E2924]">
-      <div className="flex items-center justify-between">
+    <div className="max-w-4xl mx-auto space-y-6 font-sans text-[#0E2924]">
+      
+      {/* HEADER */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#D5E8E3] pb-4">
         <div>
-          <h1 className="text-3xl font-black text-[#0E2924]">Clinical Messaging</h1>
-          <p className="mt-1 text-xs font-bold text-[#4B736B]">
+          <h1 className="text-2xl font-black text-[#0E2924]">Clinical Messaging</h1>
+          <p className="text-xs font-bold text-[#227B6B]">
             Secure chat with your care team — doctor advice lands here in real time.
           </p>
         </div>
+
         <button
-          type="button"
-          onClick={() => void loadMessages()}
-          className="rounded-full bg-white p-3 text-[#227B6B] shadow-sm"
+          onClick={fetchMessages}
+          className="flex items-center gap-2 rounded-2xl border border-[#D5E8E3] bg-white px-4 py-2.5 text-xs font-black text-[#113831] hover:bg-[#EAF5F2] transition shadow-sm"
         >
-          <RefreshCw className="h-4 w-4" />
+          <RotateCw className="h-4 w-4 text-[#227B6B]" /> Refresh Chat
         </button>
       </div>
 
-      <div className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm">
-        {loading ? (
-          <div className="flex h-40 items-center justify-center gap-2 text-xs font-black text-[#113831]">
-            <Loader2 className="h-4 w-4 animate-spin text-[#227B6B]" /> Loading messages…
+      {/* DEPARTMENT & DOCTOR SELECTION CONTROL BOARD */}
+      <div className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          
+          {/* 1. DEPARTMENT SELECTOR */}
+          <div>
+            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
+              <Stethoscope className="h-3.5 w-3.5 text-[#227B6B]" /> SELECT DEPARTMENT
+            </label>
+            <select
+              value={selectedDept}
+              onChange={(e) => setSelectedDept(e.target.value)}
+              className="w-full rounded-2xl border border-[#D5E8E3] bg-[#EAF5F2]/40 p-3.5 text-xs font-bold text-[#0E2924] focus:outline-none cursor-pointer"
+            >
+              {uniqueDepartments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
           </div>
-        ) : visible.length === 0 ? (
-          <div className="flex h-40 flex-col items-center justify-center gap-2 text-center text-slate-500">
-            <MessageSquare className="h-8 w-8 text-[#D5E8E3]" />
-            <p className="text-xs font-bold">No messages yet. Doctor advice will appear instantly.</p>
+
+          {/* 2. DOCTOR SELECTOR */}
+          <div>
+            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
+              <User className="h-3.5 w-3.5 text-[#227B6B]" />
+              {availableDoctors.length > 1
+                ? `SELECT CLINICIAN (${availableDoctors.length} Available)`
+                : 'ASSIGNED CLINICIAN'}
+            </label>
+            
+            {availableDoctors.length > 1 ? (
+              <select
+                value={selectedDoctor}
+                onChange={(e) => setSelectedDoctor(e.target.value)}
+                className="w-full rounded-2xl border border-[#D5E8E3] bg-white p-3.5 text-xs font-black text-[#113831] focus:outline-none cursor-pointer"
+              >
+                {availableDoctors.map((doc) => (
+                  <option key={doc.name} value={doc.name}>
+                    {doc.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                readOnly
+                value={selectedDoctor}
+                className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-black text-[#113831]"
+              />
+            )}
           </div>
-        ) : (
-          <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
-            {visible.map((m) => {
-              const fromDoctor = m.sender_type === 'doctor';
+
+        </div>
+      </div>
+
+      {/* MESSAGING CANVAS */}
+      <div className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-6 flex flex-col h-[450px]">
+        
+        {/* ACTIVE CHAT HEADER */}
+        <div className="flex items-center justify-between border-b border-[#EAF5F2] pb-3 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#113831] text-white text-xs font-black">
+              {selectedDoctor.replace('Dr. ', '').charAt(0)}
+            </div>
+            <div>
+              <h3 className="text-xs font-black text-[#0E2924]">{selectedDoctor}</h3>
+              <p className="text-[10px] font-bold text-[#227B6B]">{selectedDept} Specialist</p>
+            </div>
+          </div>
+          <span className="flex items-center gap-1 text-[10px] font-black text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+            <CheckCircle2 className="h-3 w-3" /> Live Channel Active
+          </span>
+        </div>
+
+        {/* CHAT MESSAGES DISPLAY */}
+        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-2 text-slate-400">
+              <MessageSquare className="h-10 w-10 text-[#227B6B]/40" />
+              <p className="text-xs font-bold text-[#227B6B]">
+                No conversation history with {selectedDoctor} yet.
+              </p>
+              <p className="text-[10px] text-slate-400">
+                Type your health concern below to send a direct message to their dashboard.
+              </p>
+            </div>
+          ) : (
+            messages.map((msg) => {
+              const isPatient = msg.sender_role === 'patient';
               return (
                 <div
-                  key={m.id}
-                  className={`rounded-2xl border px-4 py-3 ${
-                    fromDoctor
-                      ? 'border-amber-200 bg-amber-50'
-                      : 'border-[#D5E8E3] bg-[#F4F8F7]'
-                  }`}
+                  key={msg.id}
+                  className={`flex flex-col ${isPatient ? 'items-end' : 'items-start'}`}
                 >
-                  <div className="mb-1 flex items-center justify-between gap-2">
-                    <p className="text-[11px] font-black text-[#0E2924]">
-                      {fromDoctor ? m.doctor_name : 'You'}
-                      {m.doctor_id ? ` · ${m.doctor_id}` : ''}
+                  <div
+                    className={`max-w-[80%] rounded-2xl p-4 text-xs font-bold leading-relaxed shadow-sm ${
+                      isPatient
+                        ? 'bg-[#113831] text-white rounded-br-none'
+                        : 'bg-[#EAF5F2] text-[#0E2924] border border-[#D5E8E3] rounded-bl-none'
+                    }`}
+                  >
+                    <p className="text-[10px] opacity-75 mb-1 font-black">
+                      {isPatient ? 'You' : msg.doctor_name}
                     </p>
-                    <span className="text-[10px] font-bold text-slate-500">
-                      {new Date(m.created_at).toLocaleString()}
+                    <p>{msg.message}</p>
+                    <span className="text-[9px] opacity-60 mt-1 block text-right font-normal">
+                      {new Date(msg.created_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </span>
                   </div>
-                  <p className="text-xs font-bold text-[#113831]">{m.message}</p>
-                  {fromDoctor && m.priority === 'high' ? (
-                    <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase text-amber-800">
-                      <BellRing className="h-3 w-3" /> Clinical alert
-                    </span>
-                  ) : null}
                 </div>
               );
-            })}
-          </div>
-        )}
+            })
+          )}
+          <div ref={chatBottomRef} />
+        </div>
 
-        <form onSubmit={handleSend} className="mt-5 flex gap-2 border-t border-[#EAF5F2] pt-4">
+        {/* CHAT INPUT FORM */}
+        <form onSubmit={handleSendMessage} className="flex gap-3 shrink-0 pt-2 border-t border-[#EAF5F2]">
           <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Message your care team…"
-            className="flex-1 rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] px-4 py-3 text-xs font-bold text-[#0E2924] outline-none focus:border-[#227B6B]"
+            type="text"
+            placeholder={`Type your problem or question for ${selectedDoctor}...`}
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            className="flex-1 rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] px-4 py-3.5 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none shadow-sm"
           />
           <button
             type="submit"
-            disabled={sending}
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#113831] px-5 py-3 text-xs font-black text-white transition hover:bg-[#227B6B] disabled:opacity-60"
+            disabled={sending || !inputMessage.trim()}
+            className="flex items-center gap-2 rounded-2xl bg-[#113831] px-6 py-3.5 text-xs font-black text-white hover:bg-[#227B6B] transition shadow-md disabled:opacity-50"
           >
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Send
+            <Send className="h-4 w-4 text-[#A6E2D8]" /> Send
           </button>
         </form>
+
       </div>
+
     </div>
   );
 }
