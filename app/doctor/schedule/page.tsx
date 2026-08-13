@@ -2,503 +2,378 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  AlertCircle,
-  CalendarDays,
-  Check,
-  Clock3,
-  Gauge,
+  Calendar,
+  Clock,
   Loader2,
-  Palmtree,
   Plus,
-  RefreshCw,
+  RotateCw,
   Trash2,
+  UserRound,
 } from 'lucide-react';
-import { toast } from 'sonner';
 
-import { getDoctorSession } from '@/lib/doctor/session';
-import { supabase } from '@/lib/supabaseClient';
-
-const SCHEDULE_KEY = 'curasync_doctor_schedule';
-const SETTINGS_KEY = 'curasync_doctor_schedule_settings';
-const today = () => new Date().toISOString().slice(0, 10);
+import {
+  DEFAULT_ACTIVE_DOCTOR_ID,
+  getActiveDoctorProfile,
+} from '@/lib/doctor/command-center/supabase-service';
+import { createClient } from '@/lib/supabase/client';
 
 type ScheduleSlot = {
   id: string;
-  doctor_employee_id: string;
-  doctor_name: string;
+  doctor_id: string;
   schedule_date: string;
   start_time: string;
   end_time: string;
-  is_available: boolean;
-  created_at: string;
+  created_at?: string;
 };
 
-type DaySettings = {
-  doctor_employee_id: string;
-  schedule_date: string;
-  daily_patient_limit: number;
-  is_on_leave: boolean;
-  updated_at: string;
-};
-
-function readLocal(): ScheduleSlot[] {
-  try {
-    return JSON.parse(localStorage.getItem(SCHEDULE_KEY) ?? '[]') as ScheduleSlot[];
-  } catch {
-    return [];
-  }
+function localDateString(date = new Date()): string {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().split('T')[0];
 }
 
-function writeLocal(slots: ScheduleSlot[]) {
-  localStorage.setItem(SCHEDULE_KEY, JSON.stringify(slots));
-}
-
-function mergeSlots(local: ScheduleSlot[], remote: ScheduleSlot[]) {
-  const map = new Map(local.map((slot) => [slot.id, slot]));
-  remote.forEach((slot) => map.set(slot.id, slot));
-  return [...map.values()].sort((a, b) => a.start_time.localeCompare(b.start_time));
-}
-
-function readSettings(): DaySettings[] {
-  try {
-    return JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '[]') as DaySettings[];
-  } catch {
-    return [];
-  }
-}
-
-function writeSettings(settings: DaySettings[]) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+function localStorageKey(doctorId: string, date: string): string {
+  return `curasync_doctor_schedule_${doctorId}_${date}`;
 }
 
 export default function DoctorSchedulePage() {
-  const [session] = useState(getDoctorSession);
-  const [date, setDate] = useState(today);
+  const supabase = createClient();
+
+  const [activeDoctorId, setActiveDoctorId] = useState<string>(DEFAULT_ACTIVE_DOCTOR_ID);
+  const [doctorName, setDoctorName] = useState<string>('Doctor');
+  const [selectedDate, setSelectedDate] = useState<string>(localDateString());
   const [slots, setSlots] = useState<ScheduleSlot[]>([]);
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [actionId, setActionId] = useState<string | null>(null);
-  const [offline, setOffline] = useState(false);
-  const [dailyLimit, setDailyLimit] = useState(() => {
-    const saved = readSettings().find(
-      (item) =>
-        item.doctor_employee_id === session.employeeId && item.schedule_date === today(),
-    );
-    return saved?.daily_patient_limit ?? 20;
-  });
-  const [isOnLeave, setIsOnLeave] = useState(() => {
-    const saved = readSettings().find(
-      (item) =>
-        item.doctor_employee_id === session.employeeId && item.schedule_date === today(),
-    );
-    return saved?.is_on_leave ?? false;
-  });
-  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [isLocalMode, setIsLocalMode] = useState<boolean>(false);
 
-  const selectDate = (nextDate: string) => {
-    const saved = readSettings().find(
-      (item) =>
-        item.doctor_employee_id === session.employeeId && item.schedule_date === nextDate,
-    );
-    setDate(nextDate);
-    setDailyLimit(saved?.daily_patient_limit ?? 20);
-    setIsOnLeave(saved?.is_on_leave ?? false);
-  };
+  const [startTime, setStartTime] = useState<string>('09:00');
+  const [endTime, setEndTime] = useState<string>('09:30');
 
-  const loadSchedule = useCallback(
-    async (quiet = false) => {
-      if (!quiet) setLoading(true);
-      const localForDay = readLocal().filter(
-        (slot) =>
-          slot.doctor_employee_id === session.employeeId && slot.schedule_date === date,
-      );
-      try {
-        const { data, error } = await supabase
-          .from('doctor_schedules')
-          .select('*')
-          .eq('doctor_employee_id', session.employeeId)
-          .eq('schedule_date', date)
-          .order('start_time', { ascending: true });
-        if (error) throw error;
-        const merged = mergeSlots(localForDay, (data ?? []) as ScheduleSlot[]);
-        setSlots(merged);
-        const otherDays = readLocal().filter(
-          (slot) =>
-            slot.doctor_employee_id !== session.employeeId || slot.schedule_date !== date,
-        );
-        writeLocal([...otherDays, ...merged]);
-        setOffline(false);
-      } catch (error) {
-        setSlots(localForDay.sort((a, b) => a.start_time.localeCompare(b.start_time)));
-        setOffline(true);
-        if (!quiet) {
-          toast.warning('Schedule is in local mode', {
-            description:
-              error instanceof Error
-                ? error.message
-                : 'The schedule table or network is unavailable.',
-          });
-        }
-      } finally {
-        setLoading(false);
-      }
-    },
-    [date, session.employeeId],
-  );
+  const [loading, setLoading] = useState<boolean>(true);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const selectedDateStr = useMemo(() => selectedDate, [selectedDate]);
 
   useEffect(() => {
-    const initialLoad = window.setTimeout(() => void loadSchedule(), 0);
-    return () => window.clearTimeout(initialLoad);
-  }, [loadSchedule]);
+    async function resolveDoctor() {
+      const { data: authData } = await supabase.auth.getUser();
+      const profile = await getActiveDoctorProfile();
 
-  const persistLocal = useCallback(
-    (nextForDay: ScheduleSlot[]) => {
-      const other = readLocal().filter(
-        (slot) =>
-          slot.doctor_employee_id !== session.employeeId || slot.schedule_date !== date,
+      const resolvedId =
+        authData?.user?.id ||
+        (profile?.doctor_id ? String(profile.doctor_id) : null) ||
+        DEFAULT_ACTIVE_DOCTOR_ID;
+
+      setActiveDoctorId(resolvedId);
+      setDoctorName(String(profile?.full_name ?? 'Dr. CHANDRAKANTH S KESARI'));
+    }
+
+    void resolveDoctor();
+  }, [supabase]);
+
+  const loadLocalSlots = useCallback(() => {
+    if (typeof window === 'undefined') return [];
+    const raw = localStorage.getItem(localStorageKey(activeDoctorId, selectedDateStr));
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw) as ScheduleSlot[];
+    } catch {
+      return [];
+    }
+  }, [activeDoctorId, selectedDateStr]);
+
+  const saveLocalSlots = useCallback(
+    (next: ScheduleSlot[]) => {
+      if (typeof window === 'undefined') return;
+      localStorage.setItem(
+        localStorageKey(activeDoctorId, selectedDateStr),
+        JSON.stringify(next),
       );
-      writeLocal([...other, ...nextForDay]);
-      setSlots(nextForDay.sort((a, b) => a.start_time.localeCompare(b.start_time)));
     },
-    [date, session.employeeId],
+    [activeDoctorId, selectedDateStr],
   );
 
-  const addSlot = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!startTime || !endTime) return;
-    if (endTime <= startTime) {
-      toast.error('End time must be after start time');
-      return;
+  const fetchSchedule = useCallback(async () => {
+    if (!activeDoctorId) return;
+
+    setLoading(true);
+    setStatusMessage(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('doctor_schedules')
+        .select('*')
+        .eq('doctor_id', activeDoctorId)
+        .eq('schedule_date', selectedDateStr)
+        .order('start_time', { ascending: true });
+
+      if (!error) {
+        setSlots((data ?? []) as ScheduleSlot[]);
+        setIsLocalMode(false);
+        if (data?.length) {
+          saveLocalSlots(data as ScheduleSlot[]);
+        }
+      } else {
+        console.warn('Schedule fetch fallback:', error.message ?? error);
+        setSlots(loadLocalSlots());
+        setIsLocalMode(true);
+        setStatusMessage('Showing locally cached schedule — database sync unavailable.');
+      }
+    } catch (err) {
+      console.warn('Schedule fetch error:', err);
+      setSlots(loadLocalSlots());
+      setIsLocalMode(true);
+      setStatusMessage('Showing locally cached schedule — database sync unavailable.');
+    } finally {
+      setLoading(false);
     }
-    const overlaps = slots.some(
-      (slot) => startTime < slot.end_time && endTime > slot.start_time,
-    );
-    if (overlaps) {
-      toast.error('This time overlaps an existing slot');
+  }, [activeDoctorId, selectedDateStr, supabase, loadLocalSlots, saveLocalSlots]);
+
+  useEffect(() => {
+    void fetchSchedule();
+  }, [fetchSchedule]);
+
+  const handleAddSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!startTime || !endTime || startTime >= endTime) {
+      setStatusMessage('End time must be after start time.');
       return;
     }
 
     setSaving(true);
-    const slot: ScheduleSlot = {
-      id: crypto.randomUUID(),
-      doctor_employee_id: session.employeeId,
-      doctor_name: session.fullName,
-      schedule_date: date,
-      start_time: startTime,
-      end_time: endTime,
-      is_available: true,
-      created_at: new Date().toISOString(),
-    };
-    persistLocal([...slots, slot]);
+    setStatusMessage(null);
+
+    if (isLocalMode) {
+      const localSlot: ScheduleSlot = {
+        id: `local_${Date.now()}`,
+        doctor_id: activeDoctorId,
+        schedule_date: selectedDateStr,
+        start_time: startTime,
+        end_time: endTime,
+      };
+      const next = [...slots, localSlot].sort((a, b) => a.start_time.localeCompare(b.start_time));
+      setSlots(next);
+      saveLocalSlots(next);
+      setStartTime('09:00');
+      setEndTime('09:30');
+      setSaving(false);
+      return;
+    }
+
     try {
-      const { error } = await supabase.from('doctor_schedules').insert(slot);
+      const { data: newSlot, error } = await supabase
+        .from('doctor_schedules')
+        .insert([
+          {
+            doctor_id: activeDoctorId,
+            schedule_date: selectedDateStr,
+            start_time: startTime,
+            end_time: endTime,
+          },
+        ])
+        .select()
+        .single();
+
       if (error) throw error;
-      setOffline(false);
-      toast.success('Availability slot added');
-    } catch (error) {
-      setOffline(true);
-      toast.warning('Slot saved locally', {
-        description:
-          error instanceof Error ? error.message : 'It can be synced when the database is available.',
-      });
+
+      if (newSlot) {
+        const next = [...slots, newSlot as ScheduleSlot].sort((a, b) =>
+          a.start_time.localeCompare(b.start_time),
+        );
+        setSlots(next);
+        saveLocalSlots(next);
+      }
+
+      setStartTime('09:00');
+      setEndTime('09:30');
+      setStatusMessage('Availability slot added successfully.');
+    } catch (err) {
+      console.error('Failed to add slot:', err);
+      setStatusMessage('Could not save slot to database. Switched to local mode.');
+      setIsLocalMode(true);
     } finally {
       setSaving(false);
-      setStartTime('');
-      setEndTime('');
     }
   };
 
-  const toggleSlot = async (slot: ScheduleSlot) => {
-    setActionId(slot.id);
-    const next = { ...slot, is_available: !slot.is_available };
-    persistLocal(slots.map((current) => (current.id === slot.id ? next : current)));
+  const handleDeleteSlot = async (slotId: string) => {
+    setDeletingId(slotId);
+    setStatusMessage(null);
+
+    if (isLocalMode || slotId.startsWith('local_')) {
+      const next = slots.filter((s) => s.id !== slotId);
+      setSlots(next);
+      saveLocalSlots(next);
+      setDeletingId(null);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('doctor_schedules')
-        .update({ is_available: next.is_available })
-        .eq('id', slot.id);
+        .delete()
+        .eq('id', slotId)
+        .eq('doctor_id', activeDoctorId);
+
       if (error) throw error;
-      setOffline(false);
-      toast.success(next.is_available ? 'Slot opened' : 'Slot blocked');
-    } catch (error) {
-      setOffline(true);
-      toast.warning('Change saved locally', {
-        description: error instanceof Error ? error.message : 'Database update unavailable.',
-      });
+
+      const next = slots.filter((s) => s.id !== slotId);
+      setSlots(next);
+      saveLocalSlots(next);
+      setStatusMessage('Slot removed from your schedule.');
+    } catch (err) {
+      console.error('Failed to delete slot:', err);
+      setStatusMessage('Could not delete slot from database.');
     } finally {
-      setActionId(null);
+      setDeletingId(null);
     }
   };
-
-  const deleteSlot = async (slot: ScheduleSlot) => {
-    setActionId(slot.id);
-    persistLocal(slots.filter((current) => current.id !== slot.id));
-    try {
-      const { error } = await supabase.from('doctor_schedules').delete().eq('id', slot.id);
-      if (error) throw error;
-      setOffline(false);
-      toast.success('Slot removed');
-    } catch (error) {
-      setOffline(true);
-      toast.warning('Removed on this device', {
-        description: error instanceof Error ? error.message : 'Database update unavailable.',
-      });
-    } finally {
-      setActionId(null);
-    }
-  };
-
-  const persistDaySettings = useCallback(
-    async (nextLimit: number, nextLeave: boolean, successMessage: string) => {
-      const settings: DaySettings = {
-        doctor_employee_id: session.employeeId,
-        schedule_date: date,
-        daily_patient_limit: nextLimit,
-        is_on_leave: nextLeave,
-        updated_at: new Date().toISOString(),
-      };
-      const other = readSettings().filter(
-        (item) =>
-          item.doctor_employee_id !== session.employeeId || item.schedule_date !== date,
-      );
-      writeSettings([...other, settings]);
-      setDailyLimit(nextLimit);
-      setIsOnLeave(nextLeave);
-      setSettingsSaving(true);
-
-      try {
-        const { error: scheduleError } = await supabase
-          .from('doctor_schedules')
-          .update({
-            daily_patient_limit: nextLimit,
-            is_on_leave: nextLeave,
-          })
-          .eq('doctor_employee_id', session.employeeId)
-          .eq('schedule_date', date);
-
-        if (scheduleError) {
-          const { error: settingsError } = await supabase
-            .from('doctor_schedule_settings')
-            .upsert(settings, { onConflict: 'doctor_employee_id,schedule_date' });
-          if (settingsError) throw settingsError;
-        }
-        setOffline(false);
-        toast.success(successMessage);
-      } catch {
-        toast.warning(`${successMessage} locally`, {
-          description: 'Optional schedule settings could not be synced.',
-        });
-      } finally {
-        setSettingsSaving(false);
-      }
-    },
-    [date, session.employeeId],
-  );
-
-  const saveDailyLimit = () => {
-    const normalized = Math.max(1, Math.min(200, Math.round(dailyLimit)));
-    void persistDaySettings(normalized, isOnLeave, `Daily limit set to ${normalized}`);
-  };
-
-  const toggleDayLeave = () => {
-    const nextLeave = !isOnLeave;
-    void persistDaySettings(
-      dailyLimit,
-      nextLeave,
-      nextLeave ? 'Day marked as leave' : 'Day reopened',
-    );
-  };
-
-  const availableCount = useMemo(
-    () => (isOnLeave ? 0 : slots.filter((slot) => slot.is_available).length),
-    [isOnLeave, slots],
-  );
 
   return (
-    <section className="relative min-h-full overflow-hidden bg-[#F2F6FA] p-4 text-[#2C243B] sm:p-6 lg:p-8">
-      <div className="pointer-events-none absolute -left-28 top-24 h-80 w-80 rounded-full bg-[#BDE2F5]/75 blur-3xl" />
-      <div className="pointer-events-none absolute right-0 top-0 h-96 w-96 rounded-full bg-[#9887B1]/25 blur-3xl" />
-      <div className="relative mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-col gap-5 rounded-3xl border border-white/70 bg-white/55 p-5 shadow-[14px_14px_30px_rgba(137,74,102,0.13),-10px_-10px_26px_rgba(255,255,255,0.9)] backdrop-blur-2xl md:flex-row md:items-center md:justify-between sm:p-7">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-gradient-to-br from-[#A9C5E3] to-[#BDE2F5] p-3 text-[#894A66] shadow-[inset_2px_2px_5px_white,inset_-3px_-3px_7px_rgba(137,74,102,0.14)]">
-              <CalendarDays className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">Availability schedule</h1>
-              <p className="mt-1 text-sm text-[#2C243B]/60">
-                Publish daily consultation time slots.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-2xl border border-white/80 bg-white/60 px-3 py-2 shadow-[6px_6px_14px_rgba(157,166,205,0.2),-5px_-5px_12px_white]">
-            <CalendarDays className="h-4 w-4 text-[#93688E]" />
+    <div className="mx-auto min-h-screen max-w-4xl space-y-6 bg-slate-50 p-4 font-sans sm:p-6 lg:p-8">
+      <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600">
+            Availability Management
+          </p>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">Doctor Schedule</h1>
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
+            <UserRound className="h-4 w-4" />
+            {doctorName} · ID scoped to your profile only
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void fetchSchedule()}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
+        >
+          <RotateCw className="h-4 w-4" /> Refresh
+        </button>
+      </header>
+
+      {isLocalMode && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Local schedule mode — changes are stored on this device until database sync is available.
+        </div>
+      )}
+
+      {statusMessage && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {statusMessage}
+        </div>
+      )}
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <Calendar className="h-4 w-4 text-emerald-600" />
+          Select Date
+        </label>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="w-full max-w-xs rounded-lg border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+        />
+        <p className="mt-2 text-xs text-slate-500">
+          Managing schedule for{' '}
+          <span className="font-semibold">{selectedDateStr}</span> · Doctor ID{' '}
+          <span className="font-mono text-[11px]">{activeDoctorId}</span>
+        </p>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-slate-900">
+          <Plus className="h-4 w-4 text-emerald-600" />
+          Add Availability Slot
+        </h2>
+        <form onSubmit={handleAddSlot} className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
+              Start Time
+            </label>
             <input
-              type="date"
-              value={date}
-              min={today()}
-              onChange={(event) => selectDate(event.target.value)}
-              className="bg-transparent text-sm font-bold outline-none"
+              type="time"
+              required
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-500"
             />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
+              End Time
+            </label>
+            <input
+              type="time"
+              required
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-500"
+            />
+          </div>
+          <div className="flex items-end">
             <button
-              type="button"
-              onClick={() => void loadSchedule(true)}
-              aria-label="Refresh schedule"
-              className="ml-1 rounded-lg p-1 text-[#894A66] transition hover:bg-white active:scale-95"
+              type="submit"
+              disabled={saving}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 sm:w-auto"
             >
-              <RefreshCw className="h-4 w-4" />
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Add Slot
             </button>
           </div>
-        </header>
+        </form>
+      </section>
 
-        {offline && (
-          <div className="flex items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            Local schedule mode is active. The table may be missing or the network unavailable.
-          </div>
-        )}
-
-        {isOnLeave && (
-          <div className="flex flex-col gap-3 rounded-3xl border border-[#894A66]/30 bg-gradient-to-r from-[#894A66] to-[#93688E] px-5 py-4 text-white shadow-[8px_8px_20px_rgba(137,74,102,0.25),-6px_-6px_18px_white] sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Palmtree className="h-6 w-6" />
-              <div><p className="font-black">Whole-day leave</p><p className="text-sm text-white/75">All booking availability is paused for this date.</p></div>
-            </div>
-            <button type="button" onClick={toggleDayLeave} disabled={settingsSaving}
-              className="rounded-2xl bg-white px-4 py-2 text-sm font-black text-[#894A66] transition active:scale-95 disabled:opacity-50">Reopen this day</button>
-          </div>
-        )}
-
-        <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
-          <div className="space-y-5">
-          <form
-            onSubmit={addSlot}
-            className="h-fit rounded-3xl border border-white/70 bg-white/55 p-5 shadow-[10px_10px_24px_rgba(152,135,177,0.2),-8px_-8px_20px_white] backdrop-blur-2xl"
-          >
-            <h2 className="flex items-center gap-2 font-black">
-              <Plus className="h-5 w-5 text-[#93688E]" /> Add availability
-            </h2>
-            <p className="mt-1 text-sm text-[#2C243B]/55">
-              Create a non-overlapping slot for the selected date.
-            </p>
-            <div className="mt-5 space-y-4">
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-bold text-[#2C243B]/65">Start time</span>
-                <input
-                  type="time"
-                  required
-                  value={startTime}
-                  onChange={(event) => setStartTime(event.target.value)}
-                  disabled={isOnLeave}
-                  className="w-full rounded-2xl border border-white/80 bg-[#F2F6FA]/75 px-3 py-2.5 text-sm outline-none ring-[#93688E]/30 focus:ring-4 disabled:opacity-45"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-bold text-[#2C243B]/65">End time</span>
-                <input
-                  type="time"
-                  required
-                  value={endTime}
-                  onChange={(event) => setEndTime(event.target.value)}
-                  disabled={isOnLeave}
-                  className="w-full rounded-2xl border border-white/80 bg-[#F2F6FA]/75 px-3 py-2.5 text-sm outline-none ring-[#93688E]/30 focus:ring-4 disabled:opacity-45"
-                />
-              </label>
-              <button
-                type="submit"
-                disabled={saving || isOnLeave}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#894A66] to-[#93688E] px-4 py-3 text-sm font-bold text-white shadow-[6px_6px_14px_rgba(137,74,102,0.25),-5px_-5px_12px_white] transition active:scale-95 disabled:opacity-50"
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                Add slot
-              </button>
-            </div>
-          </form>
-
-          <div className="rounded-3xl border border-white/70 bg-gradient-to-br from-white/80 to-[#BDE2F5]/35 p-5 shadow-[10px_10px_24px_rgba(157,166,205,0.22),-8px_-8px_20px_white]">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9DA6CD] to-[#A9C5E3] text-white"><Gauge className="h-5 w-5" /></div>
-            <h2 className="mt-4 font-black">Daily capacity</h2>
-            <p className="mt-1 text-sm text-[#2C243B]/55">Set the maximum patients for this date.</p>
-            <div className="mt-4 flex gap-2">
-              <input type="number" min="1" max="200" value={dailyLimit} onChange={(event) => setDailyLimit(Number(event.target.value))}
-                className="min-w-0 flex-1 rounded-2xl border border-white/80 bg-white/70 px-4 py-3 font-black outline-none ring-[#93688E]/30 focus:ring-4" />
-              <button type="button" onClick={saveDailyLimit} disabled={settingsSaving}
-                className="rounded-2xl bg-[#2C243B] px-4 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50">Save</button>
-            </div>
-            {!isOnLeave && <button type="button" onClick={toggleDayLeave} disabled={settingsSaving}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#894A66]/25 bg-white/55 px-4 py-3 text-sm font-bold text-[#894A66] transition active:scale-95 disabled:opacity-50"><Palmtree className="h-4 w-4" /> Mark whole-day leave</button>}
-          </div>
-          </div>
-
-          <div className="overflow-hidden rounded-3xl border border-white/70 bg-white/50 shadow-[12px_12px_28px_rgba(157,166,205,0.22),-9px_-9px_24px_white] backdrop-blur-2xl">
-            <div className="flex items-center justify-between border-b border-[#9DA6CD]/25 px-5 py-4">
-              <div>
-                <h2 className="font-black">
-                  {new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </h2>
-                <p className="text-xs text-[#2C243B]/50">{availableCount} available slots</p>
-              </div>
-              <span className="rounded-full bg-[#BDE2F5] px-3 py-1 text-xs font-bold text-[#894A66]">
-                {isOnLeave ? 'On leave' : `${slots.length} total · limit ${dailyLimit}`}
-              </span>
-            </div>
-            {loading ? (
-              <div className="flex min-h-72 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-[#894A66]" />
-              </div>
-            ) : slots.length === 0 ? (
-              <div className="flex min-h-72 flex-col items-center justify-center p-8 text-center">
-                <Clock3 className="mb-3 h-10 w-10 text-[#9887B1]" />
-                <h3 className="font-bold">No availability configured</h3>
-                <p className="mt-1 text-sm text-[#2C243B]/55">Add the first consultation slot for this date.</p>
-              </div>
-            ) : (
-              <div className="space-y-3 p-3 sm:p-4">
-                {slots.map((slot) => (
-                  <article key={slot.id} className="flex flex-col gap-3 rounded-3xl border border-white/80 bg-gradient-to-r from-white/85 to-[#BDE2F5]/25 p-4 shadow-[6px_6px_15px_rgba(157,166,205,0.19),-5px_-5px_13px_white] sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`rounded-xl p-2.5 ${slot.is_available ? 'bg-[#BDE2F5] text-[#894A66]' : 'bg-slate-100 text-slate-500'}`}>
-                        {slot.is_available ? <Check className="h-5 w-5" /> : <Clock3 className="h-5 w-5" />}
-                      </div>
-                      <div>
-                        <p className="font-black">{slot.start_time} – {slot.end_time}</p>
-                        <p className="text-xs text-[#2C243B]/50">
-                          {slot.is_available ? 'Available for booking' : 'Blocked'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        disabled={actionId !== null || isOnLeave}
-                        onClick={() => void toggleSlot(slot)}
-                        className="rounded-xl border border-[#9DA6CD] px-3 py-2 text-xs font-bold text-[#894A66] transition hover:bg-[#F2F6FA] active:scale-95 disabled:opacity-50"
-                      >
-                        {slot.is_available ? 'Block' : 'Open'}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={actionId !== null}
-                        onClick={() => void deleteSlot(slot)}
-                        aria-label={`Delete ${slot.start_time} slot`}
-                        className="rounded-xl border border-[#93688E]/25 p-2 text-[#894A66] transition hover:bg-white active:scale-95 disabled:opacity-50"
-                      >
-                        {actionId === slot.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+            <Clock className="h-4 w-4 text-emerald-600" />
+            Your Slots for {selectedDateStr}
+          </h2>
+          <span className="text-xs font-medium text-slate-500">{slots.length} slot(s)</span>
         </div>
-      </div>
-    </section>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-sm text-slate-500">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading schedule...
+          </div>
+        ) : slots.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-slate-200 py-12 text-center text-sm text-slate-500">
+            No availability slots for this date. Add your first slot above.
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {slots.map((slot) => (
+              <li
+                key={slot.id}
+                className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {slot.start_time} – {slot.end_time}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Doctor: {slot.doctor_id.slice(0, 8)}… · Date: {slot.schedule_date}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleDeleteSlot(slot.id)}
+                  disabled={deletingId === slot.id}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                >
+                  {deletingId === slot.id ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5" />
+                  )}
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
   );
 }
