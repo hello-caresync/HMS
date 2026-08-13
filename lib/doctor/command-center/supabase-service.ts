@@ -649,7 +649,7 @@ export async function savePatientClinicalEncounter(
     throw new Error('Consultation insert returned no id');
   }
 
-  const consultationId = String(recordId);
+  const createdConsultationId = String(recordId);
 
   // Step 2: vitals (linked to consultation)
   const temp = input.vitals.temperature_f;
@@ -659,9 +659,9 @@ export async function savePatientClinicalEncounter(
   const spo2 = input.vitals.spo2_percent;
   const weight = input.vitals.weight_kg;
 
-  const vitalsPayload = {
-    consultation_id: consultationId,
-    patient_id: patientId,
+  const vitalsData = {
+    consultation_id: createdConsultationId || null,
+    patient_id: patientId || null,
     temperature: temp ? parseFloat(String(temp)) : null,
     bp_systolic: bpSystolic ? parseInt(String(bpSystolic), 10) : null,
     bp_diastolic: bpDiastolic ? parseInt(String(bpDiastolic), 10) : null,
@@ -670,7 +670,7 @@ export async function savePatientClinicalEncounter(
     weight: weight ? parseFloat(String(weight)) : null,
   };
 
-  const { error: vitalsError } = await client.from('vitals').insert([vitalsPayload]);
+  const { error: vitalsError } = await client.from('vitals').insert([vitalsData]);
 
   if (vitalsError) {
     throwSaveError('[Consultation Save Error] vitals insert failed:', vitalsError);
@@ -684,7 +684,7 @@ export async function savePatientClinicalEncounter(
     .from('prescriptions')
     .insert([
       {
-        consultation_id: consultationId,
+        consultation_id: createdConsultationId,
         appointment_id: appointmentId,
         doctor_id: doctorId,
         patient_id: patientId,
@@ -704,7 +704,7 @@ export async function savePatientClinicalEncounter(
   }
 
   return {
-    consultation_id: consultationId,
+    consultation_id: createdConsultationId,
     prescription_id: prescription?.id ? String(prescription.id) : undefined,
   };
 }
