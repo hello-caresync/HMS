@@ -651,30 +651,37 @@ export async function savePatientClinicalEncounter(
 
   const createdConsultationId = String(recordId);
 
-  // Step 2: vitals (linked to consultation)
+  // Step 2: vitals (linked to consultation) — non-blocking, multi-column aliases
   const temp = input.vitals.temperature_f;
-  const bpSystolic = input.vitals.bp_systolic;
-  const bpDiastolic = input.vitals.bp_diastolic;
+  const bpSys = input.vitals.bp_systolic;
+  const bpDia = input.vitals.bp_diastolic;
   const pulse = input.vitals.pulse_bpm;
   const spo2 = input.vitals.spo2_percent;
-  const weight = input.vitals.weight_kg;
 
+  const tempValue = temp ? parseFloat(String(temp)) : null;
+  const bpSysValue = bpSys ? parseInt(String(bpSys), 10) : null;
+  const bpDiaValue = bpDia ? parseInt(String(bpDia), 10) : null;
   const pulseValue = pulse ? parseInt(String(pulse), 10) : null;
+  const spo2Value = spo2 ? parseInt(String(spo2), 10) : null;
 
-  const vitalsData = {
-    consultation_id: createdConsultationId || null,
-    patient_id: patientId || null,
-    temperature: temp ? parseFloat(String(temp)) : null,
-    bp_systolic: bpSystolic ? parseInt(String(bpSystolic), 10) : null,
-    bp_diastolic: bpDiastolic ? parseInt(String(bpDiastolic), 10) : null,
+  const vitalsPayload = {
+    consultation_id: createdConsultationId,
+    patient_id: patientId,
+    temp: tempValue,
+    temperature: tempValue,
+    bp_sys: bpSysValue,
+    bp_systolic: bpSysValue,
+    bp_dia: bpDiaValue,
+    bp_diastolic: bpDiaValue,
     pulse: pulseValue,
     pulse_bpm: pulseValue,
-    spo2: spo2 ? parseInt(String(spo2), 10) : null,
-    weight: weight ? parseFloat(String(weight)) : null,
+    spo2: spo2Value,
+    spo2_percent: spo2Value,
+    spo2_percentage: spo2Value,
   };
 
   try {
-    const { error: vitalsError } = await client.from('vitals').insert([vitalsData]);
+    const { error: vitalsError } = await client.from('vitals').insert([vitalsPayload]);
     if (vitalsError) {
       console.warn('[Consultation Save] vitals insert skipped:', vitalsError.message || vitalsError);
     }
