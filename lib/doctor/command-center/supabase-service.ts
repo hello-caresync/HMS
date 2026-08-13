@@ -605,6 +605,10 @@ export async function savePatientClinicalEncounter(
 
   const diagnosis = input.clinical.diagnosis?.trim() || '';
   const chiefComplaint = input.clinical.chief_complaint?.trim() || '';
+  const diagnosisNotes =
+    input.clinical.clinical_notes?.trim() ||
+    input.clinical.clinical_findings?.trim() ||
+    '';
   const symptoms =
     chiefComplaint ||
     input.clinical.clinical_findings?.trim() ||
@@ -621,10 +625,11 @@ export async function savePatientClinicalEncounter(
     appointment_id: appointmentId,
     doctor_id: doctorId,
     patient_id: patientId,
-    chief_complaint: chiefComplaint || symptoms || 'General Consultation',
-    diagnosis,
-    symptoms,
-    notes,
+    chief_complaint: chiefComplaint || 'General Consultation',
+    diagnosis: diagnosis || '',
+    symptoms: symptoms || '',
+    notes: notes || '',
+    diagnosis_notes: diagnosisNotes || notes || '',
     status: 'COMPLETED',
   };
 
