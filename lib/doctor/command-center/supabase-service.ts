@@ -630,17 +630,19 @@ export async function savePatientClinicalEncounter(
   const { data: consultation, error: consultError } = await client
     .from('consultations')
     .insert([consultationPayload])
-    .select('id')
+    .select('*')
     .single();
 
   if (consultError) {
-    throwSaveError('[Consultation Save Error] consultations insert failed:', consultError);
+    throw new Error(consultError.message || consultError.details || 'Consultation insert failed');
   }
-  if (!consultation?.id) {
+
+  const recordId = consultation?.id ?? consultation?.consultation_id;
+  if (!recordId) {
     throw new Error('Consultation insert returned no id');
   }
 
-  const consultationId = String(consultation.id);
+  const consultationId = String(recordId);
 
   // Step 2: vitals (linked to consultation)
   const { error: vitalsError } = await client.from('vitals').insert([
