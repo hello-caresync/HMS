@@ -691,7 +691,7 @@ export async function savePatientClinicalEncounter(
 
   // Step 3: prescriptions
   const medicineList = meds.length > 0 ? meds : [];
-  const instructions =
+  const instructionsInput =
     input.special_instructions?.trim() ||
     input.clinical.clinical_notes?.trim() ||
     '';
@@ -703,7 +703,8 @@ export async function savePatientClinicalEncounter(
     doctor_id: doctorId || DEFAULT_ACTIVE_DOCTOR_ID,
     medications: medicineList || [],
     medicines: medicineList || [],
-    instructions: instructions || '',
+    special_instructions: instructionsInput || '',
+    instructions: instructionsInput || '',
   };
 
   const { data: prescription, error: rxError } = await client
