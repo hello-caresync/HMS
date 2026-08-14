@@ -4,6 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import {
+  PATIENT_APPOINTMENTS_UUID,
+  resolvePatientDbId,
+} from '@/lib/patient/constants';
+import {
   Stethoscope,
   Calendar,
   Clock,
@@ -77,6 +81,30 @@ const ALL_41_DOCTORS: DoctorDirectoryItem[] = [
 
 const REGAL_HOSPITAL = 'Regal Hospital';
 
+/** Static registered-patient UUID fallback when Web Crypto is unavailable. */
+const STATIC_PATIENT_UUID_FALLBACK = PATIENT_APPOINTMENTS_UUID;
+
+function generateStandardUuid(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = (Math.random() * 16) | 0;
+    const value = char === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
+function resolveRegisteredPatientUuid(sessionPatientId?: string | null): string {
+  const resolved = resolvePatientDbId(sessionPatientId);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    resolved,
+  )
+    ? resolved
+    : STATIC_PATIENT_UUID_FALLBACK;
+}
+
 function stripRelationshipTag(label: string): string {
   return label.replace(/\s\([^)]+\)/, '').trim();
 }
@@ -85,6 +113,30 @@ function getDoctorSearchKey(doctorName: string): string {
   const withoutPrefix = doctorName.replace(/^Dr\.?\s*/i, '').trim();
   const [firstNamePart] = withoutPrefix.split(/\s+/);
   return firstNamePart && firstNamePart.length >= 4 ? firstNamePart : withoutPrefix;
+}
+
+function findDoctorFromUrlParam(docParam: string): DoctorDirectoryItem | undefined {
+  const normalized = decodeURIComponent(docParam).trim().toLowerCase();
+
+  return ALL_41_DOCTORS.find((doctor) => {
+    const doctorName = doctor.name.toLowerCase();
+    const doctorLastName = doctorName.replace(/^dr\.?\s*/i, '');
+    return (
+      doctorName === normalized ||
+      doctorName.includes(normalized) ||
+      normalized.includes(doctorLastName) ||
+      doctorLastName.includes(normalized)
+    );
+  });
+}
+
+function mirrorAppointmentToLocalStorage(appointment: Record<string, unknown>): void {
+  if (typeof window === 'undefined') return;
+
+  const saved = localStorage.getItem('curasync_appointments');
+  const existing = saved ? JSON.parse(saved) : [];
+  const nextList = Array.isArray(existing) ? [appointment, ...existing] : [appointment];
+  localStorage.setItem('curasync_appointments', JSON.stringify(nextList));
 }
 
 export default function BookAppointmentPage() {
@@ -109,83 +161,115 @@ export default function BookAppointmentPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [patientDbId, setPatientDbId] = useState<string>(STATIC_PATIENT_UUID_FALLBACK);
+  const [bookedSummary, setBookedSummary] = useState<{
+    token: number;
+    doctor: string;
+    date: string;
+    slot: string;
+  } | null>(null);
 
   useEffect(() => {
-    // 1. Read URL query parameters if routed from Directory
     const docParam = searchParams.get('doctor');
     const deptParam = searchParams.get('department');
     const feeParam = searchParams.get('fee');
 
     if (docParam) {
-      const match = ALL_41_DOCTORS.find(
-        (d) => d.name.toLowerCase() === docParam.toLowerCase()
-      );
+      const match = findDoctorFromUrlParam(docParam);
       if (match) {
         setSelectedDoctorName(match.name);
         setSelectedDept(match.department);
         setConsultationFee(match.fee);
       } else {
-        setSelectedDoctorName(docParam);
-        if (deptParam) setSelectedDept(deptParam);
-        if (feeParam) setConsultationFee(feeParam);
+        setSelectedDoctorName(decodeURIComponent(docParam));
+        if (deptParam) setSelectedDept(decodeURIComponent(deptParam));
+        if (feeParam) setConsultationFee(decodeURIComponent(feeParam));
       }
     }
 
-    // 2. Load Patient & Linked Family Members from Local Storage & Supabase
-    loadPatientAndFamilyOptions();
+    void loadPatientAndFamilyOptions();
   }, [searchParams]);
 
   const loadPatientAndFamilyOptions = async () => {
     let primaryName = 'Aishwarya D S';
     let familyMembersList: FamilyMemberOption[] = [];
+    let resolvedPatientId = STATIC_PATIENT_UUID_FALLBACK;
 
-    // Local Storage check
     if (typeof window !== 'undefined') {
       const storedName = localStorage.getItem('patient_full_name');
       const savedProfile = localStorage.getItem('curasync_patient_profile');
+      const sessionPatientId =
+        localStorage.getItem('patient_id') ??
+        localStorage.getItem('curasync_patient_id') ??
+        undefined;
+
+      resolvedPatientId = resolveRegisteredPatientUuid(sessionPatientId);
 
       if (storedName) primaryName = storedName;
 
       if (savedProfile) {
         try {
-          const parsed = JSON.parse(savedProfile);
+          const parsed = JSON.parse(savedProfile) as {
+            full_name?: string;
+            family_members?: FamilyMemberOption[];
+            id?: string;
+            patient_id?: string;
+          };
           if (parsed.full_name) primaryName = parsed.full_name;
           if (Array.isArray(parsed.family_members)) {
             familyMembersList = parsed.family_members;
           }
-        } catch (e) {}
-      }
-    }
-
-    // Supabase DB check
-    try {
-      const { data, error } = await supabase
-        .from('patient_profiles')
-        .select('full_name, family_members')
-        .eq('patient_id', 'NEX_9021')
-        .single();
-
-      if (!error && data) {
-        if (data.full_name) primaryName = data.full_name;
-        if (Array.isArray(data.family_members)) {
-          familyMembersList = data.family_members;
+          resolvedPatientId = resolveRegisteredPatientUuid(
+            parsed.id ?? parsed.patient_id ?? sessionPatientId,
+          );
+        } catch {
+          /* use cached defaults */
         }
       }
-    } catch (err) {
-      console.warn('Profile sync fallback active');
-    } finally {
-      const options: FamilyMemberOption[] = [
-        { id: 'self', name: `${primaryName} (Self)`, relation: 'Self' },
-        ...familyMembersList.map((m) => ({
-          id: m.id || m.name,
-          name: `${m.name} (${m.relation})`,
-          relation: m.relation,
-        })),
-      ];
-
-      setPatientOptions(options);
-      setSelectedPatientName(options[0].name);
     }
+
+    try {
+      const profileQueries = await Promise.all([
+        supabase
+          .from('patient_profiles')
+          .select('id, patient_id, full_name, family_members')
+          .eq('id', resolvedPatientId)
+          .maybeSingle(),
+        supabase
+          .from('patient_profiles')
+          .select('id, patient_id, full_name, family_members')
+          .eq('patient_id', resolvedPatientId)
+          .maybeSingle(),
+      ]);
+
+      const profileRecord =
+        profileQueries.find((result) => !result.error && result.data)?.data ?? null;
+
+      if (profileRecord) {
+        if (profileRecord.full_name) primaryName = String(profileRecord.full_name);
+        if (Array.isArray(profileRecord.family_members)) {
+          familyMembersList = profileRecord.family_members as FamilyMemberOption[];
+        }
+        resolvedPatientId = resolveRegisteredPatientUuid(
+          String(profileRecord.id ?? profileRecord.patient_id ?? resolvedPatientId),
+        );
+      }
+    } catch {
+      console.warn('Profile sync fallback active');
+    }
+
+    const options: FamilyMemberOption[] = [
+      { id: 'self', name: `${primaryName} (Self)`, relation: 'Self' },
+      ...familyMembersList.map((member) => ({
+        id: member.id || member.name,
+        name: `${member.name} (${member.relation})`,
+        relation: member.relation,
+      })),
+    ];
+
+    setPatientDbId(resolvedPatientId);
+    setPatientOptions(options);
+    setSelectedPatientName(options[0]?.name ?? `${primaryName} (Self)`);
   };
 
   // Handle selecting a doctor from the full 41-doctor list
@@ -226,13 +310,12 @@ export default function BookAppointmentPage() {
 
     calculatedToken = (count ?? 0) + 1;
 
-    // 2. Build complete appointment payload — facility locked to Regal Hospital
+    const appointmentUuid = generateStandardUuid();
+    const registeredPatientUuid = resolveRegisteredPatientUuid(patientDbId);
+
     const newAppt = {
-      id:
-        typeof crypto !== 'undefined' && crypto.randomUUID
-          ? crypto.randomUUID()
-          : `apt_${Date.now()}`,
-      patient_id: 'NEX_9021',
+      id: appointmentUuid,
+      patient_id: registeredPatientUuid,
       patient_name: cleanPatientName,
       doctor_name: selectedDoctorName,
       department: selectedDept,
@@ -246,7 +329,6 @@ export default function BookAppointmentPage() {
       created_at: new Date().toISOString(),
     };
 
-    // 3. Mandatory cloud write — booking fails if Supabase insert fails
     const { error: apptErr } = await supabase.from('patient_appointments').insert([newAppt]);
 
     if (apptErr) {
@@ -258,9 +340,15 @@ export default function BookAppointmentPage() {
       return;
     }
 
-    // Secondary queue mirror (best-effort; does not block patient confirmation)
+    mirrorAppointmentToLocalStorage(newAppt);
+
     try {
-      const { error: queueErr } = await supabase.from('hms_opd_queue').insert([newAppt]);
+      const { error: queueErr } = await supabase.from('hms_opd_queue').insert([
+        {
+          ...newAppt,
+          patient_id: registeredPatientUuid,
+        },
+      ]);
       if (queueErr) {
         console.warn('Supabase hms_opd_queue mirror notice:', queueErr.message);
       }
@@ -268,19 +356,18 @@ export default function BookAppointmentPage() {
       console.warn('hms_opd_queue mirror exception:', mirrorErr);
     }
 
-    // 4. Local cache only after successful cloud write
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('curasync_appointments');
-      const existing = saved ? JSON.parse(saved) : [];
-      localStorage.setItem('curasync_appointments', JSON.stringify([newAppt, ...existing]));
-    }
-
+    setBookedSummary({
+      token: calculatedToken,
+      doctor: selectedDoctorName,
+      date: appointmentDate,
+      slot: slotTime,
+    });
     setIsSubmitting(false);
     setSuccess(true);
 
     setTimeout(() => {
       router.push('/patient/appointments');
-    }, 1000);
+    }, 2200);
   };
 
   return (
@@ -294,10 +381,39 @@ export default function BookAppointmentPage() {
       </div>
 
       {/* SUCCESS BANNER */}
-      {success && (
-        <div className="flex items-center gap-3 rounded-2xl bg-[#EAF5F2] p-4 text-xs font-bold text-[#113831] border border-[#227B6B]/30 shadow-sm">
-          <CheckCircle2 className="h-5 w-5 text-[#227B6B] shrink-0" />
-          <span>Appointment booked successfully! Redirecting to live token dashboard...</span>
+      {success && bookedSummary && (
+        <div className="rounded-2xl border border-[#227B6B]/30 bg-gradient-to-r from-[#EAF5F2] to-white p-5 shadow-md">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#113831] text-white">
+              <CheckCircle2 className="h-6 w-6 text-[#A6E2D8]" />
+            </div>
+            <div className="min-w-0 space-y-2">
+              <p className="text-sm font-black text-[#0E2924]">
+                SmartQ Token Confirmed — {REGAL_HOSPITAL}
+              </p>
+              <div className="grid gap-1.5 text-xs font-semibold text-[#113831] sm:grid-cols-2">
+                <p>
+                  Token:{' '}
+                  <span className="font-black text-[#227B6B]">
+                    T-{String(bookedSummary.token).padStart(2, '0')}
+                  </span>
+                </p>
+                <p>
+                  Clinician:{' '}
+                  <span className="font-black">{bookedSummary.doctor}</span>
+                </p>
+                <p>
+                  Date: <span className="font-black">{bookedSummary.date}</span>
+                </p>
+                <p>
+                  Slot: <span className="font-black">{bookedSummary.slot}</span>
+                </p>
+              </div>
+              <p className="text-[11px] font-bold text-[#227B6B]">
+                Your visit is saved to the hospital cloud queue. Redirecting to appointments...
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
