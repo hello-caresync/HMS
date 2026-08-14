@@ -133,10 +133,106 @@ function findDoctorFromUrlParam(docParam: string): DoctorDirectoryItem | undefin
 function mirrorAppointmentToLocalStorage(appointment: Record<string, unknown>): void {
   if (typeof window === 'undefined') return;
 
-  const saved = localStorage.getItem('curasync_appointments');
-  const existing = saved ? JSON.parse(saved) : [];
-  const nextList = Array.isArray(existing) ? [appointment, ...existing] : [appointment];
-  localStorage.setItem('curasync_appointments', JSON.stringify(nextList));
+  try {
+    const saved = localStorage.getItem('curasync_appointments');
+    const existing = saved ? JSON.parse(saved) : [];
+    const nextList = Array.isArray(existing) ? [appointment, ...existing] : [appointment];
+    localStorage.setItem('curasync_appointments', JSON.stringify(nextList));
+  } catch (storageErr) {
+    console.warn('Local appointment mirror failed:', storageErr);
+  }
+}
+
+type BookingPayload = {
+  id: string;
+  patient_id: string;
+  patient_name: string;
+  doctor_name: string;
+  department: string;
+  hospital_name: string;
+  appointment_date: string;
+  slot_time: string;
+  fee: string;
+  reason: string;
+  token_number: number;
+  queue_status: string;
+  created_at: string;
+};
+
+async function calculateNextTokenNumber(
+  doctorSearchKey: string,
+  appointmentDate: string,
+): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from('patient_appointments')
+      .select('*', { count: 'exact', head: true })
+      .ilike('doctor_name', `%${doctorSearchKey}%`)
+      .eq('appointment_date', appointmentDate);
+
+    if (error) {
+      console.warn('Token count query fallback active:', error.message);
+      return 1;
+    }
+
+    return (count ?? 0) + 1;
+  } catch (err) {
+    console.warn('Token count exception fallback:', err);
+    return 1;
+  }
+}
+
+/** Non-blocking mirror — schema differences on hms_opd_queue must never block booking. */
+async function mirrorToOpdQueueSafely(appointment: BookingPayload): Promise<void> {
+  try {
+    const queuePayload = {
+      id: appointment.id,
+      patient_id: appointment.patient_id,
+      patient_name: appointment.patient_name,
+      doctor_name: appointment.doctor_name,
+      department: appointment.department,
+      hospital_name: REGAL_HOSPITAL,
+      appointment_date: appointment.appointment_date,
+      slot_time: appointment.slot_time,
+      token_number: appointment.token_number,
+      queue_status: appointment.queue_status,
+      reason: appointment.reason,
+      created_at: appointment.created_at,
+    };
+
+    const { error } = await supabase.from('hms_opd_queue').insert([queuePayload]);
+    if (error) {
+      console.warn('hms_opd_queue mirror skipped (non-blocking):', error.message);
+    }
+  } catch (mirrorErr) {
+    console.warn('hms_opd_queue mirror exception (non-blocking):', mirrorErr);
+  }
+}
+
+function applyClinicianFromUrlParams(
+  docParam: string | null,
+  deptParam: string | null,
+  feeParam: string | null,
+  setters: {
+    setDoctor: (value: string) => void;
+    setDept: (value: string) => void;
+    setFee: (value: string) => void;
+  },
+): void {
+  if (docParam) {
+    const match = findDoctorFromUrlParam(docParam);
+    if (match) {
+      setters.setDoctor(match.name);
+      setters.setDept(match.department);
+      setters.setFee(match.fee);
+      return;
+    }
+
+    setters.setDoctor(decodeURIComponent(docParam));
+  }
+
+  if (deptParam) setters.setDept(decodeURIComponent(deptParam));
+  if (feeParam) setters.setFee(decodeURIComponent(feeParam));
 }
 
 export default function BookAppointmentPage() {
@@ -170,22 +266,16 @@ export default function BookAppointmentPage() {
   } | null>(null);
 
   useEffect(() => {
-    const docParam = searchParams.get('doctor');
-    const deptParam = searchParams.get('department');
-    const feeParam = searchParams.get('fee');
-
-    if (docParam) {
-      const match = findDoctorFromUrlParam(docParam);
-      if (match) {
-        setSelectedDoctorName(match.name);
-        setSelectedDept(match.department);
-        setConsultationFee(match.fee);
-      } else {
-        setSelectedDoctorName(decodeURIComponent(docParam));
-        if (deptParam) setSelectedDept(decodeURIComponent(deptParam));
-        if (feeParam) setConsultationFee(decodeURIComponent(feeParam));
-      }
-    }
+    applyClinicianFromUrlParams(
+      searchParams.get('doctor'),
+      searchParams.get('department'),
+      searchParams.get('fee'),
+      {
+        setDoctor: setSelectedDoctorName,
+        setDept: setSelectedDept,
+        setFee: setConsultationFee,
+      },
+    );
 
     void loadPatientAndFamilyOptions();
   }, [searchParams]);
@@ -289,85 +379,66 @@ export default function BookAppointmentPage() {
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccess(false);
-
-    const cleanPatientName = stripRelationshipTag(selectedPatientName);
-    const doctorSearchKey = getDoctorSearchKey(selectedDoctorName);
-
-    // 1. Calculate dynamic sequential token count from Supabase for this doctor + date
-    let calculatedToken = 1;
-    const { count, error: countError } = await supabase
-      .from('patient_appointments')
-      .select('*', { count: 'exact', head: true })
-      .ilike('doctor_name', `%${doctorSearchKey}%`)
-      .eq('appointment_date', appointmentDate);
-
-    if (countError) {
-      console.error('Token count query failed:', countError.message);
-      setErrorMessage(`Unable to calculate queue token: ${countError.message}`);
-      setIsSubmitting(false);
-      return;
-    }
-
-    calculatedToken = (count ?? 0) + 1;
-
-    const appointmentUuid = generateStandardUuid();
-    const registeredPatientUuid = resolveRegisteredPatientUuid(patientDbId);
-
-    const newAppt = {
-      id: appointmentUuid,
-      patient_id: registeredPatientUuid,
-      patient_name: cleanPatientName,
-      doctor_name: selectedDoctorName,
-      department: selectedDept,
-      hospital_name: REGAL_HOSPITAL,
-      appointment_date: appointmentDate,
-      slot_time: slotTime,
-      fee: consultationFee,
-      reason: reason.trim() || 'General OPD Consultation',
-      token_number: calculatedToken,
-      queue_status: 'SCHEDULED',
-      created_at: new Date().toISOString(),
-    };
-
-    const { error: apptErr } = await supabase.from('patient_appointments').insert([newAppt]);
-
-    if (apptErr) {
-      console.error('Supabase patient_appointments insert failed:', apptErr.message);
-      setErrorMessage(
-        `Booking could not be saved to the hospital cloud queue. ${apptErr.message}`,
-      );
-      setIsSubmitting(false);
-      return;
-    }
-
-    mirrorAppointmentToLocalStorage(newAppt);
+    setBookedSummary(null);
 
     try {
-      const { error: queueErr } = await supabase.from('hms_opd_queue').insert([
-        {
-          ...newAppt,
-          patient_id: registeredPatientUuid,
-        },
-      ]);
-      if (queueErr) {
-        console.warn('Supabase hms_opd_queue mirror notice:', queueErr.message);
+      const cleanPatientName = stripRelationshipTag(selectedPatientName);
+      const doctorSearchKey = getDoctorSearchKey(selectedDoctorName);
+      const calculatedToken = await calculateNextTokenNumber(doctorSearchKey, appointmentDate);
+
+      const appointmentUuid = generateStandardUuid();
+      const registeredPatientUuid = resolveRegisteredPatientUuid(patientDbId);
+
+      const newAppt: BookingPayload = {
+        id: appointmentUuid,
+        patient_id: registeredPatientUuid,
+        patient_name: cleanPatientName,
+        doctor_name: selectedDoctorName,
+        department: selectedDept,
+        hospital_name: REGAL_HOSPITAL,
+        appointment_date: appointmentDate,
+        slot_time: slotTime,
+        fee: consultationFee,
+        reason: reason.trim() || 'General OPD Consultation',
+        token_number: calculatedToken,
+        queue_status: 'SCHEDULED',
+        created_at: new Date().toISOString(),
+      };
+
+      // Primary source of truth — booking succeeds only when this insert succeeds.
+      const { error: apptErr } = await supabase.from('patient_appointments').insert([newAppt]);
+
+      if (apptErr) {
+        console.error('Supabase patient_appointments insert failed:', apptErr.message);
+        setErrorMessage(
+          `Booking could not be saved to the hospital cloud queue. ${apptErr.message}`,
+        );
+        return;
       }
-    } catch (mirrorErr) {
-      console.warn('hms_opd_queue mirror exception:', mirrorErr);
+
+      // Instant local mirror for immediate appointments list visibility.
+      mirrorAppointmentToLocalStorage(newAppt);
+
+      // Secondary table mirror — isolated, non-blocking, schema-tolerant.
+      await mirrorToOpdQueueSafely(newAppt);
+
+      setBookedSummary({
+        token: calculatedToken,
+        doctor: selectedDoctorName,
+        date: appointmentDate,
+        slot: slotTime,
+      });
+      setSuccess(true);
+
+      setTimeout(() => {
+        router.push('/patient/appointments');
+      }, 2200);
+    } catch (err) {
+      console.error('Unexpected booking failure:', err);
+      setErrorMessage('An unexpected error occurred while confirming your booking. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setBookedSummary({
-      token: calculatedToken,
-      doctor: selectedDoctorName,
-      date: appointmentDate,
-      slot: slotTime,
-    });
-    setIsSubmitting(false);
-    setSuccess(true);
-
-    setTimeout(() => {
-      router.push('/patient/appointments');
-    }, 2200);
   };
 
   return (
@@ -439,12 +510,17 @@ export default function BookAppointmentPage() {
             value={selectedPatientName}
             onChange={(e) => setSelectedPatientName(e.target.value)}
             className="w-full rounded-2xl border border-[#D5E8E3] bg-[#EAF5F2]/40 p-4 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none shadow-sm cursor-pointer"
+            required
           >
-            {patientOptions.map((opt) => (
-              <option key={opt.id} value={opt.name}>
-                {opt.name}
-              </option>
-            ))}
+            {patientOptions.length === 0 ? (
+              <option value={selectedPatientName}>{selectedPatientName}</option>
+            ) : (
+              patientOptions.map((opt) => (
+                <option key={opt.id} value={opt.name}>
+                  {opt.name}
+                </option>
+              ))
+            )}
           </select>
         </div>
 
