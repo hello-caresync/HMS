@@ -7,7 +7,6 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  Megaphone,
   Stethoscope,
   UserCheck,
   Play,
@@ -17,13 +16,19 @@ import {
   HeartPulse,
   FileText,
   Loader2,
+  Plus,
+  CalendarClock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
+  admitAppointmentToQueue,
   bypassToNextWaiting,
   callNextPatientInQueue,
+  createWalkInAppointment,
   fetchLiveAppointments,
+  getNextUpcomingBooking,
+  getUpcomingBookings,
   isInConsultationStatus,
   isWaitingStatus,
   resolveActivePatient,
@@ -50,6 +55,8 @@ export default function DoctorDashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [callingNext, setCallingNext] = useState(false);
   const [bypassing, setBypassing] = useState(false);
+  const [admittingId, setAdmittingId] = useState<string | null>(null);
+  const [walkInLoading, setWalkInLoading] = useState(false);
 
   const loadAppointments = useCallback(async () => {
     try {
@@ -75,6 +82,8 @@ export default function DoctorDashboardPage() {
   const waitingQueue = appointments.filter((a) => isWaitingStatus(a.status));
   const inConsultationQueue = appointments.filter((a) => isInConsultationStatus(a.status));
   const completedQueue = appointments.filter((a) => a.status === 'COMPLETED');
+  const upcomingBookings = getUpcomingBookings(appointments);
+  const nextUpcoming = getNextUpcomingBooking(appointments);
 
   const totalPatients = appointments.length;
   const totalWaiting = waitingQueue.length;
@@ -134,6 +143,37 @@ export default function DoctorDashboardPage() {
   const handleStartConsultation = () => {
     if (!activePatient) return;
     router.push(`/doctor/consultations/${activePatient.id}`);
+  };
+
+  const handleAdmitFromBookings = async (appt: LiveAppointmentRecord) => {
+    setAdmittingId(appt.id);
+    try {
+      await admitAppointmentToQueue(appt.id, 'IN_CONSULTATION');
+      await loadAppointments();
+      toast.success(`${appt.patient_name} admitted from bookings`);
+    } catch (err) {
+      console.error('[Admit from bookings]:', err);
+      toast.error('Failed to admit patient from bookings');
+    } finally {
+      setAdmittingId(null);
+    }
+  };
+
+  const handleQuickWalkIn = async () => {
+    const name = window.prompt('Enter walk-in patient name for quick triage intake:');
+    if (!name?.trim()) return;
+
+    setWalkInLoading(true);
+    try {
+      await createWalkInAppointment(name.trim());
+      await loadAppointments();
+      toast.success(`Walk-in patient "${name.trim()}" added to OPD list`);
+    } catch (err) {
+      console.error('[Quick walk-in]:', err);
+      toast.error('Failed to add walk-in patient');
+    } finally {
+      setWalkInLoading(false);
+    }
   };
 
   return (
@@ -257,14 +297,71 @@ export default function DoctorDashboardPage() {
                   <p className="text-xs font-medium">Connecting to patient bookings...</p>
                 </div>
               ) : waitingQueue.length === 0 ? (
-                <div className="py-12 text-center text-slate-400">
-                  <Megaphone className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                  <p className="font-bold text-xs text-slate-600">
-                    No patients waiting in queue.
-                  </p>
-                  <p className="text-[11px] mt-0.5">
-                    Patient bookings from the app will appear automatically.
-                  </p>
+                <div className="space-y-3">
+                  <div className="p-6 rounded-2xl bg-gradient-to-b from-slate-50 to-white border border-slate-200/80 flex flex-col items-center justify-center text-center space-y-3">
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 border border-teal-200 flex items-center justify-center shadow-xs">
+                        <Users className="w-6 h-6" />
+                      </div>
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-sm">
+                        {upcomingBookings.length > 0
+                          ? 'Queue Standby • Upcoming Appointments Available'
+                          : 'OPD Queue is Currently Clear'}
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-1 max-w-xs">
+                        {appointments.length > 0
+                          ? `You have ${appointments.length} scheduled booking(s) for today.`
+                          : 'Patient check-ins from the mobile app will sync here live.'}
+                      </p>
+                    </div>
+                    {appointments.length > 0 && (
+                      <button
+                        onClick={() => setActiveTab('appointments')}
+                        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 active:scale-95"
+                      >
+                        View Scheduled Bookings ({appointments.length})
+                      </button>
+                    )}
+                  </div>
+
+                  {nextUpcoming && (
+                    <div className="p-4 rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50/80 to-white flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 rounded-xl bg-amber-100 text-amber-700 shrink-0">
+                          <CalendarClock className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 text-left">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">
+                            Next Upcoming
+                          </p>
+                          <p className="font-bold text-xs text-slate-900 truncate">
+                            {nextUpcoming.patient_name}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {nextUpcoming.time_slot || 'Today'} · {nextUpcoming.status}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => void handleAdmitFromBookings(nextUpcoming)}
+                        disabled={admittingId === nextUpcoming.id}
+                        className="shrink-0 px-3 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-60 text-white text-[11px] font-bold rounded-xl shadow-xs transition-all flex items-center gap-1 active:scale-95"
+                      >
+                        {admittingId === nextUpcoming.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Plus className="w-3.5 h-3.5" />
+                        )}
+                        Admit / Call
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 waitingQueue.map((item, idx) => {
@@ -317,17 +414,30 @@ export default function DoctorDashboardPage() {
                 appointments.map((appt) => (
                   <div
                     key={appt.id}
-                    className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70 flex items-center justify-between"
+                    className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70 flex items-center justify-between gap-2"
                   >
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-bold text-xs text-slate-900">{appt.patient_name}</p>
                       <span className="text-[10px] text-slate-400 font-semibold">
                         {appt.type || 'Standard Consultation'} · {appt.status}
                       </span>
                     </div>
-                    <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-100">
-                      {appt.time_slot || 'Today'}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-100">
+                        {appt.time_slot || 'Today'}
+                      </span>
+                      {!isWaitingStatus(appt.status) &&
+                        !isInConsultationStatus(appt.status) &&
+                        appt.status !== 'COMPLETED' && (
+                          <button
+                            onClick={() => void handleAdmitFromBookings(appt)}
+                            disabled={admittingId === appt.id}
+                            className="px-2 py-1 text-[10px] font-bold rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-60"
+                          >
+                            {admittingId === appt.id ? '...' : 'Admit'}
+                          </button>
+                        )}
+                    </div>
                   </div>
                 ))
               )}
@@ -430,12 +540,74 @@ export default function DoctorDashboardPage() {
               </div>
             </div>
           ) : (
-            <div className="py-14 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-              <Stethoscope className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-              <p className="font-bold text-sm text-slate-700">No Patient In Queue</p>
-              <p className="text-xs text-slate-400 max-w-xs mx-auto mt-1">
-                Patient bookings from the app will appear automatically.
-              </p>
+            <div className="p-8 rounded-2xl bg-gradient-to-br from-slate-50/80 via-white to-indigo-50/30 border border-slate-200/80 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50/80 border border-indigo-200/70 flex items-center justify-center text-indigo-600 shadow-sm">
+                <Stethoscope className="w-7 h-7 animate-pulse" />
+              </div>
+
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Clinical Standby
+                </div>
+                <p className="text-[11px] text-teal-600 font-semibold mt-2 animate-pulse">
+                  Waiting for check-in from Patient App or Front Desk
+                </p>
+                <h3 className="font-black text-slate-900 text-base mt-2">
+                  No Active Encounter On-Deck
+                </h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Select a patient from the queue, admit a scheduled appointment, or click
+                  &quot;Call Next&quot; when a patient checks in.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                <button
+                  onClick={() => void handleCallNext()}
+                  disabled={waitingQueue.length === 0 || callingNext}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 ${
+                    waitingQueue.length > 0 && !callingNext
+                      ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-sm'
+                      : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                  }`}
+                >
+                  {callingNext ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <UserCheck className="w-3.5 h-3.5" />
+                  )}
+                  Call Next in Line
+                </button>
+
+                {nextUpcoming && (
+                  <button
+                    onClick={() => void handleAdmitFromBookings(nextUpcoming)}
+                    disabled={admittingId === nextUpcoming.id}
+                    className="px-4 py-2.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-60"
+                  >
+                    {admittingId === nextUpcoming.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="w-3.5 h-3.5" />
+                    )}
+                    Admit from Bookings
+                  </button>
+                )}
+
+                <button
+                  onClick={() => void handleQuickWalkIn()}
+                  disabled={walkInLoading}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-all flex items-center gap-1.5 disabled:opacity-60"
+                >
+                  {walkInLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="w-3.5 h-3.5" />
+                  )}
+                  Quick Walk-In Intake
+                </button>
+              </div>
             </div>
           )}
         </div>

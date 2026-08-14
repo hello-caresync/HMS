@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import { DEFAULT_ACTIVE_DOCTOR_ID } from '@/lib/doctor/command-center/supabase-service';
+import { DEFAULT_ACTIVE_DOCTOR_ID, DEFAULT_PATIENT_ID } from '@/lib/doctor/command-center/supabase-service';
 
 export type AppointmentQueueStatus = 'WAITING' | 'IN_CONSULTATION' | 'COMPLETED' | string;
 
@@ -39,6 +39,36 @@ export function isInConsultationStatus(status: string): boolean {
 
 export function isCompletedStatus(status: string): boolean {
   return status === 'COMPLETED';
+}
+
+export function isScheduledBookingStatus(status: string): boolean {
+  const s = status.toUpperCase();
+  return (
+    s === 'SCHEDULED' ||
+    s === 'CONFIRMED' ||
+    s === 'PENDING' ||
+    s === 'REQUESTED'
+  );
+}
+
+/** Booked appointments not yet in the live queue or consultation. */
+export function getUpcomingBookings(
+  appointments: LiveAppointmentRecord[],
+): LiveAppointmentRecord[] {
+  return appointments.filter(
+    (a) =>
+      !isWaitingStatus(a.status) &&
+      !isInConsultationStatus(a.status) &&
+      !isCompletedStatus(a.status),
+  );
+}
+
+export function getNextUpcomingBooking(
+  appointments: LiveAppointmentRecord[],
+): LiveAppointmentRecord | null {
+  const upcoming = getUpcomingBookings(appointments);
+  if (upcoming.length === 0) return null;
+  return upcoming[0];
 }
 
 /** Resolve active patient: IN_CONSULTATION first, then first WAITING. */
@@ -178,6 +208,45 @@ export async function bypassToNextWaiting(
 
   await updateAppointmentRecord(next.id, { status: 'IN_CONSULTATION' });
   return next;
+}
+
+/** Admit a scheduled booking directly into the live OPD queue. */
+export async function admitAppointmentToQueue(
+  appointmentId: string,
+  targetStatus: 'WAITING' | 'IN_CONSULTATION' = 'IN_CONSULTATION',
+): Promise<void> {
+  await updateAppointmentRecord(appointmentId, { status: targetStatus });
+}
+
+/** Quick walk-in: insert an unscheduled patient straight into the OPD list. */
+export async function createWalkInAppointment(patientName: string): Promise<void> {
+  const supabase = createClient();
+  const today = new Date();
+  const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .split('T')[0];
+  const timeLabel = today.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  const { error } = await supabase.from('appointments').insert([
+    {
+      patient_id: DEFAULT_PATIENT_ID,
+      doctor_id: DEFAULT_ACTIVE_DOCTOR_ID,
+      patient_name: patientName,
+      department: 'General Surgery',
+      reason_for_visit: 'Walk-in / Quick triage intake',
+      appointment_date: localDate,
+      appointment_time: timeLabel,
+      status: 'IN_CONSULTATION',
+    },
+  ]);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 export function subscribeAppointmentsRealtime(onChange: () => void): () => void {
