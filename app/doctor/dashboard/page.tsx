@@ -141,7 +141,10 @@ export default function DoctorDashboardPage() {
   };
 
   const handleStartConsultation = () => {
-    if (!activePatient) return;
+    if (!activePatient || !activePatient.id) {
+      toast.error('No active patient selected for consultation');
+      return;
+    }
     router.push(`/doctor/consultations?appointmentId=${activePatient.id}`);
   };
 
