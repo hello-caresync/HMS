@@ -1,11 +1,2 @@
-# Cloudflare Pages: serve static export directory indexes for trailing-slash routes
-/doctor/dashboard /doctor/dashboard/ 308
-/doctor/login /doctor/login/ 308
-/doctor/queue /doctor/queue/ 308
-/doctor/records /doctor/records/ 308
-/doctor/messages /doctor/messages/ 308
-/doctor/schedule /doctor/schedule/ 308
-/doctor/patients /doctor/patients/ 308
-/doctor/emergency /doctor/emergency/ 308
-/doctor/consultation /doctor/consultation/ 308
-/doctor/consultations /doctor/consultations/ 308
+/doctor/consultations/*  /doctor/consultations/index.html  200
+/*                       /index.html                       200

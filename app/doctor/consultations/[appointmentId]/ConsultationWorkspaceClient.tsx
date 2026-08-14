@@ -29,10 +29,17 @@ const emptyMed = (): MedicationRow => ({
   instructions: 'After food',
 });
 
-export default function ConsultationWorkspaceClient() {
+interface ConsultationWorkspaceClientProps {
+  /** Used when served via Cloudflare SPA rewrite (`/doctor/consultations/index.html`). */
+  appointmentIdOverride?: string;
+}
+
+export default function ConsultationWorkspaceClient({
+  appointmentIdOverride,
+}: ConsultationWorkspaceClientProps = {}) {
   const router = useRouter();
   const params = useParams<{ appointmentId: string }>();
-  const appointmentId = params.appointmentId;
+  const appointmentId = appointmentIdOverride ?? params.appointmentId;
 
   const [appointment, setAppointment] = useState<ConsultationAppointmentContext | null>(null);
   const [loading, setLoading] = useState(true);
