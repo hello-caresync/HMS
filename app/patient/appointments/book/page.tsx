@@ -147,7 +147,7 @@ export default function BookAppointmentPage() {
       fee: consultationFee,
       reason: reason.trim() || 'General OPD Checkup',
       token_number: calculatedToken,
-      queue_status: 'SCHEDULED',
+      queue_status: 'WAITING',
       created_at: new Date().toISOString(),
     };
 
@@ -184,7 +184,7 @@ export default function BookAppointmentPage() {
           reason_for_visit: reason.trim() || 'General OPD Checkup',
           appointment_date: appointmentDate,
           appointment_time: slotTime,
-          status: 'SCHEDULED',
+          status: 'WAITING',
         },
       ]);
 

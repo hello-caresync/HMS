@@ -72,7 +72,7 @@ export async function bookAppointmentWithDoctor(
     reason_for_visit: reasonForVisit,
     appointment_date: appointmentDate,
     appointment_time: appointmentTime,
-    status: 'SCHEDULED',
+    status: 'WAITING',
   };
 
   const { data: apptData, error: apptError } = await supabase

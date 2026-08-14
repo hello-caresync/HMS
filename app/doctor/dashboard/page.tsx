@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users,
@@ -16,102 +16,20 @@ import {
   Activity,
   HeartPulse,
   FileText,
+  Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { createClient } from '@/lib/supabase/client';
-import { DEFAULT_ACTIVE_DOCTOR_ID } from '@/lib/doctor/command-center/supabase-service';
-
-const WAITING_STATUSES = new Set(['SCHEDULED', 'WAITING', 'CONFIRMED', 'REQUESTED', 'PENDING']);
-const IN_CONSULTATION_STATUSES = new Set(['IN_CONSULTATION', 'IN_PROGRESS']);
-const COMPLETED_STATUSES = new Set(['COMPLETED']);
-
-interface AppointmentRecord {
-  id: string;
-  doctor_id: string;
-  patient_id?: string;
-  patient_name: string;
-  age?: number;
-  gender?: string;
-  chief_complaint?: string;
-  vitals_summary?: string;
-  token_number?: string;
-  appointment_date?: string;
-  time_slot?: string;
-  type?: string;
-  status: 'WAITING' | 'IN_CONSULTATION' | 'COMPLETED' | string;
-  predicted_wait_min?: number;
-  ml_duration_min?: number;
-  created_at?: string;
-}
-
-function calcAge(dob?: string): number | undefined {
-  if (!dob) return undefined;
-  const born = new Date(dob);
-  if (Number.isNaN(born.getTime())) return undefined;
-  return Math.floor((Date.now() - born.getTime()) / (365.25 * 24 * 3600 * 1000));
-}
-
-function normalizeQueueStatus(status: unknown): AppointmentRecord['status'] {
-  const s = String(status ?? 'SCHEDULED').toUpperCase();
-  if (WAITING_STATUSES.has(s)) return 'WAITING';
-  if (IN_CONSULTATION_STATUSES.has(s)) return 'IN_CONSULTATION';
-  if (COMPLETED_STATUSES.has(s)) return 'COMPLETED';
-  return s;
-}
-
-function isWaitingRecord(record: AppointmentRecord): boolean {
-  return record.status === 'WAITING';
-}
-
-async function enrichAppointmentRows(
-  rows: Record<string, unknown>[],
-): Promise<AppointmentRecord[]> {
-  const supabase = createClient();
-  const patientIds = Array.from(
-    new Set(rows.map((row) => String(row.patient_id ?? '')).filter(Boolean)),
-  );
-
-  const patientMap = new Map<string, Record<string, unknown>>();
-  if (patientIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from('patient_profiles')
-      .select('id, full_name, gender, date_of_birth, dob')
-      .in('id', patientIds);
-
-    for (const profile of (profiles ?? []) as Record<string, unknown>[]) {
-      if (profile.id) patientMap.set(String(profile.id), profile);
-    }
-  }
-
-  return rows.map((row, index) => {
-    const patientId = String(row.patient_id ?? '');
-    const profile = patientMap.get(patientId);
-    const dob = (profile?.date_of_birth ?? profile?.dob) as string | undefined;
-
-    return {
-      id: String(row.appointment_id ?? row.id ?? ''),
-      doctor_id: String(row.doctor_id ?? ''),
-      patient_id: patientId || undefined,
-      patient_name: String(row.patient_name ?? profile?.full_name ?? 'Patient'),
-      age: calcAge(dob),
-      gender: profile?.gender ? String(profile.gender) : undefined,
-      chief_complaint: String(
-        row.reason_for_visit ?? row.chief_complaint ?? row.reason ?? 'OPD Review',
-      ),
-      vitals_summary: row.vitals_summary ? String(row.vitals_summary) : undefined,
-      token_number: row.token_number ? String(row.token_number) : undefined,
-      appointment_date: row.appointment_date
-        ? String(row.appointment_date).slice(0, 10)
-        : undefined,
-      time_slot: String(row.appointment_time ?? row.time_slot ?? row.slot_time ?? 'Today'),
-      type: String(row.department ?? row.type ?? 'Standard Consultation'),
-      status: normalizeQueueStatus(row.status ?? row.queue_status),
-      predicted_wait_min: Number(row.predicted_wait_min ?? row.estimated_wait_minutes ?? 5 + index * 3),
-      ml_duration_min: Number(row.ml_duration_min ?? row.estimated_duration ?? 15),
-      created_at: row.created_at ? String(row.created_at) : undefined,
-    };
-  });
-}
+import {
+  bypassToNextWaiting,
+  callNextPatientInQueue,
+  fetchLiveAppointments,
+  isInConsultationStatus,
+  isWaitingStatus,
+  resolveActivePatient,
+  subscribeAppointmentsRealtime,
+  type LiveAppointmentRecord,
+} from '@/lib/doctor/appointments-realtime';
 
 export default function DoctorDashboardPage() {
   const router = useRouter();
@@ -125,91 +43,37 @@ export default function DoctorDashboardPage() {
     year: 'numeric',
   }).format(new Date());
 
-  const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
-  const [activePatient, setActivePatient] = useState<AppointmentRecord | null>(null);
+  const [appointments, setAppointments] = useState<LiveAppointmentRecord[]>([]);
+  const [activePatient, setActivePatient] = useState<LiveAppointmentRecord | null>(null);
   const [activeTab, setActiveTab] = useState<'queue' | 'appointments'>('queue');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [callingNext, setCallingNext] = useState(false);
+  const [bypassing, setBypassing] = useState(false);
 
-  const activePatientIdRef = useRef<string | null>(null);
-
-  const syncActivePatient = useCallback((records: AppointmentRecord[]) => {
-    const currentId = activePatientIdRef.current;
-    const waitingPatients = records.filter(isWaitingRecord);
-
-    if (currentId) {
-      const updated = records.find((record) => record.id === currentId);
-      if (updated && updated.status !== 'COMPLETED') {
-        setActivePatient(updated);
-        return;
-      }
-    }
-
-    const nextPatient = waitingPatients[0] ?? null;
-    setActivePatient(nextPatient);
-    activePatientIdRef.current = nextPatient?.id ?? null;
-  }, []);
-
-  const fetchLiveAppointments = useCallback(async () => {
-    const supabase = createClient();
-
+  const loadAppointments = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .select('*')
-        .eq('doctor_id', DEFAULT_ACTIVE_DOCTOR_ID)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('[Error fetching appointments]:', error.message);
-        return;
-      }
-
-      const enriched = await enrichAppointmentRows((data ?? []) as Record<string, unknown>[]);
-      setAppointments(enriched);
-      syncActivePatient(enriched);
+      const records = await fetchLiveAppointments();
+      setAppointments(records);
+      setActivePatient(resolveActivePatient(records));
     } catch (err) {
-      console.error('[Error]:', err);
+      console.error('[Doctor Dashboard Load]:', err);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [syncActivePatient]);
+  }, []);
 
   useEffect(() => {
-    void fetchLiveAppointments();
+    void loadAppointments();
+    const unsubscribe = subscribeAppointmentsRealtime(() => {
+      void loadAppointments();
+    });
+    return unsubscribe;
+  }, [loadAppointments]);
 
-    const supabase = createClient();
-    const refreshFromRealtime = () => {
-      void fetchLiveAppointments();
-    };
-
-    const channel = supabase
-      .channel('doctor_dashboard_appointments_realtime')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'appointments' },
-        refreshFromRealtime,
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'appointments' },
-        refreshFromRealtime,
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'appointments' },
-        refreshFromRealtime,
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [fetchLiveAppointments]);
-
-  const waitingQueue = appointments.filter(isWaitingRecord);
-  const inConsultationQueue = appointments.filter((a) => a.status === 'IN_CONSULTATION');
+  const waitingQueue = appointments.filter((a) => isWaitingStatus(a.status));
+  const inConsultationQueue = appointments.filter((a) => isInConsultationStatus(a.status));
   const completedQueue = appointments.filter((a) => a.status === 'COMPLETED');
 
   const totalPatients = appointments.length;
@@ -217,23 +81,53 @@ export default function DoctorDashboardPage() {
   const inConsultation = inConsultationQueue.length;
   const completedToday = completedQueue.length;
 
-  const canCallNext = totalWaiting > 0;
+  const canCallNext = waitingQueue.length > 0 && !callingNext;
+  const canStartConsultation = Boolean(activePatient);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    void fetchLiveAppointments();
+    void loadAppointments();
   };
 
-  const selectActivePatient = (patient: AppointmentRecord) => {
-    setActivePatient(patient);
-    activePatientIdRef.current = patient.id;
+  const handleCallNext = async () => {
+    if (waitingQueue.length === 0) {
+      toast.info('No patients waiting in queue. Patient bookings from the app will appear automatically.');
+      return;
+    }
+
+    setCallingNext(true);
+    try {
+      const next = await callNextPatientInQueue(appointments, activePatient);
+      if (next) {
+        await loadAppointments();
+        toast.success(`Called ${next.patient_name} into consultation`);
+      }
+    } catch (err) {
+      console.error('[Call Next]:', err);
+      toast.error('Failed to call next patient');
+    } finally {
+      setCallingNext(false);
+    }
   };
 
-  const handleCallNext = () => {
-    const nextPatient =
-      waitingQueue.find((patient) => patient.id !== activePatient?.id) ?? waitingQueue[0];
-    if (nextPatient) {
-      selectActivePatient(nextPatient);
+  const handleBypass = async () => {
+    if (waitingQueue.length === 0) {
+      toast.info('No patients waiting in queue');
+      return;
+    }
+
+    setBypassing(true);
+    try {
+      const next = await bypassToNextWaiting(appointments);
+      if (next) {
+        await loadAppointments();
+        toast.success(`Emergency bypass: ${next.patient_name} moved to consultation`);
+      }
+    } catch (err) {
+      console.error('[Emergency Bypass]:', err);
+      toast.error('Emergency bypass failed');
+    } finally {
+      setBypassing(false);
     }
   };
 
@@ -338,7 +232,7 @@ export default function DoctorDashboardPage() {
             </div>
 
             <button
-              onClick={handleCallNext}
+              onClick={() => void handleCallNext()}
               disabled={!canCallNext}
               className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
                 canCallNext
@@ -346,7 +240,11 @@ export default function DoctorDashboardPage() {
                   : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
               }`}
             >
-              <UserCheck className="w-3.5 h-3.5" />
+              {callingNext ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <UserCheck className="w-3.5 h-3.5" />
+              )}
               Call Next
             </button>
           </div>
@@ -361,9 +259,11 @@ export default function DoctorDashboardPage() {
               ) : waitingQueue.length === 0 ? (
                 <div className="py-12 text-center text-slate-400">
                   <Megaphone className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                  <p className="font-bold text-xs text-slate-600">No active queue tokens</p>
+                  <p className="font-bold text-xs text-slate-600">
+                    No patients waiting in queue.
+                  </p>
                   <p className="text-[11px] mt-0.5">
-                    Bookings from the patient mobile app will sync here live.
+                    Patient bookings from the app will appear automatically.
                   </p>
                 </div>
               ) : (
@@ -372,7 +272,7 @@ export default function DoctorDashboardPage() {
                   return (
                     <div
                       key={item.id}
-                      onClick={() => selectActivePatient(item)}
+                      onClick={() => setActivePatient(item)}
                       className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                         isSelected
                           ? 'bg-teal-50/70 border-teal-400 shadow-sm ring-1 ring-teal-400/20'
@@ -422,7 +322,7 @@ export default function DoctorDashboardPage() {
                     <div>
                       <p className="font-bold text-xs text-slate-900">{appt.patient_name}</p>
                       <span className="text-[10px] text-slate-400 font-semibold">
-                        {appt.type || 'Standard Consultation'}
+                        {appt.type || 'Standard Consultation'} · {appt.status}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-100">
@@ -447,8 +347,20 @@ export default function DoctorDashboardPage() {
               </div>
             </div>
 
-            <button className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/70 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+            <button
+              onClick={() => void handleBypass()}
+              disabled={waitingQueue.length === 0 || bypassing}
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+                waitingQueue.length > 0 && !bypassing
+                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/70'
+                  : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+              }`}
+            >
+              {bypassing ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" />
+              ) : (
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+              )}
               Emergency Bypass
             </button>
           </div>
@@ -470,11 +382,9 @@ export default function DoctorDashboardPage() {
 
                 <div className="text-right">
                   <span className="text-[10px] uppercase font-bold text-teal-300 block tracking-wider">
-                    ML Duration
+                    Status
                   </span>
-                  <span className="text-sm font-bold text-white">
-                    ~{activePatient.ml_duration_min || 15} min
-                  </span>
+                  <span className="text-sm font-bold text-white">{activePatient.status}</span>
                 </div>
               </div>
 
@@ -487,7 +397,7 @@ export default function DoctorDashboardPage() {
                     </span>
                   </div>
                   <p className="text-xs font-semibold text-slate-800">
-                    {activePatient.vitals_summary || 'BP: 120/80 • SpO2: 98% • Temp: 98.6°F'}
+                    {activePatient.vitals_summary || 'Awaiting vitals capture in consultation'}
                   </p>
                 </div>
 
@@ -507,9 +417,14 @@ export default function DoctorDashboardPage() {
               <div className="pt-2">
                 <button
                   onClick={handleStartConsultation}
-                  className="w-full py-3 bg-gradient-to-r from-teal-600 to-cyan-700 hover:from-teal-700 hover:to-cyan-800 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
+                  disabled={!canStartConsultation}
+                  className={`w-full py-3 font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.99] ${
+                    canStartConsultation
+                      ? 'bg-gradient-to-r from-teal-600 to-cyan-700 hover:from-teal-700 hover:to-cyan-800 text-white'
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  }`}
                 >
-                  <Play className="w-4 h-4 fill-white" />
+                  <Play className="w-4 h-4 fill-current" />
                   Start Consultation Encounter
                 </button>
               </div>
@@ -519,7 +434,7 @@ export default function DoctorDashboardPage() {
               <Stethoscope className="w-10 h-10 mx-auto text-slate-300 mb-2" />
               <p className="font-bold text-sm text-slate-700">No Patient In Queue</p>
               <p className="text-xs text-slate-400 max-w-xs mx-auto mt-1">
-                Real bookings from the patient app will appear automatically.
+                Patient bookings from the app will appear automatically.
               </p>
             </div>
           )}

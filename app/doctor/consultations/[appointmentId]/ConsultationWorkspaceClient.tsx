@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import {
   DEFAULT_ACTIVE_DOCTOR_ID,
+  DEFAULT_ACTIVE_DOCTOR_NAME,
   DEFAULT_PATIENT_ID,
   fetchConsultationAppointmentContext,
   finalizeConsultationAndPrescription,
@@ -42,6 +43,7 @@ export default function ConsultationWorkspaceClient() {
   const [bpDiastolic, setBpDiastolic] = useState('80');
   const [pulse, setPulse] = useState('72');
   const [spo2, setSpo2] = useState('98');
+  const [weight, setWeight] = useState('');
   const [chiefComplaint, setChiefComplaint] = useState('');
   const [clinicalFindings, setClinicalFindings] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
@@ -105,6 +107,7 @@ export default function ConsultationWorkspaceClient() {
         doctorId,
         patientId,
         patientName: appointment.patient_name,
+        doctorName: DEFAULT_ACTIVE_DOCTOR_NAME,
         clinical: {
           chief_complaint: chiefComplaint,
           clinical_findings: clinicalFindings,
@@ -118,12 +121,13 @@ export default function ConsultationWorkspaceClient() {
           bp_diastolic: bpDiastolic ? Number(bpDiastolic) : null,
           pulse_bpm: pulse ? Number(pulse) : null,
           spo2_percent: spo2 ? Number(spo2) : null,
+          weight_kg: weight ? Number(weight) : null,
         },
         medications: medications.map(({ id: _id, ...med }) => med),
         special_instructions: clinicalNotes || undefined,
       });
 
-      toast.success('Prescription sent successfully to patient!');
+      toast.success('Prescription finalized and sent to patient!');
       router.push('/doctor/dashboard');
     } catch (err: unknown) {
       console.error('[Consultation Save Error]:', err);
@@ -164,17 +168,23 @@ export default function ConsultationWorkspaceClient() {
           {appointment.patient_gender ?? '—'} · Age {appointment.patient_age ?? '—'} · BG{' '}
           {appointment.blood_group ?? 'N/A'}
         </p>
+        {appointment.reason && (
+          <p className="mt-2 text-sm text-slate-600">
+            <span className="font-semibold">Chief Complaint:</span> {appointment.reason}
+          </p>
+        )}
       </header>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Vitals</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
           {[
             { label: 'Temp (°F)', value: temperature, set: setTemperature },
             { label: 'BP Sys', value: bpSystolic, set: setBpSystolic },
             { label: 'BP Dia', value: bpDiastolic, set: setBpDiastolic },
             { label: 'Pulse', value: pulse, set: setPulse },
             { label: 'SpO₂ (%)', value: spo2, set: setSpo2 },
+            { label: 'Weight (kg)', value: weight, set: setWeight },
           ].map(({ label, value, set }) => (
             <div key={label}>
               <label className="mb-1 block text-[10px] font-bold uppercase text-slate-400">

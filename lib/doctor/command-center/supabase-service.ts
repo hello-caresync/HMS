@@ -421,20 +421,30 @@ export async function getDoctorDashboardDataForDoctor(
 /** Updates appointment lifecycle status with explicit error logging. */
 export async function updateAppointmentStatus(appointmentId: string, status: string) {
   const client = supabase;
+  const payload = { status, updated_at: new Date().toISOString() };
 
-  const { data, error } = await client
+  const byAppointmentId = await client
     .from('appointments')
-    .update({ status, updated_at: new Date().toISOString() })
+    .update(payload)
     .eq('appointment_id', appointmentId)
     .select()
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    logSupabaseError(`Failed to update appointment ${appointmentId} status to ${status}:`, error);
-    throw error;
+  if (!byAppointmentId.error) return byAppointmentId.data;
+
+  const byId = await client
+    .from('appointments')
+    .update(payload)
+    .eq('id', appointmentId)
+    .select()
+    .maybeSingle();
+
+  if (byId.error) {
+    logSupabaseError(`Failed to update appointment ${appointmentId} status to ${status}:`, byId.error);
+    throw byId.error;
   }
 
-  return data;
+  return byId.data;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -565,13 +575,26 @@ export async function fetchConsultationAppointmentContext(
     };
   }
 
-  const { data: appt, error: apptErr } = await client
+  let appt: Record<string, unknown> | null = null;
+  let apptErr: { message?: string } | null = null;
+
+  const byAppointmentId = await client
     .from('appointments')
     .select('*')
     .eq('appointment_id', appointmentId)
     .maybeSingle();
 
-  if (apptErr || !appt) {
+  if (!byAppointmentId.error && byAppointmentId.data) {
+    appt = byAppointmentId.data as Record<string, unknown>;
+  } else {
+    const byId = await client.from('appointments').select('*').eq('id', appointmentId).maybeSingle();
+    apptErr = byAppointmentId.error ?? byId.error;
+    if (!byId.error && byId.data) {
+      appt = byId.data as Record<string, unknown>;
+    }
+  }
+
+  if (!appt) {
     logSupabaseError('fetchConsultationAppointmentContext failed:', apptErr);
     return null;
   }
@@ -628,13 +651,15 @@ export async function savePatientClinicalEncounter(
 
   const consultationPayload = {
     appointment_id: appointmentId,
-    doctor_id: doctorId,
-    patient_id: patientId,
-    chief_complaint: chiefComplaint || 'General Consultation',
-    diagnosis: diagnosis || '',
-    symptoms: symptoms || '',
+    doctor_id: doctorId || DEFAULT_ACTIVE_DOCTOR_ID,
+    patient_id: patientId || DEFAULT_PATIENT_ID,
+    chief_complaint: chiefComplaint || 'General consultation',
+    clinical_notes: notes || '',
     notes: notes || '',
-    diagnosis_notes: diagnosisNotes || notes || '',
+    diagnosis: diagnosis || '',
+    diagnosis_notes: diagnosisNotes || '',
+    symptoms: symptoms || '',
+    follow_up_date: input.clinical.follow_up_date || null,
     status: 'COMPLETED',
   };
 
@@ -663,15 +688,17 @@ export async function savePatientClinicalEncounter(
   const pulse = input.vitals.pulse_bpm;
   const spo2 = input.vitals.spo2_percent;
 
-  const tempValue = temp ? parseFloat(String(temp)) : null;
-  const bpSysValue = bpSys ? parseInt(String(bpSys), 10) : null;
-  const bpDiaValue = bpDia ? parseInt(String(bpDia), 10) : null;
-  const pulseValue = pulse ? parseInt(String(pulse), 10) : null;
-  const spo2Value = spo2 ? parseInt(String(spo2), 10) : null;
+  const weight = input.vitals.weight_kg;
+  const tempValue = temp != null && temp !== '' ? parseFloat(String(temp)) : null;
+  const bpSysValue = bpSys != null && bpSys !== '' ? parseInt(String(bpSys), 10) : null;
+  const bpDiaValue = bpDia != null && bpDia !== '' ? parseInt(String(bpDia), 10) : null;
+  const pulseValue = pulse != null && pulse !== '' ? parseInt(String(pulse), 10) : null;
+  const spo2Value = spo2 != null && spo2 !== '' ? parseInt(String(spo2), 10) : null;
+  const weightValue = weight != null && weight !== '' ? parseFloat(String(weight)) : null;
 
   const vitalsPayload = {
     consultation_id: createdConsultationId,
-    patient_id: patientId,
+    patient_id: patientId || null,
     temp: tempValue,
     temperature: tempValue,
     bp_sys: bpSysValue,
@@ -683,6 +710,7 @@ export async function savePatientClinicalEncounter(
     spo2: spo2Value,
     spo2_percent: spo2Value,
     spo2_percentage: spo2Value,
+    weight: weightValue,
   };
 
   try {
@@ -711,7 +739,7 @@ export async function savePatientClinicalEncounter(
     patient_id: patientId || null,
     patient_name: patientName || 'Patient',
     doctor_id: activeDoctorId || DEFAULT_ACTIVE_DOCTOR_ID,
-    doctor_name: activeDoctorName || DEFAULT_ACTIVE_DOCTOR_NAME,
+    doctor_name: activeDoctorName || 'Dr. Chandrakanth S Kesari',
     medications: medicineList || [],
     medicines: medicineList || [],
     special_instructions: instructionsInput || '',
