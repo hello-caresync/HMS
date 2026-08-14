@@ -30,7 +30,13 @@ function calcAge(dob?: string): number | undefined {
 }
 
 export function isWaitingStatus(status: string): boolean {
-  return status === 'WAITING';
+  const s = status.toUpperCase();
+  return (
+    s === 'WAITING' ||
+    s === 'BOOKED' ||
+    s === 'CONFIRMED' ||
+    s === 'PENDING'
+  );
 }
 
 export function isInConsultationStatus(status: string): boolean {
@@ -43,12 +49,7 @@ export function isCompletedStatus(status: string): boolean {
 
 export function isScheduledBookingStatus(status: string): boolean {
   const s = status.toUpperCase();
-  return (
-    s === 'SCHEDULED' ||
-    s === 'CONFIRMED' ||
-    s === 'PENDING' ||
-    s === 'REQUESTED'
-  );
+  return s === 'SCHEDULED' || s === 'REQUESTED';
 }
 
 /** Booked appointments not yet in the live queue or consultation. */

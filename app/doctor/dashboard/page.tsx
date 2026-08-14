@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { createClient } from '@/lib/supabase/client';
 import {
   admitAppointmentToQueue,
   bypassToNextWaiting,
@@ -32,7 +33,6 @@ import {
   isInConsultationStatus,
   isWaitingStatus,
   resolveActivePatient,
-  subscribeAppointmentsRealtime,
   type LiveAppointmentRecord,
 } from '@/lib/doctor/appointments-realtime';
 
@@ -73,10 +73,33 @@ export default function DoctorDashboardPage() {
 
   useEffect(() => {
     void loadAppointments();
-    const unsubscribe = subscribeAppointmentsRealtime(() => {
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('permanent_appointments_sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'appointments' },
+        () => {
+          void loadAppointments();
+        },
+      )
+      .subscribe();
+
+    const pollInterval = window.setInterval(() => {
       void loadAppointments();
-    });
-    return unsubscribe;
+    }, 5000);
+
+    const onWindowFocus = () => {
+      void loadAppointments();
+    };
+    window.addEventListener('focus', onWindowFocus);
+
+    return () => {
+      void supabase.removeChannel(channel);
+      window.clearInterval(pollInterval);
+      window.removeEventListener('focus', onWindowFocus);
+    };
   }, [loadAppointments]);
 
   const waitingQueue = appointments.filter((a) => isWaitingStatus(a.status));
