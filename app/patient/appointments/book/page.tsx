@@ -75,6 +75,18 @@ const ALL_41_DOCTORS: DoctorDirectoryItem[] = [
   { id: 'RH-D41', name: 'Dr. Balaji Venkat', department: 'Pain Management', fee: '₹800' },
 ];
 
+const REGAL_HOSPITAL = 'Regal Hospital';
+
+function stripRelationshipTag(label: string): string {
+  return label.replace(/\s\([^)]+\)/, '').trim();
+}
+
+function getDoctorSearchKey(doctorName: string): string {
+  const withoutPrefix = doctorName.replace(/^Dr\.?\s*/i, '').trim();
+  const [firstNamePart] = withoutPrefix.split(/\s+/);
+  return firstNamePart && firstNamePart.length >= 4 ? firstNamePart : withoutPrefix;
+}
+
 export default function BookAppointmentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -192,35 +204,39 @@ export default function BookAppointmentPage() {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
+    setSuccess(false);
 
-    // Clean label tag like "(Self)" or "(Parent)" for backend storage
-    const cleanPatientName = selectedPatientName.replace(/\s\([^)]+\)/, '').trim();
+    const cleanPatientName = stripRelationshipTag(selectedPatientName);
+    const doctorSearchKey = getDoctorSearchKey(selectedDoctorName);
 
-    // 1. Calculate dynamic sequential token count directly from Supabase
+    // 1. Calculate dynamic sequential token count from Supabase for this doctor + date
     let calculatedToken = 1;
-    try {
-      const searchKey = selectedDoctorName.includes('Chandrakanth')
-        ? 'Chandrakanth'
-        : selectedDoctorName.replace('Dr. ', '');
+    const { count, error: countError } = await supabase
+      .from('patient_appointments')
+      .select('*', { count: 'exact', head: true })
+      .ilike('doctor_name', `%${doctorSearchKey}%`)
+      .eq('appointment_date', appointmentDate);
 
-      const { count } = await supabase
-        .from('patient_appointments')
-        .select('*', { count: 'exact', head: true })
-        .ilike('doctor_name', `%${searchKey}%`);
-
-      calculatedToken = (count || 0) + 1;
-    } catch (err) {
-      calculatedToken = Math.floor(Math.random() * 20) + 1;
+    if (countError) {
+      console.error('Token count query failed:', countError.message);
+      setErrorMessage(`Unable to calculate queue token: ${countError.message}`);
+      setIsSubmitting(false);
+      return;
     }
 
-    // 2. Build complete appointment payload
+    calculatedToken = (count ?? 0) + 1;
+
+    // 2. Build complete appointment payload — facility locked to Regal Hospital
     const newAppt = {
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'apt_' + Date.now(),
+      id:
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `apt_${Date.now()}`,
       patient_id: 'NEX_9021',
       patient_name: cleanPatientName,
       doctor_name: selectedDoctorName,
       department: selectedDept,
-      hospital_name: 'Regal Hospital',
+      hospital_name: REGAL_HOSPITAL,
       appointment_date: appointmentDate,
       slot_time: slotTime,
       fee: consultationFee,
@@ -230,36 +246,33 @@ export default function BookAppointmentPage() {
       created_at: new Date().toISOString(),
     };
 
-    // 3. Direct Cloud Insert to Supabase (patient_appointments & hms_opd_queue)
-    try {
-      const { error: apptErr } = await supabase
-        .from('patient_appointments')
-        .insert([newAppt]);
+    // 3. Mandatory cloud write — booking fails if Supabase insert fails
+    const { error: apptErr } = await supabase.from('patient_appointments').insert([newAppt]);
 
-      if (apptErr) {
-        console.error('Supabase appointments write error:', apptErr.message);
-        setErrorMessage(`Database sync notice: ${apptErr.message}`);
-      }
-
-      const { error: queueErr } = await supabase
-        .from('hms_opd_queue')
-        .insert([newAppt]);
-
-      if (queueErr) {
-        console.warn('Supabase queue write notice:', queueErr.message);
-      }
-    } catch (err: any) {
-      console.error('Backend write exception:', err);
+    if (apptErr) {
+      console.error('Supabase patient_appointments insert failed:', apptErr.message);
+      setErrorMessage(
+        `Booking could not be saved to the hospital cloud queue. ${apptErr.message}`,
+      );
+      setIsSubmitting(false);
+      return;
     }
 
-    // 4. Save to Local Storage Cache
+    // Secondary queue mirror (best-effort; does not block patient confirmation)
+    try {
+      const { error: queueErr } = await supabase.from('hms_opd_queue').insert([newAppt]);
+      if (queueErr) {
+        console.warn('Supabase hms_opd_queue mirror notice:', queueErr.message);
+      }
+    } catch (mirrorErr) {
+      console.warn('hms_opd_queue mirror exception:', mirrorErr);
+    }
+
+    // 4. Local cache only after successful cloud write
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('curasync_appointments');
       const existing = saved ? JSON.parse(saved) : [];
-      localStorage.setItem(
-        'curasync_appointments',
-        JSON.stringify([newAppt, ...existing])
-      );
+      localStorage.setItem('curasync_appointments', JSON.stringify([newAppt, ...existing]));
     }
 
     setIsSubmitting(false);
@@ -276,7 +289,7 @@ export default function BookAppointmentPage() {
       <div className="border-b border-[#D5E8E3] pb-4">
         <h1 className="text-2xl font-black text-[#0E2924]">Confirm Consultation Booking</h1>
         <p className="text-xs font-bold text-[#227B6B]">
-          Facility: <span className="text-[#113831] font-black">Regal Hospital</span> • OPD Consultation
+          Facility: <span className="text-[#113831] font-black">{REGAL_HOSPITAL}</span> • OPD Consultation
         </p>
       </div>
 
@@ -419,7 +432,7 @@ export default function BookAppointmentPage() {
         {/* FACILITY LOCATION */}
         <div className="flex items-center gap-2 text-xs font-bold text-[#227B6B] bg-[#EAF5F2]/40 p-3.5 rounded-2xl border border-[#D5E8E3]">
           <Building2 className="h-4 w-4 shrink-0 text-[#113831]" />
-          <span>Consultation Location: <strong>Regal Hospital OPD Block</strong></span>
+          <span>Consultation Location: <strong>{REGAL_HOSPITAL} OPD Block</strong></span>
         </div>
 
         {/* SUBMIT BUTTON */}

@@ -48,14 +48,16 @@ const CLINICIAN_OPTIONS = [
     keywords: ['chandrakanth'],
   },
   { id: 'suriraju', label: 'Dr. Suriraju V — Urology', keywords: ['suriraju'] },
-  { id: 'ananya', label: 'Dr. Ananya R — General Medicine', keywords: ['ananya'] },
   { id: 'vikram', label: 'Dr. Vikramaditya Rao — Cardiology', keywords: ['vikram'] },
-  { id: 'meera', label: 'Dr. Meera Nambiar — Cardiology', keywords: ['meera'] },
   { id: 'rajesh', label: 'Dr. Rajesh Kumar Hegde — Orthopedics', keywords: ['rajesh', 'hegde'] },
-  { id: 'shalini', label: 'Dr. Shalini Deshmukh — Orthopedics', keywords: ['shalini'] },
-  { id: 'arvind', label: 'Dr. Arvind Swamy — Neurology', keywords: ['arvind'] },
-  { id: 'kavitha', label: 'Dr. Kavitha Reddy — Neurosurgery', keywords: ['kavitha'] },
 ];
+
+function getClinicianIlikePattern(clinicianId: string): string | null {
+  if (clinicianId === 'ALL') return null;
+  const option = CLINICIAN_OPTIONS.find((entry) => entry.id === clinicianId);
+  if (!option?.keywords.length) return null;
+  return option.keywords[0];
+}
 
 function appointmentMatchesClinician(
   appt: LiveAppointmentRecord,
@@ -95,7 +97,7 @@ function formatAppointmentDateLabel(date?: string): string {
 
 function queueStatusBadgeClass(status: string): string {
   const normalized = status.toUpperCase();
-  if (normalized === 'IN_CONSULTATION') {
+  if (normalized === 'IN_CONSULTATION' || normalized === 'IN_PROGRESS') {
     return 'bg-[#227B6B] text-white border-[#1A6357]';
   }
   if (normalized === 'COMPLETED') {
@@ -242,17 +244,28 @@ export default function DoctorDashboardPage() {
   const [cardActionId, setCardActionId] = useState<string | null>(null);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  const fetchLiveAppointments = useCallback(async (silent = false) => {
+  const fetchLiveAppointments = useCallback(async (silent = false, clinicianId = selectedClinicianId) => {
     const supabase = createClient();
     try {
       if (!silent) setIsLoading(true);
 
+      const clinicianPattern = getClinicianIlikePattern(clinicianId);
+
+      let patientAppointmentsQuery = supabase
+        .from('patient_appointments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (clinicianPattern) {
+        patientAppointmentsQuery = patientAppointmentsQuery.ilike(
+          'doctor_name',
+          `%${clinicianPattern}%`,
+        );
+      }
+
       const [appointmentsRes, patientAppointmentsRes] = await Promise.all([
         supabase.from('appointments').select('*').order('created_at', { ascending: false }),
-        supabase
-          .from('patient_appointments')
-          .select('*')
-          .order('created_at', { ascending: false }),
+        patientAppointmentsQuery,
       ]);
 
       if (appointmentsRes.error) {
@@ -318,36 +331,36 @@ export default function DoctorDashboardPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [selectedClinicianId]);
 
   useEffect(() => {
-    void fetchLiveAppointments();
+    void fetchLiveAppointments(false, selectedClinicianId);
 
     const supabase = createClient();
     const channel = supabase
-      .channel('permanent_appointments_sync')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'appointments' },
-        () => {
-          void fetchLiveAppointments(true);
-        },
-      )
+      .channel('permanent_patient_appointments_sync')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'patient_appointments' },
         () => {
-          void fetchLiveAppointments(true);
+          void fetchLiveAppointments(true, selectedClinicianId);
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'appointments' },
+        () => {
+          void fetchLiveAppointments(true, selectedClinicianId);
         },
       )
       .subscribe();
 
     const pollInterval = window.setInterval(() => {
-      void fetchLiveAppointments(true);
-    }, 5000);
+      void fetchLiveAppointments(true, selectedClinicianId);
+    }, 3000);
 
     const onWindowFocus = () => {
-      void fetchLiveAppointments(true);
+      void fetchLiveAppointments(true, selectedClinicianId);
     };
     window.addEventListener('focus', onWindowFocus);
 
@@ -356,7 +369,7 @@ export default function DoctorDashboardPage() {
       window.clearInterval(pollInterval);
       window.removeEventListener('focus', onWindowFocus);
     };
-  }, [fetchLiveAppointments]);
+  }, [fetchLiveAppointments, selectedClinicianId]);
 
   const filteredAppointments = appointments.filter((appt) =>
     appointmentMatchesClinician(appt, selectedClinicianId),
@@ -444,7 +457,10 @@ export default function DoctorDashboardPage() {
 
     setCardActionId(appt.id);
     try {
-      await updateAppointmentRecord(appt.id, { status: 'IN_CONSULTATION' });
+      await updateAppointmentRecord(appt.id, {
+        status: 'IN_CONSULTATION',
+        queue_status: 'IN_CONSULTATION',
+      });
       setActivePatient(appt);
       router.push(`/doctor/consultations?appointmentId=${appt.id}`);
     } catch (err) {
@@ -460,7 +476,10 @@ export default function DoctorDashboardPage() {
 
     setCardActionId(appt.id);
     try {
-      await updateAppointmentRecord(appt.id, { status: 'COMPLETED' });
+      await updateAppointmentRecord(appt.id, {
+        status: 'COMPLETED',
+        queue_status: 'COMPLETED',
+      });
       await fetchLiveAppointments(true);
       toast.success(`${getRegisteredPatientName(appt)} marked as completed`);
     } catch (err) {
@@ -512,7 +531,7 @@ export default function DoctorDashboardPage() {
             </h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#EAF5F2] text-[#227B6B] border border-[#A6E2D8]">
               <span className="w-2 h-2 rounded-full bg-[#227B6B] animate-pulse" />
-              Live Sync Active
+              Live Sync • 3s Polling
             </span>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#113831] text-[#A6E2D8]">
               <Building2 className="w-3 h-3" />
