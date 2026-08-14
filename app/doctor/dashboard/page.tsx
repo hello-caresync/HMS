@@ -34,6 +34,80 @@ import {
   type LiveAppointmentRecord,
 } from '@/lib/doctor/appointments-realtime';
 
+const getRegisteredPatientName = (patient: unknown): string => {
+  if (!patient || typeof patient !== 'object') return 'Registered Patient';
+
+  const p = patient as Record<string, unknown>;
+  const nestedPatient = p.patient as Record<string, unknown> | undefined;
+  const nestedPatients = p.patients as Record<string, unknown> | undefined;
+  const nestedProfiles = p.profiles as Record<string, unknown> | undefined;
+  const userMetadata = p.user_metadata as Record<string, unknown> | undefined;
+
+  return (
+    String(p.patient_name ?? '').trim() ||
+    String(p.full_name ?? '').trim() ||
+    String(p.name ?? '').trim() ||
+    String(nestedPatient?.full_name ?? '').trim() ||
+    String(nestedPatient?.name ?? '').trim() ||
+    String(nestedPatients?.full_name ?? '').trim() ||
+    String(nestedProfiles?.full_name ?? '').trim() ||
+    String(nestedProfiles?.name ?? '').trim() ||
+    String(userMetadata?.full_name ?? '').trim() ||
+    'Registered Patient'
+  );
+};
+
+async function enrichAppointmentsWithProfiles(
+  rows: Record<string, unknown>[],
+): Promise<LiveAppointmentRecord[]> {
+  const supabase = createClient();
+  const patientIds = Array.from(
+    new Set(rows.map((row) => String(row.patient_id ?? '')).filter(Boolean)),
+  );
+
+  const profileMap = new Map<string, Record<string, unknown>>();
+  if (patientIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('patient_profiles')
+      .select('id, full_name, gender, date_of_birth, dob')
+      .in('id', patientIds);
+
+    for (const profile of (profiles ?? []) as Record<string, unknown>[]) {
+      if (profile.id) profileMap.set(String(profile.id), profile);
+    }
+  }
+
+  return rows.map((row, index) => {
+    const profile = profileMap.get(String(row.patient_id ?? ''));
+    const merged = {
+      ...row,
+      profiles: profile,
+      patients: profile,
+      patient: profile,
+      full_name: profile?.full_name ?? row.full_name,
+    };
+
+    const normalized = normalizeAppointmentRow(merged, index);
+    normalized.patient_name = getRegisteredPatientName(merged);
+
+    if (profile?.gender) {
+      normalized.gender = String(profile.gender);
+    }
+
+    const dob = (profile?.date_of_birth ?? profile?.dob) as string | undefined;
+    if (dob) {
+      const born = new Date(dob);
+      if (!Number.isNaN(born.getTime())) {
+        normalized.age = Math.floor(
+          (Date.now() - born.getTime()) / (365.25 * 24 * 3600 * 1000),
+        );
+      }
+    }
+
+    return normalized;
+  });
+}
+
 function normalizeAppointmentRow(
   row: Record<string, unknown>,
   index: number,
@@ -42,7 +116,7 @@ function normalizeAppointmentRow(
     id: String(row.appointment_id ?? row.id ?? ''),
     doctor_id: String(row.doctor_id ?? ''),
     patient_id: row.patient_id ? String(row.patient_id) : undefined,
-    patient_name: String(row.patient_name ?? 'Patient'),
+    patient_name: getRegisteredPatientName(row),
     age: row.age ? Number(row.age) : undefined,
     gender: row.gender ? String(row.gender) : undefined,
     chief_complaint: String(
@@ -103,7 +177,7 @@ export default function DoctorDashboardPage() {
       console.log('✅ Fetched Appointments Data:', data);
 
       if (data && data.length > 0) {
-        const normalized = (data as Record<string, unknown>[]).map(normalizeAppointmentRow);
+        const normalized = await enrichAppointmentsWithProfiles(data as Record<string, unknown>[]);
         setAppointments(normalized);
 
         const waitingOrActive = normalized.filter(
@@ -191,7 +265,7 @@ export default function DoctorDashboardPage() {
       const next = await callNextPatientInQueue(appointments, activePatient);
       if (next) {
         await fetchLiveAppointments();
-        toast.success(`Called ${next.patient_name} into consultation`);
+        toast.success(`Called ${getRegisteredPatientName(next)} into consultation`);
       }
     } catch (err) {
       console.error('[Call Next]:', err);
@@ -212,7 +286,7 @@ export default function DoctorDashboardPage() {
       const next = await bypassToNextWaiting(appointments);
       if (next) {
         await fetchLiveAppointments();
-        toast.success(`Emergency bypass: ${next.patient_name} moved to consultation`);
+        toast.success(`Emergency bypass: ${getRegisteredPatientName(next)} moved to consultation`);
       }
     } catch (err) {
       console.error('[Emergency Bypass]:', err);
@@ -235,7 +309,7 @@ export default function DoctorDashboardPage() {
     try {
       await admitAppointmentToQueue(appt.id, 'IN_CONSULTATION');
       await fetchLiveAppointments();
-      toast.success(`${appt.patient_name} admitted from bookings`);
+      toast.success(`${getRegisteredPatientName(appt)} admitted from bookings`);
     } catch (err) {
       console.error('[Admit from bookings]:', err);
       toast.error('Failed to admit patient from bookings');
@@ -426,7 +500,7 @@ export default function DoctorDashboardPage() {
                             Next Upcoming
                           </p>
                           <p className="font-bold text-xs text-slate-900 truncate">
-                            {nextUpcoming.patient_name}
+                            {getRegisteredPatientName(nextUpcoming)}
                           </p>
                           <p className="text-[11px] text-slate-500">
                             {nextUpcoming.time_slot || 'Today'} · {nextUpcoming.status}
@@ -466,7 +540,9 @@ export default function DoctorDashboardPage() {
                           {item.token_number || `#${idx + 1}`}
                         </span>
                         <div>
-                          <p className="font-bold text-xs text-slate-900">{item.patient_name}</p>
+                          <p className="font-bold text-xs text-slate-900">
+                            {getRegisteredPatientName(item)}
+                          </p>
                           <p className="text-[11px] text-slate-500 line-clamp-1">
                             {item.chief_complaint || 'OPD Review'}
                           </p>
@@ -502,7 +578,9 @@ export default function DoctorDashboardPage() {
                     className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70 flex items-center justify-between gap-2"
                   >
                     <div className="min-w-0">
-                      <p className="font-bold text-xs text-slate-900">{appt.patient_name}</p>
+                      <p className="font-bold text-xs text-slate-900">
+                        {getRegisteredPatientName(appt)}
+                      </p>
                       <span className="text-[10px] text-slate-400 font-semibold">
                         {appt.type || 'Standard Consultation'} · {appt.status}
                       </span>
@@ -568,9 +646,11 @@ export default function DoctorDashboardPage() {
                     {activePatient.token_number || '#1'}
                   </div>
                   <div>
-                    <h3 className="font-black text-base leading-tight">{activePatient.patient_name}</h3>
+                    <h3 className="font-black text-base leading-tight">
+                      {getRegisteredPatientName(activePatient)}
+                    </h3>
                     <p className="text-xs text-slate-300 mt-0.5">
-                      {activePatient.age || 25} Yrs • {activePatient.gender || 'Patient'}
+                      {activePatient.age || 25} Yrs • {activePatient.gender || '—'}
                     </p>
                   </div>
                 </div>
