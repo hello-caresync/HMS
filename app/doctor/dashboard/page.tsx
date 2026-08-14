@@ -1,272 +1,248 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabaseClient';
 import {
-  getDoctorDashboardData,
-  updateAppointmentStatus,
-  DoctorDashboardMetrics,
-  DoctorAppointment,
-} from '@/lib/doctor/command-center/supabase-service';
-import SmartQCommandCenter from '@/components/doctor/SmartQCommandCenter';
+  Stethoscope,
+  Calendar,
+  Clock,
+  User,
+  RotateCw,
+  Loader2,
+  FileText,
+  Activity,
+  PlayCircle,
+  CheckCircle,
+  Building2,
+} from 'lucide-react';
+
+interface AppointmentRecord {
+  id: string;
+  patient_id: string;
+  patient_name: string;
+  doctor_name: string;
+  department: string;
+  hospital_name: string;
+  appointment_date: string;
+  slot_time: string;
+  fee?: string;
+  reason?: string;
+  token_number: number;
+  queue_status: string;
+  created_at: string;
+}
 
 export default function DoctorDashboardPage() {
   const router = useRouter();
-  const [metrics, setMetrics] = useState<DoctorDashboardMetrics>({
-    todaysOpd: 0,
-    waitingQueue: 0,
-    completed: 0,
-    inConsultation: 0,
-    criticalAlerts: 0,
-    appointmentsList: [],
-    liveQueueTokens: [],
-  });
-
+  const [selectedDoctor, setSelectedDoctor] = useState<string>('Dr. Chandrakanth S. Kesari');
+  const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Fetch initial dashboard metrics and lists
-  const loadDashboardData = useCallback(async () => {
+  const fetchLiveAppointments = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getDoctorDashboardData();
-      setMetrics(data);
-    } catch (error) {
-      console.error('Failed to load doctor dashboard metrics:', error);
+      let query = supabase
+        .from('patient_appointments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (selectedDoctor !== 'ALL') {
+        // Use partial match so 'Dr. Chandrakanth' or 'Chandrakanth S Kesari' match consistently
+        const doctorKey = selectedDoctor.split(' ')[1] || selectedDoctor;
+        query = query.ilike('doctor_name', `%${doctorKey}%`);
+      }
+
+      const { data, error } = await query;
+      if (!error && data) {
+        setAppointments(data);
+      }
+    } catch (err) {
+      console.error('Error fetching doctor appointments:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedDoctor]);
 
   useEffect(() => {
-    void loadDashboardData();
-  }, [loadDashboardData]);
+    fetchLiveAppointments();
 
-  useEffect(() => {
-    // Subscribe to real-time changes on appointments and opd_tokens
-    const supabase = createClient();
+    // Listen to real-time additions and updates from the patient app
     const channel = supabase
-      .channel('doctor-dashboard-realtime')
+      .channel('doctor_app_realtime_stream')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'appointments' },
+        { event: '*', schema: 'public', table: 'patient_appointments' },
         () => {
-          console.log('Realtime appointment event received — refreshing dashboard...');
-          void loadDashboardData();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'opd_tokens' },
-        () => {
-          console.log('Realtime OPD token event received — refreshing queue...');
-          void loadDashboardData();
+          fetchLiveAppointments();
         }
       )
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
-  }, [loadDashboardData]);
+  }, [fetchLiveAppointments]);
 
-  const handleStartConsultation = async (appointmentId: string) => {
+  // Proceed to next steps: Update status and route to consultation
+  const handleStartConsultation = async (appt: AppointmentRecord) => {
     try {
-      setUpdatingId(appointmentId);
-      await updateAppointmentStatus(appointmentId, 'IN_CONSULTATION');
-      router.push(`/doctor/consultations/${appointmentId}`);
-    } catch (error) {
-      console.error(`Failed to start consultation for ${appointmentId}:`, error);
-    } finally {
-      setUpdatingId(null);
+      await supabase
+        .from('patient_appointments')
+        .update({ queue_status: 'IN_CONSULTATION' })
+        .eq('id', appt.id);
+
+      router.push(`/doctor/consultation/${appt.id}`);
+    } catch (err) {
+      console.error('Failed to update status:', err);
     }
   };
 
-  // Handle appointment status transitions
-  const handleStatusUpdate = async (appointmentId: string, nextStatus: string) => {
+  const handleCompleteConsultation = async (apptId: string) => {
     try {
-      setUpdatingId(appointmentId);
-      await updateAppointmentStatus(appointmentId, nextStatus);
-      await loadDashboardData();
-    } catch (error) {
-      console.error(`Failed to update status for appointment ${appointmentId}:`, error);
-    } finally {
-      setUpdatingId(null);
+      await supabase
+        .from('patient_appointments')
+        .update({ queue_status: 'COMPLETED' })
+        .eq('id', apptId);
+
+      fetchLiveAppointments();
+    } catch (err) {
+      console.error('Failed to complete consultation:', err);
     }
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 bg-slate-50 p-5 min-h-screen font-sans">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-xl border border-slate-200 shadow-sm gap-4">
+    <div className="max-w-6xl mx-auto space-y-8 font-sans text-[#0E2924] p-6">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#D5E8E3] pb-4">
         <div>
-          <span className="text-xs font-semibold tracking-wider text-emerald-600 uppercase">
-            Clinical Command Center
+          <span className="flex items-center gap-1.5 text-xs font-black text-[#227B6B] uppercase tracking-wider">
+            <Stethoscope className="h-4 w-4" /> Clinician OPD Console
           </span>
-          <h1 className="text-2xl font-bold text-slate-900 mt-1">
-            Good Afternoon, Dr. CHANDRAKANTH S KESARI
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            General Surgery • Wednesday, 12 August 2026
+          <h1 className="text-2xl font-black text-[#0E2924] mt-1">Live Patient OPD Queue</h1>
+          <p className="text-xs font-bold text-[#227B6B]">
+            Facility: <span className="text-[#113831] font-black">Regal Hospital</span> • Real-time Sync Active
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <span className="w-2 h-2 mr-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            Online
-          </span>
-          <button
-            onClick={() => loadDashboardData()}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200"
+          {/* Clinician Selector for Multi-Doctor Demo */}
+          <select
+            value={selectedDoctor}
+            onChange={(e) => setSelectedDoctor(e.target.value)}
+            className="rounded-2xl border border-[#D5E8E3] bg-white p-3 text-xs font-black text-[#113831] focus:outline-none shadow-sm cursor-pointer"
           >
-            Refresh
+            <option value="Dr. Chandrakanth S. Kesari">Dr. Chandrakanth S. Kesari (General Surgery)</option>
+            <option value="Dr. Suriraju V">Dr. Suriraju V (Urology)</option>
+            <option value="Dr. Vikramaditya Rao">Dr. Vikramaditya Rao (Cardiology)</option>
+            <option value="Dr. Rajesh Kumar Hegde">Dr. Rajesh Kumar Hegde (Orthopedics)</option>
+            <option value="ALL">Show All Doctors ({appointments.length})</option>
+          </select>
+
+          <button
+            onClick={fetchLiveAppointments}
+            className="flex items-center gap-2 rounded-2xl border border-[#D5E8E3] bg-white px-4 py-3 text-xs font-black text-[#113831] hover:bg-[#EAF5F2] transition shadow-sm"
+          >
+            <RotateCw className="h-4 w-4 text-[#227B6B]" /> Refresh
           </button>
         </div>
       </div>
 
-      {/* KPI Counters Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500 uppercase">TODAY&apos;S OPD</span>
-          <p className="text-3xl font-bold text-slate-900 mt-2">
-            {loading ? '-' : metrics.todaysOpd}
-          </p>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500 uppercase">WAITING QUEUE</span>
-          <p className="text-3xl font-bold text-amber-600 mt-2">
-            {loading ? '-' : metrics.waitingQueue}
-          </p>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500 uppercase">IN CONSULTATION</span>
-          <p className="text-3xl font-bold text-blue-600 mt-2">
-            {loading ? '-' : metrics.inConsultation}
-          </p>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500 uppercase">COMPLETED</span>
-          <p className="text-3xl font-bold text-emerald-600 mt-2">
-            {loading ? '-' : metrics.completed}
-          </p>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500 uppercase">CRITICAL ALERTS</span>
-          <p className="text-3xl font-bold text-rose-600 mt-2">
-            {loading ? '-' : metrics.criticalAlerts}
-          </p>
-        </div>
-      </div>
-
-      {/* SmartQ Live Queue + Action Bar */}
-      <SmartQCommandCenter
-        doctorId={metrics.doctorId}
-        queueTokens={metrics.liveQueueTokens}
-        waitingCount={metrics.waitingQueue}
-        completedCount={metrics.completed}
-        loading={loading}
-        onRefresh={() => void loadDashboardData()}
-      />
-
-      {/* Main Grid Content */}
-      <div className="grid grid-cols-1 gap-4">
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all hover:shadow-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-slate-900">Today&apos;s Appointments</h2>
-              <span className="text-xs text-slate-500 font-medium">
-                {metrics.appointmentsList.length} Scheduled
-              </span>
-            </div>
-
-            {loading ? (
-              <p className="text-sm text-slate-500 py-8 text-center">Loading appointments...</p>
-            ) : metrics.appointmentsList.length === 0 ? (
-              <p className="text-sm text-slate-500 py-8 text-center">
-                No appointments for today. Patient bookings appear here in real time.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {metrics.appointmentsList.map((app: DoctorAppointment) => (
-                  <div
-                    key={app.appointment_id}
-                    className="p-4 border border-slate-200 bg-slate-50/50 hover:bg-slate-50 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-slate-900">
-                          {app.patient_name || 'Patient'}
-                        </span>
-                        {app.token_number && (
-                          <span className="px-2 py-0.5 text-xs font-bold bg-slate-200 text-slate-800 rounded">
-                            {app.token_number}
-                          </span>
-                        )}
-                        <span
-                          className={`px-2 py-0.5 text-xs font-medium rounded ${
-                            app.status === 'confirmed' || app.status === 'SCHEDULED' || app.status === 'WAITING'
-                              ? 'bg-amber-100 text-amber-800'
-                              : app.status === 'IN_CONSULTATION' || app.status === 'in_progress'
-                              ? 'bg-blue-100 text-blue-800'
-                              : app.status === 'COMPLETED' || app.status === 'completed'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-slate-200 text-slate-700'
-                          }`}
-                        >
-                          {app.status}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1.5">
-                        Time: <span className="font-medium text-slate-700">{app.appointment_time || 'N/A'}</span> | Reason:{' '}
-                        <span className="font-medium text-slate-700">{app.reason || 'General Consultation'}</span>
-                      </p>
-                    </div>
-
-                    {/* Interactive Action Controls */}
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                      {(app.status === 'SCHEDULED' || app.status === 'WAITING' || app.status === 'confirmed') && (
-                        <button
-                          disabled={updatingId === app.appointment_id}
-                          onClick={() => handleStartConsultation(app.appointment_id)}
-                          className="px-3.5 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow-sm transition-colors disabled:opacity-50"
-                        >
-                          Start Consultation
-                        </button>
-                      )}
-
-                      {(app.status === 'IN_CONSULTATION' || app.status === 'in_progress') && (
-                        <button
-                          disabled={updatingId === app.appointment_id}
-                          onClick={() => router.push(`/doctor/consultations/${app.appointment_id}`)}
-                          className="px-3.5 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow-sm transition-colors disabled:opacity-50"
-                        >
-                          Open Workspace
-                        </button>
-                      )}
-
-                      {(app.status === 'IN_CONSULTATION' || app.status === 'in_progress') && (
-                        <button
-                          disabled={updatingId === app.appointment_id}
-                          onClick={() => handleStatusUpdate(app.appointment_id, 'COMPLETED')}
-                          className="px-3.5 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors disabled:opacity-50"
-                        >
-                          Mark Complete
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+      {/* APPOINTMENT QUEUE FEED */}
+      {loading ? (
+        <div className="flex h-64 items-center justify-center rounded-3xl bg-white border border-[#D5E8E3]">
+          <div className="flex items-center gap-2 text-xs font-black text-[#113831]">
+            <Loader2 className="h-5 w-5 animate-spin text-[#227B6B]" />
+            Fetching live queue updates...
           </div>
         </div>
-      </div>
+      ) : appointments.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-[#D5E8E3] bg-white p-12 text-center space-y-3">
+          <Calendar className="h-10 w-10 text-[#227B6B]/40" />
+          <h3 className="text-base font-black text-[#0E2924]">No Scheduled Consultations</h3>
+          <p className="text-xs font-bold text-slate-500">
+            Appointments booked by patients will appear here immediately in real time.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2">
+          {appointments.map((appt) => (
+            <div
+              key={appt.id}
+              className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-5 flex flex-col justify-between hover:border-[#113831] transition"
+            >
+              <div className="space-y-4">
+                {/* STATUS & TOKEN */}
+                <div className="flex items-center justify-between border-b border-[#EAF5F2] pb-3">
+                  <span className="text-xs font-black text-[#113831]">
+                    SmartQ Token:{' '}
+                    <span className="text-base font-black text-[#227B6B]">#{appt.token_number}</span>
+                  </span>
+                  <span
+                    className={`rounded-full px-3 py-1 text-[10px] font-black uppercase border ${
+                      appt.queue_status === 'IN_CONSULTATION'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                        : appt.queue_status === 'COMPLETED'
+                        ? 'bg-slate-100 text-slate-600 border-slate-300'
+                        : 'bg-[#EAF5F2] text-[#113831] border-[#227B6B]/20'
+                    }`}
+                  >
+                    <Activity className="h-3 w-3 inline mr-1" />
+                    {appt.queue_status}
+                  </span>
+                </div>
+
+                {/* PATIENT & DOCTOR DETAILS */}
+                <div className="space-y-1">
+                  <h3 className="text-lg font-black text-[#0E2924] flex items-center gap-2">
+                    <User className="h-4 w-4 text-[#227B6B]" /> {appt.patient_name}
+                  </h3>
+                  <p className="text-xs font-bold text-[#227B6B]">
+                    Assigned: <span className="text-[#113831]">{appt.doctor_name}</span> ({appt.department})
+                  </p>
+                </div>
+
+                {/* SYMPTOMS / REASON */}
+                {appt.reason && (
+                  <div className="bg-amber-50/80 border border-amber-200 p-3.5 rounded-2xl text-xs font-bold">
+                    <span className="text-[10px] font-black uppercase text-amber-800 flex items-center gap-1 mb-0.5">
+                      <FileText className="h-3.5 w-3.5" /> Chief Complaint / Symptoms
+                    </span>
+                    <p className="text-amber-950">{appt.reason}</p>
+                  </div>
+                )}
+
+                {/* TIME & FACILITY */}
+                <div className="flex items-center justify-between text-xs font-bold bg-[#F4F8F7] p-3 rounded-2xl border border-[#D5E8E3]">
+                  <span className="flex items-center gap-1.5 text-[#0E2924]">
+                    <Clock className="h-3.5 w-3.5 text-[#227B6B]" /> {appt.appointment_date} at {appt.slot_time}
+                  </span>
+                  <span className="flex items-center gap-1 text-[#0E2924]">
+                    <Building2 className="h-3.5 w-3.5 text-[#227B6B]" /> Regal Hospital
+                  </span>
+                </div>
+              </div>
+
+              {/* NEXT STEPS WORKFLOW BUTTONS */}
+              <div className="flex items-center gap-3 pt-3 border-t border-[#EAF5F2]">
+                <button
+                  onClick={() => handleStartConsultation(appt)}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl bg-[#113831] py-3 text-xs font-black text-white hover:bg-[#227B6B] transition shadow-sm"
+                >
+                  <PlayCircle className="h-4 w-4 text-[#A6E2D8]" /> Start Consultation
+                </button>
+
+                <button
+                  onClick={() => handleCompleteConsultation(appt.id)}
+                  className="flex items-center gap-1 rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] px-4 py-3 text-xs font-black text-[#113831] hover:bg-[#EAF5F2] transition"
+                >
+                  <CheckCircle className="h-4 w-4 text-emerald-600" /> Done
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
