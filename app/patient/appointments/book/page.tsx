@@ -175,6 +175,21 @@ export default function BookAppointmentPage() {
 
       if (apptErr) console.warn('Supabase appt write:', apptErr.message);
 
+      // Mirror to canonical appointments table for doctor dashboard realtime
+      const { error: doctorApptErr } = await supabase.from('appointments').insert([
+        {
+          patient_id: 'b0000000-0000-0000-0000-000000000002',
+          doctor_id: '56284599-9a5f-4672-9b53-b90e18146a00',
+          department: selectedDept,
+          reason_for_visit: reason.trim() || 'General OPD Checkup',
+          appointment_date: appointmentDate,
+          appointment_time: slotTime,
+          status: 'SCHEDULED',
+        },
+      ]);
+
+      if (doctorApptErr) console.warn('Doctor appointments mirror write:', doctorApptErr.message);
+
       // Mirror directly to HMS OPD Queue for Doctor Console
       const { error: queueErr } = await supabase
         .from('hms_opd_queue')
