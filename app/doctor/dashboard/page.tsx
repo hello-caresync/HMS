@@ -27,14 +27,42 @@ import {
   bypassToNextWaiting,
   callNextPatientInQueue,
   createWalkInAppointment,
-  fetchLiveAppointments,
   getNextUpcomingBooking,
   getUpcomingBookings,
   isInConsultationStatus,
   isWaitingStatus,
-  resolveActivePatient,
   type LiveAppointmentRecord,
 } from '@/lib/doctor/appointments-realtime';
+
+function normalizeAppointmentRow(
+  row: Record<string, unknown>,
+  index: number,
+): LiveAppointmentRecord {
+  return {
+    id: String(row.appointment_id ?? row.id ?? ''),
+    doctor_id: String(row.doctor_id ?? ''),
+    patient_id: row.patient_id ? String(row.patient_id) : undefined,
+    patient_name: String(row.patient_name ?? 'Patient'),
+    age: row.age ? Number(row.age) : undefined,
+    gender: row.gender ? String(row.gender) : undefined,
+    chief_complaint: String(
+      row.reason_for_visit ?? row.chief_complaint ?? row.reason ?? 'OPD Review',
+    ),
+    vitals_summary: row.vitals_summary ? String(row.vitals_summary) : undefined,
+    token_number: row.token_number ? String(row.token_number) : undefined,
+    appointment_date: row.appointment_date
+      ? String(row.appointment_date).slice(0, 10)
+      : undefined,
+    time_slot: String(row.appointment_time ?? row.time_slot ?? row.slot_time ?? 'Today'),
+    type: String(row.department ?? row.type ?? 'Standard Consultation'),
+    status: String(row.status ?? row.queue_status ?? 'WAITING').toUpperCase(),
+    predicted_wait_min: Number(
+      row.predicted_wait_min ?? row.estimated_wait_minutes ?? 5 + index * 3,
+    ),
+    ml_duration_min: Number(row.ml_duration_min ?? row.estimated_duration ?? 15),
+    created_at: row.created_at ? String(row.created_at) : undefined,
+  };
+}
 
 export default function DoctorDashboardPage() {
   const router = useRouter();
@@ -58,13 +86,44 @@ export default function DoctorDashboardPage() {
   const [admittingId, setAdmittingId] = useState<string | null>(null);
   const [walkInLoading, setWalkInLoading] = useState(false);
 
-  const loadAppointments = useCallback(async () => {
+  const fetchLiveAppointments = useCallback(async () => {
+    const supabase = createClient();
     try {
-      const records = await fetchLiveAppointments();
-      setAppointments(records);
-      setActivePatient(resolveActivePatient(records));
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Supabase Fetch Error:', error.message, error.details);
+        return;
+      }
+
+      console.log('✅ Fetched Appointments Data:', data);
+
+      if (data && data.length > 0) {
+        const normalized = (data as Record<string, unknown>[]).map(normalizeAppointmentRow);
+        setAppointments(normalized);
+
+        const waitingOrActive = normalized.filter(
+          (a) => a.status.toUpperCase() !== 'COMPLETED',
+        );
+
+        if (waitingOrActive.length > 0) {
+          const inConsultationPatient = waitingOrActive.find(
+            (a) => a.status.toUpperCase() === 'IN_CONSULTATION',
+          );
+          setActivePatient(inConsultationPatient || waitingOrActive[0]);
+        } else {
+          setActivePatient(null);
+        }
+      } else {
+        setAppointments([]);
+        setActivePatient(null);
+      }
     } catch (err) {
-      console.error('[Doctor Dashboard Load]:', err);
+      console.error('❌ Unexpected fetch error:', err);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -72,7 +131,7 @@ export default function DoctorDashboardPage() {
   }, []);
 
   useEffect(() => {
-    void loadAppointments();
+    void fetchLiveAppointments();
 
     const supabase = createClient();
     const channel = supabase
@@ -81,17 +140,17 @@ export default function DoctorDashboardPage() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'appointments' },
         () => {
-          void loadAppointments();
+          void fetchLiveAppointments();
         },
       )
       .subscribe();
 
     const pollInterval = window.setInterval(() => {
-      void loadAppointments();
+      void fetchLiveAppointments();
     }, 5000);
 
     const onWindowFocus = () => {
-      void loadAppointments();
+      void fetchLiveAppointments();
     };
     window.addEventListener('focus', onWindowFocus);
 
@@ -100,11 +159,11 @@ export default function DoctorDashboardPage() {
       window.clearInterval(pollInterval);
       window.removeEventListener('focus', onWindowFocus);
     };
-  }, [loadAppointments]);
+  }, [fetchLiveAppointments]);
 
   const waitingQueue = appointments.filter((a) => isWaitingStatus(a.status));
   const inConsultationQueue = appointments.filter((a) => isInConsultationStatus(a.status));
-  const completedQueue = appointments.filter((a) => a.status === 'COMPLETED');
+  const completedQueue = appointments.filter((a) => a.status.toUpperCase() === 'COMPLETED');
   const upcomingBookings = getUpcomingBookings(appointments);
   const nextUpcoming = getNextUpcomingBooking(appointments);
 
@@ -118,7 +177,7 @@ export default function DoctorDashboardPage() {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    void loadAppointments();
+    void fetchLiveAppointments();
   };
 
   const handleCallNext = async () => {
@@ -131,7 +190,7 @@ export default function DoctorDashboardPage() {
     try {
       const next = await callNextPatientInQueue(appointments, activePatient);
       if (next) {
-        await loadAppointments();
+        await fetchLiveAppointments();
         toast.success(`Called ${next.patient_name} into consultation`);
       }
     } catch (err) {
@@ -152,7 +211,7 @@ export default function DoctorDashboardPage() {
     try {
       const next = await bypassToNextWaiting(appointments);
       if (next) {
-        await loadAppointments();
+        await fetchLiveAppointments();
         toast.success(`Emergency bypass: ${next.patient_name} moved to consultation`);
       }
     } catch (err) {
@@ -175,7 +234,7 @@ export default function DoctorDashboardPage() {
     setAdmittingId(appt.id);
     try {
       await admitAppointmentToQueue(appt.id, 'IN_CONSULTATION');
-      await loadAppointments();
+      await fetchLiveAppointments();
       toast.success(`${appt.patient_name} admitted from bookings`);
     } catch (err) {
       console.error('[Admit from bookings]:', err);
@@ -192,7 +251,7 @@ export default function DoctorDashboardPage() {
     setWalkInLoading(true);
     try {
       await createWalkInAppointment(name.trim());
-      await loadAppointments();
+      await fetchLiveAppointments();
       toast.success(`Walk-in patient "${name.trim()}" added to OPD list`);
     } catch (err) {
       console.error('[Quick walk-in]:', err);
