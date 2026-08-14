@@ -258,7 +258,7 @@ export function CommandCenterDashboard(props: CommandCenterDashboardProps) {
               <button
                 type="button"
                 onClick={() =>
-                  router.push(`/doctor/consultations/${active.appointment_id || active.id}/`)
+                  router.push(`/doctor/consultations?appointmentId=${active.appointment_id || active.id}`)
                 }
                 className={ccClasses.btnAccent}
               >

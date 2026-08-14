@@ -142,7 +142,7 @@ export default function DoctorDashboardPage() {
 
   const handleStartConsultation = () => {
     if (!activePatient) return;
-    router.push(`/doctor/consultations/${activePatient.id}`);
+    router.push(`/doctor/consultations?appointmentId=${activePatient.id}`);
   };
 
   const handleAdmitFromBookings = async (appt: LiveAppointmentRecord) => {

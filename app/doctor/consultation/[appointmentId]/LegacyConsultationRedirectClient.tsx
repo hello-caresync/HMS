@@ -12,7 +12,7 @@ export default function LegacyConsultationRedirectClient({
   const router = useRouter();
 
   useEffect(() => {
-    router.replace(`/doctor/consultations/${appointmentId}/`);
+    router.replace(`/doctor/consultations?appointmentId=${appointmentId}`);
   }, [appointmentId, router]);
 
   return null;

@@ -185,7 +185,7 @@ export default function SmartQCommandCenter({
     try {
       await startEncounter(spotlight.raw, doctorId);
       if (spotlight.appointmentId) {
-        router.push(`/doctor/consultations/${spotlight.appointmentId}`);
+        router.push(`/doctor/consultations?appointmentId=${spotlight.appointmentId}`);
       }
       onRefresh();
     } finally {

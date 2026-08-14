@@ -43,7 +43,7 @@ export function TodaysAppointments({ appointments, isLoading, onRefresh }: Props
 
   const handleStart = async (id: string) => {
     await startConsultationAppointment(id);
-    router.push(`/doctor/consultations/${id}/`);
+    router.push(`/doctor/consultations?appointmentId=${id}`);
   };
 
   const handleComplete = async (id: string) => {
@@ -138,7 +138,7 @@ export function TodaysAppointments({ appointments, isLoading, onRefresh }: Props
                       <>
                         <button
                           type="button"
-                          onClick={() => router.push(`/doctor/consultations/${appt.appointment_id}/`)}
+                          onClick={() => router.push(`/doctor/consultations?appointmentId=${appt.appointment_id}`)}
                           className={ccClasses.btnGhost}
                         >
                           Open EMR

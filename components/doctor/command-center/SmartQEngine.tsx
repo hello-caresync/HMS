@@ -60,7 +60,7 @@ export function SmartQEngine() {
     const consultationId = await startMutation.mutateAsync(token);
     toast.success('Encounter started — patient notified');
     const routeId = token.appointment_id || consultationId;
-    router.push(`/doctor/consultations/${routeId}/`);
+    router.push(`/doctor/consultations?appointmentId=${routeId}`);
   };
 
   const handleComplete = async (token: LiveQueueRow) => {
@@ -189,7 +189,7 @@ export function SmartQEngine() {
                 <button
                   type="button"
                   onClick={() =>
-                    router.push(`/doctor/consultations/${active.appointment_id || active.id}/`)
+                    router.push(`/doctor/consultations?appointmentId=${active.appointment_id || active.id}`)
                   }
                   className={ccClasses.btnAccent}
                 >
