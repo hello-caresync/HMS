@@ -160,11 +160,9 @@ export async function fetchLiveAppointments(
   return enrichAppointmentRows((data ?? []) as Record<string, unknown>[]);
 }
 
-/** Map dashboard queue status to patient_appointments.queue_status values. */
+/** Preserve queue_status values exactly for patient_appointments cross-app sync. */
 function mapStatusForPatientAppointments(status: string): string {
-  const normalized = status.toUpperCase();
-  if (normalized === 'IN_CONSULTATION') return 'IN_PROGRESS';
-  return normalized;
+  return status.toUpperCase();
 }
 
 /** Update appointment by id across appointments and patient_appointments tables. */
@@ -175,6 +173,11 @@ export async function updateAppointmentRecord(
   const supabase = createClient();
   const withTimestamp = { ...payload, updated_at: new Date().toISOString() };
   const statusValue = payload.status ? String(payload.status) : undefined;
+  const queueStatusValue = payload.queue_status
+    ? String(payload.queue_status)
+    : statusValue
+      ? mapStatusForPatientAppointments(statusValue)
+      : undefined;
 
   let appointmentsUpdated = false;
 
@@ -200,7 +203,7 @@ export async function updateAppointmentRecord(
 
   const patientPayload: Record<string, unknown> = {
     ...withTimestamp,
-    ...(statusValue ? { queue_status: mapStatusForPatientAppointments(statusValue) } : {}),
+    ...(queueStatusValue ? { queue_status: queueStatusValue } : {}),
   };
 
   const patientById = await supabase
