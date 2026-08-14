@@ -6,16 +6,20 @@ export type AppointmentQueueStatus = 'WAITING' | 'IN_CONSULTATION' | 'COMPLETED'
 export interface LiveAppointmentRecord {
   id: string;
   doctor_id: string;
+  doctor_name?: string;
   patient_id?: string;
   patient_name: string;
   age?: number;
   gender?: string;
   chief_complaint?: string;
+  symptoms?: string;
   vitals_summary?: string;
   token_number?: string;
   appointment_date?: string;
   time_slot?: string;
   type?: string;
+  fee?: string;
+  hospital_name?: string;
   status: AppointmentQueueStatus;
   predicted_wait_min?: number;
   ml_duration_min?: number;
@@ -35,12 +39,14 @@ export function isWaitingStatus(status: string): boolean {
     s === 'WAITING' ||
     s === 'BOOKED' ||
     s === 'CONFIRMED' ||
-    s === 'PENDING'
+    s === 'PENDING' ||
+    s === 'SCHEDULED'
   );
 }
 
 export function isInConsultationStatus(status: string): boolean {
-  return status === 'IN_CONSULTATION';
+  const s = status.toUpperCase();
+  return s === 'IN_CONSULTATION' || s === 'IN_PROGRESS';
 }
 
 export function isCompletedStatus(status: string): boolean {
@@ -111,18 +117,22 @@ async function enrichAppointmentRows(
       doctor_id: String(row.doctor_id ?? ''),
       patient_id: patientId || undefined,
       patient_name: String(row.patient_name ?? profile?.full_name ?? 'Patient'),
+      doctor_name: row.doctor_name ? String(row.doctor_name) : undefined,
       age: calcAge(dob),
       gender: profile?.gender ? String(profile.gender) : undefined,
       chief_complaint: String(
         row.reason_for_visit ?? row.chief_complaint ?? row.reason ?? 'OPD Review',
       ),
+      symptoms: String(row.symptoms ?? row.reason ?? row.chief_complaint ?? ''),
       vitals_summary: row.vitals_summary ? String(row.vitals_summary) : undefined,
-      token_number: row.token_number ? String(row.token_number) : undefined,
+      token_number: row.token_number != null ? String(row.token_number) : undefined,
       appointment_date: row.appointment_date
         ? String(row.appointment_date).slice(0, 10)
         : undefined,
       time_slot: String(row.appointment_time ?? row.time_slot ?? row.slot_time ?? 'Today'),
       type: String(row.department ?? row.type ?? 'Standard Consultation'),
+      fee: row.fee ? String(row.fee) : undefined,
+      hospital_name: row.hospital_name ? String(row.hospital_name) : 'Regal Hospital',
       status: String(row.status ?? row.queue_status ?? 'WAITING').toUpperCase(),
       predicted_wait_min: Number(
         row.predicted_wait_min ?? row.estimated_wait_minutes ?? 5 + index * 3,
@@ -150,25 +160,62 @@ export async function fetchLiveAppointments(
   return enrichAppointmentRows((data ?? []) as Record<string, unknown>[]);
 }
 
-/** Update appointment by id or appointment_id column. */
+/** Map dashboard queue status to patient_appointments.queue_status values. */
+function mapStatusForPatientAppointments(status: string): string {
+  const normalized = status.toUpperCase();
+  if (normalized === 'IN_CONSULTATION') return 'IN_PROGRESS';
+  return normalized;
+}
+
+/** Update appointment by id across appointments and patient_appointments tables. */
 export async function updateAppointmentRecord(
   appointmentId: string,
   payload: Record<string, unknown>,
 ): Promise<void> {
   const supabase = createClient();
   const withTimestamp = { ...payload, updated_at: new Date().toISOString() };
+  const statusValue = payload.status ? String(payload.status) : undefined;
+
+  let appointmentsUpdated = false;
 
   const byAppointmentId = await supabase
     .from('appointments')
     .update(withTimestamp)
-    .eq('appointment_id', appointmentId);
+    .eq('appointment_id', appointmentId)
+    .select('appointment_id');
 
-  if (!byAppointmentId.error) return;
+  if (!byAppointmentId.error && (byAppointmentId.data?.length ?? 0) > 0) {
+    appointmentsUpdated = true;
+  } else {
+    const byId = await supabase
+      .from('appointments')
+      .update(withTimestamp)
+      .eq('id', appointmentId)
+      .select('id');
 
-  const byId = await supabase.from('appointments').update(withTimestamp).eq('id', appointmentId);
+    if (!byId.error && (byId.data?.length ?? 0) > 0) {
+      appointmentsUpdated = true;
+    }
+  }
 
-  if (byId.error) {
-    throw new Error(byId.error.message || byAppointmentId.error.message);
+  const patientPayload: Record<string, unknown> = {
+    ...withTimestamp,
+    ...(statusValue ? { queue_status: mapStatusForPatientAppointments(statusValue) } : {}),
+  };
+
+  const patientById = await supabase
+    .from('patient_appointments')
+    .update(patientPayload)
+    .eq('id', appointmentId)
+    .select('id');
+
+  const patientUpdated = !patientById.error && (patientById.data?.length ?? 0) > 0;
+
+  if (!appointmentsUpdated && !patientUpdated) {
+    const message =
+      patientById.error?.message ||
+      'Unable to update appointment in appointments or patient_appointments';
+    throw new Error(message);
   }
 }
 

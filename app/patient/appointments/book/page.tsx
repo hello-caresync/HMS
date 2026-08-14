@@ -17,22 +17,74 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
+interface DoctorDirectoryItem {
+  id: string;
+  name: string;
+  department: string;
+  fee: string;
+}
+
 interface FamilyMemberOption {
   id: string;
   name: string;
   relation: string;
 }
 
+// COMPLETE 41 REGAL HOSPITAL CONSULTANTS
+const ALL_41_DOCTORS: DoctorDirectoryItem[] = [
+  { id: 'RH-D01', name: 'Dr. Suriraju V', department: 'Urology', fee: '₹700' },
+  { id: 'RH-D02', name: 'Dr. Chandrakanth S. Kesari', department: 'General Surgery', fee: '₹800' },
+  { id: 'RH-D03', name: 'Dr. Ananya R', department: 'General Medicine', fee: '₹600' },
+  { id: 'RH-D04', name: 'Dr. Vikramaditya Rao', department: 'Cardiology', fee: '₹900' },
+  { id: 'RH-D05', name: 'Dr. Meera Nambiar', department: 'Cardiology', fee: '₹850' },
+  { id: 'RH-D06', name: 'Dr. Rajesh Kumar Hegde', department: 'Orthopedics', fee: '₹850' },
+  { id: 'RH-D07', name: 'Dr. Shalini Deshmukh', department: 'Orthopedics', fee: '₹750' },
+  { id: 'RH-D08', name: 'Dr. Arvind Swamy', department: 'Neurology', fee: '₹950' },
+  { id: 'RH-D09', name: 'Dr. Kavitha Reddy', department: 'Neurosurgery', fee: '₹1200' },
+  { id: 'RH-D10', name: 'Dr. Pradeep Verma', department: 'Gastroenterology', fee: '₹800' },
+  { id: 'RH-D11', name: 'Dr. Sunitha Gopal', department: 'Gastroenterology', fee: '₹750' },
+  { id: 'RH-D12', name: 'Dr. Anand Kulkarni', department: 'Nephrology', fee: '₹850' },
+  { id: 'RH-D13', name: 'Dr. Archana Bhat', department: 'Pediatrics', fee: '₹650' },
+  { id: 'RH-D14', name: 'Dr. Rohan D’Souza', department: 'Pediatrics', fee: '₹650' },
+  { id: 'RH-D15', name: 'Dr. Deepa Shankar', department: 'Obstetrics & Gynecology', fee: '₹800' },
+  { id: 'RH-D16', name: 'Dr. Priyanka Murthy', department: 'Obstetrics & Gynecology', fee: '₹750' },
+  { id: 'RH-D17', name: 'Dr. Harish Prasad', department: 'Pulmonology', fee: '₹700' },
+  { id: 'RH-D18', name: 'Dr. Nandini Sen', department: 'Dermatology', fee: '₹600' },
+  { id: 'RH-D19', name: 'Dr. Karthik Subramanian', department: 'ENT', fee: '₹650' },
+  { id: 'RH-D20', name: 'Dr. Smita Joshi', department: 'Ophthalmology', fee: '₹700' },
+  { id: 'RH-D21', name: 'Dr. Manoj Kumar', department: 'Ophthalmology', fee: '₹700' },
+  { id: 'RH-D22', name: 'Dr. Sangeetha Iyengar', department: 'Endocrinology', fee: '₹800' },
+  { id: 'RH-D23', name: 'Dr. Rakesh Nair', department: 'Oncology', fee: '₹1000' },
+  { id: 'RH-D24', name: 'Dr. Gautham Pai', department: 'Oncology', fee: '₹1000' },
+  { id: 'RH-D25', name: 'Dr. Vani S. Rao', department: 'Psychiatry', fee: '₹750' },
+  { id: 'RH-D26', name: 'Dr. Ashok Patel', department: 'Rheumatology', fee: '₹800' },
+  { id: 'RH-D27', name: 'Dr. Varun Sundaram', department: 'Vascular Surgery', fee: '₹900' },
+  { id: 'RH-D28', name: 'Dr. Rashmi Kulkarni', department: 'Anaesthesiology', fee: '₹700' },
+  { id: 'RH-D29', name: 'Dr. Sumeet Bhalla', department: 'Plastic Surgery', fee: '₹1100' },
+  { id: 'RH-D30', name: 'Dr. Nithya Srinivas', department: 'Pathology', fee: '₹500' },
+  { id: 'RH-D31', name: 'Dr. Jayakrishnan Nair', department: 'Radiology', fee: '₹600' },
+  { id: 'RH-D32', name: 'Dr. Bhavana Shah', department: 'Radiology', fee: '₹600' },
+  { id: 'RH-D33', name: 'Dr. Santosh Shetty', department: 'Emergency Medicine', fee: '₹800' },
+  { id: 'RH-D34', name: 'Dr. Madhavi Latha', department: 'Nuclear Medicine', fee: '₹900' },
+  { id: 'RH-D35', name: 'Dr. Chethan Gowda', department: 'Physical Medicine & Rehab', fee: '₹650' },
+  { id: 'RH-D36', name: 'Dr. Anushree Roy', department: 'Clinical Immunology', fee: '₹750' },
+  { id: 'RH-D37', name: 'Dr. Girish Menon', department: 'Cardiothoracic Surgery', fee: '₹1300' },
+  { id: 'RH-D38', name: 'Dr. Lavanya Krishnan', department: 'Pediatric Surgery', fee: '₹850' },
+  { id: 'RH-D39', name: 'Dr. Hemanth Kumar', department: 'Geriatrics', fee: '₹700' },
+  { id: 'RH-D40', name: 'Dr. Aparna Nair', department: 'Infectious Diseases', fee: '₹750' },
+  { id: 'RH-D41', name: 'Dr. Balaji Venkat', department: 'Pain Management', fee: '₹800' },
+];
+
 export default function BookAppointmentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // PATIENT SELECTION STATE (SELF + SAVED DEPENDENTS)
+  // PATIENT SELECTION (SELF + LINKED FAMILY MEMBERS)
   const [selectedPatientName, setSelectedPatientName] = useState<string>('Aishwarya D S (Self)');
   const [patientOptions, setPatientOptions] = useState<FamilyMemberOption[]>([]);
 
-  // CLINICAL DETAILS
-  const [assignedDoctor, setAssignedDoctor] = useState<string>('Dr. Chandrakanth S. Kesari');
+  // CLINICIAN & CLINICAL DETAILS
+  const [selectedDoctorName, setSelectedDoctorName] = useState<string>('Dr. Chandrakanth S. Kesari');
   const [selectedDept, setSelectedDept] = useState<string>('General Surgery');
   const [consultationFee, setConsultationFee] = useState<string>('₹800');
   const [reason, setReason] = useState<string>('');
@@ -47,16 +99,27 @@ export default function BookAppointmentPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // 1. Read URL params passed from Doctor Directory
+    // 1. Read URL query parameters if routed from Directory
     const docParam = searchParams.get('doctor');
     const deptParam = searchParams.get('department');
     const feeParam = searchParams.get('fee');
 
-    if (docParam) setAssignedDoctor(docParam);
-    if (deptParam) setSelectedDept(deptParam);
-    if (feeParam) setConsultationFee(feeParam);
+    if (docParam) {
+      const match = ALL_41_DOCTORS.find(
+        (d) => d.name.toLowerCase() === docParam.toLowerCase()
+      );
+      if (match) {
+        setSelectedDoctorName(match.name);
+        setSelectedDept(match.department);
+        setConsultationFee(match.fee);
+      } else {
+        setSelectedDoctorName(docParam);
+        if (deptParam) setSelectedDept(deptParam);
+        if (feeParam) setConsultationFee(feeParam);
+      }
+    }
 
-    // 2. Load Patient & Linked Family Members
+    // 2. Load Patient & Linked Family Members from Local Storage & Supabase
     loadPatientAndFamilyOptions();
   }, [searchParams]);
 
@@ -64,7 +127,7 @@ export default function BookAppointmentPage() {
     let primaryName = 'Aishwarya D S';
     let familyMembersList: FamilyMemberOption[] = [];
 
-    // Check Local Storage
+    // Local Storage check
     if (typeof window !== 'undefined') {
       const storedName = localStorage.getItem('patient_full_name');
       const savedProfile = localStorage.getItem('curasync_patient_profile');
@@ -82,7 +145,7 @@ export default function BookAppointmentPage() {
       }
     }
 
-    // Check Supabase Backend
+    // Supabase DB check
     try {
       const { data, error } = await supabase
         .from('patient_profiles')
@@ -97,7 +160,7 @@ export default function BookAppointmentPage() {
         }
       }
     } catch (err) {
-      console.warn('Profile sync notice, loaded fallback options');
+      console.warn('Profile sync fallback active');
     } finally {
       const options: FamilyMemberOption[] = [
         { id: 'self', name: `${primaryName} (Self)`, relation: 'Self' },
@@ -113,21 +176,37 @@ export default function BookAppointmentPage() {
     }
   };
 
+  // Handle selecting a doctor from the full 41-doctor list
+  const handleDoctorSelectionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const docName = e.target.value;
+    setSelectedDoctorName(docName);
+
+    const match = ALL_41_DOCTORS.find((d) => d.name === docName);
+    if (match) {
+      setSelectedDept(match.department);
+      setConsultationFee(match.fee);
+    }
+  };
+
   const handleBookAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    // Clean label tag like "(Self)" or "(Parent)" for database storage
+    // Clean label tag like "(Self)" or "(Parent)" for backend storage
     const cleanPatientName = selectedPatientName.replace(/\s\([^)]+\)/, '').trim();
 
-    // 1. Calculate dynamic sequential token number
+    // 1. Calculate dynamic sequential token count directly from Supabase
     let calculatedToken = 1;
     try {
+      const searchKey = selectedDoctorName.includes('Chandrakanth')
+        ? 'Chandrakanth'
+        : selectedDoctorName.replace('Dr. ', '');
+
       const { count } = await supabase
         .from('patient_appointments')
         .select('*', { count: 'exact', head: true })
-        .eq('doctor_name', assignedDoctor);
+        .ilike('doctor_name', `%${searchKey}%`);
 
       calculatedToken = (count || 0) + 1;
     } catch (err) {
@@ -139,72 +218,56 @@ export default function BookAppointmentPage() {
       id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'apt_' + Date.now(),
       patient_id: 'NEX_9021',
       patient_name: cleanPatientName,
-      doctor_name: assignedDoctor,
+      doctor_name: selectedDoctorName,
       department: selectedDept,
       hospital_name: 'Regal Hospital',
       appointment_date: appointmentDate,
       slot_time: slotTime,
       fee: consultationFee,
-      reason: reason.trim() || 'General OPD Checkup',
+      reason: reason.trim() || 'General OPD Consultation',
       token_number: calculatedToken,
-      queue_status: 'WAITING',
+      queue_status: 'SCHEDULED',
       created_at: new Date().toISOString(),
     };
 
-    // 3. Save to Local Storage Cache
-    let existingAppts: any[] = [];
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('curasync_appointments');
-      if (saved) {
-        try {
-          existingAppts = JSON.parse(saved);
-        } catch (e) {}
-      }
-      localStorage.setItem(
-        'curasync_appointments',
-        JSON.stringify([newAppt, ...existingAppts])
-      );
-    }
-
-    // 4. Save directly into Supabase backend
+    // 3. Direct Cloud Insert to Supabase (patient_appointments & hms_opd_queue)
     try {
-      // Primary appointments table
       const { error: apptErr } = await supabase
         .from('patient_appointments')
         .insert([newAppt]);
 
-      if (apptErr) console.warn('Supabase appt write:', apptErr.message);
+      if (apptErr) {
+        console.error('Supabase appointments write error:', apptErr.message);
+        setErrorMessage(`Database sync notice: ${apptErr.message}`);
+      }
 
-      // Mirror to canonical appointments table for doctor dashboard realtime
-      const { error: doctorApptErr } = await supabase.from('appointments').insert([
-        {
-          patient_id: 'b0000000-0000-0000-0000-000000000002',
-          doctor_id: '56284599-9a5f-4672-9b53-b90e18146a00',
-          department: selectedDept,
-          reason_for_visit: reason.trim() || 'General OPD Checkup',
-          appointment_date: appointmentDate,
-          appointment_time: slotTime,
-          status: 'WAITING',
-        },
-      ]);
-
-      if (doctorApptErr) console.warn('Doctor appointments mirror write:', doctorApptErr.message);
-
-      // Mirror directly to HMS OPD Queue for Doctor Console
       const { error: queueErr } = await supabase
         .from('hms_opd_queue')
         .insert([newAppt]);
 
-      if (queueErr) console.warn('Supabase queue write:', queueErr.message);
+      if (queueErr) {
+        console.warn('Supabase queue write notice:', queueErr.message);
+      }
     } catch (err: any) {
-      console.warn('Backend sync completed with local cache fallback');
-    } finally {
-      setIsSubmitting(false);
-      setSuccess(true);
-      setTimeout(() => {
-        router.push('/patient/appointments');
-      }, 1000);
+      console.error('Backend write exception:', err);
     }
+
+    // 4. Save to Local Storage Cache
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('curasync_appointments');
+      const existing = saved ? JSON.parse(saved) : [];
+      localStorage.setItem(
+        'curasync_appointments',
+        JSON.stringify([newAppt, ...existing])
+      );
+    }
+
+    setIsSubmitting(false);
+    setSuccess(true);
+
+    setTimeout(() => {
+      router.push('/patient/appointments');
+    }, 1000);
   };
 
   return (
@@ -256,28 +319,46 @@ export default function BookAppointmentPage() {
           </select>
         </div>
 
-        {/* CLINICIAN & DEPARTMENT / FEE */}
+        {/* CLINICIAN (ALL 41 DOCTORS INCLUDED) */}
+        <div>
+          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
+            <User className="h-3.5 w-3.5 text-[#227B6B]" /> SELECT CLINICIAN (41 SPECIALISTS AVAILABLE) *
+          </label>
+          <select
+            value={selectedDoctorName}
+            onChange={handleDoctorSelectionChange}
+            className="w-full rounded-2xl border border-[#D5E8E3] bg-white p-4 text-xs font-black text-[#113831] focus:border-[#113831] focus:outline-none shadow-sm cursor-pointer"
+          >
+            {ALL_41_DOCTORS.map((doc) => (
+              <option key={doc.id} value={doc.name}>
+                {doc.name} — {doc.department} ({doc.fee})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* DEPARTMENT & FEE SUMMARY */}
         <div className="grid gap-6 md:grid-cols-2">
           <div>
             <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
-              <User className="h-3.5 w-3.5 text-[#227B6B]" /> SELECTED CONSULTANT
+              <Stethoscope className="h-3.5 w-3.5 text-[#227B6B]" /> CLINICAL DEPARTMENT
             </label>
             <input
               type="text"
               readOnly
-              value={assignedDoctor}
+              value={selectedDept}
               className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-4 text-xs font-black text-[#113831]"
             />
           </div>
 
           <div>
             <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
-              <Stethoscope className="h-3.5 w-3.5 text-[#227B6B]" /> DEPARTMENT & FEE
+              CONSULTATION FEE
             </label>
             <input
               type="text"
               readOnly
-              value={`${selectedDept} (${consultationFee})`}
+              value={consultationFee}
               className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-4 text-xs font-black text-[#113831]"
             />
           </div>
@@ -335,7 +416,7 @@ export default function BookAppointmentPage() {
           </div>
         </div>
 
-        {/* FACILITY CONFIRMATION */}
+        {/* FACILITY LOCATION */}
         <div className="flex items-center gap-2 text-xs font-bold text-[#227B6B] bg-[#EAF5F2]/40 p-3.5 rounded-2xl border border-[#D5E8E3]">
           <Building2 className="h-4 w-4 shrink-0 text-[#113831]" />
           <span>Consultation Location: <strong>Regal Hospital OPD Block</strong></span>
