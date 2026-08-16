@@ -96,17 +96,30 @@ function generateStandardUuid(): string {
   });
 }
 
+function isValidStandardUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
+/** Prefer registered profile UUID; fall back to Web Crypto UUID generation. */
+function resolveBookingPatientUuid(profilePatientId: string): string {
+  const registered = resolveRegisteredPatientUuid(profilePatientId);
+  if (isValidStandardUuid(registered)) return registered;
+  return generateStandardUuid();
+}
+
 function resolveRegisteredPatientUuid(sessionPatientId?: string | null): string {
   const resolved = resolvePatientDbId(sessionPatientId);
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    resolved,
-  )
-    ? resolved
-    : STATIC_PATIENT_UUID_FALLBACK;
+  return isValidStandardUuid(resolved) ? resolved : STATIC_PATIENT_UUID_FALLBACK;
 }
 
 function stripRelationshipTag(label: string): string {
   return label.replace(/\s\([^)]+\)/, '').trim();
+}
+
+function findDoctorDirectoryEntry(doctorName: string): DoctorDirectoryItem | undefined {
+  return ALL_41_DOCTORS.find((doctor) => doctor.name === doctorName);
 }
 
 function getDoctorSearchKey(doctorName: string): string {
@@ -147,17 +160,77 @@ type BookingPayload = {
   id: string;
   patient_id: string;
   patient_name: string;
+  doctor_id: string;
   doctor_name: string;
   department: string;
   hospital_name: string;
   appointment_date: string;
   slot_time: string;
+  appointment_time: string;
   fee: string;
   reason: string;
+  chief_complaint: string;
   token_number: number;
   queue_status: string;
   created_at: string;
 };
+
+/** Row shape aligned to Supabase schema cache for patient_appointments. */
+function toPatientAppointmentsInsertRow(payload: BookingPayload): Record<string, unknown> {
+  return {
+    id: payload.id,
+    patient_id: payload.patient_id,
+    patient_name: payload.patient_name,
+    doctor_id: payload.doctor_id,
+    doctor_name: payload.doctor_name,
+    department: payload.department,
+    hospital_name: REGAL_HOSPITAL,
+    appointment_date: payload.appointment_date,
+    slot_time: payload.slot_time,
+    appointment_time: payload.appointment_time,
+    fee: payload.fee,
+    reason: payload.reason,
+    token_number: payload.token_number,
+    queue_status: payload.queue_status,
+    created_at: payload.created_at,
+  };
+}
+
+function buildSchemaSafeBookingPayload(input: {
+  appointmentId: string;
+  patientId: string;
+  patientName: string;
+  doctorName: string;
+  doctorId: string;
+  department: string;
+  appointmentDate: string;
+  slotTime: string;
+  fee: string;
+  reason: string;
+  tokenNumber: number;
+}): BookingPayload {
+  const clinicalReason = input.reason.trim() || 'General OPD Consultation';
+  const createdAt = new Date().toISOString();
+
+  return {
+    id: input.appointmentId,
+    patient_id: input.patientId,
+    patient_name: input.patientName,
+    doctor_id: input.doctorId,
+    doctor_name: input.doctorName,
+    department: input.department,
+    hospital_name: REGAL_HOSPITAL,
+    appointment_date: input.appointmentDate,
+    slot_time: input.slotTime,
+    appointment_time: input.slotTime,
+    fee: input.fee,
+    reason: clinicalReason,
+    chief_complaint: clinicalReason,
+    token_number: input.tokenNumber,
+    queue_status: 'SCHEDULED',
+    created_at: createdAt,
+  };
+}
 
 async function calculateNextTokenNumber(
   doctorSearchKey: string,
@@ -189,14 +262,17 @@ async function mirrorToOpdQueueSafely(appointment: BookingPayload): Promise<void
       id: appointment.id,
       patient_id: appointment.patient_id,
       patient_name: appointment.patient_name,
+      doctor_id: appointment.doctor_id,
       doctor_name: appointment.doctor_name,
       department: appointment.department,
       hospital_name: REGAL_HOSPITAL,
       appointment_date: appointment.appointment_date,
       slot_time: appointment.slot_time,
+      appointment_time: appointment.appointment_time,
       token_number: appointment.token_number,
       queue_status: appointment.queue_status,
       reason: appointment.reason,
+      chief_complaint: appointment.chief_complaint,
       created_at: appointment.created_at,
     };
 
@@ -207,6 +283,19 @@ async function mirrorToOpdQueueSafely(appointment: BookingPayload): Promise<void
   } catch (mirrorErr) {
     console.warn('hms_opd_queue mirror exception (non-blocking):', mirrorErr);
   }
+}
+
+async function insertPrimaryPatientAppointment(
+  appointment: BookingPayload,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const insertRow = toPatientAppointmentsInsertRow(appointment);
+  const { error } = await supabase.from('patient_appointments').insert([insertRow]);
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  return { ok: true };
 }
 
 function applyClinicianFromUrlParams(
@@ -387,40 +476,41 @@ export default function BookAppointmentPage() {
       const calculatedToken = await calculateNextTokenNumber(doctorSearchKey, appointmentDate);
 
       const appointmentUuid = generateStandardUuid();
-      const registeredPatientUuid = resolveRegisteredPatientUuid(patientDbId);
+      const bookingPatientUuid = resolveBookingPatientUuid(patientDbId);
+      const doctorEntry = findDoctorDirectoryEntry(selectedDoctorName);
 
-      const newAppt: BookingPayload = {
-        id: appointmentUuid,
-        patient_id: registeredPatientUuid,
-        patient_name: cleanPatientName,
-        doctor_name: selectedDoctorName,
+      const newAppt = buildSchemaSafeBookingPayload({
+        appointmentId: appointmentUuid,
+        patientId: bookingPatientUuid,
+        patientName: cleanPatientName,
+        doctorName: selectedDoctorName,
+        doctorId: doctorEntry?.id ?? 'RH-UNASSIGNED',
         department: selectedDept,
-        hospital_name: REGAL_HOSPITAL,
-        appointment_date: appointmentDate,
-        slot_time: slotTime,
+        appointmentDate,
+        slotTime,
         fee: consultationFee,
-        reason: reason.trim() || 'General OPD Consultation',
-        token_number: calculatedToken,
-        queue_status: 'SCHEDULED',
-        created_at: new Date().toISOString(),
-      };
+        reason,
+        tokenNumber: calculatedToken,
+      });
 
-      // Primary source of truth — booking succeeds only when this insert succeeds.
-      const { error: apptErr } = await supabase.from('patient_appointments').insert([newAppt]);
+      // Schema-aligned primary insert: slot_time + appointment_time both set to selected slot.
+      const primaryInsert = await insertPrimaryPatientAppointment(newAppt);
 
-      if (apptErr) {
-        console.error('Supabase patient_appointments insert failed:', apptErr.message);
+      if (!primaryInsert.ok) {
+        console.error('Supabase patient_appointments insert failed:', primaryInsert.message);
         setErrorMessage(
-          `Booking could not be saved to the hospital cloud queue. ${apptErr.message}`,
+          `Booking could not be saved to the hospital cloud queue. ${primaryInsert.message}`,
         );
         return;
       }
 
-      // Instant local mirror for immediate appointments list visibility.
       mirrorAppointmentToLocalStorage(newAppt);
 
-      // Secondary table mirror — isolated, non-blocking, schema-tolerant.
-      await mirrorToOpdQueueSafely(newAppt);
+      try {
+        await mirrorToOpdQueueSafely(newAppt);
+      } catch (mirrorErr) {
+        console.warn('hms_opd_queue isolated mirror failure (non-blocking):', mirrorErr);
+      }
 
       setBookedSummary({
         token: calculatedToken,
