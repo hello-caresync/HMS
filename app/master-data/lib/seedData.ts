@@ -1,5 +1,6 @@
 import type { MasterDataRegistry } from '../types';
 import { createDefaultOpdTimings } from '../types';
+import { formatINR } from '@/lib/utils/currency';
 
 export const SEED_MASTER_DATA: MasterDataRegistry = {
   departments: [
@@ -144,11 +145,7 @@ export const ROOM_TYPES = ['General', 'Private', 'ICU'] as const;
 export const BED_STATUSES = ['Vacant', 'Occupied', 'Maintenance', 'Reserved'] as const;
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return formatINR(amount);
 }
 
 export function calculatePriceWithGst(basePrice: number, gstPercentage: number): number {

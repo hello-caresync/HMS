@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { formatINR } from '@/lib/utils/currency';
 
 interface Transaction {
   id: string;
@@ -232,7 +233,7 @@ export default function DashboardView({ revenue, patientSales, hospitalSales, or
                   </td>
                   <td className="py-3.5 px-4 text-slate-950 font-bold">{tx.date}</td>
                   <td className="py-3.5 px-4 text-right font-mono font-black text-slate-900">
-                    ₹{tx.amount.toLocaleString('en-IN')}
+                    {formatINR(tx.amount)}
                   </td>
                 </tr>
               ))}

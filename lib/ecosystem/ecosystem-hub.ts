@@ -7,6 +7,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { mapHubToBusEvent } from '@/lib/events/event-bus';
+import { formatINR } from '@/lib/utils/currency';
 
 import type { EcosystemAppointment, AppointmentStatus } from '@/lib/ecosystem/types';
 import { useEcosystemStore } from '@/lib/ecosystem/store';
@@ -718,7 +719,7 @@ export async function hubProcessPayment(
     {
       role: 'hospital',
       title: 'Payment Received',
-      body: `${inv.patientName} · ₹${amount.toLocaleString('en-IN')} via ${method}`,
+      body: `${inv.patientName} · ${formatINR(amount)} via ${method}`,
       category: 'billing',
       relatedId: invoiceId,
     },
@@ -726,7 +727,7 @@ export async function hubProcessPayment(
       role: 'patient',
       patientId: inv.patientId,
       title: 'Payment Success',
-      body: `₹${amount.toLocaleString('en-IN')} received for invoice ${inv.invoiceNumber}.`,
+      body: `${formatINR(amount)} received for invoice ${inv.invoiceNumber}.`,
       category: 'billing',
       relatedId: invoiceId,
     },

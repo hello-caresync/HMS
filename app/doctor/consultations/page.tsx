@@ -7,7 +7,11 @@ import ConsultationWorkspaceClient from './[appointmentId]/ConsultationWorkspace
 
 function ConsultationWorkspace() {
   const searchParams = useSearchParams();
-  const appointmentId = searchParams.get('appointmentId');
+  const appointmentId =
+    searchParams.get('appointmentId') ||
+    searchParams.get('id') ||
+    searchParams.get('appointment_id') ||
+    '';
 
   if (!appointmentId) {
     return (

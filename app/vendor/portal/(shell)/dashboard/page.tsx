@@ -1,7 +1,7 @@
 'use client';
 
-import DashboardWorkspace from '@/components/vendor/workspaces/DashboardWorkspace';
+import VendorDashboard from '@/components/vendor/VendorDashboard';
 
 export default function VendorDashboardPage() {
-  return <DashboardWorkspace />;
+  return <VendorDashboard />;
 }

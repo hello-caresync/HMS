@@ -25,6 +25,9 @@ import {
 import { toast } from 'sonner';
 
 import { createClient } from '@/lib/supabase/client';
+import { formatINR } from '@/lib/utils/currency';
+import { generatePostConsultationBill } from '@/lib/hospital/operations/consultation-billing-sync';
+import { DEFAULT_PATIENT_ID } from '@/lib/doctor/command-center/supabase-service';
 import {
   admitAppointmentToQueue,
   bypassToNextWaiting,
@@ -34,7 +37,6 @@ import {
   getUpcomingBookings,
   isInConsultationStatus,
   isWaitingStatus,
-  updateAppointmentRecord,
   type LiveAppointmentRecord,
 } from '@/lib/doctor/appointments-realtime';
 
@@ -75,7 +77,7 @@ function formatFeeLabel(fee?: string): string {
   if (!fee) return '—';
   const numeric = Number(String(fee).replace(/[^\d.]/g, ''));
   if (Number.isNaN(numeric)) return fee;
-  return `₹${numeric.toLocaleString('en-IN')}`;
+  return formatINR(numeric);
 }
 
 function formatAppointmentDateLabel(date?: string): string {
@@ -109,6 +111,12 @@ function queueStatusBadgeClass(status: string): string {
 function formatTokenLabel(token?: string, fallbackIndex?: number): string {
   if (token) return token.startsWith('T-') ? token : `T-${String(token).padStart(2, '0')}`;
   return `T-${String((fallbackIndex ?? 0) + 1).padStart(2, '0')}`;
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value || '',
+  );
 }
 
 const getRegisteredPatientName = (patient: unknown): string => {
@@ -219,6 +227,42 @@ function normalizeAppointmentRow(
   };
 }
 
+async function tryMarkInConsultation(appointmentId: string): Promise<void> {
+  const supabase = createClient();
+
+  try {
+    const patientUpdate = await supabase
+      .from('patient_appointments')
+      .update({ queue_status: 'IN_CONSULTATION', status: 'IN_CONSULTATION' })
+      .eq('id', appointmentId);
+
+    if (patientUpdate.error) {
+      console.warn(
+        'Non-fatal patient_appointments status update warning:',
+        patientUpdate.error.message,
+      );
+    }
+
+    const appointmentUpdate = await supabase
+      .from('appointments')
+      .update({ status: 'IN_CONSULTATION' })
+      .eq('id', appointmentId);
+
+    if (appointmentUpdate.error) {
+      const byAppointmentId = await supabase
+        .from('appointments')
+        .update({ status: 'IN_CONSULTATION' })
+        .eq('appointment_id', appointmentId);
+
+      if (byAppointmentId.error) {
+        console.warn('Non-fatal appointments status update warning:', byAppointmentId.error.message);
+      }
+    }
+  } catch (dbErr) {
+    console.warn('Non-fatal status update warning:', dbErr);
+  }
+}
+
 export default function DoctorDashboardPage() {
   const router = useRouter();
 
@@ -233,7 +277,7 @@ export default function DoctorDashboardPage() {
 
   const [appointments, setAppointments] = useState<LiveAppointmentRecord[]>([]);
   const [activePatient, setActivePatient] = useState<LiveAppointmentRecord | null>(null);
-  const [activeTab, setActiveTab] = useState<'queue' | 'appointments'>('queue');
+  const [activeTab, setActiveTab] = useState<'queue' | 'appointments' | 'completed'>('queue');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [callingNext, setCallingNext] = useState(false);
@@ -441,12 +485,13 @@ export default function DoctorDashboardPage() {
     }
   };
 
-  const handleStartConsultation = () => {
+  const handleStartConsultation = async () => {
     if (!activePatient?.id) {
       toast.error('No active patient selected for consultation');
       return;
     }
-    void handleStartConsultationForCard(activePatient);
+
+    await handleStartConsultationForCard(activePatient);
   };
 
   const handleStartConsultationForCard = async (appt: LiveAppointmentRecord) => {
@@ -456,35 +501,138 @@ export default function DoctorDashboardPage() {
     }
 
     setCardActionId(appt.id);
-    try {
-      await updateAppointmentRecord(appt.id, {
-        status: 'IN_CONSULTATION',
-        queue_status: 'IN_CONSULTATION',
-      });
-      setActivePatient(appt);
-      router.push(`/doctor/consultations?appointmentId=${appt.id}`);
-    } catch (err) {
-      console.error('[Start Consultation]:', err);
-      toast.error('Failed to start consultation');
-    } finally {
-      setCardActionId(null);
-    }
+
+    await tryMarkInConsultation(appt.id);
+
+    setActivePatient({ ...appt, status: 'IN_CONSULTATION' });
+    router.push(`/doctor/consultations?appointmentId=${appt.id}`);
+
+    setCardActionId(null);
   };
 
-  const handleMarkDone = async (appt: LiveAppointmentRecord) => {
-    if (!appt.id) return;
+  const handleMarkDone = async (targetPatient?: LiveAppointmentRecord) => {
+    const patientToComplete = targetPatient || activePatient;
+    if (!patientToComplete?.id) {
+      toast.error('No appointment selected to complete');
+      return;
+    }
 
-    setCardActionId(appt.id);
-    try {
-      await updateAppointmentRecord(appt.id, {
-        status: 'COMPLETED',
-        queue_status: 'COMPLETED',
+    const appointmentId = patientToComplete.id;
+    setCardActionId(appointmentId);
+
+    const markCompletedInList = (list: LiveAppointmentRecord[]) =>
+      list.map((item) =>
+        item.id === appointmentId ? { ...item, status: 'COMPLETED' } : item,
+      );
+
+    const advanceToNextPatient = (list: LiveAppointmentRecord[]) => {
+      const nextPatient = list.find(
+        (a) =>
+          a.id !== appointmentId &&
+          a.status.toUpperCase() !== 'COMPLETED' &&
+          (isWaitingStatus(a.status) || isInConsultationStatus(a.status)),
+      );
+      setActivePatient(nextPatient || null);
+    };
+
+    const applyOptimisticCompleted = () => {
+      setAppointments((prev) => {
+        const updated = markCompletedInList(prev);
+        advanceToNextPatient(updated);
+        return updated;
       });
-      await fetchLiveAppointments(true);
-      toast.success(`${getRegisteredPatientName(appt)} marked as completed`);
-    } catch (err) {
-      console.error('[Mark Done]:', err);
-      toast.error('Failed to complete appointment');
+      setActiveTab('completed');
+    };
+
+    try {
+      const supabase = createClient();
+      let dbUpdated = false;
+
+      if (isUuid(appointmentId)) {
+        const patientApptUpdate = await supabase
+          .from('patient_appointments')
+          .update({ queue_status: 'COMPLETED', status: 'COMPLETED' })
+          .eq('id', appointmentId);
+        if (!patientApptUpdate.error) dbUpdated = true;
+
+        const apptUpdate = await supabase
+          .from('appointments')
+          .update({ status: 'COMPLETED' })
+          .eq('id', appointmentId);
+        if (!apptUpdate.error) dbUpdated = true;
+
+        if (apptUpdate.error) {
+          const apptByAppointmentId = await supabase
+            .from('appointments')
+            .update({ status: 'COMPLETED' })
+            .eq('appointment_id', appointmentId);
+          if (!apptByAppointmentId.error) dbUpdated = true;
+        }
+      }
+
+      if (!dbUpdated && patientToComplete.token_number) {
+        const tokenValue = patientToComplete.token_number;
+        const numericToken = Number(String(tokenValue).replace(/[^\d]/g, ''));
+
+        const patientByToken = await supabase
+          .from('patient_appointments')
+          .update({ queue_status: 'COMPLETED', status: 'COMPLETED' })
+          .eq('token_number', tokenValue);
+        if (!patientByToken.error) dbUpdated = true;
+
+        if (!dbUpdated && !Number.isNaN(numericToken)) {
+          const patientByNumericToken = await supabase
+            .from('patient_appointments')
+            .update({ queue_status: 'COMPLETED', status: 'COMPLETED' })
+            .eq('token_number', numericToken);
+          if (!patientByNumericToken.error) dbUpdated = true;
+        }
+
+        const apptByToken = await supabase
+          .from('appointments')
+          .update({ status: 'COMPLETED' })
+          .eq('token_number', tokenValue);
+        if (!apptByToken.error) dbUpdated = true;
+
+        if (apptByToken.error && !Number.isNaN(numericToken)) {
+          const apptByNumericToken = await supabase
+            .from('appointments')
+            .update({ status: 'COMPLETED' })
+            .eq('token_number', numericToken);
+          if (!apptByNumericToken.error) dbUpdated = true;
+        }
+      }
+
+      if (!dbUpdated) {
+        throw new Error('No matching appointment row was updated');
+      }
+
+      const billResult = await generatePostConsultationBill(supabase, {
+        appointmentId,
+        patientId: patientToComplete.patient_id || DEFAULT_PATIENT_ID,
+        patientName: getRegisteredPatientName(patientToComplete),
+        doctorName: patientToComplete.doctor_name,
+        consultationFee: patientToComplete.fee,
+      });
+      if (billResult.ok && billResult.bill && !billResult.skipped) {
+        toast.info(
+          `Bill ${billResult.bill.invoice_number} sent to patient & cashier desk.`,
+        );
+      }
+
+      toast.success(
+        `Encounter with ${getRegisteredPatientName(patientToComplete)} completed.`,
+      );
+
+      applyOptimisticCompleted();
+      void fetchLiveAppointments(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Error completing appointment:', message || err);
+      toast.error('Could not update status in database, updated locally.');
+
+      applyOptimisticCompleted();
+      void fetchLiveAppointments(true);
     } finally {
       setCardActionId(null);
     }
@@ -610,7 +758,7 @@ export default function DoctorDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         <div className="lg:col-span-5 bg-white rounded-2xl border border-[#D5E8E3] shadow-sm p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-[#EAF5F2] pb-3">
-            <div className="flex gap-1.5 p-1 bg-[#F4FAF8] rounded-xl">
+            <div className="flex flex-wrap gap-1.5 p-1 bg-[#F4FAF8] rounded-xl">
               <button
                 onClick={() => setActiveTab('queue')}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
@@ -619,7 +767,7 @@ export default function DoctorDashboardPage() {
                     : 'text-[#227B6B] hover:text-[#113831]'
                 }`}
               >
-                Live Queue ({liveQueue.length})
+                Live Queue ({waitingQueue.length})
               </button>
               <button
                 onClick={() => setActiveTab('appointments')}
@@ -630,6 +778,16 @@ export default function DoctorDashboardPage() {
                 }`}
               >
                 All Bookings ({filteredAppointments.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('completed')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  activeTab === 'completed'
+                    ? 'bg-white text-[#0E2924] shadow-sm border border-[#D5E8E3]'
+                    : 'text-[#227B6B] hover:text-[#113831]'
+                }`}
+              >
+                Completed ({completedQueue.length})
               </button>
             </div>
 
@@ -915,6 +1073,89 @@ export default function DoctorDashboardPage() {
               )}
             </div>
           )}
+
+          {activeTab === 'completed' && (
+            <div className="space-y-3 max-h-[480px] overflow-y-auto pr-0.5">
+              {completedQueue.length === 0 ? (
+                <div className="py-12 text-center text-[#227B6B]">
+                  <CheckCircle2 className="w-8 h-8 mx-auto text-[#A6E2D8] mb-2" />
+                  <p className="font-bold text-xs text-[#113831]">No completed consultations yet</p>
+                  <p className="text-[11px] text-[#227B6B] mt-1">
+                    Finished encounters appear here after you click Done.
+                  </p>
+                </div>
+              ) : (
+                completedQueue.map((appt, idx) => {
+                  const complaint =
+                    appt.chief_complaint && appt.chief_complaint !== 'OPD Review'
+                      ? appt.chief_complaint
+                      : appt.symptoms || 'General consultation review';
+
+                  return (
+                    <div
+                      key={appt.id}
+                      className="p-4 rounded-xl border border-[#A6E2D8] bg-[#EAF5F2]/40 space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <span className="w-10 h-10 rounded-xl bg-[#113831] text-white font-black text-xs flex items-center justify-center shrink-0">
+                            {formatTokenLabel(appt.token_number, idx)}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="font-black text-sm text-[#0E2924] truncate">
+                              {getRegisteredPatientName(appt)}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold bg-[#113831] text-[#A6E2D8]">
+                                <Building2 className="w-2.5 h-2.5" />
+                                {REGAL_HOSPITAL}
+                              </span>
+                              <span className="px-2 py-0.5 text-[9px] font-extrabold rounded-md border bg-[#EAF5F2] text-[#113831] border-[#A6E2D8] uppercase">
+                                Completed
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div className="flex items-center gap-1.5 text-[#227B6B]">
+                          <Calendar className="w-3 h-3 shrink-0" />
+                          <span className="font-semibold text-[#113831]">
+                            {formatAppointmentDateLabel(appt.appointment_date)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[#227B6B]">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          <span className="font-semibold text-[#113831]">
+                            {appt.time_slot || '—'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[#227B6B] col-span-2">
+                          <Banknote className="w-3 h-3 shrink-0" />
+                          <span className="font-semibold text-[#113831]">
+                            Fee: {formatFeeLabel(appt.fee)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-white/80 border border-[#D5E8E3]">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#227B6B] mb-0.5">
+                          Consultation Summary
+                        </p>
+                        <p className="text-xs font-medium text-[#0E2924] line-clamp-2">{complaint}</p>
+                        {appt.doctor_name && (
+                          <p className="text-[10px] font-semibold text-[#227B6B] mt-1">
+                            Clinician: {appt.doctor_name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
 
         <div className="lg:col-span-7 bg-white rounded-2xl border border-[#D5E8E3] shadow-sm p-5 space-y-4">
@@ -1018,7 +1259,7 @@ export default function DoctorDashboardPage() {
                   Start Consultation
                 </button>
                 <button
-                  onClick={() => void handleMarkDone(activePatient)}
+                  onClick={() => void handleMarkDone(activePatient ?? undefined)}
                   disabled={cardActionId === activePatient.id}
                   className="py-3 font-bold text-sm rounded-xl border border-[#A6E2D8] bg-[#EAF5F2] hover:bg-[#A6E2D8] text-[#113831] transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-60"
                 >

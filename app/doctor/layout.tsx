@@ -10,7 +10,6 @@ import {
   Calendar,
   User,
   LogOut,
-  Bell,
   ShieldCheck,
   Loader2,
   LayoutDashboard,
@@ -19,6 +18,7 @@ import {
   Siren,
 } from 'lucide-react';
 import DoctorProviders from '@/components/doctor/DoctorProviders';
+import { EcosystemNotificationBell } from '@/components/ecosystem/EcosystemNotificationBell';
 
 type LayoutDoctorSession = {
   doctor_name?: string;
@@ -172,13 +172,11 @@ function DoctorShell({ children }: { children: React.ReactNode }) {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E8F1F8] text-[#173F5F] transition hover:bg-[#20639B]/10"
-              aria-label="Notifications"
-            >
-              <Bell className="h-4 w-4" />
-            </button>
+            <EcosystemNotificationBell
+              app="doctor"
+              recipientId={doctorSession?.employeeId}
+              className="bg-[#E8F1F8] text-[#173F5F] hover:bg-[#20639B]/10"
+            />
             <span className="rounded-full bg-[#173F5F] px-3.5 py-1 text-[10px] font-black uppercase text-white shadow-sm">
               {doctorSession?.employeeId || 'RH-D01'}
             </span>

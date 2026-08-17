@@ -1,157 +1,259 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Lock, Mail, ShieldCheck, User } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { CheckCheck, RefreshCw } from 'lucide-react';
 
-export default function PatientLoginPageClient() {
-  const router = useRouter();
-  const [animationStep, setAnimationStep] = useState<'walking' | 'arrived'>('walking');
-  const [isRegistering, setIsRegistering] = useState(true); // Default matching video "Register now"
-  const [isLoading, setIsLoading] = useState(false);
+import { VendorFeedbackBanner, useVendorFeedback } from '@/components/vendor/ui/useVendorFeedback';
+import { VendorModuleHeader } from '@/components/vendor/ui/VendorModuleHeader';
+import { vendorClasses } from '@/lib/vendor/theme';
+import { matchesPurchaseOrderLifecycle } from '@/lib/vendor/lifecycle';
+import { useActiveHospitalCode, useVendorAppStore } from '@/lib/vendor/store/vendor-app-store';
+import {
+  formatDate,
+  formatInr,
+  loadPurchaseOrders,
+  poItemDetails,
+  setPurchaseOrderStatus,
+  subscribeVendorPortal,
+  type PoStatus,
+  type PurchaseOrder,
+} from '@/lib/vendor/v0/portal-service';
+
+/** Nexora Vendor · live purchase order workspace with realtime sync and bulk accept. */
+function PurchaseOrdersWorkspace() {
+  const { feedback, showSuccess, showError } = useVendorFeedback();
+  const hospitalCode = useActiveHospitalCode();
+  const lifecycleStage = useVendorAppStore((s) => s.workflowStage);
+  const [orders, setOrders] = useState<PurchaseOrder[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const result = await loadPurchaseOrders(60, hospitalCode);
+      setOrders(result.rows);
+      setLoadError(result.error ?? null);
+    } catch (error) {
+      setOrders([]);
+      setLoadError(error instanceof Error ? error.message : 'Could not load purchase orders.');
+    }
+  }, [hospitalCode]);
 
   useEffect(() => {
-    // 1. Character walks across screen for 2.2 seconds, then triggers form dropdown
-    const timer = setTimeout(() => {
-      setAnimationStep('arrived');
-    }, 2200);
+    setLoading(true);
+    void (async () => {
+      await load();
+      setLoading(false);
+    })();
+  }, [load]);
 
-    return () => clearTimeout(timer);
-  }, []);
+  useEffect(
+    () =>
+      subscribeVendorPortal(
+        () => void load(),
+        {
+          onPurchaseOrderInsert: (row) => {
+            setOrders((current) => [row, ...current.filter((item) => item.id !== row.id)]);
+          },
+          onPurchaseOrderUpdate: (row) => {
+            setOrders((current) => current.map((item) => (item.id === row.id ? row : item)));
+          },
+          onPurchaseOrderDelete: (id) => {
+            setOrders((current) => current.filter((item) => item.id !== id));
+          },
+        },
+        { hospitalCode },
+      ),
+    [load, hospitalCode],
+  );
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push('/patient/appointments');
-    }, 1000);
+  const rows = useMemo(
+    () => orders.filter((order) => matchesPurchaseOrderLifecycle(lifecycleStage, order.status)),
+    [lifecycleStage, orders],
+  );
+
+  const selectableIds = useMemo(
+    () => rows.filter((order) => order.status.toUpperCase() === 'ISSUED').map((order) => order.id),
+    [rows],
+  );
+
+  const selectedVisible = selected.filter((id) => selectableIds.includes(id));
+  const allSelected = selectableIds.length > 0 && selectedVisible.length === selectableIds.length;
+
+  const toggleRow = (id: string) => {
+    setSelected((current) =>
+      current.includes(id) ? current.filter((value) => value !== id) : [...current, id],
+    );
+  };
+
+  const toggleAll = () => {
+    setSelected(allSelected ? [] : selectableIds);
+  };
+
+  const applyStatus = async (ids: string[], status: PoStatus) => {
+    if (ids.length === 0) return;
+    setBusy(true);
+    setOrders((current) => current.map((row) => (ids.includes(row.id) ? { ...row, status } : row)));
+
+    const result = await setPurchaseOrderStatus(ids, status);
+    setBusy(false);
+    setSelected([]);
+
+    if (!result.ok) {
+      showError(result.error ?? 'Could not update the purchase orders.');
+      await load();
+      return;
+    }
+
+    const label = status === 'ACCEPTED' ? 'accepted' : 'rejected';
+    showSuccess(`${ids.length} order${ids.length === 1 ? '' : 's'} ${label}.`);
+    await load();
   };
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#2A3950] font-sans text-white">
-      
-      {/* Container Box matching video aspect ratio */}
-      <div className="relative flex h-[620px] w-full max-w-4xl items-center justify-center overflow-hidden rounded-xl border border-slate-700 bg-[#253246] shadow-2xl p-6">
-        
-        {/* WALKING CHARACTER / HERO ILLUSTRATION */}
-        <div
-          className={`absolute bottom-16 flex flex-col items-center transition-all duration-[1800ms] cubic-bezier(0.25, 1, 0.5, 1) ${
-            animationStep === 'walking'
-              ? 'left-[10%] scale-110'
-              : 'left-[12%] md:left-[16%] scale-100'
-          }`}
-        >
-          {/* Animated Walking/Bouncing Character Placeholder */}
-          <div className="relative flex h-52 w-40 flex-col items-center justify-end">
-            <div className="relative flex h-36 w-36 items-center justify-center rounded-full bg-[#572E54] shadow-2xl animate-bounce [animation-duration:1.2s]">
-              {/* Character head & body SVG / image */}
-              <svg className="h-24 w-24 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="7" r="4" />
-                <path d="M5.5 21a8.38 8.38 0 0113 0" />
-              </svg>
+    <div className="space-y-6">
+      <VendorModuleHeader
+        title="Purchase Orders"
+        description="Incoming POs from every partner hospital, synced live from Supabase."
+        actions={
+          <>
+            <button
+              type="button"
+              disabled={busy || selectedVisible.length === 0}
+              onClick={() => void applyStatus(selectedVisible, 'ACCEPTED')}
+              className={vendorClasses.btnPrimary}
+            >
+              <CheckCheck className="h-4 w-4" aria-hidden />
+              Bulk accept selected{selectedVisible.length > 0 ? ` (${selectedVisible.length})` : ''}
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void load()}
+              className={vendorClasses.btnGhost}
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden />
+              Refresh
+            </button>
+          </>
+        }
+      />
+
+      <VendorFeedbackBanner feedback={feedback} />
+
+      {loadError ? (
+        <p className="rounded-lg border border-vendor-danger/30 bg-vendor-danger/5 px-4 py-2 text-sm font-medium text-vendor-danger">
+          {loadError}
+        </p>
+      ) : null}
+
+      {loading ? (
+        <p className="text-sm font-medium text-vendor-muted">Loading purchase orders…</p>
+      ) : rows.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-vendor-accent/40 px-4 py-10 text-center text-sm font-medium text-vendor-muted">
+          No purchase orders in this view.
+        </p>
+      ) : (
+        <div className="w-full overflow-hidden rounded-xl border border-amber-200/70 bg-white shadow-sm">
+          <div className="grid grid-cols-12 items-center gap-4 border-b border-amber-100 bg-[#FFF9ED] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
+            <div className="col-span-1 flex items-center">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={toggleAll}
+                disabled={selectableIds.length === 0}
+                aria-label="Select all issued orders"
+                className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+              />
             </div>
-            {/* Ground Shadow */}
-            <div className="mt-2 h-3 w-28 rounded-full bg-black/40 blur-sm animate-pulse" />
+            <div className="col-span-2">PO Number</div>
+            <div className="col-span-2">Hospital</div>
+            <div className="col-span-3">Items</div>
+            <div className="col-span-1">Received</div>
+            <div className="col-span-1 text-right">Total</div>
+            <div className="col-span-1 text-center">Status</div>
+            <div className="col-span-1 text-right">Actions</div>
           </div>
-        </div>
 
-        {/* DROPDOWN / SLIDE-DOWN FORM (Appears right after walking finishes) */}
-        <div
-          className={`absolute right-8 md:right-16 w-full max-w-md transition-all duration-1000 ease-out ${
-            animationStep === 'arrived'
-              ? 'top-10 opacity-100 translate-y-0'
-              : '-top-full opacity-0 -translate-y-20 pointer-events-none'
-          }`}
-        >
-          <div className="rounded-2xl bg-white p-8 text-[#2D232A] shadow-2xl border border-slate-100">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-black text-[#482A41]">
-                  {isRegistering ? 'Register now' : 'Sign In'}
-                </h2>
-                <p className="text-xs text-[#7A6374]">
-                  {isRegistering
-                    ? 'Enter your info to register for upcoming medical sessions'
-                    : 'Enter your account credentials to continue'}
-                </p>
-              </div>
-              <span className="rounded-full bg-[#572E54]/10 p-2.5 text-[#572E54]">
-                <ShieldCheck className="h-5 w-5" />
-              </span>
-            </div>
+          <div className="divide-y divide-amber-100/60">
+            {rows.map((po, index) => {
+              const pending = po.status.toUpperCase() === 'ISSUED';
+              const itemDetails = po.item_details || poItemDetails(po) || 'Medical Consumables';
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {isRegistering && (
-                <div>
-                  <label className="mb-1 block text-xs font-bold uppercase text-[#7A6374]">
-                    What is your name?
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3.5 top-3 h-4 w-4 text-[#7A6374]" />
+              return (
+                <div
+                  key={po.id || `${po.po_number}-${index}`}
+                  className="grid grid-cols-12 items-center gap-4 px-6 py-4 text-sm transition-colors hover:bg-amber-50/40"
+                >
+                  <div className="col-span-1 flex items-center">
                     <input
-                      type="text"
-                      required
-                      placeholder="Enter your name"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 focus:border-[#572E54] focus:bg-white focus:outline-none"
+                      type="checkbox"
+                      checked={selected.includes(po.id)}
+                      onChange={() => toggleRow(po.id)}
+                      disabled={!pending}
+                      aria-label={`Select ${po.po_number}`}
+                      className="h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
                     />
                   </div>
+                  <div className="col-span-2 font-semibold text-slate-800">{po.po_number}</div>
+                  <div className="col-span-2 text-slate-600">{po.hospital_name || po.hospital_code}</div>
+                  <div className="col-span-3 truncate text-slate-600" title={itemDetails}>
+                    {itemDetails}
+                  </div>
+                  <div className="col-span-1 text-xs text-slate-500">{formatDate(po.created_at)}</div>
+                  <div className="col-span-1 text-right font-medium text-slate-900">
+                    {formatInr(Number(po.total_amount))}
+                  </div>
+                  <div className="col-span-1 text-center">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        po.status === 'ISSUED'
+                          ? 'bg-amber-100 text-amber-800'
+                          : po.status === 'ACCEPTED'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : po.status === 'DISPATCHED'
+                              ? 'bg-blue-100 text-blue-800'
+                              : po.status === 'REJECTED'
+                                ? 'bg-rose-100 text-rose-800'
+                                : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {po.status}
+                    </span>
+                  </div>
+                  <div className="col-span-1 flex items-center justify-end gap-2">
+                    {pending ? (
+                      <>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void applyStatus([po.id], 'ACCEPTED')}
+                          className="rounded-md bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-amber-600 disabled:opacity-60"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void applyStatus([po.id], 'REJECTED')}
+                          className="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-60"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
-              )}
-
-              <div>
-                <label className="mb-1 block text-xs font-bold uppercase text-[#7A6374]">
-                  Enter your email address:
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-3 h-4 w-4 text-[#7A6374]" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="Enter your email"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 focus:border-[#572E54] focus:bg-white focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-bold uppercase text-[#7A6374]">
-                  Password:
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-3 h-4 w-4 text-[#7A6374]" />
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 focus:border-[#572E54] focus:bg-white focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="mt-4 w-full rounded-xl bg-[#572E54] py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#482A41] active:scale-98 disabled:opacity-50"
-              >
-                {isLoading ? 'Processing...' : isRegistering ? 'Submit' : 'Login'}
-              </button>
-            </form>
-
-            <div className="mt-5 text-center text-xs font-medium text-[#7A6374]">
-              {isRegistering ? 'Already registered?' : "Don't have an account?"}{' '}
-              <button
-                type="button"
-                onClick={() => setIsRegistering(!isRegistering)}
-                className="font-bold text-[#572E54] underline hover:text-[#482A41]"
-              >
-                {isRegistering ? 'Sign in here' : 'Register now'}
-              </button>
-            </div>
+              );
+            })}
           </div>
         </div>
-
-      </div>
+      )}
     </div>
   );
 }
+
+export default PurchaseOrdersWorkspace;
+export { PurchaseOrdersWorkspace };

@@ -1,3 +1,5 @@
+import { formatINR } from '@/lib/utils/currency';
+
 export type ReportDimension =
   | 'patient'
   | 'revenue'
@@ -69,11 +71,7 @@ export const DIMENSION_LABELS: Record<ReportDimension, string> = {
 };
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return formatINR(amount);
 }
 
 export function formatTimestamp(iso: string): string {

@@ -2,6 +2,8 @@
 
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
+import { formatINR } from '@/lib/utils/currency';
+
 import { computeInvoiceTotals, validateSplitTotal } from '../lib/calculations';
 import {
   createDraftInvoice,
@@ -129,7 +131,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
       } else if (Math.abs(paymentAmount - grandTotal) > 0.01) {
         return {
           success: false,
-          error: `Payment amount must match Grand Total ₹${grandTotal.toLocaleString('en-IN')}`,
+          error: `Payment amount must match Grand Total ${formatINR(grandTotal)}`,
         };
       }
 

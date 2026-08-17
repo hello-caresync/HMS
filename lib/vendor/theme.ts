@@ -14,7 +14,7 @@ export const VENDOR_BRAND = {
   danger: '#E76F51',
   emergency: '#E76F51',
   muted: '#6B6B6B',
-  sidebar: '#2B2B2B',
+  sidebar: '#1E1E1E',
 } as const;
 
 export const vendorClasses = {

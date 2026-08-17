@@ -363,9 +363,7 @@ export function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
-export function formatInr(amount: number): string {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
-}
+export { formatINR as formatInr } from '@/lib/utils/currency';
 
 export function searchUniversal(query: string): UniversalSearchResult[] {
   const q = query.trim().toLowerCase();

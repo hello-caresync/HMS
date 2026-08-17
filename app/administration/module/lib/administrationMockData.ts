@@ -316,9 +316,7 @@ export const PATIENT_LOAD_FORECAST = [
   { day: 'Sun', opd: 290, er: 15, ipd: 298 },
 ];
 
-export function formatInr(amount: number): string {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
-}
+export { formatINR as formatInr } from '@/lib/utils/currency';
 
 export function formatInrCr(amount: number): string {
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;

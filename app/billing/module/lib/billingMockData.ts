@@ -8,6 +8,7 @@ import type {
   PaymentMode,
 } from '../billingNav.types';
 import { advanceClaimFromDenial, advanceClaimStage } from '../billingNav.types';
+import { formatINR } from '@/lib/utils/currency';
 
 export type BillingQueueItem = {
   id: string;
@@ -268,13 +269,11 @@ export function searchBilling(query: string, items: BillingQueueItem[]): number 
   ).length;
 }
 
-export function formatInr(amount: number): string {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
-}
+export { formatINR as formatInr } from '@/lib/utils/currency';
 
 export function formatCr(amount: number): string {
-  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
-  return formatInr(amount);
+  if (amount >= 10000000) return `${formatINR(amount / 10000000, { maximumFractionDigits: 2 })} Cr`;
+  return formatINR(amount);
 }
 
 export { advanceClaimStage, advanceClaimFromDenial };

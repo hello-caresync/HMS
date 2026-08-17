@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronLeft, PanelLeftClose, PanelLeftOpen, Wifi } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { VendorHospitalSwitcher } from '@/components/vendor/VendorHospitalSwitcher';
+import { HospitalSelector } from '@/components/vendor/HospitalSelector';
 import { VendorWorkflowBar } from '@/components/vendor/VendorWorkflowBar';
 import {
   VENDOR_NAV_ITEMS,
@@ -23,7 +23,6 @@ export function VendorShell({ children }: VendorShellProps) {
   const toggleSidebar = useVendorAppStore((s) => s.toggleSidebar);
   const realtimeConnected = useVendorAppStore((s) => s.realtimeConnected);
   const organization = useVendorAppStore((s) => s.organization);
-  const notificationUnreadCount = useVendorAppStore((s) => s.notificationUnreadCount);
 
   const sidebarWidth = collapsed ? 'w-[4.5rem]' : 'w-64';
 
@@ -56,7 +55,7 @@ export function VendorShell({ children }: VendorShellProps) {
           <ul className="space-y-1">
             {VENDOR_NAV_ITEMS.map(({ key, label, href, icon: Icon, badge }) => {
               const active = isVendorNavActive(pathname, href);
-              const badgeCount = key === 'notifications' ? notificationUnreadCount : badge;
+              const badgeCount = badge;
               return (
                 <li key={href}>
                   <Link
@@ -104,7 +103,7 @@ export function VendorShell({ children }: VendorShellProps) {
         <header
           className={`sticky top-0 z-40 flex flex-wrap items-center justify-between gap-3 px-4 py-3 backdrop-blur ${vendorClasses.topBar}`}
         >
-          <VendorHospitalSwitcher />
+          <HospitalSelector />
           <div className="flex items-center gap-2">
             <span
               className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold ${
@@ -116,8 +115,8 @@ export function VendorShell({ children }: VendorShellProps) {
               <Wifi className="h-3 w-3" aria-hidden />
               {realtimeConnected ? 'Live sync' : 'Offline'}
             </span>
-            <Link href={VENDOR_PORTAL_ROUTES.notifications} className={vendorClasses.btnGhost}>
-              Alerts
+            <Link href={VENDOR_PORTAL_ROUTES.communication} className={vendorClasses.btnGhost}>
+              Messages
             </Link>
           </div>
         </header>

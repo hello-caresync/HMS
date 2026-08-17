@@ -40,10 +40,11 @@ export const patientClasses = {
     'rounded-xl bg-[#EAF5F2] px-4 py-2.5 text-sm font-semibold text-[#113831] shadow-sm transition hover:bg-[#D5E8E3]',
   btnSecondaryOutline:
     'rounded-xl border border-[#D5E8E3] bg-white px-4 py-2.5 text-sm font-semibold text-[#113831] hover:bg-[#EAF5F2]',
-  navShell: 'bg-white text-[#0E2924] border-r border-[#D5E8E3]',
-  navActive: 'bg-[#EAF5F2] font-semibold text-[#113831] shadow-sm',
-  navActiveAlt: 'bg-[#113831] font-semibold text-white shadow-md',
-  navIdle: 'text-[#4B736B] hover:bg-[#F4F8F7] hover:text-[#113831]',
+  navShell: 'bg-[#081C17] text-white border-r border-[#153A32]',
+  navActive:
+    'border border-[#227B6B]/50 bg-[#113831] font-black text-white shadow-md shadow-black/20',
+  navActiveAlt: 'border border-[#227B6B]/50 bg-[#113831] font-black text-white shadow-md',
+  navIdle: 'text-slate-300 hover:bg-[#0E2822] hover:text-white',
   topBar: 'border-b border-[#D5E8E3] bg-white/95 text-[#0E2924]',
   tabActive: 'bg-[#113831] text-white',
   tabIdle: 'bg-[#EAF5F2] text-[#113831] border border-[#D5E8E3]',

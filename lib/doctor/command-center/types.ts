@@ -89,6 +89,32 @@ export type PatientRegistryRow = {
   age?: number;
 };
 
+/** Distinct patient row for doctor records search sidebar. */
+export type EncounterPatientRow = {
+  id: string;
+  patient_id: string;
+  patient_name: string;
+  age?: number;
+  gender?: string;
+  created_at?: string;
+  last_status?: string;
+};
+
+/** Unified timeline row returned by fetchPatientMedicalTimeline. */
+export type PatientMedicalTimelineItem = {
+  id: string;
+  type: 'CONSULTATION' | 'PRESCRIPTION' | 'VITALS' | string;
+  title: string;
+  diagnosis?: string;
+  notes?: string;
+  doctor_name?: string;
+  medications?: unknown[];
+  instructions?: string;
+  vitalsSummary?: string;
+  date?: string;
+  raw?: Record<string, unknown>;
+};
+
 export type ConsultationRecord = {
   id: string;
   appointment_id: string;

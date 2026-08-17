@@ -12,6 +12,9 @@ import {
   fetchConsultationAppointmentContext,
   finalizeConsultationAndPrescription,
   formatConsultationSaveError,
+  sanitizeAppointmentUuid,
+  sanitizeDoctorUuid,
+  sanitizePatientUuid,
   type ConsultationAppointmentContext,
   type ConsultationMedicationItem,
 } from '@/lib/doctor/command-center/supabase-service';
@@ -99,8 +102,9 @@ export default function ConsultationWorkspaceClient({
   const handleFinalizeConsultation = async () => {
     if (!appointment) return;
 
-    const doctorId = appointment.doctor_id || DEFAULT_ACTIVE_DOCTOR_ID;
-    const patientId = appointment.patient_id || DEFAULT_PATIENT_ID;
+    const safeDoctorId = sanitizeDoctorUuid(appointment.doctor_id || DEFAULT_ACTIVE_DOCTOR_ID);
+    const safePatientId = sanitizePatientUuid(appointment.patient_id || '') ?? DEFAULT_PATIENT_ID;
+    const safeAppointmentId = sanitizeAppointmentUuid(appointmentId || '');
 
     if (!diagnosis.trim() || !chiefComplaint.trim()) {
       toast.error('Chief complaint and diagnosis are required.');
@@ -110,9 +114,9 @@ export default function ConsultationWorkspaceClient({
     setSaving(true);
     try {
       await finalizeConsultationAndPrescription({
-        appointmentId,
-        doctorId,
-        patientId,
+        appointmentId: safeAppointmentId,
+        doctorId: safeDoctorId,
+        patientId: safePatientId,
         patientName: appointment.patient_name,
         doctorName: DEFAULT_ACTIVE_DOCTOR_NAME,
         clinical: {

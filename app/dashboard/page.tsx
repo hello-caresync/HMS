@@ -1,7 +1,7 @@
 'use client';
 
-import { DashboardWorkspace } from '@/components/nexora-hospital/workspaces/DashboardWorkspace';
+import HospitalOperationsCenter from '@/components/nexora-hospital/HospitalOperationsCenter';
 
 export default function DashboardPage() {
-  return <DashboardWorkspace />;
+  return <HospitalOperationsCenter />;
 }

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { DoctorHospitalDeskChat } from '@/components/doctor/DoctorHospitalDeskChat';
 import {
   DEFAULT_ACTIVE_DOCTOR_ID,
   OPDToken,
@@ -471,6 +472,11 @@ export default function SmartQCommandCenter({
             <UserCheck className="mt-3 h-5 w-5 text-indigo-300" />
           </div>
         )}
+      </div>
+
+      {/* Hospital Operations Desk · bi-directional realtime with Hospital Hub */}
+      <div className="lg:col-span-12">
+        <DoctorHospitalDeskChat compact />
       </div>
     </div>
   );

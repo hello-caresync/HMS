@@ -1,4 +1,5 @@
 import type { DashboardMetrics, DashboardNotification } from '../types';
+import { formatINR } from '@/lib/utils/currency';
 
 export const INITIAL_NOTIFICATIONS: DashboardNotification[] = [
   {
@@ -224,6 +225,7 @@ export const DASHBOARD_METRICS: DashboardMetrics = {
 };
 
 export function formatCurrency(amount: number, currency = 'INR'): string {
+  if (currency === 'INR') return formatINR(amount);
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency,

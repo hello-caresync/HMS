@@ -1,4 +1,5 @@
 import { SANDBOX_SECURED_PLACEHOLDER } from './types';
+import { formatINR } from '@/lib/utils/currency';
 import type {
   BackupScheduleConfig,
   FinanceCheckoutSummary,
@@ -63,5 +64,5 @@ export const DEFAULT_CHECKOUT_SUMMARY: FinanceCheckoutSummary = {
 };
 
 export function formatInr(amount: number): string {
-  return `₹ ${amount.toLocaleString('en-IN', { minimumFractionDigits: amount % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
+  return formatINR(amount, { maximumFractionDigits: amount % 1 ? 2 : 0 });
 }

@@ -1,11 +1,14 @@
+import { generatePostConsultationBill } from '@/lib/hospital/operations/consultation-billing-sync';
 import { supabase } from '@/lib/supabase/client';
 import type {
   CompleteEncounterPayload,
   DashboardKpis,
   DiagnosisSeverity,
   EmergencyAlert,
+  EncounterPatientRow,
   LabOrderStatus,
   LiveQueueRow,
+  PatientMedicalTimelineItem,
   OpdTokenStatus,
   PatientRegistryRow,
 } from './types';
@@ -16,6 +19,29 @@ import type {
 
 /** Canonical active clinician UUID in Supabase (`doctors.doctor_id`). */
 export const DEFAULT_ACTIVE_DOCTOR_ID = '56284599-9a5f-4672-9b53-b90e18146a00';
+
+/** Alias used by consultation finalize handlers. */
+export const DEFAULT_DOCTOR_UUID = DEFAULT_ACTIVE_DOCTOR_ID;
+
+export function isUuid(value: string | null | undefined): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value || '',
+  );
+}
+
+export function sanitizeDoctorUuid(doctorId: string | null | undefined): string {
+  return isUuid(doctorId) ? String(doctorId) : DEFAULT_ACTIVE_DOCTOR_ID;
+}
+
+export function sanitizePatientUuid(patientId: string | null | undefined): string | null {
+  return isUuid(patientId) ? String(patientId) : null;
+}
+
+export function sanitizeAppointmentUuid(
+  appointmentId: string | null | undefined,
+): string | null {
+  return isUuid(appointmentId) ? String(appointmentId) : null;
+}
 
 /** Default demo patient UUID for local/testing fallbacks. */
 export const DEFAULT_PATIENT_ID = 'b0000000-0000-0000-0000-000000000002';
@@ -30,6 +56,8 @@ export const ACTIVE_APPOINTMENT_STATUSES = [
   'CONFIRMED',
   'confirmed',
   'requested',
+  'checked_in',
+  'CHECKED_IN',
   'IN_CONSULTATION',
   'in_progress',
 ] as const;
@@ -132,12 +160,15 @@ function calcAgeFromDob(dob?: string | null): number | undefined {
 }
 
 function isWaitingStatus(status: unknown): boolean {
-  const s = String(status ?? '').toUpperCase();
+  const s = String(status ?? '')
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
   return (
     s === 'SCHEDULED' ||
     s === 'WAITING' ||
     s === 'CONFIRMED' ||
-    s === 'REQUESTED'
+    s === 'REQUESTED' ||
+    s === 'CHECKED_IN'
   );
 }
 
@@ -322,7 +353,7 @@ export async function getDoctorDashboardData(doctorId?: string): Promise<DoctorD
       'appointment_id, patient_id, doctor_id, appointment_date, appointment_time, status, reason_for_visit, department, created_at',
     )
     .eq('doctor_id', targetDoctorId)
-    .in('status', ['SCHEDULED', 'WAITING', 'CONFIRMED', 'PENDING', 'IN_CONSULTATION', 'in_progress'])
+    .in('status', ['SCHEDULED', 'WAITING', 'CONFIRMED', 'PENDING', 'IN_CONSULTATION', 'in_progress', 'checked_in', 'CHECKED_IN'])
     .order('created_at', { ascending: false });
 
   if (apptError) {
@@ -561,8 +592,8 @@ export async function fetchConsultationAppointmentContext(
   if (!viewErr && viewRow) {
     return {
       appointment_id: String(viewRow.appointment_id),
-      doctor_id: String(viewRow.doctor_id),
-      patient_id: String(viewRow.patient_id),
+      doctor_id: sanitizeDoctorUuid(String(viewRow.doctor_id ?? '')),
+      patient_id: sanitizePatientUuid(String(viewRow.patient_id ?? '')) ?? DEFAULT_PATIENT_ID,
       patient_name: viewRow.patient_name ? String(viewRow.patient_name) : undefined,
       patient_gender: viewRow.patient_gender ? String(viewRow.patient_gender) : undefined,
       patient_age: viewRow.patient_age ? Number(viewRow.patient_age) : undefined,
@@ -595,7 +626,34 @@ export async function fetchConsultationAppointmentContext(
   }
 
   if (!appt) {
-    logSupabaseError('fetchConsultationAppointmentContext failed:', apptErr);
+    const { data: patientAppt, error: patientApptErr } = await client
+      .from('patient_appointments')
+      .select('*')
+      .eq('id', appointmentId)
+      .maybeSingle();
+
+    if (!patientApptErr && patientAppt) {
+      const row = patientAppt as Record<string, unknown>;
+      const patientMap = await fetchPatientProfileMap([String(row.patient_id ?? '')]);
+      const p = patientMap[String(row.patient_id ?? '')];
+
+      return {
+        appointment_id: String(row.id ?? appointmentId),
+        doctor_id: sanitizeDoctorUuid(String(row.doctor_id ?? '')),
+        patient_id: sanitizePatientUuid(String(row.patient_id ?? '')) ?? DEFAULT_PATIENT_ID,
+        patient_name: String(row.patient_name ?? p?.full_name ?? 'Patient'),
+        patient_gender: p?.gender ? String(p.gender) : undefined,
+        patient_age: calcAgeFromDob((p?.date_of_birth ?? p?.dob) as string | undefined),
+        blood_group: p?.blood_group ? String(p.blood_group) : undefined,
+        reason: row.reason
+          ? String(row.reason)
+          : row.chief_complaint
+            ? String(row.chief_complaint)
+            : undefined,
+      };
+    }
+
+    logSupabaseError('fetchConsultationAppointmentContext failed:', apptErr ?? patientApptErr);
     return null;
   }
 
@@ -603,9 +661,9 @@ export async function fetchConsultationAppointmentContext(
   const p = patientMap[String(appt.patient_id ?? '')];
 
   return {
-    appointment_id: String(appt.appointment_id),
-    doctor_id: String(appt.doctor_id),
-    patient_id: String(appt.patient_id),
+    appointment_id: String(appt.appointment_id ?? appt.id ?? appointmentId),
+    doctor_id: sanitizeDoctorUuid(String(appt.doctor_id ?? '')),
+    patient_id: sanitizePatientUuid(String(appt.patient_id ?? '')) ?? DEFAULT_PATIENT_ID,
     patient_name: p?.full_name ? String(p.full_name) : undefined,
     patient_gender: p?.gender ? String(p.gender) : undefined,
     patient_age: calcAgeFromDob((p?.date_of_birth ?? p?.dob) as string | undefined),
@@ -626,10 +684,10 @@ export async function savePatientClinicalEncounter(
   input: Omit<ConsultationFinalizeInput, 'appointmentId'> & { appointmentId?: string | null },
 ): Promise<ConsultationFinalizeResult> {
   const client = supabase;
-  const doctorId = input.doctorId || DEFAULT_ACTIVE_DOCTOR_ID;
-  const patientId = input.patientId || DEFAULT_PATIENT_ID;
+  const doctorId = sanitizeDoctorUuid(input.doctorId);
+  const patientId = sanitizePatientUuid(input.patientId) ?? DEFAULT_PATIENT_ID;
   const meds = input.medications.filter((m) => m.name.trim() !== '');
-  const appointmentId = input.appointmentId ?? null;
+  const appointmentId = sanitizeAppointmentUuid(input.appointmentId ?? null);
 
   const diagnosis = input.clinical.diagnosis?.trim() || '';
   const chiefComplaint = input.clinical.chief_complaint?.trim() || '';
@@ -1008,7 +1066,12 @@ function normalizeAppointmentFallbackRow(
   const p = Array.isArray(profile) ? profile[0] : profile;
   const apptStatus = String(appt.status ?? 'SCHEDULED').toUpperCase();
   const queueStatus: OpdTokenStatus =
-    apptStatus === 'WAITING' || apptStatus === 'SCHEDULED' ? 'ISSUED' : normalizeStatus(apptStatus);
+    apptStatus === 'WAITING' ||
+    apptStatus === 'SCHEDULED' ||
+    apptStatus === 'CHECKED_IN' ||
+    apptStatus === 'CONFIRMED'
+      ? 'ISSUED'
+      : normalizeStatus(apptStatus);
 
   return normalizeQueueRow(
     {
@@ -1058,7 +1121,7 @@ async function fetchAppointmentsFallback(doctorUuid: string): Promise<LiveQueueR
       .from('appointments')
       .select('*')
       .eq('doctor_id', doctorUuid)
-      .in('status', ['SCHEDULED', 'WAITING', 'requested', 'confirmed', 'in_progress']);
+      .in('status', ['SCHEDULED', 'WAITING', 'requested', 'confirmed', 'checked_in', 'CHECKED_IN', 'in_progress']);
 
     if (error || !appointments?.length) return [];
 
@@ -1538,6 +1601,63 @@ export async function rpcCompleteConsultationEncounter(
   } catch {
     /* ok */
   }
+
+  try {
+    const apptId = payload.appointmentId ?? null;
+    let patientName = 'Patient';
+    let patientUhid: string | undefined;
+    let consultationFee: number | undefined;
+
+    const { data: profile } = await supabase
+      .from('patient_profiles')
+      .select('full_name, uhid, mrn')
+      .eq('id', payload.patientId)
+      .maybeSingle();
+    if (profile) {
+      patientName = String(profile.full_name ?? patientName);
+      patientUhid = profile.uhid
+        ? String(profile.uhid)
+        : profile.mrn
+          ? String(profile.mrn)
+          : undefined;
+    }
+
+    if (apptId) {
+      const byId = await supabase
+        .from('appointments')
+        .select('fee, patient_name, uhid')
+        .eq('id', apptId)
+        .maybeSingle();
+      const appt = byId.data
+        ?? (
+          await supabase
+            .from('appointments')
+            .select('fee, patient_name, uhid')
+            .eq('appointment_id', apptId)
+            .maybeSingle()
+        ).data;
+
+      if (appt) {
+        consultationFee = appt.fee != null ? Number(appt.fee) : undefined;
+        patientName = String(appt.patient_name ?? patientName);
+        patientUhid = patientUhid ?? (appt.uhid ? String(appt.uhid) : undefined);
+      }
+    }
+
+    await generatePostConsultationBill(supabase, {
+      appointmentId: apptId ?? payload.consultationId,
+      patientId: payload.patientId,
+      patientName,
+      patientUhid,
+      doctorId: payload.doctorId,
+      doctorName: payload.doctorName,
+      consultationFee,
+      prescriptions: payload.prescriptions,
+      labTests: payload.labTests,
+    });
+  } catch {
+    /* billing bridge optional */
+  }
 }
 
 export async function searchPatients(query: string, tokenNumber?: string): Promise<PatientRegistryRow[]> {
@@ -1614,6 +1734,254 @@ export async function getConsultationIdForAppointment(
     return data?.id ? String(data.id) : null;
   } catch {
     return null;
+  }
+}
+
+const ENCOUNTER_PATIENT_SELECT =
+  'id, patient_id, patient_name, age, gender, created_at, status, queue_status';
+
+function mapEncounterPatientRow(row: Record<string, unknown>): EncounterPatientRow {
+  const rawAge = row.age;
+  return {
+    id: String(row.id ?? row.appointment_id ?? ''),
+    patient_id: String(row.patient_id ?? ''),
+    patient_name: String(row.patient_name ?? 'Patient'),
+    age:
+      rawAge != null && rawAge !== '' && !Number.isNaN(Number(rawAge))
+        ? Number(rawAge)
+        : undefined,
+    gender: row.gender ? String(row.gender) : undefined,
+    created_at: row.created_at ? String(row.created_at) : undefined,
+    last_status: String(row.status ?? row.queue_status ?? ''),
+  };
+}
+
+function dedupeEncounterPatients(rows: EncounterPatientRow[]): EncounterPatientRow[] {
+  const byKey = new Map<string, EncounterPatientRow>();
+
+  for (const row of rows) {
+    const key = (row.patient_id || row.patient_name).toLowerCase();
+    const existing = byKey.get(key);
+    if (!existing || String(row.created_at ?? '') > String(existing.created_at ?? '')) {
+      byKey.set(key, row);
+    }
+  }
+
+  return Array.from(byKey.values()).sort((a, b) =>
+    String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')),
+  );
+}
+
+/** Load consultations, prescriptions, and vitals for a patient or appointment key. */
+export async function fetchPatientMedicalTimeline(
+  patientKey: string,
+): Promise<PatientMedicalTimelineItem[]> {
+  if (!patientKey) return [];
+
+  try {
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      patientKey,
+    );
+
+    let consultQuery = supabase
+      .from('consultations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (isUUID) {
+      consultQuery = consultQuery.or(
+        `patient_id.eq.${patientKey},appointment_id.eq.${patientKey}`,
+      );
+    } else {
+      consultQuery = consultQuery.ilike('patient_name', `%${patientKey}%`);
+    }
+
+    let prescQuery = supabase
+      .from('prescriptions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (isUUID) {
+      prescQuery = prescQuery.or(`patient_id.eq.${patientKey},appointment_id.eq.${patientKey}`);
+    } else {
+      prescQuery = prescQuery.ilike('patient_name', `%${patientKey}%`);
+    }
+
+    let vitalsQuery = supabase.from('vitals').select('*').order('created_at', { ascending: false });
+
+    if (isUUID) {
+      vitalsQuery = vitalsQuery.or(
+        `patient_id.eq.${patientKey},consultation_id.eq.${patientKey}`,
+      );
+    }
+
+    const [consultRes, prescRes, vitalsRes] = await Promise.all([
+      consultQuery,
+      prescQuery,
+      vitalsQuery,
+    ]);
+
+    const consultations = (consultRes.data ?? []) as Record<string, unknown>[];
+    const prescriptions = (prescRes.data ?? []) as Record<string, unknown>[];
+    const vitals = (vitalsRes.data ?? []) as Record<string, unknown>[];
+
+    const timeline: PatientMedicalTimelineItem[] = [
+      ...consultations.map((c) => ({
+        id: String(c.id ?? ''),
+        type: 'CONSULTATION',
+        title: String(c.chief_complaint || 'Clinical Encounter'),
+        diagnosis: String(c.diagnosis || 'Clinical evaluation completed'),
+        notes: String(c.clinical_notes || c.notes || ''),
+        doctor_name: String(c.doctor_name || 'Dr. Chandrakanth S. Kesari'),
+        date: c.created_at ? String(c.created_at) : undefined,
+        raw: c,
+      })),
+      ...prescriptions.map((p) => ({
+        id: String(p.id ?? p.prescription_id ?? ''),
+        type: 'PRESCRIPTION',
+        title: 'Prescription Dispatched',
+        medications: (p.medications || p.medicines || []) as unknown[],
+        instructions: String(p.special_instructions || p.instructions || ''),
+        doctor_name: String(p.doctor_name || 'Dr. Chandrakanth S. Kesari'),
+        date: p.created_at ? String(p.created_at) : undefined,
+        raw: p,
+      })),
+      ...vitals.map((v) => ({
+        id: String(v.id ?? ''),
+        type: 'VITALS',
+        title: 'Recorded Vitals',
+        vitalsSummary: `BP: ${v.bp_sys || v.bp_systolic || 120}/${v.bp_dia || v.bp_diastolic || 80} • HR: ${v.pulse || v.pulse_bpm || 72} bpm • SpO2: ${v.spo2 || v.spo2_percent || 98}%`,
+        date: v.created_at ? String(v.created_at) : undefined,
+        raw: v,
+      })),
+    ].sort(
+      (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime(),
+    );
+
+    return timeline;
+  } catch (err) {
+    console.error('Error in fetchPatientMedicalTimeline:', err);
+    return [];
+  }
+}
+
+/** Search distinct patients from appointments, patient_appointments, and consultations. */
+export async function searchEncounterPatients(query: string): Promise<EncounterPatientRow[]> {
+  const q = query.trim();
+
+  try {
+    if (q.length < 2) {
+      const [appointmentsRes, patientApptRes] = await Promise.all([
+        supabase
+          .from('appointments')
+          .select(ENCOUNTER_PATIENT_SELECT)
+          .in('status', ['COMPLETED', 'completed'])
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabase
+          .from('patient_appointments')
+          .select(ENCOUNTER_PATIENT_SELECT)
+          .in('queue_status', ['COMPLETED'])
+          .order('created_at', { ascending: false })
+          .limit(10),
+      ]);
+
+      const rows = [
+        ...((appointmentsRes.data ?? []) as Record<string, unknown>[]),
+        ...((patientApptRes.data ?? []) as Record<string, unknown>[]),
+      ].map(mapEncounterPatientRow);
+
+      return dedupeEncounterPatients(rows).slice(0, 10);
+    }
+
+    const pattern = `%${q}%`;
+    const results: EncounterPatientRow[] = [];
+
+    const [appointmentsRes, patientApptRes, consultationsRes] = await Promise.all([
+      supabase
+        .from('appointments')
+        .select(ENCOUNTER_PATIENT_SELECT)
+        .ilike('patient_name', pattern)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('patient_appointments')
+        .select(ENCOUNTER_PATIENT_SELECT)
+        .ilike('patient_name', pattern)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('consultations')
+        .select('id, patient_id, patient_name, created_at')
+        .ilike('patient_name', pattern)
+        .order('created_at', { ascending: false }),
+    ]);
+
+    for (const row of (appointmentsRes.data ?? []) as Record<string, unknown>[]) {
+      results.push(mapEncounterPatientRow(row));
+    }
+    for (const row of (patientApptRes.data ?? []) as Record<string, unknown>[]) {
+      results.push(mapEncounterPatientRow(row));
+    }
+
+    if (!consultationsRes.error) {
+      for (const row of (consultationsRes.data ?? []) as Record<string, unknown>[]) {
+        results.push({
+          id: String(row.id ?? ''),
+          patient_id: String(row.patient_id ?? ''),
+          patient_name: String(row.patient_name ?? 'Patient'),
+          created_at: row.created_at ? String(row.created_at) : undefined,
+          last_status: 'CONSULTATION',
+        });
+      }
+    }
+
+    if (results.length === 0) {
+      const { data: profiles } = await supabase
+        .from('patient_profiles')
+        .select('id, full_name, gender, dob, date_of_birth')
+        .ilike('full_name', pattern)
+        .limit(20);
+
+      for (const profile of (profiles ?? []) as Record<string, unknown>[]) {
+        results.push({
+          id: String(profile.id ?? ''),
+          patient_id: String(profile.id ?? ''),
+          patient_name: String(profile.full_name ?? 'Patient'),
+          gender: profile.gender ? String(profile.gender) : undefined,
+          age: calcAgeFromDob(String(profile.date_of_birth ?? profile.dob ?? '')),
+        });
+      }
+
+      const patientIds = ((profiles ?? []) as Record<string, unknown>[])
+        .map((profile) => String(profile.id ?? ''))
+        .filter(Boolean);
+
+      if (patientIds.length > 0) {
+        const { data: linkedConsultations } = await supabase
+          .from('consultations')
+          .select('id, patient_id, created_at, chief_complaint, status')
+          .in('patient_id', patientIds)
+          .order('created_at', { ascending: false });
+
+        for (const row of (linkedConsultations ?? []) as Record<string, unknown>[]) {
+          const profile = ((profiles ?? []) as Record<string, unknown>[]).find(
+            (entry) => String(entry.id) === String(row.patient_id),
+          );
+
+          results.push({
+            id: String(row.id ?? ''),
+            patient_id: String(row.patient_id ?? ''),
+            patient_name: String(profile?.full_name ?? 'Patient'),
+            created_at: row.created_at ? String(row.created_at) : undefined,
+            last_status: String(row.status ?? 'CONSULTATION'),
+          });
+        }
+      }
+    }
+
+    return dedupeEncounterPatients(results);
+  } catch (err) {
+    console.error('[searchEncounterPatients]:', err);
+    return [];
   }
 }
 

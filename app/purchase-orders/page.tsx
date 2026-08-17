@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { DEFAULT_VENDOR_ID, PO_STATUS_DB, PO_STATUS_FILTERS, type PoStatusFilter } from '@/lib/vendor-supabase/constants';
 import type { PurchaseOrderRow } from '@/lib/vendor-supabase/types';
+import { formatINR } from '@/lib/utils/currency';
 
 type Toast = { type: 'success' | 'error'; message: string } | null;
 
@@ -17,9 +18,7 @@ type DispatchForm = {
 const emptyDispatch: DispatchForm = { carrier_name: '', tracking_number: '', driver_contact: '' };
 
 function formatMoney(value: number) {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(
-    value,
-  );
+  return formatINR(value, { maximumFractionDigits: 2 });
 }
 
 function statusBadgeClass(status: PurchaseOrderRow['status']) {

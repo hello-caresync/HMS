@@ -347,9 +347,7 @@ export function searchAdmissions(query: string): number {
   ).length;
 }
 
-export function formatInr(amount: number): string {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
-}
+export { formatINR as formatInr } from '@/lib/utils/currency';
 
 export function formatDateTime(iso: string): string {
   return new Intl.DateTimeFormat('en-IN', {

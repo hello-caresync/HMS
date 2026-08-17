@@ -285,9 +285,7 @@ export function getRegistryTitle(nodeId: RegistryTreeNodeId): string {
   return map[nodeId];
 }
 
-export function formatInr(amount: number): string {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
-}
+export { formatINR as formatInr } from '@/lib/utils/currency';
 
 export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });

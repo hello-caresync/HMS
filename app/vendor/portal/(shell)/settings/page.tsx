@@ -1,7 +1,7 @@
 'use client';
 
-import SettingsWorkspace from '@/components/vendor/workspaces/SettingsWorkspace';
+import ProfileSettingsWorkspace from '@/components/vendor/workspaces/ProfileSettingsWorkspace';
 
 export default function VendorSettingsPage() {
-  return <SettingsWorkspace />;
+  return <ProfileSettingsWorkspace />;
 }

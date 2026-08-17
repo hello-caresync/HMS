@@ -90,6 +90,56 @@ function useRealtimeSync(actorId: string | null | undefined, app: 'doctor' | 'pa
       )
       .on(
         'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'system_notifications' },
+        (payload: RealtimePostgresChangesPayload<any>) => {
+          const row = payload.new as {
+            id: string;
+            recipient_type?: string;
+            recipient_id?: string | null;
+            title: string;
+            message?: string;
+            body?: string;
+            category?: string;
+            is_read?: boolean;
+            created_at?: string;
+          };
+          if (!row?.id) return;
+
+          const recipientType = String(row.recipient_type ?? 'all').toLowerCase();
+          const targetId = String(row.recipient_id ?? '').trim();
+          const matchesApp =
+            recipientType === 'all' ||
+            recipientType === app ||
+            (app === 'doctor' && recipientType === 'doctor') ||
+            (app === 'patient' && recipientType === 'patient');
+
+          if (!matchesApp) return;
+          if (targetId && targetId !== 'all' && targetId !== 'broadcast' && targetId !== actorId) return;
+
+          const mapped = {
+            id: row.id,
+            title: row.title,
+            body: row.message ?? row.body ?? '',
+            category: row.category ?? 'system',
+            read: Boolean(row.is_read),
+            related_id: null,
+            target_audience: app,
+            created_at: row.created_at ?? new Date().toISOString(),
+            patient_id: app === 'patient' ? actorId : null,
+            doctor_id: app === 'doctor' ? actorId : null,
+          } as NotificationRow;
+
+          if (app === 'doctor') {
+            upsertDoctorNotificationsFromDb([notificationRowToDoctor(mapped)]);
+          } else {
+            upsertPatientNotificationsFromDb([notificationRowToPatient(mapped)]);
+          }
+
+          toast.info(row.title, { description: row.message ?? row.body });
+        },
+      )
+      .on(
+        'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications' },
         (payload: RealtimePostgresChangesPayload<any>) => {
           const row = payload.new as NotificationRow;

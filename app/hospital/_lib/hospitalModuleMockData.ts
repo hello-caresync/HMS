@@ -1,4 +1,5 @@
 import type { HospitalModuleConfig } from '../_config/moduleRegistry';
+import { formatINR } from '@/lib/utils/currency';
 
 export type HospitalRecord = {
   id: string;
@@ -53,7 +54,7 @@ export function createSeedRecords(config: HospitalModuleConfig): HospitalRecord[
       reference: `${prefix}-${1000 + i}`,
       subject,
       department: dept,
-      amount: config.id.includes('bill') || config.id === 'billing' ? `₹${(4200 + i * 850).toLocaleString('en-IN')}` : undefined,
+      amount: config.id.includes('bill') || config.id === 'billing' ? formatINR(4200 + i * 850) : undefined,
       status: pick(statuses, i),
       updatedAt: new Date(Date.now() - i * 3600_000).toLocaleString('en-IN', {
         hour: '2-digit',

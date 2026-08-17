@@ -1,128 +1,147 @@
-"use client";
-import React from 'react';
-import { 
-  Activity, 
-  AlertTriangle, 
-  ShieldAlert, 
-  Truck, 
-  CheckCircle2 
-} from 'lucide-react';
+'use client';
 
-export default function EmergencyTriageDesk() {
-  // High contrast mock telemetry data (Strict privacy isolation applied)
-  const activeTriageCases = [
-    { id: "TRI-2401", patient: "Unknown Male (~45y)", complaint: "Road traffic accident · head trauma", urgency: "CRITICAL", bed: "Awaiting Bed" },
-    { id: "TRI-2402", patient: "K.V.", complaint: "Chest pain · radiating to arm", urgency: "URGENT", bed: "TR-BED-03" },
-    { id: "TRI-2403", patient: "Walk-in Initials", complaint: "Sports injury · ankle sprain", urgency: "NON-URGENT", bed: "Awaiting Bed" }
-  ];
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+
+import { HospitalOpsShell } from '@/components/hospital-operations/HospitalOpsShell';
+import { hospitalOpsClasses } from '@/lib/hospital/design-tokens';
+import { postHospitalApi, getOpsSupabase } from '@/lib/hospital/operations/client-api';
+import {
+  countActiveTriages,
+  fetchEmergencyTriages,
+  registerEmergencyTriage,
+} from '@/lib/hospital/operations/emergency';
+import type { EmergencyTriageRow, TriagePriority } from '@/lib/hospital/operations/types';
+import { useHospitalOpsRealtime } from '@/lib/hospital/operations/realtime';
+
+export default function EmergencyTriagePage() {
+  const [triages, setTriages] = useState<EmergencyTriageRow[]>([]);
+  const [form, setForm] = useState({
+    patientName: '',
+    chiefComplaint: '',
+    priority: 'P2' as TriagePriority,
+  });
+
+  const load = useCallback(async () => {
+    const data = await fetchEmergencyTriages(getOpsSupabase());
+    setTriages(data);
+  }, []);
+
+  useHospitalOpsRealtime(load);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const counts = countActiveTriages(triages);
+
+  const submitTriage = async () => {
+    if (!form.patientName.trim() || !form.chiefComplaint.trim()) {
+      toast.error('Patient name and chief complaint are required');
+      return;
+    }
+    try {
+      await postHospitalApi(
+        '/api/emergency/triage',
+        form,
+        () => registerEmergencyTriage(getOpsSupabase(), form),
+      );
+      if (form.priority === 'P1') {
+        toast.error('P1 CRITICAL — Doctor bypass alarm broadcast', { duration: 6000 });
+      } else {
+        toast.success('Triage registered');
+      }
+      setForm({ patientName: '', chiefComplaint: '', priority: 'P2' });
+      void load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Triage failed');
+    }
+  };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-900 bg-slate-50 min-h-screen font-sans selection:bg-slate-200">
-      
-      {/* Top Critical Alert Banners */}
-      <div className="space-y-2">
-        <div className="bg-red-100 border-2 border-red-300 text-red-950 p-3.5 rounded-xl flex items-center gap-3 shadow-sm font-bold text-xs sm:text-sm">
-          <ShieldAlert className="text-red-700 shrink-0 animate-pulse" size={18} />
-          <span>CODE BLUE — RESUSCITATION BAY 2 — ACTIVATE CRASH TEAM IMMEDIATELY</span>
-        </div>
-        <div className="bg-amber-100 border-2 border-amber-300 text-amber-950 p-3.5 rounded-xl flex items-center gap-3 shadow-sm font-bold text-xs sm:text-sm">
-          <AlertTriangle className="text-amber-700 shrink-0" size={18} />
-          <span>MASS CASUALTY PROTOCOL STANDBY — 2 AMBULANCES INBOUND</span>
-        </div>
+    <HospitalOpsShell
+      title="Emergency Triage & Doctor Bypass"
+      subtitle="P1 triggers EMERGENCY_BYPASS_TRIGGERED system event to Doctor App"
+      actions={
+        <button type="button" className={hospitalOpsClasses.btnCritical} onClick={() => void submitTriage()}>
+          Register Triage
+        </button>
+      }
+    >
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {[
+          { label: 'P1 Critical', value: counts.p1, tone: hospitalOpsClasses.badgeCritical },
+          { label: 'P2 Urgent', value: counts.p2, tone: hospitalOpsClasses.badgeWarning },
+          { label: 'P3 Non-Urgent', value: counts.p3, tone: hospitalOpsClasses.badgeDefault },
+        ].map((c) => (
+          <div key={c.label} className={`${hospitalOpsClasses.surface} p-4`}>
+            <p className="text-[10px] font-black uppercase text-[#52796F]">{c.label}</p>
+            <p className="text-2xl font-black">{c.value}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Main Operational Interface Stacked Full Width */}
-      <div className="w-full space-y-6">
-        
-        {/* Ambulance Arrival Telemetry Rows */}
-        <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-5 space-y-3">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-900 block">Ambulance Arrival Telemetry</span>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold space-y-1">
-              <div className="flex items-center justify-between text-slate-900">
-                <span>AMB-07 · ALS</span>
-                <Truck size={14} className="text-slate-900" />
-              </div>
-              <p className="text-slate-800 font-medium">En Route · ETA 4 min</p>
-              <span className="text-[10px] text-slate-800 font-medium">1 Patient Boarded</span>
-            </div>
-
-            <div className="p-3 bg-emerald-50 border-2 border-emerald-200 rounded-lg text-xs font-bold space-y-1">
-              <div className="flex items-center justify-between text-emerald-900">
-                <span>AMB-12 · BLS</span>
-                <CheckCircle2 size={14} className="text-emerald-700" />
-              </div>
-              <p className="text-emerald-800">Arrived at Bay</p>
-              <span className="text-[10px] text-emerald-600 font-medium">2 Patients Logged</span>
-            </div>
-
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold space-y-1">
-              <div className="flex items-center justify-between text-slate-900">
-                <span>AMB-03 · ALS</span>
-                <Truck size={14} className="text-slate-900" />
-              </div>
-              <p className="text-slate-800 font-medium">En Route · ETA 12 min</p>
-              <span className="text-[10px] text-slate-800 font-medium">1 Patient Boarded</span>
-            </div>
-          </div>
+      <div className="grid lg:grid-cols-3 gap-4">
+        <div className={`${hospitalOpsClasses.surface} p-4 space-y-3 lg:col-span-1`}>
+          <h2 className="text-sm font-black">New Triage Intake</h2>
+          <input
+            className={hospitalOpsClasses.input}
+            placeholder="Patient name"
+            value={form.patientName}
+            onChange={(e) => setForm((f) => ({ ...f, patientName: e.target.value }))}
+          />
+          <textarea
+            className={`${hospitalOpsClasses.input} min-h-[80px]`}
+            placeholder="Chief complaint"
+            value={form.chiefComplaint}
+            onChange={(e) => setForm((f) => ({ ...f, chiefComplaint: e.target.value }))}
+          />
+          <select
+            className={hospitalOpsClasses.input}
+            value={form.priority}
+            onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as TriagePriority }))}
+          >
+            <option value="P1">P1 — Critical (Doctor Bypass)</option>
+            <option value="P2">P2 — Urgent</option>
+            <option value="P3">P3 — Non-Urgent</option>
+          </select>
         </div>
 
-        {/* High-Contrast Live Triage Board Table */}
-        <div className="bg-white rounded-xl border-2 border-slate-200 shadow-sm p-5 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <h3 className="text-base font-bold text-slate-900">Live Case Triage Board</h3>
-            <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold bg-slate-900 text-white px-2 py-1 rounded">
-              <Activity size={10} />
-              <span>REALTIME AGGREGATION CORE</span>
-            </div>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b-2 border-slate-200 bg-slate-100 text-slate-900 font-black">
-                  <th className="p-3">Case ID</th>
-                  <th className="p-3">Patient Descriptor</th>
-                  <th className="p-3">Clinical Indication</th>
-                  <th className="p-3">Urgency Tier</th>
-                  <th className="p-3 text-right">Location Bed</th>
-                </tr>
-              </thead>
-              <tbody className="font-semibold text-slate-900">
-                {activeTriageCases.map((item, idx) => (
-                  <tr key={idx} className="border-b-2 border-slate-200 hover:bg-slate-100/80 transition-colors">
-                    <td className="p-3 font-mono font-bold text-slate-900">{item.id}</td>
-                    <td className="p-3 font-bold text-slate-900">{item.patient}</td>
-                    <td className="p-3 text-slate-950">{item.complaint}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                        item.urgency === 'CRITICAL' ? 'bg-red-100 text-red-950 border-red-400 font-bold' :
-                        item.urgency === 'URGENT' ? 'bg-amber-100 text-amber-950 border-amber-400 font-bold' :
-                        'bg-emerald-100 text-emerald-950 border-emerald-400 font-bold'
-                      }`}>
-                        {item.urgency}
-                      </span>
-                    </td>
-                    <td className="p-3 text-right">
-                      {item.bed === 'Awaiting Bed' ? (
-                        <button className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-2.5 py-1 rounded text-[10px] transition-colors shadow-sm">
-                          Assign Trauma Bed
-                        </button>
-                      ) : (
-                        <span className="text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded text-[10px] font-bold">
-                          {item.bed}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className={`${hospitalOpsClasses.surface} p-4 lg:col-span-2`}>
+          <h2 className="text-sm font-black mb-3">Active Triage Board</h2>
+          <div className="space-y-2 max-h-[420px] overflow-y-auto">
+            {triages.length === 0 ? (
+              <p className="text-xs text-[#84A98C] font-semibold">No triage records yet</p>
+            ) : (
+              triages.map((row, index) => (
+                <div
+                  key={row.id || `triage-${index}`}
+                  className={`rounded-lg border p-3 ${
+                    row.priority === 'P1'
+                      ? 'border-[#C94A29]/50 bg-[#C94A29]/5'
+                      : 'border-[#CAD2C5] bg-white'
+                  }`}
+                >
+                  <div className="flex justify-between gap-2">
+                    <p className="text-sm font-black">{row.patient_name}</p>
+                    <span
+                      className={`text-[10px] font-black px-2 py-0.5 rounded ${
+                        row.priority === 'P1'
+                          ? hospitalOpsClasses.badgeCritical
+                          : row.priority === 'P2'
+                            ? hospitalOpsClasses.badgeWarning
+                            : hospitalOpsClasses.badgeDefault
+                      }`}
+                    >
+                      {row.priority}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#52796F] mt-1">{row.chief_complaint}</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
-
       </div>
-      
-    </div>
+    </HospitalOpsShell>
   );
 }

@@ -85,6 +85,32 @@ export function setDoctorSession(session: DoctorSession): void {
   }
 }
 
+export function profileToSession(profile: {
+  id: string;
+  name: string;
+  email: string;
+  department: string;
+  room: string;
+  fee: number;
+}): DoctorSession {
+  return {
+    employeeId: profile.id,
+    fullName: profile.name,
+    doctor_name: profile.name,
+    department: profile.department,
+    email: profile.email,
+    loginIdentifier: profile.email,
+    specialization: profile.department,
+    qualification: profile.department,
+    opdRoom: profile.room,
+    consultationFee: profile.fee,
+    fee: profile.fee,
+    hospitalId: REGAL_HOSPITAL_ID,
+    hospitalName: 'Regal Hospital',
+    signedInAt: new Date().toISOString(),
+  };
+}
+
 export function clearDoctorSession(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(DOCTOR_STORAGE_KEYS.doctorSession);

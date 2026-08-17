@@ -67,6 +67,9 @@ type DigitalSignature = {
 };
 
 const SIGNATURE_KEY = 'curasync_doctor_signature';
+const ACTIVE_DOCTOR_KEY = 'curasync_active_doctor';
+const DOCTOR_PROFILE_UPDATED_EVENT = 'doctor-profile-updated';
+const DOCTOR_CONFLICT_TARGETS = ['employee_id', 'registration_number', 'email'] as const;
 const emptySignature: DigitalSignature = {
   mode: 'typed',
   typedValue: '',
@@ -96,6 +99,39 @@ function writeSignature(signature: DigitalSignature) {
 function departmentName(value: HospitalMember['departments'], fallback: string) {
   if (Array.isArray(value)) return value[0]?.name || fallback;
   return value?.name || fallback;
+}
+
+// The doctors directory exists in two historical shapes, so unknown columns are
+// dropped and the conflict target falls back until one combination is accepted.
+async function upsertDoctorRow(payload: Record<string, unknown>) {
+  let candidate: Record<string, unknown> = { ...payload };
+  let targetIndex = 0;
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const { error } = await supabase
+      .from('doctors')
+      .upsert(candidate, { onConflict: DOCTOR_CONFLICT_TARGETS[targetIndex] });
+    if (!error) return { synced: true };
+
+    if (error.code === '42P01') return { synced: false };
+
+    const missingColumn = error.message.match(/'([^']+)' column/)?.[1];
+    if (missingColumn && missingColumn in candidate) {
+      const next = { ...candidate };
+      delete next[missingColumn];
+      candidate = next;
+      continue;
+    }
+
+    if (error.code === '42P10' && targetIndex < DOCTOR_CONFLICT_TARGETS.length - 1) {
+      targetIndex += 1;
+      continue;
+    }
+
+    throw error;
+  }
+
+  throw new Error('The doctors directory rejected every supported column combination.');
 }
 
 function fromSession(session: DoctorSession): DoctorProfile {
@@ -186,6 +222,50 @@ export default function DoctorProfilePage() {
 
   const setField = (field: keyof DoctorProfile, value: string) => {
     setProfile((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleSaveProfile = async (formData: Record<string, unknown>) => {
+    setSaving(true);
+    try {
+      const specialty =
+        (formData.specialty as string) || (formData.specialization as string) || 'Consultant';
+      const license =
+        (formData.medical_license as string) ||
+        (formData.registration_number as string) ||
+        'REG-PENDING';
+      const payload = {
+        employee_id: (formData.employee_id as string) || 'RH-D06',
+        full_name: (formData.full_name as string) || (formData.name as string) || 'Doctor',
+        department: (formData.department as string) || 'General Medicine',
+        specialty,
+        specialization: specialty,
+        medical_license: license,
+        registration_number: license,
+        email: (formData.email as string) || '',
+        phone: (formData.phone as string) || '',
+        qualification: (formData.qualification as string) || 'MBBS',
+        room_number: (formData.room_number as string) || '',
+        consultation_fee: formData.consultation_fee ? Number(formData.consultation_fee) : 800,
+        bio: (formData.bio as string) || '',
+        updated_at: new Date().toISOString(),
+      };
+
+      // Written before the network call so a refresh keeps the chosen profile even offline.
+      localStorage.setItem(ACTIVE_DOCTOR_KEY, JSON.stringify(payload));
+      window.dispatchEvent(new Event(DOCTOR_PROFILE_UPDATED_EVENT));
+
+      const { synced } = await upsertDoctorRow(payload);
+      toast.success(
+        synced
+          ? 'Doctor profile updated and synced successfully.'
+          : 'Doctor profile saved to this device.',
+      );
+    } catch (error) {
+      console.error('Error saving doctor profile:', error);
+      toast.error('Failed to save profile changes');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const saveProfile = async (event: React.FormEvent) => {
@@ -296,7 +376,19 @@ export default function DoctorProfilePage() {
       setProfile((current) => ({ ...current, departmentId: resolvedDepartmentId }));
       setSource('database');
       setOffline(false);
-      toast.success('Clinical profile updated');
+
+      await handleSaveProfile({
+        employee_id: profile.employeeId,
+        full_name: profile.fullName,
+        department: profile.department.trim(),
+        specialization: profile.specialization.trim(),
+        medical_license: profile.medicalLicenseNumber.trim(),
+        email: profile.email.trim(),
+        phone: profile.phone.trim(),
+        qualification: profile.qualification.trim(),
+        room_number: profile.opdRoomNumber.trim(),
+        consultation_fee: profile.consultationFee,
+      });
     } catch (error) {
       setSource('session');
       setOffline(true);

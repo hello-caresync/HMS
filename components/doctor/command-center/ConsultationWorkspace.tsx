@@ -120,7 +120,7 @@ export function ConsultationWorkspace({ appointmentId }: { appointmentId: string
       appointmentId: token.appointment_id ?? appointmentId,
     });
 
-    toast.success('Prescription signed & issued to Patient App');
+    toast.success('Prescription signed · Post-consultation bill dispatched to Patient & Cashier');
     router.push('/doctor/queue/');
   };
 

@@ -1,4 +1,53 @@
-'use client'; import { VENDOR_WORKFLOW_STAGES } from '@/lib/vendor/navigation';
-import { vendorClasses } from '@/lib/vendor/theme';
-import { useVendorAppStore } from '@/lib/vendor/store/vendor-app-store'; export function VendorWorkflowBar() { const activeStage = useVendorAppStore((s) => s.workflowStage); const setStage = useVendorAppStore((s) => s.setWorkflowStage); return ( <div className="flex flex-wrap items-center gap-1 rounded-xl border border-vendor-accent/20 bg-vendor-cream/80 px-2 py-2 text-[10px] font-semibold uppercase tracking-wide text-vendor-muted" aria-label="Procurement lifecycle" > {VENDOR_WORKFLOW_STAGES.map((stage, index) => { const isActive = stage === activeStage; return ( <span key={stage} className="flex items-center gap-1"> <button type="button" onClick={() => setStage(stage)} className={isActive ? vendorClasses.tabActive : vendorClasses.tabIdle} > {stage} </button> {index < VENDOR_WORKFLOW_STAGES.length - 1 ? ( <span className="text-vendor-accent" aria-hidden> → </span> ) : null} </span> ); })} </div> );
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+
+import { LifecycleStepper } from '@/components/vendor/shell/LifecycleStepper';
+import { lifecycleRouteForStage, type LifecycleCounts, type LifecycleStage } from '@/lib/vendor/lifecycle';
+import { useActiveHospitalCode, useVendorAppStore } from '@/lib/vendor/store/vendor-app-store';
+import { loadLifecycleCounts, subscribeVendorPortal } from '@/lib/vendor/v0/portal-service';
+
+/** Global procurement lifecycle bar — click a stage to filter all V0 workspaces. */
+export function VendorWorkflowBar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const hospitalCode = useActiveHospitalCode();
+  const currentStage = useVendorAppStore((s) => s.workflowStage);
+  const setWorkflowStage = useVendorAppStore((s) => s.setWorkflowStage);
+  const [counts, setCounts] = useState<LifecycleCounts>({});
+
+  const reloadCounts = useCallback(async () => {
+    const result = await loadLifecycleCounts(hospitalCode);
+    setCounts(result.counts);
+  }, [hospitalCode]);
+
+  useEffect(() => {
+    void reloadCounts();
+  }, [reloadCounts]);
+
+  useEffect(
+    () =>
+      subscribeVendorPortal(
+        () => void reloadCounts(),
+        undefined,
+        { hospitalCode },
+      ),
+    [hospitalCode, reloadCounts],
+  );
+
+  const handleSelectStage = (stage: LifecycleStage) => {
+    setWorkflowStage(stage);
+
+    const targetRoute = lifecycleRouteForStage(stage);
+    if (targetRoute && pathname !== targetRoute && !pathname.startsWith(`${targetRoute}/`)) {
+      router.push(targetRoute);
+    }
+  };
+
+  return (
+    <LifecycleStepper currentStage={currentStage} onSelectStage={handleSelectStage} counts={counts} />
+  );
 }
+
+export default VendorWorkflowBar;

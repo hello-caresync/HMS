@@ -1,4 +1,5 @@
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { formatINR } from '@/lib/utils/currency';
 
 import type {
   DbAdmission,
@@ -69,7 +70,7 @@ function mapBilling(row: DbBillingInvoice): HospitalUiRecord {
     reference: row.invoice_number,
     subject: row.patient_name,
     department: row.department ?? 'Billing',
-    amount: `₹${total.toLocaleString('en-IN')} · paid ₹${paid.toLocaleString('en-IN')}`,
+    amount: `${formatINR(total)} · paid ${formatINR(paid)}`,
     status: row.payment_status ?? row.status,
     updatedAt: formatUpdated(row.updated_at),
     totalDue: total,

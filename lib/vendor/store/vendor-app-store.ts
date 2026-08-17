@@ -3,9 +3,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-import { MOCK_HOSPITALS, MOCK_ORGANIZATION } from '@/lib/vendor/mock/data';
+import { ALL_HOSPITALS_CODE, VENDOR_HOSPITALS } from '@/lib/vendor/hospitals';
+import { MOCK_ORGANIZATION } from '@/lib/vendor/mock/data';
 import type { HospitalPartner, VendorOrganization, VendorThemeMode } from '@/lib/vendor/types/domain';
-import type { VendorLifecycleStage } from '@/lib/vendor/navigation';
+import type { LifecycleStage } from '@/lib/vendor/lifecycle';
 
 type VendorAppState = {
   organization: VendorOrganization;
@@ -13,14 +14,14 @@ type VendorAppState = {
   activeHospitalId: string;
   theme: VendorThemeMode;
   sidebarCollapsed: boolean;
-  workflowStage: VendorLifecycleStage;
+  workflowStage: LifecycleStage;
   mfaEnabled: boolean;
   biometricEnabled: boolean;
   realtimeConnected: boolean;
   setActiveHospitalId: (id: string) => void;
   setTheme: (theme: VendorThemeMode) => void;
   toggleSidebar: () => void;
-  setWorkflowStage: (stage: VendorLifecycleStage) => void;
+  setWorkflowStage: (stage: LifecycleStage) => void;
   setMfaEnabled: (enabled: boolean) => void;
   setBiometricEnabled: (enabled: boolean) => void;
   setRealtimeConnected: (connected: boolean) => void;
@@ -32,15 +33,15 @@ export const useVendorAppStore = create<VendorAppState>()(
   persist(
     (set) => ({
       organization: MOCK_ORGANIZATION,
-      hospitals: MOCK_HOSPITALS,
-      activeHospitalId: 'hosp-1',
+      hospitals: VENDOR_HOSPITALS,
+      activeHospitalId: ALL_HOSPITALS_CODE,
       theme: 'light',
       sidebarCollapsed: false,
-      workflowStage: 'Issued',
+      workflowStage: 'ALL',
       mfaEnabled: true,
       biometricEnabled: false,
       realtimeConnected: false,
-      notificationUnreadCount: 8,
+      notificationUnreadCount: 0,
       setActiveHospitalId: (id) => set({ activeHospitalId: id }),
       setTheme: (theme) => set({ theme }),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -66,7 +67,14 @@ export const useVendorAppStore = create<VendorAppState>()(
 
 export function useActiveHospital() {
   return useVendorAppStore((s) => {
-    const hospital = s.hospitals.find((h) => h.id === s.activeHospitalId) ?? s.hospitals[0]!;
+    const hospital =
+      s.hospitals.find((h) => h.id === s.activeHospitalId) ??
+      s.hospitals.find((h) => h.id === ALL_HOSPITALS_CODE) ??
+      s.hospitals[0]!;
     return hospital;
   });
+}
+
+export function useActiveHospitalCode(): string {
+  return useActiveHospital().networkCode;
 }

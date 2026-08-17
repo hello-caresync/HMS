@@ -1,1 +1,1 @@
-export { default } from '@/components/doctor/sidebar';
+export { PatientSidebar as default, PatientSidebar } from '@/components/patient/Sidebar';

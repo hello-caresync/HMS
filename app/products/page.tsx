@@ -6,6 +6,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { DEFAULT_VENDOR_ID, PRODUCT_CATEGORIES } from '@/lib/vendor-supabase/constants';
 import type { NewProductInput, ProductRow } from '@/lib/vendor-supabase/types';
+import { formatINR } from '@/lib/utils/currency';
 
 type Toast = { type: 'success' | 'error'; message: string } | null;
 
@@ -21,9 +22,7 @@ const emptyForm: NewProductInput = {
 };
 
 function formatMoney(value: number) {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(
-    value,
-  );
+  return formatINR(value, { maximumFractionDigits: 2 });
 }
 
 export default function ProductsPage() {

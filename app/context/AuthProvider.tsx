@@ -59,6 +59,7 @@ const PROTECTED_PREFIXES = [
   '/insurance',
   '/insurance-tpa',
   '/inventory',
+  '/lab',
   '/procurement',
   '/vendor-coordination',
   '/finance',

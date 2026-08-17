@@ -1,10 +1,15 @@
-import BillingInvoiceWorkbench from '../../finance/billing/components/BillingInvoiceWorkbench';
+'use client';
 
-export const metadata = {
-  title: 'Billing · CuraSync ERP',
-  description: 'Unified invoice builder and GST ledger',
-};
+import BillingInvoiceWorkbench from '../../finance/billing/components/BillingInvoiceWorkbench';
+import { HospitalOpsShell } from '@/components/hospital-operations/HospitalOpsShell';
 
 export default function BillingPage() {
-  return <BillingInvoiceWorkbench />;
+  return (
+    <HospitalOpsShell
+      title="Billing & Cashier Desk"
+      subtitle="Consolidated invoicing · GST ledger · patient checkout"
+    >
+      <BillingInvoiceWorkbench />
+    </HospitalOpsShell>
+  );
 }

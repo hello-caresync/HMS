@@ -16,11 +16,12 @@ import { Download, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { DEFAULT_VENDOR_ID, FORECAST_CATEGORIES, FORECAST_HORIZONS } from '@/lib/vendor-supabase/constants';
 import type { InvoiceRow, ProductRow, PurchaseOrderRow, VendorProfileRow } from '@/lib/vendor-supabase/types';
+import { formatINR } from '@/lib/utils/currency';
 
 type Toast = { type: 'success' | 'error'; message: string } | null;
 
 function formatMoney(n: number) {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+  return formatINR(n);
 }
 
 function downloadCsv(filename: string, rows: string[][]) {
