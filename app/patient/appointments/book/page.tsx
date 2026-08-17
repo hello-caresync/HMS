@@ -4,6 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import {
+  calculateNextOpdTokenNumber,
+  registerPatientOnlineBooking,
+} from '@/lib/hospital/operations/appointment-sync';
+import {
   PATIENT_APPOINTMENTS_UUID,
   resolvePatientDbId,
 } from '@/lib/patient/constants';
@@ -122,12 +126,6 @@ function findDoctorDirectoryEntry(doctorName: string): DoctorDirectoryItem | und
   return ALL_41_DOCTORS.find((doctor) => doctor.name === doctorName);
 }
 
-function getDoctorSearchKey(doctorName: string): string {
-  const withoutPrefix = doctorName.replace(/^Dr\.?\s*/i, '').trim();
-  const [firstNamePart] = withoutPrefix.split(/\s+/);
-  return firstNamePart && firstNamePart.length >= 4 ? firstNamePart : withoutPrefix;
-}
-
 function findDoctorFromUrlParam(docParam: string): DoctorDirectoryItem | undefined {
   const normalized = decodeURIComponent(docParam).trim().toLowerCase();
 
@@ -233,22 +231,17 @@ function buildSchemaSafeBookingPayload(input: {
 }
 
 async function calculateNextTokenNumber(
-  doctorSearchKey: string,
+  doctorEmployeeId: string,
+  doctorName: string,
   appointmentDate: string,
 ): Promise<number> {
   try {
-    const { count, error } = await supabase
-      .from('patient_appointments')
-      .select('*', { count: 'exact', head: true })
-      .ilike('doctor_name', `%${doctorSearchKey}%`)
-      .eq('appointment_date', appointmentDate);
-
-    if (error) {
-      console.warn('Token count query fallback active:', error.message);
-      return 1;
-    }
-
-    return (count ?? 0) + 1;
+    return await calculateNextOpdTokenNumber(
+      supabase,
+      doctorEmployeeId,
+      doctorName,
+      appointmentDate,
+    );
   } catch (err) {
     console.warn('Token count exception fallback:', err);
     return 1;
@@ -472,19 +465,23 @@ export default function BookAppointmentPage() {
 
     try {
       const cleanPatientName = stripRelationshipTag(selectedPatientName);
-      const doctorSearchKey = getDoctorSearchKey(selectedDoctorName);
-      const calculatedToken = await calculateNextTokenNumber(doctorSearchKey, appointmentDate);
+      const doctorEntry = findDoctorDirectoryEntry(selectedDoctorName);
+      const doctorEmployeeId = doctorEntry?.id ?? 'RH-UNASSIGNED';
+      const calculatedToken = await calculateNextTokenNumber(
+        doctorEmployeeId,
+        selectedDoctorName,
+        appointmentDate,
+      );
 
       const appointmentUuid = generateStandardUuid();
       const bookingPatientUuid = resolveBookingPatientUuid(patientDbId);
-      const doctorEntry = findDoctorDirectoryEntry(selectedDoctorName);
 
       const newAppt = buildSchemaSafeBookingPayload({
         appointmentId: appointmentUuid,
         patientId: bookingPatientUuid,
         patientName: cleanPatientName,
         doctorName: selectedDoctorName,
-        doctorId: doctorEntry?.id ?? 'RH-UNASSIGNED',
+        doctorId: doctorEmployeeId,
         department: selectedDept,
         appointmentDate,
         slotTime,
@@ -493,13 +490,37 @@ export default function BookAppointmentPage() {
         tokenNumber: calculatedToken,
       });
 
-      // Schema-aligned primary insert: slot_time + appointment_time both set to selected slot.
+      // Primary patient-app ledger (doctor dashboard + patient history).
       const primaryInsert = await insertPrimaryPatientAppointment(newAppt);
 
       if (!primaryInsert.ok) {
         console.error('Supabase patient_appointments insert failed:', primaryInsert.message);
         setErrorMessage(
           `Booking could not be saved to the hospital cloud queue. ${primaryInsert.message}`,
+        );
+        return;
+      }
+
+      // Unified reception ledger — required for Hospital Operations Center realtime sync.
+      const receptionSync = await registerPatientOnlineBooking(supabase, {
+        id: newAppt.id,
+        patient_id: newAppt.patient_id,
+        patient_name: newAppt.patient_name,
+        doctor_id: newAppt.doctor_id,
+        doctor_name: newAppt.doctor_name,
+        department: newAppt.department,
+        appointment_date: newAppt.appointment_date,
+        appointment_time: newAppt.appointment_time,
+        slot_time: newAppt.slot_time,
+        fee: newAppt.fee,
+        reason: newAppt.reason,
+        token_number: newAppt.token_number,
+      });
+
+      if (!receptionSync.ok) {
+        console.error('Supabase appointments reception sync failed:', receptionSync.error);
+        setErrorMessage(
+          `Booking saved for your records but hospital reception sync failed. ${receptionSync.error ?? 'Please contact the front desk.'}`,
         );
         return;
       }

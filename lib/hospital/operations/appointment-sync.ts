@@ -2,11 +2,14 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { ensureDoctorUuid } from '@/lib/doctor/command-center/doctor-context';
 import { DEFAULT_ACTIVE_DOCTOR_ID } from '@/lib/doctor/command-center/supabase-service';
+import {
+  REGAL_FACILITY_CODE,
+  REGAL_HOSPITAL_ID,
+} from '@/lib/regal/constants';
 
 import type { AppointmentLifecycleStatus } from './types';
 
-/** Regal Hospital facility UUID shared with vendor portal. */
-export const REGAL_HOSPITAL_ID = '11111111-1111-1111-1111-111111111111';
+export { REGAL_HOSPITAL_ID, REGAL_FACILITY_CODE };
 
 export type WalkInRegistrationInput = {
   patient_name: string;
@@ -20,6 +23,122 @@ export type WalkInRegistrationInput = {
   token_number?: string;
   uhid?: string;
 };
+
+export type PatientOnlineBookingInput = {
+  id: string;
+  patient_id: string;
+  patient_name: string;
+  patient_uhid?: string;
+  doctor_id: string;
+  doctor_name: string;
+  department: string;
+  appointment_date: string;
+  appointment_time: string;
+  slot_time?: string;
+  fee?: string | number;
+  reason?: string;
+  token_number: number | string;
+};
+
+function formatTokenLabel(token: number | string): string {
+  if (typeof token === 'string' && /^T-\d+$/i.test(token.trim())) {
+    return token.trim().toUpperCase();
+  }
+  const numeric = typeof token === 'number' ? token : Number(String(token).replace(/\D/g, ''));
+  const seq = Number.isFinite(numeric) && numeric > 0 ? numeric : 1;
+  return `T-${String(seq).padStart(2, '0')}`;
+}
+
+function parseFeeAmount(fee?: string | number): number {
+  if (typeof fee === 'number' && Number.isFinite(fee)) return fee;
+  const parsed = Number(String(fee ?? '').replace(/[^\d.]/g, ''));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 800;
+}
+
+function dedupeAppointmentRows(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+  const seen = new Set<string>();
+  const merged: Record<string, unknown>[] = [];
+
+  for (const row of rows) {
+    const key = String(row.appointment_id ?? row.id ?? '');
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(row);
+  }
+
+  return merged;
+}
+
+/** Map legacy patient_appointments rows into hospital OPD shape. */
+export function normalizePatientAppointmentToHospital(
+  row: Record<string, unknown>,
+): Record<string, unknown> {
+  const tokenNumber = row.token_number ?? row.token;
+  return normalizeHospitalAppointmentRow({
+    id: row.id,
+    appointment_id: row.id,
+    hospital_id: REGAL_HOSPITAL_ID,
+    facility_code: REGAL_FACILITY_CODE,
+    hospital_code: REGAL_FACILITY_CODE,
+    patient_id: row.patient_id,
+    patient_name: row.patient_name,
+    patient_uhid: row.patient_uhid ?? row.uhid,
+    doctor_code: row.doctor_id,
+    doctor_employee_id: row.doctor_id,
+    doctor_id: row.doctor_id,
+    doctor_name: row.doctor_name,
+    department: row.department,
+    appointment_date: row.appointment_date,
+    appointment_time: row.appointment_time ?? row.slot_time,
+    slot_time: row.slot_time ?? row.appointment_time,
+    appointment_type: row.appointment_type ?? 'OPD Consultation',
+    token_number: tokenNumber != null ? formatTokenLabel(tokenNumber as string | number) : 'T-01',
+    queue_number: row.queue_number ?? row.token_number,
+    status: row.queue_status ?? row.status ?? 'confirmed',
+    chief_complaint: row.reason ?? row.chief_complaint,
+    reason_for_visit: row.reason ?? row.chief_complaint,
+    fee: parseFeeAmount(row.fee as string | number | undefined),
+    source: 'PATIENT_APP',
+    created_at: row.created_at,
+    updated_at: row.updated_at ?? row.created_at,
+  });
+}
+
+/** Count next OPD token for a clinician on a given date (appointments + patient_appointments). */
+export async function calculateNextOpdTokenNumber(
+  supabase: SupabaseClient,
+  doctorEmployeeId: string,
+  doctorName: string,
+  appointmentDate: string,
+): Promise<number> {
+  const doctorKey = doctorName.replace(/^Dr\.?\s*/i, '').split(/\s+/)[0] ?? doctorName;
+  let highest = 0;
+
+  const appointmentQueries = await Promise.all([
+    supabase
+      .from('appointments')
+      .select('token_number, queue_number')
+      .eq('appointment_date', appointmentDate)
+      .or(`doctor_code.eq.${doctorEmployeeId},doctor_employee_id.eq.${doctorEmployeeId},doctor_name.ilike.%${doctorKey}%`),
+    supabase
+      .from('patient_appointments')
+      .select('token_number')
+      .eq('appointment_date', appointmentDate)
+      .ilike('doctor_name', `%${doctorKey}%`),
+  ]);
+
+  for (const result of appointmentQueries) {
+    for (const row of result.data ?? []) {
+      const record = row as Record<string, unknown>;
+      const tokenRaw = record.token_number ?? record.queue_number;
+      if (tokenRaw == null) continue;
+      const match = String(tokenRaw).match(/(\d+)/);
+      if (match) highest = Math.max(highest, Number(match[1]));
+    }
+  }
+
+  return highest + 1;
+}
 
 export type AppointmentSyncResult = {
   ok: boolean;
@@ -197,12 +316,18 @@ async function insertAppointmentRow(
       .from('appointments')
       .update({
         hospital_id: payload.hospital_id,
+        facility_code: payload.facility_code,
+        hospital_code: payload.hospital_code,
         token_number: payload.token_number,
         uhid: payload.uhid,
+        patient_uhid: payload.patient_uhid,
         patient_name: payload.patient_name,
         doctor_name: payload.doctor_name,
         doctor_code: payload.doctor_code,
+        appointment_time: payload.appointment_time,
+        slot_time: payload.slot_time,
         chief_complaint: payload.chief_complaint,
+        reason_for_visit: payload.reason_for_visit,
         fee: payload.fee,
         updated_at: payload.updated_at,
       })
@@ -333,8 +458,11 @@ export async function registerWalkInAppointment(
     id: appointmentId,
     appointment_id: appointmentId,
     hospital_id: REGAL_HOSPITAL_ID,
+    facility_code: REGAL_FACILITY_CODE,
+    hospital_code: REGAL_FACILITY_CODE,
     token_number: tokenNumber,
     uhid,
+    patient_uhid: uhid,
     patient_id: patientId,
     patient_name: input.patient_name.trim(),
     age: input.age || '24',
@@ -391,6 +519,87 @@ export async function registerWalkInAppointment(
   };
 }
 
+/** Persist patient-app online booking to unified appointments ledger for hospital reception. */
+export async function registerPatientOnlineBooking(
+  supabase: SupabaseClient,
+  input: PatientOnlineBookingInput,
+): Promise<AppointmentSyncResult> {
+  const appointmentId = input.id;
+  const uhid = input.patient_uhid || newUhid();
+  const tokenNumber = formatTokenLabel(input.token_number);
+  const now = new Date().toISOString();
+  const clinicalReason = input.reason?.trim() || 'General OPD Consultation';
+
+  const doctorUuid = await resolveDoctorUuidForHospital(
+    input.doctor_id,
+    input.doctor_name,
+    input.department,
+  );
+
+  await upsertPatientRecords(supabase, {
+    patientId: input.patient_id,
+    uhid,
+    name: input.patient_name.trim(),
+    department: input.department,
+    chief_complaint: clinicalReason,
+    doctor_id: input.doctor_id,
+    doctor_name: input.doctor_name,
+  });
+
+  const payload: Record<string, unknown> = {
+    id: appointmentId,
+    appointment_id: appointmentId,
+    hospital_id: REGAL_HOSPITAL_ID,
+    facility_code: REGAL_FACILITY_CODE,
+    hospital_code: REGAL_FACILITY_CODE,
+    token_number: tokenNumber,
+    uhid,
+    patient_uhid: uhid,
+    patient_id: input.patient_id,
+    patient_name: input.patient_name.trim(),
+    doctor_id: doctorUuid,
+    doctor_code: input.doctor_id,
+    doctor_employee_id: input.doctor_id,
+    doctor_name: input.doctor_name,
+    department: input.department,
+    appointment_date: input.appointment_date,
+    appointment_time: input.appointment_time,
+    slot_time: input.slot_time ?? input.appointment_time,
+    appointment_type: 'OPD Consultation',
+    queue_number: parseTokenSequence(tokenNumber),
+    status: 'confirmed',
+    chief_complaint: clinicalReason,
+    reason_for_visit: clinicalReason,
+    fee: parseFeeAmount(input.fee),
+    source: 'PATIENT_APP',
+    updated_at: now,
+    created_at: now,
+  };
+
+  const { data, error } = await insertAppointmentRow(supabase, payload);
+  if (error) {
+    return { ok: false, error };
+  }
+
+  await ensureOpdToken(supabase, {
+    appointmentId,
+    doctorUuid,
+    patientId: input.patient_id,
+    tokenNumber,
+    status: 'ISSUED',
+  });
+
+  const row = normalizeHospitalAppointmentRow(data ?? payload);
+
+  return {
+    ok: true,
+    appointmentId,
+    patientId: input.patient_id,
+    doctorUuid,
+    row,
+  };
+}
+
 /** Update appointment lifecycle across hospital + doctor apps. */
 export async function transitionHospitalAppointment(
   supabase: SupabaseClient,
@@ -438,19 +647,84 @@ export async function transitionHospitalAppointment(
   return { ok: updated, appointmentId, error: updated ? undefined : 'Appointment update failed' };
 }
 
-/** Live-only appointment load for hospital OPD — never injects seed data. */
-export async function loadHospitalAppointmentsLive(
+async function loadPatientAppointmentsFallback(
   supabase: SupabaseClient,
 ): Promise<Record<string, unknown>[]> {
   try {
     const { data, error } = await supabase
-      .from('appointments')
+      .from('patient_appointments')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(200);
 
     if (error || !data?.length) return [];
-    return data.map((row) => normalizeHospitalAppointmentRow(row as Record<string, unknown>));
+    return data.map((row) =>
+      normalizePatientAppointmentToHospital(row as Record<string, unknown>),
+    );
+  } catch {
+    return [];
+  }
+}
+
+async function queryAppointmentsForFacility(
+  supabase: SupabaseClient,
+  facilityCode: string,
+): Promise<Record<string, unknown>[]> {
+  const facilityFilter = await supabase
+    .from('appointments')
+    .select('*')
+    .or(
+      `facility_code.eq.${facilityCode},hospital_code.eq.${facilityCode},hospital_id.eq.${REGAL_HOSPITAL_ID}`,
+    )
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  if (!facilityFilter.error && facilityFilter.data?.length) {
+    return facilityFilter.data as Record<string, unknown>[];
+  }
+
+  const hospitalFilter = await supabase
+    .from('appointments')
+    .select('*')
+    .eq('hospital_id', REGAL_HOSPITAL_ID)
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  if (!hospitalFilter.error && hospitalFilter.data?.length) {
+    return hospitalFilter.data as Record<string, unknown>[];
+  }
+
+  const unfiltered = await supabase
+    .from('appointments')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  if (unfiltered.error || !unfiltered.data?.length) return [];
+  return unfiltered.data as Record<string, unknown>[];
+}
+
+/** Live-only appointment load for hospital OPD — never injects seed data. */
+export async function loadHospitalAppointmentsLive(
+  supabase: SupabaseClient,
+  facilityCode: string = REGAL_FACILITY_CODE,
+): Promise<Record<string, unknown>[]> {
+  try {
+    const [appointmentRows, legacyRows] = await Promise.all([
+      queryAppointmentsForFacility(supabase, facilityCode),
+      loadPatientAppointmentsFallback(supabase),
+    ]);
+
+    const normalizedAppointments = appointmentRows.map((row) =>
+      normalizeHospitalAppointmentRow(row),
+    );
+    const merged = dedupeAppointmentRows([...normalizedAppointments, ...legacyRows]);
+
+    return merged.sort((left, right) => {
+      const leftTs = Date.parse(String(left.created_at ?? '')) || 0;
+      const rightTs = Date.parse(String(right.created_at ?? '')) || 0;
+      return rightTs - leftTs;
+    });
   } catch {
     return [];
   }

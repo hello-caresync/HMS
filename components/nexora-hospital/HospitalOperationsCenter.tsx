@@ -658,6 +658,7 @@ export default function HospitalOperationsCenter() {
     const channel = supabase
       .channel('regal-hospital-operations')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => void load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'patient_appointments' }, () => void load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'opd_tokens' }, () => void load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, () => void load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'prescriptions' }, () => void load())
@@ -665,7 +666,6 @@ export default function HospitalOperationsCenter() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_triages' }, () => void load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'billing_invoices' }, () => void load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, () => void load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => void load())
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'system_events' },
