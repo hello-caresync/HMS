@@ -1,4 +1,4 @@
--- Emergency Triage Desk — live trauma intake (Regal RH-BLR-01)
+-- Emergency Triage Desk — full clinical lifecycle (Regal RH-BLR-01)
 -- Safe to re-run in Supabase SQL Editor.
 
 CREATE TABLE IF NOT EXISTS public.emergency_triage (
@@ -7,22 +7,32 @@ CREATE TABLE IF NOT EXISTS public.emergency_triage (
   facility_code VARCHAR(50) DEFAULT 'RH-BLR-01',
   hospital_code VARCHAR(50) DEFAULT 'RH-BLR-01',
   patient_name VARCHAR(150) NOT NULL,
-  patient_uhid VARCHAR(100),
+  patient_uhid VARCHAR(100) NOT NULL,
   priority_tier VARCHAR(30) NOT NULL DEFAULT 'P1 Critical',
   chief_complaint TEXT NOT NULL,
-  assigned_doctor_id VARCHAR(100) DEFAULT 'RH-D02',
-  assigned_doctor_name VARCHAR(150) DEFAULT 'Dr. Chandrakanth S. Kesari',
-  bp VARCHAR(30) DEFAULT '120/80',
-  spo2 INT DEFAULT 98,
-  pulse INT DEFAULT 80,
-  temp NUMERIC(4, 1) DEFAULT 37.0,
-  gcs INT DEFAULT 15,
+  assigned_doctor_id VARCHAR(100) NOT NULL DEFAULT 'RH-D02',
+  assigned_doctor_name VARCHAR(150) NOT NULL DEFAULT 'Dr. Chandrakanth S. Kesari',
+  bp VARCHAR(30) DEFAULT 'Pending',
+  spo2 INT,
+  pulse INT,
+  temp NUMERIC(4, 1),
+  gcs INT,
   status VARCHAR(50) DEFAULT 'active',
   doctor_bypass_triggered BOOLEAN DEFAULT true,
+  doctor_prescription_notes TEXT,
+  medications JSONB DEFAULT '[]'::jsonb,
+  attended_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
   arrival_time VARCHAR(30),
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+ALTER TABLE public.emergency_triage
+  ADD COLUMN IF NOT EXISTS doctor_prescription_notes TEXT,
+  ADD COLUMN IF NOT EXISTS medications JSONB DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS attended_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
 
 DELETE FROM public.emergency_triage
 WHERE patient_name IN ('Unknown Male (Trauma)', 'Kavya Menon', 'Arjun Das', 'unknown');
@@ -32,6 +42,9 @@ CREATE INDEX IF NOT EXISTS idx_emergency_triage_facility
 
 CREATE INDEX IF NOT EXISTS idx_emergency_triage_status
   ON public.emergency_triage (status, priority_tier);
+
+CREATE INDEX IF NOT EXISTS idx_emergency_triage_doctor
+  ON public.emergency_triage (assigned_doctor_id, status);
 
 ALTER TABLE public.emergency_triage ENABLE ROW LEVEL SECURITY;
 

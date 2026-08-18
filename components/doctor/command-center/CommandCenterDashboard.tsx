@@ -30,6 +30,7 @@ import { useCommandCenterStore } from '@/lib/doctor/command-center/store';
 import { ccClasses } from '@/lib/doctor/command-center/theme';
 import { KpiCard } from './KpiCard';
 import { QueueDrawer } from './QueueDrawer';
+import EmergencyBypassTakeover from './EmergencyBypassTakeover';
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -120,6 +121,10 @@ export function CommandCenterDashboard(props: CommandCenterDashboardProps) {
 
   return (
     <div className="space-y-6">
+      <EmergencyBypassTakeover
+        assignedDoctorId={activeDoctorId || 'RH-D02'}
+        assignedDoctorName={doctorName}
+      />
       {criticalAlerts.length > 0 && (
         <div className="flex items-center justify-between rounded-2xl border border-[#D9534F]/30 bg-[#D9534F]/10 px-5 py-4 animate-pulse">
           <div className="flex items-center gap-3">
