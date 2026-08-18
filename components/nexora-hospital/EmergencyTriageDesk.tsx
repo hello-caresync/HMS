@@ -25,11 +25,11 @@ export interface TraumaCase {
   chief_complaint: string;
   assigned_doctor_name: string;
   assigned_doctor_id?: string;
-  bp: string;
-  spo2: number;
-  pulse: number;
-  temp: number;
-  gcs?: number;
+  bp?: string | null;
+  spo2?: number | null;
+  pulse?: number | null;
+  temp?: number | null;
+  gcs?: number | null;
   status: 'active' | 'stabilized' | 'transferred' | 'discharged' | string;
   doctor_bypass_triggered: boolean;
   arrival_time?: string;
@@ -56,6 +56,10 @@ interface EmergencyTriageDeskProps {
 }
 
 function normalizeTraumaRow(row: Record<string, unknown>): TraumaCase {
+  const bpRaw = row.bp;
+  const bp =
+    bpRaw == null || String(bpRaw).trim() === '' ? null : String(bpRaw);
+
   return {
     id: String(row.id ?? ''),
     hospital_id: String(row.hospital_id ?? REGAL_HOSPITAL_ID),
@@ -67,16 +71,29 @@ function normalizeTraumaRow(row: Record<string, unknown>): TraumaCase {
     chief_complaint: String(row.chief_complaint ?? 'Emergency intake'),
     assigned_doctor_name: String(row.assigned_doctor_name ?? 'On-call trauma team'),
     assigned_doctor_id: row.assigned_doctor_id != null ? String(row.assigned_doctor_id) : undefined,
-    bp: String(row.bp ?? '120/80'),
-    spo2: Number(row.spo2 ?? 98),
-    pulse: Number(row.pulse ?? 80),
-    temp: Number(row.temp ?? 37),
-    gcs: row.gcs != null ? Number(row.gcs) : undefined,
+    bp,
+    spo2: row.spo2 == null || row.spo2 === '' ? null : Number(row.spo2),
+    pulse: row.pulse == null || row.pulse === '' ? null : Number(row.pulse),
+    temp: row.temp == null || row.temp === '' ? null : Number(row.temp),
+    gcs: row.gcs == null || row.gcs === '' ? null : Number(row.gcs),
     status: String(row.status ?? 'active'),
     doctor_bypass_triggered: Boolean(row.doctor_bypass_triggered),
     arrival_time: row.arrival_time != null ? String(row.arrival_time) : undefined,
     created_at: String(row.created_at ?? new Date().toISOString()),
   };
+}
+
+function formatBp(value: string | null | undefined): string {
+  if (value == null || value.trim() === '' || value === 'Pending') return '\u2014';
+  return value;
+}
+
+function formatNumericVital(
+  value: number | null | undefined,
+  suffix = '',
+): string {
+  if (value == null || Number.isNaN(value)) return '\u2014';
+  return `${value}${suffix}`;
 }
 
 function ToastBanner({
@@ -151,11 +168,11 @@ export default function EmergencyTriageDesk({
     priority_tier: 'P1 Critical',
     chief_complaint: '',
     assigned_doctor_name: currentDoctorName,
-    bp: '90/60',
-    spo2: 91,
-    pulse: 128,
-    temp: 36.8,
-    gcs: 9,
+    bp: '',
+    spo2: '',
+    pulse: '',
+    temp: '',
+    gcs: '',
     doctor_bypass: true,
   });
 
@@ -239,6 +256,12 @@ export default function EmergencyTriageDesk({
       const arrivalTimeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const generatedUhid = form.patient_uhid.trim() || `EMR-${now.getTime().toString().slice(-4)}`;
 
+      const parsedBp = form.bp.trim() || 'Pending';
+      const parsedSpo2 = form.spo2.trim() ? Number(form.spo2) : null;
+      const parsedPulse = form.pulse.trim() ? Number(form.pulse) : null;
+      const parsedTemp = form.temp.trim() ? Number(form.temp) : null;
+      const parsedGcs = form.gcs.trim() ? Number(form.gcs) : null;
+
       const { error: insertError } = await supabase.from('emergency_triage').insert({
         hospital_id: hospitalId,
         facility_code: facilityCode,
@@ -249,11 +272,11 @@ export default function EmergencyTriageDesk({
         chief_complaint: form.chief_complaint.trim(),
         assigned_doctor_name: form.assigned_doctor_name.trim() || currentDoctorName,
         assigned_doctor_id: currentDoctorId,
-        bp: form.bp.trim() || '120/80',
-        spo2: Number(form.spo2),
-        pulse: Number(form.pulse),
-        temp: Number(form.temp),
-        gcs: Number(form.gcs),
+        bp: parsedBp,
+        spo2: parsedSpo2,
+        pulse: parsedPulse,
+        temp: parsedTemp,
+        gcs: parsedGcs,
         status: 'active',
         doctor_bypass_triggered: form.doctor_bypass,
         arrival_time: arrivalTimeString,
@@ -263,7 +286,16 @@ export default function EmergencyTriageDesk({
       if (insertError) throw insertError;
 
       if (form.doctor_bypass) {
-        const bypassMessage = `DOCTOR BYPASS: [${form.priority_tier}] ${form.patient_name.trim()} admitted with "${form.chief_complaint.trim()}". Vitals: BP ${form.bp}, SpO2 ${form.spo2}%, Pulse ${form.pulse} bpm. Immediate bedside presence required!`;
+        const vitalsSummary =
+          [
+            form.bp.trim() ? `BP: ${form.bp.trim()}` : null,
+            form.spo2.trim() ? `SpO2: ${form.spo2.trim()}%` : null,
+            form.pulse.trim() ? `Pulse: ${form.pulse.trim()} bpm` : null,
+          ]
+            .filter(Boolean)
+            .join(' \u2022 ') || 'Vitals Pending';
+
+        const bypassMessage = `DOCTOR BYPASS: [${form.priority_tier}] ${form.patient_name.trim()} admitted with "${form.chief_complaint.trim()}". (${vitalsSummary}). Immediate bedside presence required!`;
 
         await supabase.from('channel_messages').insert({
           hospital_id: hospitalId,
@@ -300,11 +332,11 @@ export default function EmergencyTriageDesk({
         priority_tier: 'P1 Critical',
         chief_complaint: '',
         assigned_doctor_name: currentDoctorName,
-        bp: '90/60',
-        spo2: 91,
-        pulse: 128,
-        temp: 36.8,
-        gcs: 9,
+        bp: '',
+        spo2: '',
+        pulse: '',
+        temp: '',
+        gcs: '',
         doctor_bypass: true,
       });
       await fetchTraumaCases();
@@ -400,15 +432,19 @@ export default function EmergencyTriageDesk({
             />
           </Field>
 
-          <Field label="Intake Vitals">
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="font-bold text-slate-700">Intake Vitals</span>
+              <span className="text-[10px] font-medium text-slate-400">Optional &bull; Leave blank if not yet measured</span>
+            </div>
             <div className="grid grid-cols-5 gap-2">
               {(
                 [
-                  ['bp', 'BP', 'text', '90/60'],
-                  ['spo2', 'SpO2 %', 'number', '91'],
-                  ['pulse', 'Pulse', 'number', '128'],
-                  ['temp', 'Temp °C', 'number', '36.8'],
-                  ['gcs', 'GCS', 'number', '9'],
+                  ['bp', 'BP', 'text', '120/80'],
+                  ['spo2', 'SpO2 %', 'number', '98'],
+                  ['pulse', 'Pulse', 'number', '75'],
+                  ['temp', 'Temp °C', 'number', '37.0'],
+                  ['gcs', 'GCS', 'number', '15'],
                 ] as const
               ).map(([key, label, inputType, placeholder]) => (
                 <div key={key}>
@@ -419,20 +455,19 @@ export default function EmergencyTriageDesk({
                     min={key === 'gcs' ? 3 : undefined}
                     max={key === 'gcs' ? 15 : undefined}
                     placeholder={placeholder}
-                    value={String(form[key])}
+                    value={form[key]}
                     onChange={(event) =>
                       setForm({
                         ...form,
-                        [key]:
-                          key === 'bp' ? event.target.value : Number(event.target.value),
+                        [key]: event.target.value,
                       })
                     }
-                    className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-center text-xs font-bold"
+                    className="w-full rounded-lg border border-slate-300 bg-slate-50 px-2 py-1.5 text-center text-xs font-bold focus:bg-white"
                   />
                 </div>
               ))}
             </div>
-          </Field>
+          </div>
 
           <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3">
             <input
@@ -583,21 +618,23 @@ export default function EmergencyTriageDesk({
 
                   <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/60 pt-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <VitalChip label="BP" value={traumaCase.bp || '120/80'} />
+                      <VitalChip label="BP" value={formatBp(traumaCase.bp)} />
                       <VitalChip
                         label="SpO2"
-                        value={`${traumaCase.spo2 ?? 98}%`}
-                        alert={Boolean(traumaCase.spo2 && traumaCase.spo2 < 92)}
+                        value={formatNumericVital(traumaCase.spo2, '%')}
+                        alert={traumaCase.spo2 != null && traumaCase.spo2 < 92}
                       />
                       <VitalChip
                         label="Pulse"
-                        value={String(traumaCase.pulse ?? 80)}
-                        alert={Boolean(traumaCase.pulse && traumaCase.pulse > 110)}
+                        value={formatNumericVital(traumaCase.pulse, ' bpm')}
+                        alert={traumaCase.pulse != null && traumaCase.pulse > 110}
                       />
-                      <VitalChip label="Temp" value={`${traumaCase.temp ?? 37}°C`} />
-                      {traumaCase.gcs != null && (
-                        <VitalChip label="GCS" value={String(traumaCase.gcs)} alert={traumaCase.gcs <= 9} />
-                      )}
+                      <VitalChip label="Temp" value={formatNumericVital(traumaCase.temp, '°C')} />
+                      <VitalChip
+                        label="GCS"
+                        value={formatNumericVital(traumaCase.gcs)}
+                        alert={traumaCase.gcs != null && traumaCase.gcs <= 9}
+                      />
                     </div>
 
                     <button
