@@ -621,6 +621,7 @@ function DoctorSearchSelect({
 export default function HospitalOperationsCenter() {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [intent, setIntent] = useState<Intent>(null);
+  const [emergencyQuickEntry, setEmergencyQuickEntry] = useState(false);
   const [live, setLive] = useState(false);
 
   const [appointments, setAppointments] = useState<Row[]>([]);
@@ -678,9 +679,19 @@ export default function HospitalOperationsCenter() {
         { event: 'INSERT', schema: 'public', table: 'system_events' },
         (message: { new?: Row | null }) => {
           const event = (message.new ?? {}) as Row;
+          const eventType = str(event.event_type);
+          const payload = (event.payload ?? {}) as Row;
+
           if (str(event.severity) === 'critical') {
-            const payload = (event.payload ?? {}) as Row;
-            toast.error(str(payload.message, 'Critical ecosystem alert received'), { duration: 6000 });
+            if (eventType === 'EMERGENCY_BYPASS_TRIGGERED') {
+              toast.message('Doctor bypass broadcast', {
+                description: str(payload.message, 'Emergency bypass alert sent to on-duty doctors'),
+                duration: 6000,
+                className: 'border-amber-300 bg-amber-50 text-amber-900',
+              });
+            } else {
+              toast.error(str(payload.message, 'Critical ecosystem alert received'), { duration: 6000 });
+            }
           }
           void load();
         },
@@ -755,9 +766,24 @@ export default function HospitalOperationsCenter() {
             <h2 className="text-xl font-black tracking-tight text-slate-900">{heading.title}</h2>
             <p className={`mt-0.5 ${ui.meta}`}>{heading.sub}</p>
           </div>
-          <span className="rounded-full bg-[#00A896]/10 px-3 py-1 text-xs font-bold text-[#00806f]">
-            {DEFAULT_REGAL_DOCTOR.name} {MDOT} {DEFAULT_REGAL_DOCTOR.id}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEmergencyQuickEntry(true);
+                if (activeTab !== 'emergency') {
+                  setIntent('bypass');
+                }
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700 active:scale-95"
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Emergency Quick-Entry
+            </button>
+            <span className="rounded-full bg-[#00A896]/10 px-3 py-1 text-xs font-bold text-[#00806f]">
+              {DEFAULT_REGAL_DOCTOR.name} {MDOT} {DEFAULT_REGAL_DOCTOR.id}
+            </span>
+          </div>
         </header>
 
         <div className="flex-1 space-y-5 p-6">
@@ -796,8 +822,24 @@ export default function HospitalOperationsCenter() {
               supabase={client()}
               facilityCode={REGAL_FACILITY.code}
               hospitalId={REGAL_HOSPITAL_ID}
-              autoOpenIntake={intent === 'bypass'}
-              onIntentHandled={clearIntent}
+              isOpenModalExternally={emergencyQuickEntry || intent === 'bypass'}
+              onCloseExternalModal={() => {
+                setEmergencyQuickEntry(false);
+                clearIntent();
+              }}
+            />
+          )}
+          {activeTab !== 'emergency' && emergencyQuickEntry && (
+            <EmergencyTriageDesk
+              supabase={client()}
+              facilityCode={REGAL_FACILITY.code}
+              hospitalId={REGAL_HOSPITAL_ID}
+              modalOnly
+              isOpenModalExternally={emergencyQuickEntry}
+              onCloseExternalModal={() => {
+                setEmergencyQuickEntry(false);
+                clearIntent();
+              }}
             />
           )}
           {activeTab === 'billing' && <BillingTab bills={bills} setBills={setBills} />}

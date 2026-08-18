@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.emergency_triage (
   hospital_code VARCHAR(50) DEFAULT 'RH-BLR-01',
   patient_name VARCHAR(150) NOT NULL,
   patient_uhid VARCHAR(100),
-  priority_tier VARCHAR(20) NOT NULL DEFAULT 'P1 Critical',
+  priority_tier VARCHAR(30) NOT NULL DEFAULT 'P1 Critical',
   chief_complaint TEXT NOT NULL,
   assigned_doctor_id VARCHAR(100) DEFAULT 'RH-D02',
   assigned_doctor_name VARCHAR(150) DEFAULT 'Dr. Chandrakanth S. Kesari',
@@ -18,14 +18,14 @@ CREATE TABLE IF NOT EXISTS public.emergency_triage (
   temp NUMERIC(4, 1) DEFAULT 37.0,
   gcs INT DEFAULT 15,
   status VARCHAR(50) DEFAULT 'active',
-  doctor_bypass_triggered BOOLEAN DEFAULT false,
-  arrival_time VARCHAR(20),
+  doctor_bypass_triggered BOOLEAN DEFAULT true,
+  arrival_time VARCHAR(30),
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
 DELETE FROM public.emergency_triage
-WHERE patient_name IN ('Unknown Male (Trauma)', 'Kavya Menon', 'Arjun Das');
+WHERE patient_name IN ('Unknown Male (Trauma)', 'Kavya Menon', 'Arjun Das', 'unknown');
 
 CREATE INDEX IF NOT EXISTS idx_emergency_triage_facility
   ON public.emergency_triage (facility_code, created_at DESC);
@@ -35,8 +35,9 @@ CREATE INDEX IF NOT EXISTS idx_emergency_triage_status
 
 ALTER TABLE public.emergency_triage ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "open_emergency_triage" ON public.emergency_triage;
 DROP POLICY IF EXISTS "open_emergency_triage_access" ON public.emergency_triage;
-CREATE POLICY "open_emergency_triage_access" ON public.emergency_triage
+CREATE POLICY "open_emergency_triage" ON public.emergency_triage
   FOR ALL TO anon, authenticated
   USING (true)
   WITH CHECK (true);

@@ -7,20 +7,12 @@ import {
   AlertOctagon,
   BellRing,
   CheckCircle2,
-  HeartPulse,
   Radio,
   RefreshCw,
-  Thermometer,
-  Wind,
   X,
 } from 'lucide-react';
 
 import { REGAL_FACILITY_CODE, REGAL_HOSPITAL_ID } from '@/lib/regal/constants';
-import {
-  priorityTierFromCode,
-  registerEmergencyTriageIntake,
-  type EmergencyPriorityTier,
-} from '@/lib/hospital/operations/emergency-triage-sync';
 
 export interface TraumaCase {
   id: string;
@@ -29,7 +21,7 @@ export interface TraumaCase {
   hospital_code: string;
   patient_name: string;
   patient_uhid?: string;
-  priority_tier: EmergencyPriorityTier | string;
+  priority_tier: 'P1 Critical' | 'P2 Urgent' | 'P3 Non-Urgent' | string;
   chief_complaint: string;
   assigned_doctor_name: string;
   assigned_doctor_id?: string;
@@ -44,17 +36,24 @@ export interface TraumaCase {
   created_at: string;
 }
 
+type ToastKind = 'success' | 'broadcast' | 'error';
+
 interface EmergencyTriageDeskProps {
   supabase: SupabaseClient;
   facilityCode?: string;
   hospitalId?: string;
   currentDoctorName?: string;
   currentDoctorId?: string;
+  /** Opens intake modal from global header quick-entry */
+  isOpenModalExternally?: boolean;
+  onCloseExternalModal?: () => void;
+  /** @deprecated use isOpenModalExternally */
   autoOpenIntake?: boolean;
+  /** @deprecated use onCloseExternalModal */
   onIntentHandled?: () => void;
+  /** When true, only renders the intake modal overlay (no trauma board) */
+  modalOnly?: boolean;
 }
-
-const PRIORITY_OPTIONS: EmergencyPriorityTier[] = ['P1 Critical', 'P2 Urgent', 'P3 Non-Urgent'];
 
 function normalizeTraumaRow(row: Record<string, unknown>): TraumaCase {
   return {
@@ -64,14 +63,14 @@ function normalizeTraumaRow(row: Record<string, unknown>): TraumaCase {
     hospital_code: String(row.hospital_code ?? REGAL_FACILITY_CODE),
     patient_name: String(row.patient_name ?? 'Patient'),
     patient_uhid: row.patient_uhid != null ? String(row.patient_uhid) : undefined,
-    priority_tier: String(row.priority_tier ?? row.priority ?? 'P3 Non-Urgent'),
-    chief_complaint: String(row.chief_complaint ?? row.complaint ?? 'Emergency intake'),
-    assigned_doctor_name: String(row.assigned_doctor_name ?? row.surgeon ?? 'On-call trauma team'),
+    priority_tier: String(row.priority_tier ?? 'P3 Non-Urgent'),
+    chief_complaint: String(row.chief_complaint ?? 'Emergency intake'),
+    assigned_doctor_name: String(row.assigned_doctor_name ?? 'On-call trauma team'),
     assigned_doctor_id: row.assigned_doctor_id != null ? String(row.assigned_doctor_id) : undefined,
-    bp: String(row.bp ?? '—'),
-    spo2: Number(row.spo2 ?? 0),
-    pulse: Number(row.pulse ?? 0),
-    temp: Number(row.temp ?? 0),
+    bp: String(row.bp ?? '120/80'),
+    spo2: Number(row.spo2 ?? 98),
+    pulse: Number(row.pulse ?? 80),
+    temp: Number(row.temp ?? 37),
     gcs: row.gcs != null ? Number(row.gcs) : undefined,
     status: String(row.status ?? 'active'),
     doctor_bypass_triggered: Boolean(row.doctor_bypass_triggered),
@@ -80,37 +79,49 @@ function normalizeTraumaRow(row: Record<string, unknown>): TraumaCase {
   };
 }
 
-async function broadcastBypassChannelMessage(
-  supabase: SupabaseClient,
-  input: {
-    hospitalId: string;
-    facilityCode: string;
-    priorityTier: string;
-    patientName: string;
-    chiefComplaint: string;
-    bp: string;
-    spo2: number;
-    pulse: number;
-  },
-): Promise<void> {
-  const message = `[${input.priorityTier}] ${input.patientName} admitted with "${input.chiefComplaint}". Vitals: BP ${input.bp}, SpO2 ${input.spo2}%, Pulse ${input.pulse} bpm. Immediate bedside presence required!`;
+function ToastBanner({
+  toast,
+  onDismiss,
+}: {
+  toast: { type: ToastKind; text: string };
+  onDismiss: () => void;
+}) {
+  const styles =
+    toast.type === 'broadcast'
+      ? 'border-amber-300 bg-amber-50 text-amber-900'
+      : toast.type === 'success'
+        ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+        : 'border-rose-300 bg-rose-50 text-rose-900';
 
-  await supabase.from('channel_messages').insert({
-    hospital_id: input.hospitalId,
-    facility_code: input.facilityCode,
-    hospital_code: input.facilityCode,
-    channel_type: 'emergency',
-    sender_role: 'emergency_triage',
-    sender_id: 'TRIAGE-DESK',
-    sender_name: 'Emergency Triage Desk',
-    recipient_type: 'doctor',
-    recipient_id: 'ALL',
-    message,
-    message_text: message,
-    priority: 'critical',
-    is_read: false,
-    created_at: new Date().toISOString(),
-  });
+  const Icon =
+    toast.type === 'broadcast' ? BellRing : toast.type === 'success' ? CheckCircle2 : AlertOctagon;
+
+  const iconClass =
+    toast.type === 'broadcast'
+      ? 'text-amber-600 animate-bounce'
+      : toast.type === 'success'
+        ? 'text-emerald-600'
+        : 'text-rose-600';
+
+  return (
+    <div
+      className={`flex items-center justify-between rounded-2xl border p-4 text-xs font-semibold shadow-md ${styles}`}
+      role="status"
+    >
+      <div className="flex items-center gap-2.5">
+        <Icon className={`h-4 w-4 shrink-0 ${iconClass}`} />
+        <span>{toast.text}</span>
+      </div>
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss alert"
+        className="ml-4 rounded-lg p-1 text-slate-500 transition-colors hover:bg-black/5"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
 }
 
 export default function EmergencyTriageDesk({
@@ -119,19 +130,25 @@ export default function EmergencyTriageDesk({
   hospitalId = REGAL_HOSPITAL_ID,
   currentDoctorName = 'Dr. Chandrakanth S. Kesari',
   currentDoctorId = 'RH-D02',
+  isOpenModalExternally = false,
+  onCloseExternalModal,
   autoOpenIntake = false,
   onIntentHandled,
+  modalOnly = false,
 }: EmergencyTriageDeskProps) {
+  const externalOpen = isOpenModalExternally || autoOpenIntake;
+  const closeExternal = onCloseExternalModal ?? onIntentHandled;
+
   const [traumaCases, setTraumaCases] = useState<TraumaCase[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!modalOnly);
   const [submitting, setSubmitting] = useState(false);
   const [showIntakeModal, setShowIntakeModal] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [toast, setToast] = useState<{ type: ToastKind; text: string } | null>(null);
 
   const [form, setForm] = useState({
     patient_name: '',
     patient_uhid: '',
-    priority_tier: 'P1 Critical' as EmergencyPriorityTier,
+    priority_tier: 'P1 Critical',
     chief_complaint: '',
     assigned_doctor_name: currentDoctorName,
     bp: '90/60',
@@ -143,6 +160,7 @@ export default function EmergencyTriageDesk({
   });
 
   const fetchTraumaCases = useCallback(async () => {
+    if (modalOnly) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -155,24 +173,26 @@ export default function EmergencyTriageDesk({
       if (error) throw error;
       setTraumaCases((data ?? []).map((row) => normalizeTraumaRow(row as Record<string, unknown>)));
     } catch (err: unknown) {
-      console.error('Error fetching trauma triage cases:', err);
-      setFeedback({
+      console.error('Error fetching triage records:', err);
+      setToast({
         type: 'error',
-        message: err instanceof Error ? err.message : 'Failed to load trauma cases.',
+        text: err instanceof Error ? err.message : 'Failed to load trauma cases.',
       });
       setTraumaCases([]);
     } finally {
       setLoading(false);
     }
-  }, [supabase, facilityCode, hospitalId]);
+  }, [supabase, facilityCode, hospitalId, modalOnly]);
 
   useEffect(() => {
     void fetchTraumaCases();
   }, [fetchTraumaCases]);
 
   useEffect(() => {
+    if (modalOnly) return;
+
     const channel = supabase
-      .channel(`realtime_emergency_triage_stream_${facilityCode}`)
+      .channel(`emergency_desk_live_stream_${facilityCode}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'emergency_triage' },
@@ -183,69 +203,97 @@ export default function EmergencyTriageDesk({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [supabase, facilityCode, fetchTraumaCases]);
+  }, [supabase, facilityCode, fetchTraumaCases, modalOnly]);
 
   useEffect(() => {
-    if (!autoOpenIntake) return;
-    setShowIntakeModal(true);
-    setForm((current) => ({
-      ...current,
-      priority_tier: 'P1 Critical',
-      doctor_bypass: true,
-    }));
-    onIntentHandled?.();
-  }, [autoOpenIntake, onIntentHandled]);
+    if (externalOpen) {
+      setShowIntakeModal(true);
+      setForm((current) => ({
+        ...current,
+        priority_tier: 'P1 Critical',
+        doctor_bypass: true,
+      }));
+    }
+  }, [externalOpen]);
 
-  const handleIntakeEmergencyPatient = async (event: React.FormEvent) => {
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  const closeModal = () => {
+    setShowIntakeModal(false);
+    closeExternal?.();
+  };
+
+  const handleIntakeEmergency = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!form.patient_name.trim() || !form.chief_complaint.trim()) return;
 
     setSubmitting(true);
-    setFeedback(null);
+    setToast(null);
 
     try {
-      const bypass = form.doctor_bypass || form.priority_tier === 'P1 Critical';
+      const now = new Date();
+      const arrivalTimeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const generatedUhid = form.patient_uhid.trim() || `EMR-${now.getTime().toString().slice(-4)}`;
 
-      const result = await registerEmergencyTriageIntake(supabase, {
+      const { error: insertError } = await supabase.from('emergency_triage').insert({
+        hospital_id: hospitalId,
+        facility_code: facilityCode,
+        hospital_code: facilityCode,
         patient_name: form.patient_name.trim(),
-        patient_uhid: form.patient_uhid.trim() || undefined,
-        chief_complaint: form.chief_complaint.trim(),
+        patient_uhid: generatedUhid,
         priority_tier: form.priority_tier,
-        assigned_doctor_id: currentDoctorId,
+        chief_complaint: form.chief_complaint.trim(),
         assigned_doctor_name: form.assigned_doctor_name.trim() || currentDoctorName,
+        assigned_doctor_id: currentDoctorId,
         bp: form.bp.trim() || '120/80',
         spo2: Number(form.spo2),
         pulse: Number(form.pulse),
         temp: Number(form.temp),
         gcs: Number(form.gcs),
-        trigger_doctor_bypass: bypass,
+        status: 'active',
+        doctor_bypass_triggered: form.doctor_bypass,
+        arrival_time: arrivalTimeString,
+        updated_at: now.toISOString(),
       });
 
-      if (!result.ok) {
-        throw new Error(result.error ?? 'Failed to submit trauma intake.');
-      }
+      if (insertError) throw insertError;
 
-      if (bypass) {
-        await broadcastBypassChannelMessage(supabase, {
-          hospitalId,
-          facilityCode,
-          priorityTier: form.priority_tier,
-          patientName: form.patient_name.trim(),
-          chiefComplaint: form.chief_complaint.trim(),
-          bp: form.bp.trim() || '120/80',
-          spo2: Number(form.spo2),
-          pulse: Number(form.pulse),
+      if (form.doctor_bypass) {
+        const bypassMessage = `DOCTOR BYPASS: [${form.priority_tier}] ${form.patient_name.trim()} admitted with "${form.chief_complaint.trim()}". Vitals: BP ${form.bp}, SpO2 ${form.spo2}%, Pulse ${form.pulse} bpm. Immediate bedside presence required!`;
+
+        await supabase.from('channel_messages').insert({
+          hospital_id: hospitalId,
+          facility_code: facilityCode,
+          hospital_code: facilityCode,
+          channel_type: 'emergency',
+          sender_role: 'emergency_triage',
+          sender_id: 'TRIAGE-DESK',
+          sender_name: 'Emergency Triage Desk',
+          recipient_type: 'doctor',
+          recipient_id: 'ALL',
+          message: bypassMessage,
+          message_text: bypassMessage,
+          priority: 'critical',
+          is_read: false,
+          created_at: now.toISOString(),
+        });
+
+        setToast({
+          type: 'broadcast',
+          text: `Doctor bypass broadcasted \u2022 On-duty doctors alerted for ${form.patient_name.trim()}`,
+        });
+      } else {
+        setToast({
+          type: 'success',
+          text: `Admitted ${form.patient_name.trim()} to Emergency Triage Desk.`,
         });
       }
 
-      setFeedback({
-        type: 'success',
-        message: `Admitted ${form.patient_name} (${form.priority_tier})${
-          bypass ? ' — Doctor Bypass Alert Broadcasted' : ''
-        }`,
-      });
-
-      setShowIntakeModal(false);
+      closeModal();
       setForm({
         patient_name: '',
         patient_uhid: '',
@@ -261,16 +309,16 @@ export default function EmergencyTriageDesk({
       });
       await fetchTraumaCases();
     } catch (err: unknown) {
-      setFeedback({
+      setToast({
         type: 'error',
-        message: err instanceof Error ? err.message : 'Failed to submit trauma intake.',
+        text: err instanceof Error ? err.message : 'Failed to submit emergency intake.',
       });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleResolveCase = async (id: string, patientName: string) => {
+  const handleResolveCase = async (id: string, name: string) => {
     try {
       const { error } = await supabase
         .from('emergency_triage')
@@ -278,42 +326,178 @@ export default function EmergencyTriageDesk({
         .eq('id', id);
 
       if (error) throw error;
-      setFeedback({ type: 'success', message: `${patientName} marked as stabilized.` });
+      setToast({ type: 'success', text: `${name} marked as stabilized/transferred.` });
       await fetchTraumaCases();
     } catch (err: unknown) {
-      setFeedback({
+      setToast({
         type: 'error',
-        message: err instanceof Error ? err.message : 'Failed to update case.',
+        text: err instanceof Error ? err.message : 'Failed to update case.',
       });
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {feedback && (
-        <div
-          className={`flex items-center justify-between rounded-xl border p-3.5 text-xs font-semibold transition-all ${
-            feedback.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-              : 'border-rose-200 bg-rose-50 text-rose-800'
-          }`}
-        >
-          <span>{feedback.message}</span>
-          <button type="button" onClick={() => setFeedback(null)} className="text-xs underline">
-            Dismiss
+  const intakeModal = showIntakeModal && (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <AlertOctagon className="h-5 w-5 text-rose-600" />
+            <h3 className="text-sm font-bold text-slate-800">Intake Trauma & Trigger Bypass</h3>
+          </div>
+          <button type="button" onClick={closeModal} className="text-slate-400 hover:text-slate-600">
+            <X className="h-4 w-4" />
           </button>
         </div>
-      )}
+
+        <form onSubmit={handleIntakeEmergency} className="space-y-3.5 text-xs">
+          <Field label="Patient Name / Identifier">
+            <input
+              type="text"
+              required
+              placeholder="Patient name or trauma identifier"
+              value={form.patient_name}
+              onChange={(event) => setForm({ ...form, patient_name: event.target.value })}
+              className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium focus:bg-white"
+            />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Priority Tier">
+              <select
+                value={form.priority_tier}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    priority_tier: event.target.value,
+                    doctor_bypass: event.target.value === 'P1 Critical' ? true : form.doctor_bypass,
+                  })
+                }
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-bold"
+              >
+                <option value="P1 Critical">P1 Critical (Immediate)</option>
+                <option value="P2 Urgent">P2 Urgent (15 min)</option>
+                <option value="P3 Non-Urgent">P3 Non-Urgent</option>
+              </select>
+            </Field>
+            <Field label="Assign Doctor">
+              <input
+                type="text"
+                value={form.assigned_doctor_name}
+                onChange={(event) => setForm({ ...form, assigned_doctor_name: event.target.value })}
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium"
+              />
+            </Field>
+          </div>
+
+          <Field label="Chief Complaint & Symptoms">
+            <textarea
+              required
+              rows={2}
+              placeholder="e.g. Acute chest pain, dyspnea, suspected MI"
+              value={form.chief_complaint}
+              onChange={(event) => setForm({ ...form, chief_complaint: event.target.value })}
+              className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs focus:bg-white"
+            />
+          </Field>
+
+          <Field label="Intake Vitals">
+            <div className="grid grid-cols-5 gap-2">
+              {(
+                [
+                  ['bp', 'BP', 'text', '90/60'],
+                  ['spo2', 'SpO2 %', 'number', '91'],
+                  ['pulse', 'Pulse', 'number', '128'],
+                  ['temp', 'Temp °C', 'number', '36.8'],
+                  ['gcs', 'GCS', 'number', '9'],
+                ] as const
+              ).map(([key, label, inputType, placeholder]) => (
+                <div key={key}>
+                  <span className="mb-0.5 block text-[10px] font-semibold text-slate-400">{label}</span>
+                  <input
+                    type={inputType}
+                    step={key === 'temp' ? '0.1' : '1'}
+                    min={key === 'gcs' ? 3 : undefined}
+                    max={key === 'gcs' ? 15 : undefined}
+                    placeholder={placeholder}
+                    value={String(form[key])}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        [key]:
+                          key === 'bp' ? event.target.value : Number(event.target.value),
+                      })
+                    }
+                    className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-center text-xs font-bold"
+                  />
+                </div>
+              ))}
+            </div>
+          </Field>
+
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3">
+            <input
+              type="checkbox"
+              checked={form.doctor_bypass}
+              onChange={(event) => setForm({ ...form, doctor_bypass: event.target.checked })}
+              className="h-4 w-4 rounded text-rose-600 focus:ring-rose-500"
+            />
+            <div>
+              <span className="block font-bold text-rose-900">Broadcast Instant Doctor Bypass Alert</span>
+              <span className="text-[11px] text-rose-700">
+                Notifies doctor OPD workspace and sends high-priority channel alert
+              </span>
+            </div>
+          </label>
+
+          <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={closeModal}
+              disabled={submitting}
+              className="rounded-xl border border-slate-200 px-4 py-2 font-bold hover:bg-slate-50 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex items-center gap-1.5 rounded-xl bg-rose-600 px-5 py-2 font-bold text-white hover:bg-rose-700 disabled:opacity-50"
+            >
+              <BellRing className="h-3.5 w-3.5" />
+              {submitting ? 'Admitting…' : form.doctor_bypass ? 'Admit & Broadcast' : 'Admit Patient'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+
+  if (modalOnly) {
+    return (
+      <>
+        {toast && !showIntakeModal && (
+          <div className="fixed left-1/2 top-4 z-[110] w-full max-w-xl -translate-x-1/2 px-4">
+            <ToastBanner toast={toast} onDismiss={() => setToast(null)} />
+          </div>
+        )}
+        {intakeModal}
+      </>
+    );
+  }
+
+  return (
+    <div className="relative space-y-5">
+      {toast && <ToastBanner toast={toast} onDismiss={() => setToast(null)} />}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50/50 px-6 py-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50/60 px-6 py-4 sm:flex-row sm:items-center">
           <div>
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 animate-pulse text-rose-600" />
               <h2 className="text-sm font-bold tracking-tight text-slate-800">Active Trauma Cases</h2>
             </div>
             <p className="mt-0.5 text-xs text-slate-500">
-              {traumaCases.length} active {'\u2022'} priority scored on arrival {'\u2022'} live Realtime sync
+              {traumaCases.length} active {'\u2022'} priority scored on arrival {'\u2022'} live real-time sync
             </p>
           </div>
 
@@ -343,8 +527,7 @@ export default function EmergencyTriageDesk({
               <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-500 opacity-80" />
               <h4 className="text-xs font-bold text-slate-700">Emergency Desk Clear</h4>
               <p className="mx-auto mt-1 max-w-sm text-xs text-slate-400">
-                No active trauma or critical bypass cases right now. Click &quot;Trigger Doctor Bypass&quot; to admit
-                an incoming emergency.
+                No active trauma cases. Click &quot;Trigger Doctor Bypass&quot; to register an incoming emergency.
               </p>
             </div>
           ) : (
@@ -358,7 +541,7 @@ export default function EmergencyTriageDesk({
                   key={traumaCase.id}
                   className={`rounded-xl border p-4 transition-all ${
                     isP1
-                      ? 'border-rose-200/80 bg-rose-50/40 shadow-sm'
+                      ? 'border-rose-200/90 bg-rose-50/40 shadow-sm'
                       : isP2
                         ? 'border-amber-200/80 bg-amber-50/30'
                         : 'border-slate-200 bg-slate-50/50'
@@ -373,7 +556,7 @@ export default function EmergencyTriageDesk({
                             isP1 ? 'bg-rose-600' : isP2 ? 'bg-amber-500' : 'bg-slate-600'
                           }`}
                         >
-                          {priorityTierFromCode(tier)}
+                          {traumaCase.priority_tier}
                         </span>
                         {traumaCase.doctor_bypass_triggered && (
                           <span className="inline-flex items-center gap-1 rounded border border-rose-300 bg-rose-100/70 px-2 py-0.5 text-[10px] font-bold text-rose-700">
@@ -383,9 +566,6 @@ export default function EmergencyTriageDesk({
                         )}
                       </div>
                       <p className="mt-1 text-xs font-medium text-slate-600">{traumaCase.chief_complaint}</p>
-                      {traumaCase.patient_uhid && (
-                        <p className="mt-0.5 text-[11px] font-semibold text-slate-400">UHID {traumaCase.patient_uhid}</p>
-                      )}
                     </div>
 
                     <div className="text-right text-xs">
@@ -403,24 +583,18 @@ export default function EmergencyTriageDesk({
 
                   <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/60 pt-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <VitalChip label="BP" value={traumaCase.bp} />
+                      <VitalChip label="BP" value={traumaCase.bp || '120/80'} />
                       <VitalChip
                         label="SpO2"
-                        value={`${traumaCase.spo2}%`}
-                        alert={traumaCase.spo2 < 92}
-                        icon={<Wind className="h-3 w-3 text-slate-400" />}
+                        value={`${traumaCase.spo2 ?? 98}%`}
+                        alert={Boolean(traumaCase.spo2 && traumaCase.spo2 < 92)}
                       />
                       <VitalChip
                         label="Pulse"
-                        value={String(traumaCase.pulse)}
-                        alert={traumaCase.pulse > 110}
-                        icon={<HeartPulse className="h-3 w-3 text-slate-400" />}
+                        value={String(traumaCase.pulse ?? 80)}
+                        alert={Boolean(traumaCase.pulse && traumaCase.pulse > 110)}
                       />
-                      <VitalChip
-                        label="Temp"
-                        value={`${traumaCase.temp}°C`}
-                        icon={<Thermometer className="h-3 w-3 text-slate-400" />}
-                      />
+                      <VitalChip label="Temp" value={`${traumaCase.temp ?? 37}°C`} />
                       {traumaCase.gcs != null && (
                         <VitalChip label="GCS" value={String(traumaCase.gcs)} alert={traumaCase.gcs <= 9} />
                       )}
@@ -441,158 +615,7 @@ export default function EmergencyTriageDesk({
         </div>
       </div>
 
-      {showIntakeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <AlertOctagon className="h-5 w-5 text-rose-600" />
-                <h3 className="text-sm font-bold text-slate-800">Intake Trauma / Doctor Bypass</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowIntakeModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleIntakeEmergencyPatient} className="space-y-3.5 text-xs">
-              <Field label="Patient Name / Identifier">
-                <input
-                  type="text"
-                  required
-                  placeholder="Patient name or trauma identifier"
-                  value={form.patient_name}
-                  onChange={(event) => setForm({ ...form, patient_name: event.target.value })}
-                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium focus:bg-white"
-                />
-              </Field>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Priority Tier">
-                  <select
-                    value={form.priority_tier}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        priority_tier: event.target.value as EmergencyPriorityTier,
-                        doctor_bypass:
-                          event.target.value === 'P1 Critical' ? true : form.doctor_bypass,
-                      })
-                    }
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium focus:bg-white"
-                  >
-                    {PRIORITY_OPTIONS.map((tier) => (
-                      <option key={tier} value={tier}>
-                        {tier}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="UHID (optional)">
-                  <input
-                    type="text"
-                    placeholder="Auto-generated if blank"
-                    value={form.patient_uhid}
-                    onChange={(event) => setForm({ ...form, patient_uhid: event.target.value })}
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium focus:bg-white"
-                  />
-                </Field>
-              </div>
-
-              <Field label="Chief Complaint">
-                <input
-                  type="text"
-                  required
-                  placeholder="RTA · head trauma · GCS 9"
-                  value={form.chief_complaint}
-                  onChange={(event) => setForm({ ...form, chief_complaint: event.target.value })}
-                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium focus:bg-white"
-                />
-              </Field>
-
-              <Field label="Assigned Trauma Surgeon">
-                <input
-                  type="text"
-                  value={form.assigned_doctor_name}
-                  onChange={(event) => setForm({ ...form, assigned_doctor_name: event.target.value })}
-                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium focus:bg-white"
-                />
-              </Field>
-
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                {(
-                  [
-                    ['bp', 'BP', '90/60'],
-                    ['spo2', 'SpO2', '91'],
-                    ['pulse', 'Pulse', '128'],
-                    ['temp', 'Temp °C', '36.8'],
-                    ['gcs', 'GCS', '9'],
-                  ] as const
-                ).map(([key, label, placeholder]) => (
-                  <Field key={key} label={label}>
-                    <input
-                      type={key === 'bp' ? 'text' : 'number'}
-                      step={key === 'temp' ? '0.1' : '1'}
-                      placeholder={placeholder}
-                      value={String(form[key])}
-                      onChange={(event) =>
-                        setForm({
-                          ...form,
-                          [key]:
-                            key === 'bp'
-                              ? event.target.value
-                              : key === 'temp'
-                                ? Number(event.target.value)
-                                : Number(event.target.value),
-                        })
-                      }
-                      className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium focus:bg-white"
-                    />
-                  </Field>
-                ))}
-              </div>
-
-              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-rose-200 bg-rose-50/60 px-3 py-2.5">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
-                  checked={form.doctor_bypass}
-                  onChange={(event) => setForm({ ...form, doctor_bypass: event.target.checked })}
-                />
-                <span className="flex items-center gap-1.5 text-xs font-bold text-rose-800">
-                  <BellRing className="h-3.5 w-3.5" />
-                  Trigger Doctor Bypass — broadcast critical alert to on-duty doctors
-                </span>
-              </label>
-
-              <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowIntakeModal(false)}
-                  disabled={submitting}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50"
-                >
-                  {submitting
-                    ? 'Admitting…'
-                    : form.doctor_bypass
-                      ? 'Admit & Broadcast Bypass Alert'
-                      : 'Admit Patient'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {intakeModal}
     </div>
   );
 }
@@ -610,17 +633,14 @@ function VitalChip({
   label,
   value,
   alert = false,
-  icon,
 }: {
   label: string;
   value: string;
   alert?: boolean;
-  icon?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm">
-      {icon}
-      <span className="font-normal text-slate-400">{label}</span>
+    <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+      <span className="mr-1 font-normal text-slate-400">{label}</span>
       <strong className={alert ? 'font-black text-rose-600' : 'text-slate-900'}>{value}</strong>
     </div>
   );
