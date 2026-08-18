@@ -40,7 +40,12 @@ import { MDOT, EM_DASH, ELLIPSIS, EMPTY_VALUE } from '@/lib/utils/typography';
 import { emitEcosystemSystemEvent } from '@/lib/ecosystem/messaging-service';
 import EcosystemMessagesView from '@/components/nexora-hospital/EcosystemMessagesView';
 import EcosystemNotificationCenter from '@/components/nexora-hospital/EcosystemNotificationCenter';
+import EmergencyTriageDesk from '@/components/nexora-hospital/EmergencyTriageDesk';
 import SupplyChainWorkspace from '@/components/nexora-hospital/SupplyChainWorkspace';
+import { REGAL_HOSPITAL_ID } from '@/lib/regal/constants';
+import {
+  loadEmergencyTriagesLive,
+} from '@/lib/hospital/operations/emergency-triage-sync';
 import {
   collectConsultationBillPayment,
   consultationBillToHospitalRow,
@@ -57,7 +62,6 @@ import {
   SEED_BEDS,
   SEED_PRESCRIPTIONS,
   SEED_STAFF,
-  SEED_TRIAGES,
 } from '@/components/nexora-hospital/hospital-ops-seed';
 
 /* â”€â”€ Design tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -225,7 +229,7 @@ const TABLES = {
   beds: ['hospital_beds', 'beds'],
   prescriptions: ['prescriptions'],
   labs: ['lab_orders'],
-  triages: ['emergency_triages'],
+  triages: ['emergency_triage', 'emergency_triages'],
   bills: ['billing_invoices', 'bills'],
   inventory: ['inventory_items', 'pharmacy_inventory'],
   purchaseOrders: ['purchase_orders'],
@@ -416,11 +420,12 @@ function StatusBadge({ value }: { value: string }) {
 }
 
 function PriorityBadge({ value }: { value: string }) {
-  const p = str(value, 'P3').toUpperCase();
+  const normalized = str(value, 'P3').toUpperCase();
+  const tier = normalized.startsWith('P1') ? 'P1' : normalized.startsWith('P2') ? 'P2' : 'P3';
   const config =
-    p === 'P1'
+    tier === 'P1'
       ? { tone: 'bg-red-600 text-white', text: 'P1 Critical' }
-      : p === 'P2'
+      : tier === 'P2'
         ? { tone: 'bg-amber-500 text-white', text: 'P2 Urgent' }
         : { tone: 'bg-slate-200 text-slate-700', text: 'P3 Non-Urgent' };
   return (
@@ -623,7 +628,7 @@ export default function HospitalOperationsCenter() {
   const [patientsLoading, setPatientsLoading] = useState(true);
   const [beds, setBeds] = useState<Row[]>(SEED_BEDS as Row[]);
   const [prescriptions, setPrescriptions] = useState<Row[]>(SEED_PRESCRIPTIONS as Row[]);
-  const [triages, setTriages] = useState<Row[]>(SEED_TRIAGES as Row[]);
+  const [triages, setTriages] = useState<Row[]>([]);
   const [bills, setBills] = useState<Row[]>([]);
   const [staff, setStaff] = useState<Row[]>(SEED_STAFF as Row[]);
 
@@ -633,7 +638,7 @@ export default function HospitalOperationsCenter() {
       loadPatientsLive(),
       safeSelect(TABLES.beds, SEED_BEDS as Row[]),
       safeSelect(TABLES.prescriptions, SEED_PRESCRIPTIONS as Row[]),
-      safeSelect(TABLES.triages, SEED_TRIAGES as Row[]),
+      loadEmergencyTriagesLive(client()),
       loadHospitalBillsLive(client()).then((rows) =>
         rows.map((row) => consultationBillToHospitalRow(row) as Row),
       ),
@@ -664,6 +669,7 @@ export default function HospitalOperationsCenter() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, () => void load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'prescriptions' }, () => void load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'channel_messages' }, () => void load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_triage' }, () => void load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_triages' }, () => void load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'billing_invoices' }, () => void load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, () => void load())
@@ -786,10 +792,11 @@ export default function HospitalOperationsCenter() {
             <RecordsTab prescriptions={prescriptions} setPrescriptions={setPrescriptions} />
           )}
           {activeTab === 'emergency' && (
-            <EmergencyTab
-              triages={triages}
-              setTriages={setTriages}
-              autoOpen={intent === 'bypass'}
+            <EmergencyTriageDesk
+              supabase={client()}
+              facilityCode={REGAL_FACILITY.code}
+              hospitalId={REGAL_HOSPITAL_ID}
+              autoOpenIntake={intent === 'bypass'}
               onIntentHandled={clearIntent}
             />
           )}
@@ -837,7 +844,9 @@ function DashboardTab({
   }, [appointments]);
 
   const occupied = beds.filter((bed) => Boolean(bed.is_occupied) || normalize(bed.status) === 'occupied').length;
-  const criticalCases = triages.filter((row) => str(row.priority).toUpperCase() === 'P1').length;
+  const criticalCases = triages.filter((row) =>
+    str(row.priority_tier ?? row.priority, 'P3').toUpperCase().startsWith('P1'),
+  ).length;
 
   const kpis = [
     { label: 'Patients Today', value: appointments.length, tab: 'opd' as TabId, accent: 'text-slate-900' },
@@ -1868,224 +1877,6 @@ function RecordsTab({
         )}
       </ul>
     </Panel>
-  );
-}
-
-/* â”€â”€ 7 {MDOT} Emergency Triage Desk â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-
-function EmergencyTab({
-  triages,
-  setTriages,
-  autoOpen,
-  onIntentHandled,
-}: {
-  triages: Row[];
-  setTriages: React.Dispatch<React.SetStateAction<Row[]>>;
-  autoOpen: boolean;
-  onIntentHandled: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    patient_name: '',
-    chief_complaint: '',
-    priority: 'P1',
-    bp: '',
-    spo2: '',
-    pulse: '',
-    temp: '',
-  });
-
-  useEffect(() => {
-    if (autoOpen) {
-      setOpen(true);
-      onIntentHandled();
-    }
-  }, [autoOpen, onIntentHandled]);
-
-  const active = triages.filter((row) => str(row.status, 'active') === 'active');
-
-  const trigger = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!form.patient_name.trim()) {
-      toast.error('Enter the patient name before broadcasting');
-      return;
-    }
-
-    const row: Row = {
-      id: `tr-${Date.now()}`,
-      patient_name: form.patient_name.trim(),
-      chief_complaint: form.chief_complaint.trim() || 'Emergency intake',
-      priority: form.priority,
-      vitals: { bp: form.bp, spo2: form.spo2, pulse: form.pulse, temp: form.temp },
-      status: 'active',
-      arrival: clockNow(),
-      created_at: new Date().toISOString(),
-    };
-
-    setTriages((current) => [row, ...current]);
-    await tryInsert(TABLES.triages, row);
-
-    const critical = form.priority === 'P1';
-    await emitEvent(
-      'EMERGENCY_BYPASS_TRIGGERED',
-      `${form.priority} ${MDOT} ${str(row.patient_name)} ${EM_DASH} ${str(row.chief_complaint)}`,
-      critical ? 'critical' : 'warning',
-      { vitals: row.vitals, priority: form.priority },
-    );
-
-    if (critical) {
-      toast.error(`Doctor bypass broadcast ${MDOT} on-duty doctors alerted now`, { duration: 6000 });
-    } else {
-      toast.success(`${form.priority} case added to the triage queue`);
-    }
-
-    setForm({ patient_name: '', chief_complaint: '', priority: 'P1', bp: '', spo2: '', pulse: '', temp: '' });
-    setOpen(false);
-  };
-
-  return (
-    <>
-      <Panel
-        title="Active Trauma Cases"
-        subtitle={`${active.length} active ${MDOT} priority scored on arrival`}
-        action={
-          <button type="button" className={ui.btnRed} onClick={() => setOpen(true)}>
-            <AlertTriangle className="h-3.5 w-3.5" />
-            Trigger Doctor Bypass
-          </button>
-        }
-      >
-        <ul className="space-y-2.5">
-          {triages.map((row, index) => {
-            const vitals = (row.vitals ?? {}) as Row;
-            const p1 = str(row.priority, 'P3').toUpperCase() === 'P1';
-            return (
-              <li
-                key={rowKey(row, index)}
-                className={`rounded-lg border p-3.5 ${p1 ? 'border-red-200 bg-red-50/60' : 'border-slate-200'}`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-slate-900">{str(row.patient_name, 'Patient')}</p>
-                      <PriorityBadge value={str(row.priority, 'P3')} />
-                    </div>
-                    <p className={`mt-0.5 ${ui.meta}`}>{str(row.chief_complaint, 'Emergency intake')}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold tabular-nums text-slate-500">
-                      Arrived {str(row.arrival, EMPTY_VALUE)}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {str(row.surgeon ?? row.doctor_name, DEFAULT_CONSULTANT)}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  {[
-                    ['BP', str(vitals.bp, EMPTY_VALUE)],
-                    ['SpO2', str(vitals.spo2, EMPTY_VALUE)],
-                    ['Pulse', str(vitals.pulse, EMPTY_VALUE)],
-                    ['Temp', str(vitals.temp, EMPTY_VALUE)],
-                  ].map(([label, value], vitalIndex) => (
-                    <span
-                      key={`${label}-${vitalIndex}`}
-                      className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200"
-                    >
-                      {label} <span className="tabular-nums text-slate-900">{value}</span>
-                    </span>
-                  ))}
-                </div>
-              </li>
-            );
-          })}
-          {triages.length === 0 && (
-            <li className="py-8 text-center text-xs font-semibold text-slate-400">
-              No emergency cases on the floor
-            </li>
-          )}
-        </ul>
-      </Panel>
-
-      <Modal
-        open={open}
-        title="Emergency Doctor Bypass"
-        subtitle="Broadcasts EMERGENCY_BYPASS_TRIGGERED for instant Doctor App alerts"
-        onClose={() => setOpen(false)}
-      >
-        <form className="space-y-3" onSubmit={trigger}>
-          <Field label="Patient name">
-            <input
-              className={ui.input}
-              required
-              value={form.patient_name}
-              onChange={(event) => setForm({ ...form, patient_name: event.target.value })}
-            />
-          </Field>
-          <Field label="Chief complaint">
-            <input
-              className={ui.input}
-              placeholder="RTA {MDOT} head trauma {MDOT} GCS 9"
-              value={form.chief_complaint}
-              onChange={(event) => setForm({ ...form, chief_complaint: event.target.value })}
-            />
-          </Field>
-          <Field label="Priority score">
-            <select
-              className={ui.input}
-              value={form.priority}
-              onChange={(event) => setForm({ ...form, priority: event.target.value })}
-            >
-              <option value="P1">P1 Critical</option>
-              <option value="P2">P2 Urgent</option>
-              <option value="P3">P3 Non-Urgent</option>
-            </select>
-          </Field>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label="BP">
-              <input
-                className={ui.input}
-                placeholder="90/60"
-                value={form.bp}
-                onChange={(event) => setForm({ ...form, bp: event.target.value })}
-              />
-            </Field>
-            <Field label="SpO2">
-              <input
-                className={ui.input}
-                placeholder="91"
-                value={form.spo2}
-                onChange={(event) => setForm({ ...form, spo2: event.target.value })}
-              />
-            </Field>
-            <Field label="Pulse">
-              <input
-                className={ui.input}
-                placeholder="128"
-                value={form.pulse}
-                onChange={(event) => setForm({ ...form, pulse: event.target.value })}
-              />
-            </Field>
-            <Field label="Temp">
-              <input
-                className={ui.input}
-                placeholder="36.8"
-                value={form.temp}
-                onChange={(event) => setForm({ ...form, temp: event.target.value })}
-              />
-            </Field>
-          </div>
-          <div className="flex justify-end gap-2 pt-1">
-            <button type="button" className={ui.btnGhost} onClick={() => setOpen(false)}>
-              Cancel
-            </button>
-            <button type="submit" className={ui.btnRed}>
-              Broadcast Bypass Alert
-            </button>
-          </div>
-        </form>
-      </Modal>
-    </>
   );
 }
 

@@ -311,41 +311,7 @@ export const SEED_BEDS = [
   }),
 ];
 
-export const SEED_TRIAGES = [
-  {
-    id: 'tr-001',
-    patient_name: 'Unknown Male (Trauma)',
-    chief_complaint: 'RTA · head trauma · GCS 9',
-    priority: 'P1',
-    vitals: { bp: '90/60', spo2: '91', pulse: '128', rr: '28', gcs: '9', temp: '36.8' },
-    status: 'active',
-    surgeon: 'Dr. Trauma Lead',
-    arrival: '05:12',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'tr-002',
-    patient_name: 'Kavya Menon',
-    chief_complaint: 'Chest pain radiating to left arm',
-    priority: 'P2',
-    vitals: { bp: '150/95', spo2: '96', pulse: '102', rr: '22', gcs: '15', temp: '37.1' },
-    status: 'active',
-    surgeon: 'Dr. Neelima Joshi',
-    arrival: '07:45',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'tr-003',
-    patient_name: 'Arjun Das',
-    chief_complaint: 'Ankle sprain · sports injury',
-    priority: 'P3',
-    vitals: { bp: '118/76', spo2: '99', pulse: '78', rr: '16', gcs: '15', temp: '36.6' },
-    status: 'active',
-    surgeon: 'Dr. Ramesh Kulkarni',
-    arrival: '08:30',
-    created_at: new Date().toISOString(),
-  },
-];
+export const SEED_TRIAGES: Record<string, unknown>[] = [];
 
 export const SEED_PRESCRIPTIONS = [
   {

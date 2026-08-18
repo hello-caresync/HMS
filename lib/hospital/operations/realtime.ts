@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { createClient } from '@/lib/supabase/client';
+import { countActiveEmergencyTriages } from '@/lib/hospital/operations/emergency-triage-sync';
 import type { SidebarBadgeCounts } from './types';
 
 export function useHospitalOpsRealtime(onRefresh: () => void) {
@@ -26,6 +27,9 @@ export function useHospitalOpsRealtime(onRefresh: () => void) {
     const channel = supabase
       .channel('hospital-ops-hub')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => onRefresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_triage' }, () =>
+        onRefresh(),
+      )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_triages' }, () =>
         onRefresh(),
       )
@@ -53,7 +57,7 @@ export function useHospitalOpsRealtime(onRefresh: () => void) {
 export async function fetchSidebarBadgeCounts(): Promise<SidebarBadgeCounts> {
   const supabase = createClient();
 
-  const [apptRes, triageRes, bedRes, rxRes, invRes] = await Promise.all([
+  const [apptRes, bedRes, rxRes, invRes] = await Promise.all([
     supabase.from('appointments').select('id', { count: 'exact', head: true }).in('status', [
       'BOOKED',
       'SCHEDULED',
@@ -61,16 +65,14 @@ export async function fetchSidebarBadgeCounts(): Promise<SidebarBadgeCounts> {
       'IN_CONSULTATION',
     ]),
     supabase
-      .from('emergency_triages')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'active'),
-    supabase
       .from('hospital_beds')
       .select('id', { count: 'exact', head: true })
       .eq('is_occupied', true),
     supabase.from('prescriptions').select('id', { count: 'exact', head: true }).neq('status', 'DISPENSED'),
     supabase.from('inventory_items').select('id', { count: 'exact', head: true }),
   ]);
+
+  const emergencyCount = await countActiveEmergencyTriages(supabase);
 
   const lowStockRes = await supabase.from('inventory_items').select('quantity_in_stock, reorder_level');
 
@@ -81,7 +83,7 @@ export async function fetchSidebarBadgeCounts(): Promise<SidebarBadgeCounts> {
 
   return {
     opd: apptRes.count ?? 0,
-    emergency: triageRes.count ?? 0,
+    emergency: emergencyCount,
     ipd: bedRes.count ?? 0,
     pharmacy: rxRes.count ?? 0,
     inventory: lowStock || invRes.count || 0,

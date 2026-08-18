@@ -1,22 +1,32 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import {
+  countActiveEmergencyTriages,
+  loadEmergencyTriagesLive,
+  normalizeEmergencyTriageRow,
+  priorityTierFromCode,
+  registerEmergencyTriageIntake,
+  type EmergencyIntakeInput,
+  type EmergencyPriorityTier,
+} from './emergency-triage-sync';
 import { emitSystemEvent } from './events';
 import type { EmergencyTriageRow, TriagePriority } from './types';
+
+export {
+  countActiveEmergencyTriages,
+  loadEmergencyTriagesLive,
+  normalizeEmergencyTriageRow,
+  priorityTierFromCode,
+  registerEmergencyTriageIntake,
+  type EmergencyIntakeInput,
+  type EmergencyPriorityTier,
+};
 
 export async function fetchEmergencyTriages(
   supabase: SupabaseClient,
 ): Promise<EmergencyTriageRow[]> {
-  const { data, error } = await supabase
-    .from('emergency_triages')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(40);
-
-  if (error) {
-    console.warn('[fetchEmergencyTriages]', error.message);
-    return [];
-  }
-  return (data ?? []) as EmergencyTriageRow[];
+  const rows = await loadEmergencyTriagesLive(supabase);
+  return rows as EmergencyTriageRow[];
 }
 
 export async function registerEmergencyTriage(
@@ -29,56 +39,33 @@ export async function registerEmergencyTriage(
     vitals?: Record<string, unknown>;
   },
 ) {
-  const { data, error } = await supabase
-    .from('emergency_triages')
-    .insert({
-      patient_name: input.patientName,
-      patient_id: input.patientId ?? null,
-      chief_complaint: input.chiefComplaint,
-      priority: input.priority,
-      vitals: input.vitals ?? {},
-      status: 'active',
-    })
-    .select('*')
-    .single();
+  const vitals = input.vitals ?? {};
+  const result = await registerEmergencyTriageIntake(supabase, {
+    patient_name: input.patientName,
+    patient_uhid: input.patientId,
+    chief_complaint: input.chiefComplaint,
+    priority_tier: priorityTierFromCode(input.priority),
+    bp: vitals.bp != null ? String(vitals.bp) : undefined,
+    spo2: vitals.spo2 != null ? Number(vitals.spo2) : undefined,
+    pulse: vitals.pulse != null ? Number(vitals.pulse) : undefined,
+    temp: vitals.temp != null ? Number(vitals.temp) : undefined,
+    gcs: vitals.gcs != null ? Number(vitals.gcs) : undefined,
+    trigger_doctor_bypass: input.priority === 'P1',
+  });
 
-  if (error) throw new Error(error.message || 'Failed to register triage');
-
-  const triageId = String(data.id);
-
-  if (input.priority === 'P1') {
-    await emitSystemEvent(
-      supabase,
-      'EMERGENCY_BYPASS_TRIGGERED',
-      {
-        message: `P1 CRITICAL: ${input.patientName} — ${input.chiefComplaint}`,
-        triageId,
-        patientName: input.patientName,
-        priority: 'P1',
-        relatedId: triageId,
-        alarm: true,
-      },
-      { severity: 'critical', targetRoles: ['doctor', 'hospital'] },
-    );
-
-    await supabase.from('notifications').insert({
-      title: 'EMERGENCY P1 — Doctor Bypass',
-      body: `${input.patientName}: ${input.chiefComplaint}`,
-      category: 'emergency',
-      severity: 'critical',
-      related_id: triageId,
-    });
+  if (!result.ok) {
+    throw new Error(result.error ?? 'Failed to register triage');
   }
 
-  return { success: true, triage: data as EmergencyTriageRow };
+  return { success: true, triage: result.row as EmergencyTriageRow };
 }
 
 export function countActiveTriages(rows: EmergencyTriageRow[]) {
   const active = rows.filter((r) => r.status !== 'discharged' && r.status !== 'closed');
   return {
-    p1: active.filter((r) => r.priority === 'P1').length,
-    p2: active.filter((r) => r.priority === 'P2').length,
-    p3: active.filter((r) => r.priority === 'P3').length,
+    p1: active.filter((r) => String(r.priority).startsWith('P1')).length,
+    p2: active.filter((r) => String(r.priority).startsWith('P2')).length,
+    p3: active.filter((r) => String(r.priority).startsWith('P3')).length,
     total: active.length,
   };
 }
