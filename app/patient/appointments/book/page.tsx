@@ -173,7 +173,7 @@ type BookingPayload = {
   created_at: string;
 };
 
-/** Row shape aligned to Supabase schema cache for patient_appointments. */
+/** Row shape aligned to Supabase schema cache for patient_appointments (ground truth). */
 function toPatientAppointmentsInsertRow(payload: BookingPayload): Record<string, unknown> {
   return {
     id: payload.id,
@@ -185,7 +185,6 @@ function toPatientAppointmentsInsertRow(payload: BookingPayload): Record<string,
     hospital_name: REGAL_HOSPITAL,
     appointment_date: payload.appointment_date,
     slot_time: payload.slot_time,
-    appointment_time: payload.appointment_time,
     fee: payload.fee,
     reason: payload.reason,
     token_number: payload.token_number,
@@ -235,6 +234,22 @@ async function calculateNextTokenNumber(
   doctorName: string,
   appointmentDate: string,
 ): Promise<number> {
+  const doctorKey = doctorName.replace(/^Dr\.?\s*/i, '').split(/\s+/)[0] ?? doctorName;
+
+  try {
+    const { count, error } = await supabase
+      .from('patient_appointments')
+      .select('*', { count: 'exact', head: true })
+      .eq('appointment_date', appointmentDate)
+      .or(`doctor_id.eq.${doctorEmployeeId},doctor_name.ilike.%${doctorKey}%`);
+
+    if (!error && count != null) {
+      return count + 1;
+    }
+  } catch (err) {
+    console.warn('patient_appointments token count fallback:', err);
+  }
+
   try {
     return await calculateNextOpdTokenNumber(
       supabase,
@@ -243,12 +258,42 @@ async function calculateNextTokenNumber(
       appointmentDate,
     );
   } catch (err) {
-    console.warn('Token count exception fallback:', err);
+    console.warn('Cross-table token count fallback:', err);
     return 1;
   }
 }
 
-/** Non-blocking mirror — schema differences on hms_opd_queue must never block booking. */
+/** Non-blocking hospital reception mirror — schema drift must never block booking. */
+async function mirrorToReceptionSafely(appointment: BookingPayload): Promise<void> {
+  try {
+    const result = await registerPatientOnlineBooking(supabase, {
+      id: appointment.id,
+      patient_id: appointment.patient_id,
+      patient_name: appointment.patient_name,
+      doctor_id: appointment.doctor_id,
+      doctor_name: appointment.doctor_name,
+      department: appointment.department,
+      appointment_date: appointment.appointment_date,
+      appointment_time: appointment.appointment_time,
+      slot_time: appointment.slot_time,
+      fee: appointment.fee,
+      reason: appointment.reason,
+      token_number: appointment.token_number,
+    });
+
+    if (!result.ok) {
+      console.warn('appointments reception mirror skipped (non-blocking):', result.error);
+    }
+  } catch (mirrorErr) {
+    console.warn('appointments reception mirror exception (non-blocking):', mirrorErr);
+  }
+}
+
+/** Fire all auxiliary ledger mirrors without affecting booking UX. */
+function runAuxiliarySyncs(appointment: BookingPayload): void {
+  void mirrorToReceptionSafely(appointment);
+  void mirrorToOpdQueueSafely(appointment);
+}
 async function mirrorToOpdQueueSafely(appointment: BookingPayload): Promise<void> {
   try {
     const queuePayload = {
@@ -490,48 +535,17 @@ export default function BookAppointmentPage() {
         tokenNumber: calculatedToken,
       });
 
-      // Primary patient-app ledger (doctor dashboard + patient history).
       const primaryInsert = await insertPrimaryPatientAppointment(newAppt);
 
       if (!primaryInsert.ok) {
         console.error('Supabase patient_appointments insert failed:', primaryInsert.message);
         setErrorMessage(
-          `Booking could not be saved to the hospital cloud queue. ${primaryInsert.message}`,
+          `Booking could not be saved. ${primaryInsert.message}`,
         );
         return;
       }
 
-      // Unified reception ledger — required for Hospital Operations Center realtime sync.
-      const receptionSync = await registerPatientOnlineBooking(supabase, {
-        id: newAppt.id,
-        patient_id: newAppt.patient_id,
-        patient_name: newAppt.patient_name,
-        doctor_id: newAppt.doctor_id,
-        doctor_name: newAppt.doctor_name,
-        department: newAppt.department,
-        appointment_date: newAppt.appointment_date,
-        appointment_time: newAppt.appointment_time,
-        slot_time: newAppt.slot_time,
-        fee: newAppt.fee,
-        reason: newAppt.reason,
-        token_number: newAppt.token_number,
-      });
-
-      if (!receptionSync.ok) {
-        console.error('Supabase appointments reception sync failed:', receptionSync.error);
-        setErrorMessage(
-          `Booking saved for your records but hospital reception sync failed. ${receptionSync.error ?? 'Please contact the front desk.'}`,
-        );
-        return;
-      }
-
-      mirrorAppointmentToLocalStorage(newAppt);
-
-      try {
-        await mirrorToOpdQueueSafely(newAppt);
-      } catch (mirrorErr) {
-        console.warn('hms_opd_queue isolated mirror failure (non-blocking):', mirrorErr);
-      }
+      mirrorAppointmentToLocalStorage(newAppt as unknown as Record<string, unknown>);
 
       setBookedSummary({
         token: calculatedToken,
@@ -541,9 +555,11 @@ export default function BookAppointmentPage() {
       });
       setSuccess(true);
 
+      runAuxiliarySyncs(newAppt);
+
       setTimeout(() => {
         router.push('/patient/appointments');
-      }, 2200);
+      }, 1000);
     } catch (err) {
       console.error('Unexpected booking failure:', err);
       setErrorMessage('An unexpected error occurred while confirming your booking. Please try again.');
@@ -592,7 +608,7 @@ export default function BookAppointmentPage() {
                 </p>
               </div>
               <p className="text-[11px] font-bold text-[#227B6B]">
-                Your visit is saved to the hospital cloud queue. Redirecting to appointments...
+                Your consultation is confirmed. Redirecting to appointments...
               </p>
             </div>
           </div>
