@@ -25,6 +25,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <head>
         <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className="font-sans antialiased" style={{ fontFamily: 'var(--font-inter), Inter, system-ui, sans-serif' }}>
         <AppProviders>{children}</AppProviders>

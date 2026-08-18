@@ -8,6 +8,7 @@ import {
   type ConsultationMedicationItem,
   type PatientPrescriptionRecord,
 } from '@/lib/doctor/command-center/supabase-service';
+import { BULLET, ELLIPSIS, EM_DASH } from '@/lib/utils/typography';
 
 const DEFAULT_PATIENT_ID = 'b0000000-0000-0000-0000-000000000002';
 
@@ -89,7 +90,7 @@ export default function PatientPrescriptionsPage() {
             filter: `patient_id=eq.${activePatientId}`,
           },
           (payload: RealtimePostgresChangesPayload<{ patient_id?: string }>) => {
-            console.log('New prescription issued — updating patient view:', payload.new);
+            console.log(`New prescription issued ${EM_DASH} updating patient view:`, payload.new);
             void fetchPrescriptions();
           },
         )
@@ -132,8 +133,8 @@ export default function PatientPrescriptionsPage() {
           </span>
           <h1 className="text-2xl font-bold text-slate-900 mt-1">My Digital Prescriptions</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Real-time Rx delivery • Patient ID:{' '}
-            <span className="font-semibold text-slate-800">{patientId.slice(0, 8)}…</span>
+            Real-time Rx delivery {BULLET} Patient ID:{' '}
+            <span className="font-semibold text-slate-800">{patientId.slice(0, 8)}{ELLIPSIS}</span>
           </p>
         </div>
 
@@ -190,7 +191,7 @@ export default function PatientPrescriptionsPage() {
                       {doc?.full_name || 'Dr. CHANDRAKANTH S KESARI'}
                     </h2>
                     <p className="text-xs text-slate-300 mt-0.5 print:text-slate-600">
-                      {doc?.department || 'General Surgery'} •{' '}
+                      {doc?.department || 'General Surgery'} {BULLET}{' '}
                       {doc?.specialization || 'General Surgeon'}
                     </p>
                   </div>
@@ -240,7 +241,7 @@ export default function PatientPrescriptionsPage() {
                             value: `${vitals.bp_systolic ?? '120'}/${vitals.bp_diastolic ?? '80'}`,
                           },
                           { label: 'Pulse', value: `${vitals.pulse_bpm ?? '72'} bpm` },
-                          { label: 'SpO₂', value: `${vitals.spo2_percent ?? '98'}%` },
+                          { label: 'SpO2', value: `${vitals.spo2_percent ?? '98'}%` },
                           { label: 'Weight', value: `${vitals.weight_kg ?? '68'} kg` },
                           {
                             label: 'Follow-up',

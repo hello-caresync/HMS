@@ -36,6 +36,7 @@ import { toast } from 'sonner';
 
 import { createClient } from '@/lib/supabase/client';
 import { formatINR } from '@/lib/utils/currency';
+import { MDOT, EM_DASH, ELLIPSIS, EMPTY_VALUE } from '@/lib/utils/typography';
 import { emitEcosystemSystemEvent } from '@/lib/ecosystem/messaging-service';
 import EcosystemMessagesView from '@/components/nexora-hospital/EcosystemMessagesView';
 import EcosystemNotificationCenter from '@/components/nexora-hospital/EcosystemNotificationCenter';
@@ -188,7 +189,7 @@ const HEADINGS: Record<TabId, { title: string; sub: string }> = {
   emergency: { title: 'Emergency Triage Desk', sub: 'Priority intake and doctor bypass broadcast' },
   billing: { title: 'Billing & Cashier Desk', sub: 'Consolidated invoices across every department' },
   supply: { title: 'Supply Chain & Vendor POs', sub: 'Stock thresholds and purchase order dispatch' },
-  staff: { title: 'Doctors & Staff Directory', sub: '41 Regal Hospital clinicians Â· duty roster and RBAC' },
+  staff: { title: 'Doctors & Staff Directory', sub: `41 Regal Hospital clinicians ${MDOT} duty roster and RBAC` },
   messages: {
     title: 'Ecosystem Communications',
     sub: 'Dispatch alerts to Patient, Doctor and Vendor apps with delivery tracking',
@@ -275,7 +276,7 @@ function staffName(row: Row): string {
   return joined || 'Staff member';
 }
 
-/** Returns only live Supabase rows â€” never injects dummy patient fallbacks. */
+/** Returns only live Supabase rows {EM_DASH} never injects dummy patient fallbacks. */
 async function loadPatientsLive(): Promise<Row[]> {
   for (const table of TABLES.patients) {
     try {
@@ -360,9 +361,9 @@ function clockNow(): string {
 }
 
 function formatDate(value: string | null | undefined): string {
-  if (!value) return 'â€”';
+  if (!value) return EMPTY_VALUE;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'â€”';
+  if (Number.isNaN(date.getTime())) return EMPTY_VALUE;
   return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
@@ -558,7 +559,7 @@ function SearchInput({
   );
 }
 
-/** Searchable doctor picker for walk-in registration â€” auto-fills department and fee. */
+/** Searchable doctor picker for walk-in registration {EM_DASH} auto-fills department and fee. */
 function DoctorSearchSelect({
   value,
   onChange,
@@ -583,7 +584,7 @@ function DoctorSearchSelect({
     <div className="space-y-2">
       <input
         className={ui.input}
-        placeholder="Search by name, RH-DXX ID, department or roomâ€¦"
+        placeholder={`Search by name, RH-DXX ID, department or room${ELLIPSIS}`}
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
@@ -749,7 +750,7 @@ export default function HospitalOperationsCenter() {
             <p className={`mt-0.5 ${ui.meta}`}>{heading.sub}</p>
           </div>
           <span className="rounded-full bg-[#00A896]/10 px-3 py-1 text-xs font-bold text-[#00806f]">
-            {DEFAULT_REGAL_DOCTOR.name} Â· {DEFAULT_REGAL_DOCTOR.id}
+            {DEFAULT_REGAL_DOCTOR.name} {MDOT} {DEFAULT_REGAL_DOCTOR.id}
           </span>
         </header>
 
@@ -809,7 +810,7 @@ export default function HospitalOperationsCenter() {
   );
 }
 
-/* â”€â”€ 1 Â· Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ 1 {MDOT} Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function DashboardTab({
   appointments,
@@ -874,7 +875,7 @@ function DashboardTab({
 
       <Panel
         title="Quick Actions"
-        subtitle={`${occupied} beds occupied Â· ${criticalCases} P1 case${criticalCases === 1 ? '' : 's'} on the floor`}
+        subtitle={`${occupied} beds occupied ${MDOT} ${criticalCases} P1 case${criticalCases === 1 ? '' : 's'} on the floor`}
       >
         <div className="flex flex-wrap gap-2">
           {actions.map((action, index) => (
@@ -914,11 +915,11 @@ function DashboardTab({
               {snapshot.map((row, index) => (
                 <tr key={rowKey(row, index)} className={ui.tr}>
                   <td className={ui.td}>
-                    <Token value={str(row.token_number, 'â€”')} />
+                    <Token value={str(row.token_number, EMPTY_VALUE)} />
                   </td>
                   <td className={ui.td}>
                     <p className="font-semibold text-slate-900">{str(row.patient_name, 'Patient')}</p>
-                    <p className="text-xs text-slate-400">{str(row.uhid, 'â€”')}</p>
+                    <p className="text-xs text-slate-400">{str(row.uhid, EMPTY_VALUE)}</p>
                   </td>
                   <td className={ui.td}>{str(row.doctor_name, DEFAULT_CONSULTANT)}</td>
                   <td className={ui.td}>{str(row.department, 'General Medicine')}</td>
@@ -936,7 +937,7 @@ function DashboardTab({
   );
 }
 
-/* â”€â”€ 2 Â· SmartQ OPD & Reception â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ 2 {MDOT} SmartQ OPD & Reception â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function OpdTab({
   appointments,
@@ -995,7 +996,7 @@ function OpdTab({
     if (next === 'checked_in') {
       await emitEvent(
         'PATIENT_CHECKED_IN',
-        `${str(row.patient_name, 'Patient')} checked in on token ${str(row.token_number, 'â€”')}`,
+        `${str(row.patient_name, 'Patient')} checked in on token ${str(row.token_number, EMPTY_VALUE)}`,
         'info',
         {
           appointment_id: id,
@@ -1006,7 +1007,7 @@ function OpdTab({
         },
         ['doctor', 'hospital'],
       );
-      toast.success('Checked in Â· patient moved to the Doctor App queue');
+      toast.success(`Checked in ${MDOT} patient moved to the Doctor App queue`);
       return;
     }
     toast.success(next === 'completed' ? 'Consultation closed' : 'Patient sent in for consultation');
@@ -1037,7 +1038,7 @@ function OpdTab({
     );
 
     if (!result.ok || !result.row) {
-      toast.error(result.error ?? 'Failed to register walk-in â€” check Supabase connection');
+      toast.error(result.error ?? 'Failed to register walk-in {EM_DASH} check Supabase connection');
       return;
     }
 
@@ -1065,7 +1066,7 @@ function OpdTab({
     setAppointments((current) => [appointmentRow, ...current]);
     await emitEvent(
       'PATIENT_CHECKED_IN',
-      `Walk-in ${str(patientRow.full_name)} Â· token ${token} Â· ${str(appointmentRow.doctor_name)}`,
+      `Walk-in ${str(patientRow.full_name)} ${MDOT} token ${token} ${MDOT} ${str(appointmentRow.doctor_name)}`,
       'info',
       {
         appointment_id: str(result.appointmentId),
@@ -1082,7 +1083,7 @@ function OpdTab({
       ['doctor', 'hospital'],
     );
 
-    toast.success(`Token ${token} issued Â· ${str(appointmentRow.doctor_name)} live queue updated`);
+    toast.success(`Token ${token} issued ${MDOT} ${str(appointmentRow.doctor_name)} live queue updated`);
     setForm({
       patient_name: '',
       doctor_id: DEFAULT_REGAL_DOCTOR.id,
@@ -1129,11 +1130,11 @@ function OpdTab({
                 return (
                   <tr key={rowKey(row, index)} className={ui.tr}>
                     <td className={ui.td}>
-                      <Token value={str(row.token_number, 'â€”')} />
+                      <Token value={str(row.token_number, EMPTY_VALUE)} />
                     </td>
                     <td className={ui.td}>
                       <p className="font-semibold text-slate-900">{str(row.patient_name, 'Patient')}</p>
-                      <p className="text-xs text-slate-400">{str(row.uhid, 'â€”')}</p>
+                      <p className="text-xs text-slate-400">{str(row.uhid, EMPTY_VALUE)}</p>
                     </td>
                     <td className={ui.td}>{str(row.doctor_name, DEFAULT_CONSULTANT)}</td>
                     <td className={ui.td}>{str(row.department, 'General Medicine')}</td>
@@ -1180,7 +1181,7 @@ function OpdTab({
       >
         <form className="space-y-3" onSubmit={issueWalkIn}>
           <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-            Next token Â· <span className="font-black text-[#0F3E5D]">{nextWalkInToken(appointments)}</span>
+            Next token {MDOT} <span className="font-black text-[#0F3E5D]">{nextWalkInToken(appointments)}</span>
           </div>
           <Field label="Patient name">
             <input
@@ -1219,15 +1220,15 @@ function OpdTab({
             <textarea
               className={`${ui.input} min-h-[96px]`}
               required
-              placeholder="Describe symptoms, referral reason, or presenting complaintâ€¦"
+              placeholder={`Describe symptoms, referral reason, or presenting complaint${ELLIPSIS}`}
               value={form.chief_complaint}
               onChange={(event) => setForm({ ...form, chief_complaint: event.target.value })}
             />
           </Field>
           <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-            Appointment date Â· <span className="font-black text-[#0F3E5D]">{today()}</span> Â· writes to{' '}
+            Appointment date {MDOT} <span className="font-black text-[#0F3E5D]">{today()}</span> {MDOT} writes to{' '}
             <span className="font-black text-[#00806f]">patients</span> +{' '}
-            <span className="font-black text-[#00806f]">appointments</span> Â· status{' '}
+            <span className="font-black text-[#00806f]">appointments</span> {MDOT} status{' '}
             <span className="font-black text-[#00806f]">checked_in</span>
           </p>
           <div className="flex justify-end gap-2 pt-1">
@@ -1244,7 +1245,7 @@ function OpdTab({
   );
 }
 
-/* â”€â”€ 3 Â· Patient Directory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ 3 {MDOT} Patient Directory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function PatientsTab({
   patients,
@@ -1291,7 +1292,7 @@ function PatientsTab({
     await tryInsert(TABLES.patients, row);
     await emitEvent('PATIENT_REGISTERED', `${str(row.full_name)} registered as ${uhid}`);
 
-    toast.success(`Registered Â· ${uhid}`);
+    toast.success(`Registered ${MDOT} ${uhid}`);
     setForm({ full_name: '', age: '', gender: 'Female', phone: '', blood_group: 'O+' });
     setOpen(false);
   };
@@ -1302,7 +1303,7 @@ function PatientsTab({
         title="Universal Health ID Registry"
         subtitle={
           loading
-            ? 'Loading live patient records from Supabaseâ€¦'
+            ? `Loading live patient records from Supabase${ELLIPSIS}`
             : `${rows.length} of ${patients.length} registered patient${patients.length === 1 ? '' : 's'}`
         }
         action={
@@ -1312,12 +1313,12 @@ function PatientsTab({
         }
       >
         {loading ? (
-          <p className="py-10 text-center text-sm font-medium text-slate-500">Fetching patient registryâ€¦</p>
+          <p className="py-10 text-center text-sm font-medium text-slate-500">{`Fetching patient registry${ELLIPSIS}`}</p>
         ) : patients.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 px-6 py-14 text-center">
             <p className="text-sm font-bold text-slate-900">No patients registered yet</p>
             <p className={`mt-1 max-w-md ${ui.meta}`}>
-              The directory shows only live Supabase records â€” no demo patients are injected. Register
+              The directory shows only live Supabase records {EM_DASH} no demo patients are injected. Register
               the first patient or check in a walk-in from SmartQ OPD.
             </p>
             <button type="button" className={`${ui.btnTeal} mt-4`} onClick={() => setOpen(true)}>
@@ -1351,28 +1352,28 @@ function PatientsTab({
                   {rows.map((row, index) => (
                     <tr key={rowKey(row, index)} className={ui.tr}>
                       <td className={`${ui.td} font-semibold tabular-nums text-[#0F3E5D]`}>
-                        {str(row.uhid, 'â€”')}
+                        {str(row.uhid, EMPTY_VALUE)}
                       </td>
                       <td className={ui.td}>
                         <p className="font-semibold text-slate-900">
                           {str(row.full_name ?? row.name, 'Patient')}
                         </p>
                         <p className="text-xs text-slate-400">
-                          {str(row.age, 'â€”')} yrs Â· {str(row.doctor ?? row.doctor_name, 'â€”')}
+                          {str(row.age, EMPTY_VALUE)} yrs {MDOT} {str(row.doctor ?? row.doctor_name, EMPTY_VALUE)}
                         </p>
                       </td>
-                      <td className={`${ui.td} tabular-nums`}>{str(row.phone, 'â€”')}</td>
-                      <td className={ui.td}>{str(row.gender, 'â€”')}</td>
+                      <td className={`${ui.td} tabular-nums`}>{str(row.phone, EMPTY_VALUE)}</td>
+                      <td className={ui.td}>{str(row.gender, EMPTY_VALUE)}</td>
                       <td className={ui.td}>
                         <span className="rounded-md bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700">
-                          {str(row.blood_group, 'â€”')}
+                          {str(row.blood_group, EMPTY_VALUE)}
                         </span>
                       </td>
                       <td className={ui.td}>
                         <StatusBadge value={str(row.ehr_status ?? row.status ?? row.admission_status, 'active')} />
                       </td>
                       <td className={`${ui.td} tabular-nums text-slate-500`}>
-                        {str(row.last_visit ?? row.created_at, 'â€”').slice(0, 10)}
+                        {str(row.last_visit ?? row.created_at, EMPTY_VALUE).slice(0, 10)}
                       </td>
                     </tr>
                   ))}
@@ -1455,7 +1456,7 @@ function PatientsTab({
   );
 }
 
-/* â”€â”€ 4 Â· IPD & Bed Census â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ 4 {MDOT} IPD & Bed Census â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function bedState(bed: Row): 'occupied' | 'cleaning' | 'available' {
   const raw = normalize(bed.status);
@@ -1539,12 +1540,12 @@ function IpdTab({
     });
     await emitEvent(
       'PATIENT_ADMITTED',
-      `${form.patient_name.trim()} admitted to ${str(target.ward)} Â· bed ${str(target.bed_number)}`,
+      `${form.patient_name.trim()} admitted to ${str(target.ward)} ${MDOT} bed ${str(target.bed_number)}`,
       'info',
       { bed_id: str(target.id), consultant: form.doctor_name },
     );
 
-    toast.success(`Admitted to ${str(target.ward)} Â· bed ${str(target.bed_number)}`);
+    toast.success(`Admitted to ${str(target.ward)} ${MDOT} bed ${str(target.bed_number)}`);
     setForm({ patient_name: '', bed_id: '', doctor_name: DEFAULT_CONSULTANT });
     setAdmitOpen(false);
   };
@@ -1556,8 +1557,8 @@ function IpdTab({
       status: 'cleaning',
       patient_name: null,
     });
-    await emitEvent('PATIENT_DISCHARGED', `${name} discharged from ${str(bed.ward)} Â· bed sanitizing`);
-    toast.success(`${name} discharged Â· bed marked for sanitizing`);
+    await emitEvent('PATIENT_DISCHARGED', `${name} discharged from ${str(bed.ward)} ${MDOT} bed sanitizing`);
+    toast.success(`${name} discharged ${MDOT} bed marked for sanitizing`);
   };
 
   const transfer = async (event: FormEvent) => {
@@ -1579,7 +1580,7 @@ function IpdTab({
     await patchBed(str(source.id), { is_occupied: false, status: 'cleaning', patient_name: null });
     await emitEvent(
       'PATIENT_TRANSFERRED',
-      `${name} moved to ${str(target.ward)} Â· bed ${str(target.bed_number)}`,
+      `${name} moved to ${str(target.ward)} ${MDOT} bed ${str(target.bed_number)}`,
     );
 
     toast.success(`${name} transferred to bed ${str(target.bed_number)}`);
@@ -1598,7 +1599,7 @@ function IpdTab({
               <span className="text-sm font-bold text-slate-400"> / {entry.total}</span>
             </p>
             <p className="mt-1 text-xs font-semibold text-slate-500">
-              {entry.available} available Â· {entry.cleaning} sanitizing
+              {entry.available} available {MDOT} {entry.cleaning} sanitizing
             </p>
           </div>
         ))}
@@ -1633,7 +1634,7 @@ function IpdTab({
             return (
               <div key={rowKey(bed, index)} className={`rounded-lg border p-3 ${tone}`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-black tabular-nums">Bed {str(bed.bed_number, 'â€”')}</span>
+                  <span className="text-sm font-black tabular-nums">Bed {str(bed.bed_number, EMPTY_VALUE)}</span>
                   <span className="text-xs font-bold uppercase tracking-wide opacity-70">
                     {state === 'cleaning' ? 'Sanitizing' : state}
                   </span>
@@ -1724,7 +1725,7 @@ function IpdTab({
               <option value="">Select a bed</option>
               {openBeds.map((bed, index) => (
                 <option key={rowKey(bed, index)} value={str(bed.id)}>
-                  {str(bed.ward)} Â· Bed {str(bed.bed_number)}
+                  {str(bed.ward)} {MDOT} Bed {str(bed.bed_number)}
                 </option>
               ))}
             </select>
@@ -1750,7 +1751,7 @@ function IpdTab({
       <Modal
         open={Boolean(transferSource)}
         title="Transfer Patient"
-        subtitle={`Moving ${str(transferSource?.patient_name, 'patient')} from bed ${str(transferSource?.bed_number, 'â€”')}`}
+        subtitle={`Moving ${str(transferSource?.patient_name, 'patient')} from bed ${str(transferSource?.bed_number, EMPTY_VALUE)}`}
         onClose={() => setTransferSource(null)}
       >
         <form className="space-y-3" onSubmit={transfer}>
@@ -1764,7 +1765,7 @@ function IpdTab({
               <option value="">Select a bed</option>
               {openBeds.map((bed, index) => (
                 <option key={rowKey(bed, index)} value={str(bed.id)}>
-                  {str(bed.ward)} Â· Bed {str(bed.bed_number)}
+                  {str(bed.ward)} {MDOT} Bed {str(bed.bed_number)}
                 </option>
               ))}
             </select>
@@ -1783,7 +1784,7 @@ function IpdTab({
   );
 }
 
-/* â”€â”€ 5 Â· Records & Central Pharmacy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ 5 {MDOT} Records & Central Pharmacy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function RecordsTab({
   prescriptions,
@@ -1814,13 +1815,13 @@ function RecordsTab({
       'info',
       { prescription_id: id, uhid: str(rx.uhid) },
     );
-    toast.success(`Dispensed Â· stock deducted for ${meds.length} item${meds.length === 1 ? '' : 's'}`);
+    toast.success(`Dispensed ${MDOT} stock deducted for ${meds.length} item${meds.length === 1 ? '' : 's'}`);
   };
 
   return (
     <Panel
       title="E-Prescription Fulfillment Deck"
-      subtitle={`${pending.length} awaiting dispense Â· routed live from the Doctor App`}
+      subtitle={`${pending.length} awaiting dispense ${MDOT} routed live from the Doctor App`}
     >
       <ul className="space-y-3">
         {prescriptions.map((rx, index) => {
@@ -1832,7 +1833,7 @@ function RecordsTab({
                 <div>
                   <p className="text-sm font-bold text-slate-900">{str(rx.patient_name, 'Patient')}</p>
                   <p className={ui.meta}>
-                    {str(rx.uhid, 'â€”')} Â· prescribed by {str(rx.doctor_name, DEFAULT_CONSULTANT)}
+                    {str(rx.uhid, EMPTY_VALUE)} {MDOT} prescribed by {str(rx.doctor_name, DEFAULT_CONSULTANT)}
                   </p>
                 </div>
                 {done ? (
@@ -1849,8 +1850,8 @@ function RecordsTab({
                     key={`${str(med.name, 'med')}-${medIndex}`}
                     className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700"
                   >
-                    {str(med.name, 'Medicine')} Â· {str(med.dosage, 'â€”')} Â· {str(med.frequency, '')}
-                    {med.days ? ` Â· ${str(med.days)}d` : ''}
+                    {str(med.name, 'Medicine')} {MDOT} {str(med.dosage, EMPTY_VALUE)} {MDOT} {str(med.frequency, '')}
+                    {med.days ? ` ${MDOT} ${str(med.days)}d` : ''}
                   </li>
                 ))}
                 {meds.length === 0 && (
@@ -1870,7 +1871,7 @@ function RecordsTab({
   );
 }
 
-/* â”€â”€ 7 Â· Emergency Triage Desk â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ 7 {MDOT} Emergency Triage Desk â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function EmergencyTab({
   triages,
@@ -1927,13 +1928,13 @@ function EmergencyTab({
     const critical = form.priority === 'P1';
     await emitEvent(
       'EMERGENCY_BYPASS_TRIGGERED',
-      `${form.priority} Â· ${str(row.patient_name)} â€” ${str(row.chief_complaint)}`,
+      `${form.priority} ${MDOT} ${str(row.patient_name)} ${EM_DASH} ${str(row.chief_complaint)}`,
       critical ? 'critical' : 'warning',
       { vitals: row.vitals, priority: form.priority },
     );
 
     if (critical) {
-      toast.error('Doctor bypass broadcast Â· on-duty doctors alerted now', { duration: 6000 });
+      toast.error(`Doctor bypass broadcast ${MDOT} on-duty doctors alerted now`, { duration: 6000 });
     } else {
       toast.success(`${form.priority} case added to the triage queue`);
     }
@@ -1946,7 +1947,7 @@ function EmergencyTab({
     <>
       <Panel
         title="Active Trauma Cases"
-        subtitle={`${active.length} active Â· priority scored on arrival`}
+        subtitle={`${active.length} active ${MDOT} priority scored on arrival`}
         action={
           <button type="button" className={ui.btnRed} onClick={() => setOpen(true)}>
             <AlertTriangle className="h-3.5 w-3.5" />
@@ -1973,7 +1974,7 @@ function EmergencyTab({
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-bold tabular-nums text-slate-500">
-                      Arrived {str(row.arrival, 'â€”')}
+                      Arrived {str(row.arrival, EMPTY_VALUE)}
                     </p>
                     <p className="text-xs text-slate-400">
                       {str(row.surgeon ?? row.doctor_name, DEFAULT_CONSULTANT)}
@@ -1982,10 +1983,10 @@ function EmergencyTab({
                 </div>
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
                   {[
-                    ['BP', str(vitals.bp, 'â€”')],
-                    ['SpOâ‚‚', str(vitals.spo2, 'â€”')],
-                    ['Pulse', str(vitals.pulse, 'â€”')],
-                    ['Temp', str(vitals.temp, 'â€”')],
+                    ['BP', str(vitals.bp, EMPTY_VALUE)],
+                    ['SpO2', str(vitals.spo2, EMPTY_VALUE)],
+                    ['Pulse', str(vitals.pulse, EMPTY_VALUE)],
+                    ['Temp', str(vitals.temp, EMPTY_VALUE)],
                   ].map(([label, value], vitalIndex) => (
                     <span
                       key={`${label}-${vitalIndex}`}
@@ -2024,7 +2025,7 @@ function EmergencyTab({
           <Field label="Chief complaint">
             <input
               className={ui.input}
-              placeholder="RTA Â· head trauma Â· GCS 9"
+              placeholder="RTA {MDOT} head trauma {MDOT} GCS 9"
               value={form.chief_complaint}
               onChange={(event) => setForm({ ...form, chief_complaint: event.target.value })}
             />
@@ -2049,7 +2050,7 @@ function EmergencyTab({
                 onChange={(event) => setForm({ ...form, bp: event.target.value })}
               />
             </Field>
-            <Field label="SpOâ‚‚">
+            <Field label="SpO2">
               <input
                 className={ui.input}
                 placeholder="91"
@@ -2088,7 +2089,7 @@ function EmergencyTab({
   );
 }
 
-/* â”€â”€ 8 Â· Billing & Cashier Desk â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ 8 {MDOT} Billing & Cashier Desk â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function BillingTab({
   bills,
@@ -2208,11 +2209,11 @@ function BillingTab({
                   <Fragment key={key}>
                     <tr className={ui.tr}>
                       <td className={`${ui.td} font-semibold tabular-nums text-[#0F3E5D]`}>
-                        {str(bill.invoice_number, 'â€”')}
+                        {str(bill.invoice_number, EMPTY_VALUE)}
                       </td>
                       <td className={ui.td}>
                         <p className="font-semibold text-slate-900">{str(bill.patient_name, 'Patient')}</p>
-                        <p className="text-xs text-slate-400">{str(bill.patient_uhid ?? bill.uhid, 'â€”')}</p>
+                        <p className="text-xs text-slate-400">{str(bill.patient_uhid ?? bill.uhid, EMPTY_VALUE)}</p>
                       </td>
                       <td className={ui.td}>
                         <button
@@ -2275,7 +2276,7 @@ function BillingTab({
       <Modal
         open={Boolean(payFor)}
         title="Collect Payment"
-        subtitle={`${str(payFor?.invoice_number, 'Invoice')} Â· ${str(payFor?.patient_name, 'patient')}`}
+        subtitle={`${str(payFor?.invoice_number, 'Invoice')} ${MDOT} ${str(payFor?.patient_name, 'patient')}`}
         onClose={() => setPayFor(null)}
       >
         <form className="space-y-3" onSubmit={collect}>
@@ -2421,7 +2422,7 @@ function StaffTab({
     <>
       <Panel
         title="Regal Hospital Doctor Directory"
-        subtitle={`${REGAL_DOCTORS.length} official clinicians Â· ${doctorsOnDuty} on duty Â· ${rows.length} shown`}
+        subtitle={`${REGAL_DOCTORS.length} official clinicians ${MDOT} ${doctorsOnDuty} on duty ${MDOT} ${rows.length} shown`}
       >
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <SearchInput value={query} onChange={setQuery} placeholder="Search name, ID, department or role" />
@@ -2457,11 +2458,11 @@ function StaffTab({
               {rows.map((member, index) => (
                 <tr key={rowKey(member, index)} className={ui.tr}>
                   <td className={`${ui.td} font-semibold tabular-nums text-slate-500`}>
-                    {str(member.employee_id, 'â€”')}
+                    {str(member.employee_id, EMPTY_VALUE)}
                   </td>
                   <td className={`${ui.td} font-semibold text-slate-900`}>{staffName(member)}</td>
                   <td className={ui.td}>{str(member.department, 'Administration')}</td>
-                  <td className={ui.td}>{str(member.room_number, 'â€”')}</td>
+                  <td className={ui.td}>{str(member.room_number, EMPTY_VALUE)}</td>
                   <td className={`${ui.td} tabular-nums font-semibold`}>
                     {member.consultation_fee != null ? formatINR(num(member.consultation_fee)) : '\u2014'}
                   </td>
@@ -2514,7 +2515,7 @@ function StaffTab({
   );
 }
 
-/* â”€â”€ 11 Â· Ecosystem Communications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â”€â”€ 11 {MDOT} Ecosystem Communications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function MessagesTab({ patients }: { patients: Row[] }) {
   const patientOptions = useMemo(
