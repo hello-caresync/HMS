@@ -28,7 +28,6 @@ import { toast } from 'sonner';
 
 import { createClient } from '@/lib/supabase/client';
 import { formatINR } from '@/lib/utils/currency';
-import { generatePostConsultationBill } from '@/lib/hospital/operations/consultation-billing-sync';
 import {
   attendEmergencyCase,
   completeEmergencyCase,
@@ -36,7 +35,6 @@ import {
   loadEmergencyClinicalArchive,
   type EmergencyClinicalCase,
 } from '@/lib/hospital/operations/emergency-clinical-sync';
-import { DEFAULT_PATIENT_ID } from '@/lib/doctor/command-center/supabase-service';
 import {
   admitAppointmentToQueue,
   bypassToNextWaiting,
@@ -127,12 +125,6 @@ function queueStatusBadgeClass(status: string): string {
 function formatTokenLabel(token?: string, fallbackIndex?: number): string {
   if (token) return token.startsWith('T-') ? token : `T-${String(token).padStart(2, '0')}`;
   return `T-${String((fallbackIndex ?? 0) + 1).padStart(2, '0')}`;
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    value || '',
-  );
 }
 
 const getRegisteredPatientName = (patient: unknown): string => {
@@ -659,129 +651,97 @@ export default function DoctorDashboardPage() {
     setCardActionId(null);
   };
 
-  const handleMarkDone = async (targetPatient?: LiveAppointmentRecord) => {
-    const patientToComplete = targetPatient || activePatient;
-    if (!patientToComplete?.id) {
-      toast.error('No appointment selected to complete');
-      return;
-    }
+  const handleMarkDone = async (patientToComplete?: LiveAppointmentRecord) => {
+    const target = patientToComplete || activePatient;
+    if (!target) return;
 
-    const appointmentId = patientToComplete.id;
-    setCardActionId(appointmentId);
+    const targetId = target.id;
+    const targetName = getRegisteredPatientName(target);
+    const targetToken = target.token_number;
 
-    const markCompletedInList = (list: LiveAppointmentRecord[]) =>
-      list.map((item) =>
-        item.id === appointmentId ? { ...item, status: 'COMPLETED' } : item,
-      );
-
-    const advanceToNextPatient = (list: LiveAppointmentRecord[]) => {
-      const nextPatient = list.find(
-        (a) =>
-          a.id !== appointmentId &&
-          a.status.toUpperCase() !== 'COMPLETED' &&
-          (isWaitingStatus(a.status) || isInConsultationStatus(a.status)),
-      );
-      setActivePatient(nextPatient || null);
-    };
-
-    const applyOptimisticCompleted = () => {
-      setAppointments((prev) => {
-        const updated = markCompletedInList(prev);
-        advanceToNextPatient(updated);
-        return updated;
-      });
-      setActiveTab('completed');
-    };
+    setCardActionId(targetId);
 
     try {
       const supabase = createClient();
-      let dbUpdated = false;
-
-      if (isUuid(appointmentId)) {
-        const patientApptUpdate = await supabase
-          .from('patient_appointments')
-          .update({ queue_status: 'COMPLETED', status: 'COMPLETED' })
-          .eq('id', appointmentId);
-        if (!patientApptUpdate.error) dbUpdated = true;
-
-        const apptUpdate = await supabase
-          .from('appointments')
-          .update({ status: 'COMPLETED' })
-          .eq('id', appointmentId);
-        if (!apptUpdate.error) dbUpdated = true;
-
-        if (apptUpdate.error) {
-          const apptByAppointmentId = await supabase
-            .from('appointments')
-            .update({ status: 'COMPLETED' })
-            .eq('appointment_id', appointmentId);
-          if (!apptByAppointmentId.error) dbUpdated = true;
-        }
-      }
-
-      if (!dbUpdated && patientToComplete.token_number) {
-        const tokenValue = patientToComplete.token_number;
-        const numericToken = Number(String(tokenValue).replace(/[^\d]/g, ''));
-
-        const patientByToken = await supabase
-          .from('patient_appointments')
-          .update({ queue_status: 'COMPLETED', status: 'COMPLETED' })
-          .eq('token_number', tokenValue);
-        if (!patientByToken.error) dbUpdated = true;
-
-        if (!dbUpdated && !Number.isNaN(numericToken)) {
-          const patientByNumericToken = await supabase
-            .from('patient_appointments')
-            .update({ queue_status: 'COMPLETED', status: 'COMPLETED' })
-            .eq('token_number', numericToken);
-          if (!patientByNumericToken.error) dbUpdated = true;
-        }
-
-        const apptByToken = await supabase
-          .from('appointments')
-          .update({ status: 'COMPLETED' })
-          .eq('token_number', tokenValue);
-        if (!apptByToken.error) dbUpdated = true;
-
-        if (apptByToken.error && !Number.isNaN(numericToken)) {
-          const apptByNumericToken = await supabase
-            .from('appointments')
-            .update({ status: 'COMPLETED' })
-            .eq('token_number', numericToken);
-          if (!apptByNumericToken.error) dbUpdated = true;
-        }
-      }
-
-      if (!dbUpdated) {
-        throw new Error('No matching appointment row was updated');
-      }
-
-      const billResult = await generatePostConsultationBill(supabase, {
-        appointmentId,
-        patientId: patientToComplete.patient_id || DEFAULT_PATIENT_ID,
-        patientName: getRegisteredPatientName(patientToComplete),
-        doctorName: patientToComplete.doctor_name,
-        consultationFee: patientToComplete.fee,
-      });
-      if (billResult.ok && billResult.bill && !billResult.skipped) {
-        toast.info(
-          `Bill ${billResult.bill.invoice_number} sent to patient & cashier desk.`,
-        );
-      }
-
-      toast.success(
-        `Encounter with ${getRegisteredPatientName(patientToComplete)} completed.`,
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        targetId || '',
       );
 
-      applyOptimisticCompleted();
-      void fetchLiveAppointments(true);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error('Error completing appointment:', message || err);
-      toast.error('Could not update status in database, updated locally.');
+      if (isUUID) {
+        await supabase
+          .from('patient_appointments')
+          .update({ queue_status: 'COMPLETED', status: 'COMPLETED' })
+          .eq('id', targetId);
 
-      applyOptimisticCompleted();
-      void fetchLiveAppointments(true);
+        await supabase.from('appointments').update({ status: 'COMPLETED' }).eq('id', targetId);
+
+        await supabase
+          .from('appointments')
+          .update({ status: 'COMPLETED' })
+          .eq('appointment_id', targetId);
+      } else if (targetToken) {
+        await supabase
+          .from('patient_appointments')
+          .update({ queue_status: 'COMPLETED', status: 'COMPLETED' })
+          .eq('token_number', targetToken);
+
+        await supabase
+          .from('appointments')
+          .update({ status: 'COMPLETED' })
+          .eq('token_number', targetToken);
+      } else {
+        await supabase
+          .from('patient_appointments')
+          .update({ queue_status: 'COMPLETED', status: 'COMPLETED' })
+          .eq('patient_name', targetName);
+
+        await supabase
+          .from('appointments')
+          .update({ status: 'COMPLETED' })
+          .eq('patient_name', targetName);
+      }
+
+      await supabase.from('consultations').insert([
+        {
+          patient_name: targetName,
+          doctor_name: doctorName || 'Dr CHANDRAKANTH S KESARI',
+          chief_complaint: target.chief_complaint || target.symptoms || 'General Consultation',
+          status: 'COMPLETED',
+          created_at: new Date().toISOString(),
+        },
+      ]);
+
+      setAppointments((prev) => {
+        const updated = prev.map((item) =>
+          item.id === targetId ||
+          (targetToken && item.token_number === targetToken) ||
+          getRegisteredPatientName(item) === targetName
+            ? { ...item, status: 'COMPLETED' }
+            : item,
+        );
+
+        const remainingWaiting = updated.filter(
+          (a) =>
+            a.id !== targetId &&
+            (!targetToken || a.token_number !== targetToken) &&
+            getRegisteredPatientName(a) !== targetName &&
+            a.status?.toUpperCase() !== 'COMPLETED' &&
+            (isWaitingStatus(a.status) || isInConsultationStatus(a.status)),
+        );
+
+        setActivePatient(remainingWaiting[0] || null);
+        return updated;
+      });
+
+      setActiveTab('completed');
+      toast.success(`Encounter with ${targetName} completed.`);
+
+      setTimeout(() => {
+        void fetchLiveAppointments(true);
+      }, 400);
+    } catch (err: unknown) {
+      console.error('Error completing appointment:', err);
+      toast.error('Could not complete appointment in database');
     } finally {
       setCardActionId(null);
     }
