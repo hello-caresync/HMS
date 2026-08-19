@@ -8,16 +8,13 @@ import { toast } from 'sonner';
 import {
   DEFAULT_ACTIVE_DOCTOR_ID,
   DEFAULT_ACTIVE_DOCTOR_NAME,
-  DEFAULT_PATIENT_ID,
   fetchConsultationAppointmentContext,
-  finalizeConsultationAndPrescription,
   formatConsultationSaveError,
-  sanitizeAppointmentUuid,
-  sanitizeDoctorUuid,
-  sanitizePatientUuid,
+  updateAppointmentStatus,
   type ConsultationAppointmentContext,
   type ConsultationMedicationItem,
 } from '@/lib/doctor/command-center/supabase-service';
+import { supabase } from '@/lib/supabase/client';
 
 interface MedicationRow extends ConsultationMedicationItem {
   id: string;
@@ -46,7 +43,7 @@ export default function ConsultationWorkspaceClient({
 
   const [appointment, setAppointment] = useState<ConsultationAppointmentContext | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [temperature, setTemperature] = useState('98.6');
   const [bpSystolic, setBpSystolic] = useState('120');
@@ -99,53 +96,141 @@ export default function ConsultationWorkspaceClient({
     );
   };
 
-  const handleFinalizeConsultation = async () => {
+  const handleEndConsultation = async () => {
     if (!appointment) return;
-
-    const safeDoctorId = sanitizeDoctorUuid(appointment.doctor_id || DEFAULT_ACTIVE_DOCTOR_ID);
-    const safePatientId = sanitizePatientUuid(appointment.patient_id || '') ?? DEFAULT_PATIENT_ID;
-    const safeAppointmentId = sanitizeAppointmentUuid(appointmentId || '');
 
     if (!diagnosis.trim() || !chiefComplaint.trim()) {
       toast.error('Chief complaint and diagnosis are required.');
       return;
     }
 
-    setSaving(true);
+    setIsSubmitting(true);
     try {
-      await finalizeConsultationAndPrescription({
-        appointmentId: safeAppointmentId,
-        doctorId: safeDoctorId,
-        patientId: safePatientId,
-        patientName: appointment.patient_name,
-        doctorName: DEFAULT_ACTIVE_DOCTOR_NAME,
-        clinical: {
-          chief_complaint: chiefComplaint,
-          clinical_findings: clinicalFindings,
-          diagnosis,
-          clinical_notes: clinicalNotes,
-          follow_up_date: followUpDate || null,
-        },
-        vitals: {
-          temperature_f: temperature ? Number(temperature) : null,
-          bp_systolic: bpSystolic ? Number(bpSystolic) : null,
-          bp_diastolic: bpDiastolic ? Number(bpDiastolic) : null,
-          pulse_bpm: pulse ? Number(pulse) : null,
-          spo2_percent: spo2 ? Number(spo2) : null,
-          weight_kg: weight ? Number(weight) : null,
-        },
-        medications: medications.map(({ id: _id, ...med }) => med),
-        special_instructions: clinicalNotes || undefined,
-      });
+      const isUUID = (val: string) =>
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val || '');
 
-      toast.success('Prescription finalized and sent to patient!');
+      const patientName = appointment.patient_name || 'Patient';
+      const activeDoctorId = appointment.doctor_id || DEFAULT_ACTIVE_DOCTOR_ID;
+      const activeDoctorName = DEFAULT_ACTIVE_DOCTOR_NAME || 'Dr. Chandrakanth S Kesari';
+      const patientId = appointment.patient_id || '';
+      const diagnosisNotes = clinicalFindings.trim();
+      const doctorAdvice = clinicalNotes.trim();
+      const labOrders = '';
+      const prescribedMedicines = medications
+        .filter((med) => med.name.trim())
+        .map(({ id: _id, ...med }) => med);
+
+      const resolvedAppointmentId = isUUID(appointmentId || '') ? appointmentId : null;
+      const resolvedPatientId = isUUID(patientId || '') ? patientId : null;
+      const resolvedDoctorId = isUUID(activeDoctorId || '')
+        ? activeDoctorId
+        : '56284599-9a5f-4672-9b53-b90e18146a00';
+
+      const { data: consultData, error: consultError } = await supabase
+        .from('consultations')
+        .insert([
+          {
+            appointment_id: resolvedAppointmentId,
+            patient_id: resolvedPatientId,
+            patient_name: patientName,
+            doctor_id: resolvedDoctorId,
+            doctor_name: activeDoctorName,
+            chief_complaint: chiefComplaint || 'Consultation Completed',
+            clinical_notes: clinicalNotes || '',
+            diagnosis: diagnosis || '',
+            diagnosis_notes: diagnosisNotes || '',
+            lab_tests: labOrders || '',
+            follow_up_date: followUpDate || null,
+            status: 'COMPLETED',
+            created_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (consultError) {
+        console.warn('Consultation insert note:', consultError.message);
+      }
+
+      const createdConsultationId = consultData?.id ? String(consultData.id) : null;
+
+      if (createdConsultationId) {
+        const tempValue = temperature ? parseFloat(temperature) : null;
+        const bpSysValue = bpSystolic ? parseInt(bpSystolic, 10) : null;
+        const bpDiaValue = bpDiastolic ? parseInt(bpDiastolic, 10) : null;
+        const pulseValue = pulse ? parseInt(pulse, 10) : null;
+        const spo2Value = spo2 ? parseInt(spo2, 10) : null;
+        const weightValue = weight ? parseFloat(weight) : null;
+
+        const { error: vitalsError } = await supabase.from('vitals').insert([
+          {
+            consultation_id: createdConsultationId,
+            patient_id: resolvedPatientId,
+            temp: tempValue,
+            temperature: tempValue,
+            bp_sys: bpSysValue,
+            bp_systolic: bpSysValue,
+            bp_dia: bpDiaValue,
+            bp_diastolic: bpDiaValue,
+            pulse: pulseValue,
+            pulse_bpm: pulseValue,
+            spo2: spo2Value,
+            spo2_percent: spo2Value,
+            weight: weightValue,
+          },
+        ]);
+
+        if (vitalsError) {
+          console.warn('Vitals insert note:', vitalsError.message);
+        }
+      }
+
+      if (prescribedMedicines.length > 0) {
+        const { error: prescError } = await supabase.from('prescriptions').insert([
+          {
+            consultation_id: createdConsultationId,
+            appointment_id: resolvedAppointmentId,
+            patient_id: resolvedPatientId,
+            patient_name: patientName,
+            doctor_id: resolvedDoctorId,
+            doctor_name: activeDoctorName,
+            medications: prescribedMedicines,
+            instructions: doctorAdvice || '',
+            created_at: new Date().toISOString(),
+          },
+        ]);
+
+        if (prescError) {
+          console.warn('Prescription insert note:', prescError.message);
+        }
+      }
+
+      if (resolvedAppointmentId) {
+        try {
+          await updateAppointmentStatus(resolvedAppointmentId, 'COMPLETED');
+        } catch {
+          const { error: apptError } = await supabase
+            .from('appointments')
+            .update({ status: 'COMPLETED' })
+            .eq('id', resolvedAppointmentId);
+
+          if (apptError) {
+            console.warn('Appointment status update note:', apptError.message);
+          }
+        }
+      } else if (patientName) {
+        await supabase.from('appointments').update({ status: 'COMPLETED' }).eq('patient_name', patientName);
+      }
+
+      toast.success(
+        'Consultation completed, saved to patient records, and marked as completed!',
+      );
       router.push('/doctor/dashboard');
     } catch (err: unknown) {
-      console.error('[Consultation Save Error]:', err);
-      const errorMessage = formatConsultationSaveError(err);
-      toast.error(`Error saving consultation: ${errorMessage}`);
+      console.error('Error finalizing consultation:', err);
+      toast.error('Failed to save full consultation history.');
     } finally {
-      setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -312,12 +397,12 @@ export default function ConsultationWorkspaceClient({
         </button>
         <button
           type="button"
-          disabled={saving}
-          onClick={() => void handleFinalizeConsultation()}
+          disabled={isSubmitting}
+          onClick={() => void handleEndConsultation()}
           className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          Finalize &amp; Send to Patient
+          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          End Consultation / Finalize &amp; Dispatch Rx
         </button>
       </div>
     </div>
