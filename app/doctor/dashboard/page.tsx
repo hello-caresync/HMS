@@ -1560,14 +1560,14 @@ export default function DoctorDashboardPage() {
                   Start Consultation
                 </button>
                 <button
-                  onClick={() => void handleMarkDone(activePatient ?? undefined)}
+                  onClick={() => void handleMarkDone(activePatient)}
                   disabled={cardActionId === activePatient.id}
-                  className="py-3 font-bold text-sm rounded-xl border border-[#A6E2D8] bg-[#EAF5F2] hover:bg-[#A6E2D8] text-[#113831] transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-60"
+                  className="w-full sm:w-auto px-6 py-3.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {cardActionId === activePatient.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-700" />
                   ) : (
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700" />
                   )}
                   Done
                 </button>
