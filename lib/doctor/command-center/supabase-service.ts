@@ -451,31 +451,164 @@ export async function getDoctorDashboardDataForDoctor(
 
 /** Updates appointment lifecycle status with explicit error logging. */
 export async function updateAppointmentStatus(appointmentId: string, status: string) {
+  const updated = await completeAppointmentAfterConsultation({
+    appointmentId,
+    status,
+  });
+  if (!updated) {
+    throw new Error(`Failed to update appointment ${appointmentId} status to ${status}`);
+  }
+}
+
+export interface CompleteAppointmentInput {
+  appointmentId?: string | null;
+  patientId?: string | null;
+  patientName?: string;
+  tokenNumber?: string | null;
+  /** Defaults to COMPLETED */
+  status?: string;
+}
+
+/**
+ * Marks an appointment completed using every known identifier fallback
+ * (id, appointment_id, patient_appointments, token_number, patient_name, patient_id).
+ */
+export async function completeAppointmentAfterConsultation(
+  input: CompleteAppointmentInput,
+): Promise<boolean> {
   const client = supabase;
+  const status = input.status ?? 'COMPLETED';
   const payload = { status, updated_at: new Date().toISOString() };
+  const patientPayload = {
+    queue_status: status,
+    status,
+    updated_at: new Date().toISOString(),
+  };
+  let dbUpdated = false;
 
-  const byAppointmentId = await client
-    .from('appointments')
-    .update(payload)
-    .eq('appointment_id', appointmentId)
-    .select()
-    .maybeSingle();
+  const appointmentId = isUuid(input.appointmentId ?? '') ? String(input.appointmentId) : null;
 
-  if (!byAppointmentId.error) return byAppointmentId.data;
+  if (appointmentId) {
+    const patientApptUpdate = await client
+      .from('patient_appointments')
+      .update(patientPayload)
+      .eq('id', appointmentId)
+      .select('id');
+    if (!patientApptUpdate.error && (patientApptUpdate.data?.length ?? 0) > 0) {
+      dbUpdated = true;
+    }
 
-  const byId = await client
-    .from('appointments')
-    .update(payload)
-    .eq('id', appointmentId)
-    .select()
-    .maybeSingle();
+    const apptById = await client
+      .from('appointments')
+      .update(payload)
+      .eq('id', appointmentId)
+      .select('id, appointment_id');
+    if (!apptById.error && (apptById.data?.length ?? 0) > 0) {
+      dbUpdated = true;
+    }
 
-  if (byId.error) {
-    logSupabaseError(`Failed to update appointment ${appointmentId} status to ${status}:`, byId.error);
-    throw byId.error;
+    const apptByAppointmentId = await client
+      .from('appointments')
+      .update(payload)
+      .eq('appointment_id', appointmentId)
+      .select('id, appointment_id');
+    if (!apptByAppointmentId.error && (apptByAppointmentId.data?.length ?? 0) > 0) {
+      dbUpdated = true;
+    }
   }
 
-  return byId.data;
+  if (!dbUpdated && input.tokenNumber) {
+    const tokenValue = String(input.tokenNumber);
+    const numericToken = Number(tokenValue.replace(/[^\d]/g, ''));
+
+    const patientByToken = await client
+      .from('patient_appointments')
+      .update(patientPayload)
+      .eq('token_number', tokenValue)
+      .select('id');
+    if (!patientByToken.error && (patientByToken.data?.length ?? 0) > 0) {
+      dbUpdated = true;
+    }
+
+    if (!dbUpdated && !Number.isNaN(numericToken)) {
+      const patientByNumericToken = await client
+        .from('patient_appointments')
+        .update(patientPayload)
+        .eq('token_number', numericToken)
+        .select('id');
+      if (!patientByNumericToken.error && (patientByNumericToken.data?.length ?? 0) > 0) {
+        dbUpdated = true;
+      }
+    }
+
+    const apptByToken = await client
+      .from('appointments')
+      .update(payload)
+      .eq('token_number', tokenValue)
+      .select('id');
+    if (!apptByToken.error && (apptByToken.data?.length ?? 0) > 0) {
+      dbUpdated = true;
+    }
+
+    if (!dbUpdated && !Number.isNaN(numericToken)) {
+      const apptByNumericToken = await client
+        .from('appointments')
+        .update(payload)
+        .eq('token_number', numericToken)
+        .select('id');
+      if (!apptByNumericToken.error && (apptByNumericToken.data?.length ?? 0) > 0) {
+        dbUpdated = true;
+      }
+    }
+  }
+
+  if (!dbUpdated && isUuid(input.patientId ?? '')) {
+    const patientId = String(input.patientId);
+    const apptByPatient = await client
+      .from('appointments')
+      .update(payload)
+      .eq('patient_id', patientId)
+      .neq('status', 'COMPLETED')
+      .select('id');
+    if (!apptByPatient.error && (apptByPatient.data?.length ?? 0) > 0) {
+      dbUpdated = true;
+    }
+
+    const patientApptByPatient = await client
+      .from('patient_appointments')
+      .update(patientPayload)
+      .eq('patient_id', patientId)
+      .neq('status', 'COMPLETED')
+      .select('id');
+    if (!patientApptByPatient.error && (patientApptByPatient.data?.length ?? 0) > 0) {
+      dbUpdated = true;
+    }
+  }
+
+  if (!dbUpdated && input.patientName?.trim()) {
+    const patientName = input.patientName.trim();
+    const apptByName = await client
+      .from('appointments')
+      .update(payload)
+      .eq('patient_name', patientName)
+      .neq('status', 'COMPLETED')
+      .select('id');
+    if (!apptByName.error && (apptByName.data?.length ?? 0) > 0) {
+      dbUpdated = true;
+    }
+
+    const patientApptByName = await client
+      .from('patient_appointments')
+      .update(patientPayload)
+      .eq('patient_name', patientName)
+      .neq('status', 'COMPLETED')
+      .select('id');
+    if (!patientApptByName.error && (patientApptByName.data?.length ?? 0) > 0) {
+      dbUpdated = true;
+    }
+  }
+
+  return dbUpdated;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -516,6 +649,7 @@ export interface ConsultationAppointmentContext {
   patient_age?: number;
   blood_group?: string;
   reason?: string;
+  token_number?: string;
 }
 
 export interface ConsultationFinalizeInput {
@@ -603,6 +737,7 @@ export async function fetchConsultationAppointmentContext(
         : viewRow.reason
           ? String(viewRow.reason)
           : undefined,
+      token_number: viewRow.token_number != null ? String(viewRow.token_number) : undefined,
     };
   }
 
@@ -650,6 +785,7 @@ export async function fetchConsultationAppointmentContext(
           : row.chief_complaint
             ? String(row.chief_complaint)
             : undefined,
+        token_number: row.token_number != null ? String(row.token_number) : undefined,
       };
     }
 
@@ -673,6 +809,7 @@ export async function fetchConsultationAppointmentContext(
       : appt.reason
         ? String(appt.reason)
         : undefined,
+    token_number: appt.token_number != null ? String(appt.token_number) : undefined,
   };
 }
 

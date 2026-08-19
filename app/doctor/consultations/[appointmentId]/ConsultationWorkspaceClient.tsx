@@ -8,9 +8,9 @@ import { toast } from 'sonner';
 import {
   DEFAULT_ACTIVE_DOCTOR_ID,
   DEFAULT_ACTIVE_DOCTOR_NAME,
+  completeAppointmentAfterConsultation,
   fetchConsultationAppointmentContext,
   formatConsultationSaveError,
-  updateAppointmentStatus,
   type ConsultationAppointmentContext,
   type ConsultationMedicationItem,
 } from '@/lib/doctor/command-center/supabase-service';
@@ -96,7 +96,7 @@ export default function ConsultationWorkspaceClient({
     );
   };
 
-  const handleEndConsultation = async () => {
+  const handleFinalizeConsultation = async () => {
     if (!appointment) return;
 
     if (!diagnosis.trim() || !chiefComplaint.trim()) {
@@ -110,21 +110,21 @@ export default function ConsultationWorkspaceClient({
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val || '');
 
       const patientName = appointment.patient_name || 'Patient';
-      const activeDoctorId = appointment.doctor_id || DEFAULT_ACTIVE_DOCTOR_ID;
-      const activeDoctorName = DEFAULT_ACTIVE_DOCTOR_NAME || 'Dr. Chandrakanth S Kesari';
-      const patientId = appointment.patient_id || '';
-      const diagnosisNotes = clinicalFindings.trim();
+      const activeDoctorName = DEFAULT_ACTIVE_DOCTOR_NAME || 'Dr CHANDRAKANTH S KESARI';
       const doctorAdvice = clinicalNotes.trim();
-      const labOrders = '';
       const prescribedMedicines = medications
         .filter((med) => med.name.trim())
         .map(({ id: _id, ...med }) => med);
 
-      const resolvedAppointmentId = isUUID(appointmentId || '') ? appointmentId : null;
-      const resolvedPatientId = isUUID(patientId || '') ? patientId : null;
-      const resolvedDoctorId = isUUID(activeDoctorId || '')
-        ? activeDoctorId
-        : '56284599-9a5f-4672-9b53-b90e18146a00';
+      const resolvedAppointmentId = isUUID(appointmentId || '')
+        ? appointmentId
+        : isUUID(appointment.appointment_id || '')
+          ? appointment.appointment_id
+          : null;
+      const resolvedPatientId = isUUID(appointment.patient_id || '') ? appointment.patient_id : null;
+      const resolvedDoctorId = isUUID(appointment.doctor_id || '')
+        ? appointment.doctor_id
+        : DEFAULT_ACTIVE_DOCTOR_ID;
 
       const { data: consultData, error: consultError } = await supabase
         .from('consultations')
@@ -135,18 +135,17 @@ export default function ConsultationWorkspaceClient({
             patient_name: patientName,
             doctor_id: resolvedDoctorId,
             doctor_name: activeDoctorName,
-            chief_complaint: chiefComplaint || 'Consultation Completed',
+            chief_complaint: chiefComplaint || '',
             clinical_notes: clinicalNotes || '',
             diagnosis: diagnosis || '',
-            diagnosis_notes: diagnosisNotes || '',
-            lab_tests: labOrders || '',
+            diagnosis_notes: clinicalFindings.trim() || '',
             follow_up_date: followUpDate || null,
             status: 'COMPLETED',
             created_at: new Date().toISOString(),
           },
         ])
         .select()
-        .single();
+        .maybeSingle();
 
       if (consultError) {
         console.warn('Consultation insert note:', consultError.message);
@@ -205,30 +204,25 @@ export default function ConsultationWorkspaceClient({
         }
       }
 
-      if (resolvedAppointmentId) {
-        try {
-          await updateAppointmentStatus(resolvedAppointmentId, 'COMPLETED');
-        } catch {
-          const { error: apptError } = await supabase
-            .from('appointments')
-            .update({ status: 'COMPLETED' })
-            .eq('id', resolvedAppointmentId);
+      const appointmentUpdated = await completeAppointmentAfterConsultation({
+        appointmentId: resolvedAppointmentId,
+        patientId: resolvedPatientId,
+        patientName,
+        tokenNumber: appointment.token_number ?? null,
+      });
 
-          if (apptError) {
-            console.warn('Appointment status update note:', apptError.message);
-          }
-        }
-      } else if (patientName) {
-        await supabase.from('appointments').update({ status: 'COMPLETED' }).eq('patient_name', patientName);
+      if (!appointmentUpdated) {
+        console.warn(
+          'Appointment status update note: no matching row updated for',
+          resolvedAppointmentId ?? patientName,
+        );
       }
 
-      toast.success(
-        'Consultation completed, saved to patient records, and marked as completed!',
-      );
+      toast.success('Consultation completed and patient moved to Completed queue!');
       router.push('/doctor/dashboard');
     } catch (err: unknown) {
-      console.error('Error finalizing consultation:', err);
-      toast.error('Failed to save full consultation history.');
+      console.error('Error ending consultation:', err);
+      toast.error('Failed to complete appointment');
     } finally {
       setIsSubmitting(false);
     }
@@ -398,7 +392,7 @@ export default function ConsultationWorkspaceClient({
         <button
           type="button"
           disabled={isSubmitting}
-          onClick={() => void handleEndConsultation()}
+          onClick={() => void handleFinalizeConsultation()}
           className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
         >
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
