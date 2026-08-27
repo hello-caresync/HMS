@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
 import {
   calculateNextOpdTokenNumber,
-  registerPatientOnlineBooking,
+  formatHashTokenLabel,
 } from '@/lib/hospital/operations/appointment-sync';
 import {
   PATIENT_APPOINTMENTS_UUID,
@@ -84,21 +85,11 @@ const ALL_41_DOCTORS: DoctorDirectoryItem[] = [
 ];
 
 const REGAL_HOSPITAL = 'Regal Hospital';
+const PATIENT_BOOKING_SOURCE = 'patient_app';
+const LEGACY_PATIENT_UUID_FALLBACK = '00000000-0000-0000-0000-000000009021';
 
 /** Static registered-patient UUID fallback when Web Crypto is unavailable. */
 const STATIC_PATIENT_UUID_FALLBACK = PATIENT_APPOINTMENTS_UUID;
-
-function generateStandardUuid(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
-    const random = (Math.random() * 16) | 0;
-    const value = char === 'x' ? random : (random & 0x3) | 0x8;
-    return value.toString(16);
-  });
-}
 
 function isValidStandardUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -106,11 +97,11 @@ function isValidStandardUuid(value: string): boolean {
   );
 }
 
-/** Prefer registered profile UUID; fall back to Web Crypto UUID generation. */
-function resolveBookingPatientUuid(profilePatientId: string): string {
-  const registered = resolveRegisteredPatientUuid(profilePatientId);
-  if (isValidStandardUuid(registered)) return registered;
-  return generateStandardUuid();
+function isValidUUID(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim())
+  );
 }
 
 function resolveRegisteredPatientUuid(sessionPatientId?: string | null): string {
@@ -154,102 +145,11 @@ function mirrorAppointmentToLocalStorage(appointment: Record<string, unknown>): 
   }
 }
 
-type BookingPayload = {
-  id: string;
-  patient_id: string;
-  patient_name: string;
-  doctor_id: string;
-  doctor_name: string;
-  department: string;
-  hospital_name: string;
-  appointment_date: string;
-  slot_time: string;
-  appointment_time: string;
-  fee: string;
-  reason: string;
-  chief_complaint: string;
-  token_number: number;
-  queue_status: string;
-  created_at: string;
-};
-
-/** Row shape aligned to Supabase schema cache for patient_appointments (ground truth). */
-function toPatientAppointmentsInsertRow(payload: BookingPayload): Record<string, unknown> {
-  return {
-    id: payload.id,
-    patient_id: payload.patient_id,
-    patient_name: payload.patient_name,
-    doctor_id: payload.doctor_id,
-    doctor_name: payload.doctor_name,
-    department: payload.department,
-    hospital_name: REGAL_HOSPITAL,
-    appointment_date: payload.appointment_date,
-    slot_time: payload.slot_time,
-    fee: payload.fee,
-    reason: payload.reason,
-    token_number: payload.token_number,
-    queue_status: payload.queue_status,
-    created_at: payload.created_at,
-  };
-}
-
-function buildSchemaSafeBookingPayload(input: {
-  appointmentId: string;
-  patientId: string;
-  patientName: string;
-  doctorName: string;
-  doctorId: string;
-  department: string;
-  appointmentDate: string;
-  slotTime: string;
-  fee: string;
-  reason: string;
-  tokenNumber: number;
-}): BookingPayload {
-  const clinicalReason = input.reason.trim() || 'General OPD Consultation';
-  const createdAt = new Date().toISOString();
-
-  return {
-    id: input.appointmentId,
-    patient_id: input.patientId,
-    patient_name: input.patientName,
-    doctor_id: input.doctorId,
-    doctor_name: input.doctorName,
-    department: input.department,
-    hospital_name: REGAL_HOSPITAL,
-    appointment_date: input.appointmentDate,
-    slot_time: input.slotTime,
-    appointment_time: input.slotTime,
-    fee: input.fee,
-    reason: clinicalReason,
-    chief_complaint: clinicalReason,
-    token_number: input.tokenNumber,
-    queue_status: 'SCHEDULED',
-    created_at: createdAt,
-  };
-}
-
 async function calculateNextTokenNumber(
   doctorEmployeeId: string,
   doctorName: string,
   appointmentDate: string,
 ): Promise<number> {
-  const doctorKey = doctorName.replace(/^Dr\.?\s*/i, '').split(/\s+/)[0] ?? doctorName;
-
-  try {
-    const { count, error } = await supabase
-      .from('patient_appointments')
-      .select('*', { count: 'exact', head: true })
-      .eq('appointment_date', appointmentDate)
-      .or(`doctor_id.eq.${doctorEmployeeId},doctor_name.ilike.%${doctorKey}%`);
-
-    if (!error && count != null) {
-      return count + 1;
-    }
-  } catch (err) {
-    console.warn('patient_appointments token count fallback:', err);
-  }
-
   try {
     return await calculateNextOpdTokenNumber(
       supabase,
@@ -258,82 +158,166 @@ async function calculateNextTokenNumber(
       appointmentDate,
     );
   } catch (err) {
-    console.warn('Cross-table token count fallback:', err);
+    console.warn('Token counter fallback:', err);
     return 1;
   }
 }
 
-/** Non-blocking hospital reception mirror — schema drift must never block booking. */
-async function mirrorToReceptionSafely(appointment: BookingPayload): Promise<void> {
-  try {
-    const result = await registerPatientOnlineBooking(supabase, {
-      id: appointment.id,
-      patient_id: appointment.patient_id,
-      patient_name: appointment.patient_name,
-      doctor_id: appointment.doctor_id,
-      doctor_name: appointment.doctor_name,
-      department: appointment.department,
-      appointment_date: appointment.appointment_date,
-      appointment_time: appointment.appointment_time,
-      slot_time: appointment.slot_time,
-      fee: appointment.fee,
-      reason: appointment.reason,
-      token_number: appointment.token_number,
-    });
-
-    if (!result.ok) {
-      console.warn('appointments reception mirror skipped (non-blocking):', result.error);
-    }
-  } catch (mirrorErr) {
-    console.warn('appointments reception mirror exception (non-blocking):', mirrorErr);
+function resolveBookingPatientId(existingPatientId: string): string {
+  if (isValidUUID(existingPatientId)) return existingPatientId.trim();
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
   }
+  return LEGACY_PATIENT_UUID_FALLBACK;
 }
 
-/** Fire all auxiliary ledger mirrors without affecting booking UX. */
-function runAuxiliarySyncs(appointment: BookingPayload): void {
-  void mirrorToReceptionSafely(appointment);
-  void mirrorToOpdQueueSafely(appointment);
-}
-async function mirrorToOpdQueueSafely(appointment: BookingPayload): Promise<void> {
-  try {
-    const queuePayload = {
-      id: appointment.id,
-      patient_id: appointment.patient_id,
-      patient_name: appointment.patient_name,
-      doctor_id: appointment.doctor_id,
-      doctor_name: appointment.doctor_name,
-      department: appointment.department,
-      hospital_name: REGAL_HOSPITAL,
-      appointment_date: appointment.appointment_date,
-      slot_time: appointment.slot_time,
-      appointment_time: appointment.appointment_time,
-      token_number: appointment.token_number,
-      queue_status: appointment.queue_status,
-      reason: appointment.reason,
-      chief_complaint: appointment.chief_complaint,
-      created_at: appointment.created_at,
-    };
-
-    const { error } = await supabase.from('hms_opd_queue').insert([queuePayload]);
-    if (error) {
-      console.warn('hms_opd_queue mirror skipped (non-blocking):', error.message);
-    }
-  } catch (mirrorErr) {
-    console.warn('hms_opd_queue mirror exception (non-blocking):', mirrorErr);
-  }
+function isSchemaCacheError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('schema cache') ||
+    lower.includes('could not find') ||
+    lower.includes('does not exist') ||
+    lower.includes('pgrst') ||
+    lower.includes('invalid input syntax for type uuid')
+  );
 }
 
-async function insertPrimaryPatientAppointment(
-  appointment: BookingPayload,
-): Promise<{ ok: true } | { ok: false; message: string }> {
-  const insertRow = toPatientAppointmentsInsertRow(appointment);
-  const { error } = await supabase.from('patient_appointments').insert([insertRow]);
+interface ComprehensiveAppointmentInput {
+  patientId: string;
+  patientName: string;
+  doctorName: string;
+  doctorCode: string;
+  department: string;
+  appointmentDate: string;
+  slotTime: string;
+  consultationFee: string;
+  reason: string;
+  tokenNumber: number;
+  tokenLabel: string;
+  createdAt: string;
+}
 
-  if (error) {
-    return { ok: false, message: error.message };
-  }
+/** All alias variations for patient_appointments + appointments schema compatibility. */
+function buildComprehensiveAppointmentPayload(
+  input: ComprehensiveAppointmentInput,
+): Record<string, unknown> {
+  const doctorCode = String(input.doctorCode || 'RH-D01').trim().toUpperCase();
+  const doctorName = input.doctorName.trim();
+  const patientName = input.patientName.trim() || 'Patient';
+  const clinicalReason = input.reason.trim() || 'General OPD Consultation';
+  const slotTime = input.slotTime || '10:00 AM';
+  const feeDisplay = input.consultationFee || '₹800';
 
-  return { ok: true };
+  return {
+    // Patient identity — both name column aliases
+    patient_id: input.patientId,
+    name: patientName,
+    patient_name: patientName,
+
+    // Clinician routing (RH-D## + name aliases)
+    doctor_name: doctorName,
+    doctor_code: doctorCode,
+    doctor_id: doctorCode,
+    doctor_employee_id: doctorCode,
+
+    // Facility & department
+    department: input.department,
+    hospital_name: REGAL_HOSPITAL,
+
+    // Scheduling (all time-slot column aliases)
+    appointment_date: input.appointmentDate,
+    slot_time: slotTime,
+    appointment_time: slotTime,
+    time_slot: slotTime,
+
+    // Fee (display string on both fee columns for patient_appointments compatibility)
+    fee: feeDisplay,
+    consultation_fee: feeDisplay,
+
+    // Clinical intake (all complaint column aliases)
+    reason: clinicalReason,
+    chief_complaint: clinicalReason,
+    reason_for_visit: clinicalReason,
+
+    // Queue & token
+    token_number: input.tokenNumber,
+    token_label: input.tokenLabel,
+    queue_number: input.tokenNumber,
+    status: 'SCHEDULED',
+    queue_status: 'SCHEDULED',
+
+    // Metadata
+    source: PATIENT_BOOKING_SOURCE,
+    booking_source: PATIENT_BOOKING_SOURCE,
+    vitals_summary: 'BP: 120/80 • HR: 72 • SpO2: 98%',
+    created_at: input.createdAt,
+    updated_at: input.createdAt,
+  };
+}
+
+function buildPatientAppointmentPayload(input: {
+  patientId: string;
+  patientName: string;
+  doctorName: string;
+  doctorCode: string;
+  department: string;
+  appointmentDate: string;
+  slotTime: string;
+  consultationFee: string;
+  reason: string;
+  tokenNumber: number;
+  tokenLabel: string;
+  createdAt: string;
+}): Record<string, unknown> {
+  const patientName = input.patientName.trim() || 'Patient';
+  const feeDisplay = input.consultationFee || '₹800';
+
+  return {
+    ...buildComprehensiveAppointmentPayload({ ...input, patientName }),
+    name: patientName,
+    patient_name: patientName,
+    fee: feeDisplay,
+    consultation_fee: feeDisplay,
+    token_number: input.tokenNumber,
+    queue_number: input.tokenNumber,
+    token_label: input.tokenLabel,
+    source: PATIENT_BOOKING_SOURCE,
+    queue_status: 'SCHEDULED',
+    created_at: input.createdAt,
+  };
+}
+
+function buildAppointmentsLedgerPayload(input: {
+  patientId: string;
+  patientName: string;
+  doctorName: string;
+  doctorCode: string;
+  department: string;
+  appointmentDate: string;
+  slotTime: string;
+  consultationFee: string;
+  reason: string;
+  tokenNumber: number;
+  tokenLabel: string;
+  createdAt: string;
+}): Record<string, unknown> {
+  const patientName = input.patientName.trim() || 'Patient';
+  const feeDisplay = input.consultationFee || '₹800';
+  const feeNumeric = Number(String(feeDisplay).replace(/[^\d.]/g, '')) || 800;
+
+  return {
+    ...buildComprehensiveAppointmentPayload({ ...input, patientName }),
+    name: patientName,
+    patient_name: patientName,
+    fee: feeDisplay,
+    consultation_fee: feeNumeric,
+    age: 25,
+    gender: 'Female',
+    token_number: input.tokenNumber,
+    queue_number: input.tokenNumber,
+    token_label: input.tokenLabel,
+    source: PATIENT_BOOKING_SOURCE,
+  };
 }
 
 function applyClinicianFromUrlParams(
@@ -342,6 +326,7 @@ function applyClinicianFromUrlParams(
   feeParam: string | null,
   setters: {
     setDoctor: (value: string) => void;
+    setDoctorCode: (value: string) => void;
     setDept: (value: string) => void;
     setFee: (value: string) => void;
   },
@@ -350,6 +335,7 @@ function applyClinicianFromUrlParams(
     const match = findDoctorFromUrlParam(docParam);
     if (match) {
       setters.setDoctor(match.name);
+      setters.setDoctorCode(match.id);
       setters.setDept(match.department);
       setters.setFee(match.fee);
       return;
@@ -372,6 +358,7 @@ export default function BookAppointmentPage() {
 
   // CLINICIAN & CLINICAL DETAILS
   const [selectedDoctorName, setSelectedDoctorName] = useState<string>('Dr. Chandrakanth S. Kesari');
+  const [selectedDoctorCode, setSelectedDoctorCode] = useState<string>('RH-D02');
   const [selectedDept, setSelectedDept] = useState<string>('General Surgery');
   const [consultationFee, setConsultationFee] = useState<string>('₹800');
   const [reason, setReason] = useState<string>('');
@@ -384,7 +371,7 @@ export default function BookAppointmentPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [patientDbId, setPatientDbId] = useState<string>(STATIC_PATIENT_UUID_FALLBACK);
+  const [patientId, setPatientId] = useState<string>(STATIC_PATIENT_UUID_FALLBACK);
   const [bookedSummary, setBookedSummary] = useState<{
     token: number;
     doctor: string;
@@ -399,6 +386,7 @@ export default function BookAppointmentPage() {
       searchParams.get('fee'),
       {
         setDoctor: setSelectedDoctorName,
+        setDoctorCode: setSelectedDoctorCode,
         setDept: setSelectedDept,
         setFee: setConsultationFee,
       },
@@ -484,7 +472,7 @@ export default function BookAppointmentPage() {
       })),
     ];
 
-    setPatientDbId(resolvedPatientId);
+    setPatientId(resolvedPatientId);
     setPatientOptions(options);
     setSelectedPatientName(options[0]?.name ?? `${primaryName} (Self)`);
   };
@@ -496,13 +484,14 @@ export default function BookAppointmentPage() {
 
     const match = ALL_41_DOCTORS.find((d) => d.name === docName);
     if (match) {
+      setSelectedDoctorCode(match.id);
       setSelectedDept(match.department);
       setConsultationFee(match.fee);
     }
   };
 
-  const handleBookAppointment = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleBookAppointment = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccess(false);
@@ -511,58 +500,158 @@ export default function BookAppointmentPage() {
     try {
       const cleanPatientName = stripRelationshipTag(selectedPatientName);
       const doctorEntry = findDoctorDirectoryEntry(selectedDoctorName);
-      const doctorEmployeeId = doctorEntry?.id ?? 'RH-UNASSIGNED';
+      const rawDoctorName =
+        selectedDoctorName || doctorEntry?.name || 'Dr CHANDRAKANTH S KESARI';
+      const rawDoctorCode = (
+        selectedDoctorCode ||
+        doctorEntry?.id ||
+        'RH-D01'
+      )
+        .trim()
+        .toUpperCase();
+      const selectedTime = slotTime || '10:00 AM';
       const calculatedToken = await calculateNextTokenNumber(
-        doctorEmployeeId,
-        selectedDoctorName,
+        rawDoctorCode,
+        rawDoctorName,
         appointmentDate,
       );
+      const tokenLabel = formatHashTokenLabel(calculatedToken);
+      const clinicalReason = reason.trim() || 'General OPD Consultation';
+      const createdAt = new Date().toISOString();
+      const resolvedPatientId = resolveBookingPatientId(patientId);
+      const department = selectedDept || doctorEntry?.department || 'General Surgery';
+      const resolvedDate = appointmentDate || new Date().toISOString().split('T')[0];
 
-      const appointmentUuid = generateStandardUuid();
-      const bookingPatientUuid = resolveBookingPatientUuid(patientDbId);
-
-      const newAppt = buildSchemaSafeBookingPayload({
-        appointmentId: appointmentUuid,
-        patientId: bookingPatientUuid,
-        patientName: cleanPatientName,
-        doctorName: selectedDoctorName,
-        doctorId: doctorEmployeeId,
-        department: selectedDept,
-        appointmentDate,
-        slotTime,
-        fee: consultationFee,
-        reason,
+      const patientPayload = buildPatientAppointmentPayload({
+        patientId: resolvedPatientId,
+        patientName: cleanPatientName.trim() || 'Patient',
+        doctorName: rawDoctorName,
+        doctorCode: rawDoctorCode,
+        department,
+        appointmentDate: resolvedDate,
+        slotTime: selectedTime,
+        consultationFee,
+        reason: clinicalReason,
         tokenNumber: calculatedToken,
+        tokenLabel,
+        createdAt,
       });
 
-      const primaryInsert = await insertPrimaryPatientAppointment(newAppt);
+      const appointmentsPayload = buildAppointmentsLedgerPayload({
+        patientId: resolvedPatientId,
+        patientName: cleanPatientName.trim() || 'Patient',
+        doctorName: rawDoctorName,
+        doctorCode: rawDoctorCode,
+        department,
+        appointmentDate: resolvedDate,
+        slotTime: selectedTime,
+        consultationFee,
+        reason: clinicalReason,
+        tokenNumber: calculatedToken,
+        tokenLabel,
+        createdAt,
+      });
 
-      if (!primaryInsert.ok) {
-        console.error('Supabase patient_appointments insert failed:', primaryInsert.message);
-        setErrorMessage(
-          `Booking could not be saved. ${primaryInsert.message}`,
-        );
-        return;
+      console.log('Sending patient_appointments payload to Supabase:', patientPayload);
+
+      let savedRecord: Record<string, unknown> | null = null;
+      let persistenceSource: 'patient_appointments' | 'appointments' | 'local' = 'local';
+      let patientErrorMessage: string | null = null;
+
+      // Primary persistence — patient_appointments
+      try {
+        const { data: patientData, error: patientError } = await supabase
+          .from('patient_appointments')
+          .insert([patientPayload])
+          .select()
+          .maybeSingle();
+
+        if (patientError) {
+          patientErrorMessage = patientError.message || 'Unknown patient_appointments error';
+          console.error('Supabase error inserting patient_appointments:', patientErrorMessage);
+        } else if (patientData) {
+          savedRecord = patientData as Record<string, unknown>;
+          persistenceSource = 'patient_appointments';
+        }
+      } catch (primaryErr) {
+        patientErrorMessage =
+          primaryErr instanceof Error ? primaryErr.message : 'patient_appointments insert failed';
+        console.error('patient_appointments insert exception:', primaryErr);
       }
 
-      mirrorAppointmentToLocalStorage(newAppt as unknown as Record<string, unknown>);
+      // Auxiliary mirror — appointments ledger (isolated; never blocks booking)
+      try {
+        console.log('Sending appointments ledger payload to Supabase:', appointmentsPayload);
+
+        const { data: appointmentData, error: appointmentError } = await supabase
+          .from('appointments')
+          .insert([appointmentsPayload])
+          .select()
+          .maybeSingle();
+
+        if (appointmentError) {
+          console.warn('appointments mirror skipped:', appointmentError.message);
+        } else if (appointmentData && !savedRecord) {
+          savedRecord = appointmentData as Record<string, unknown>;
+          persistenceSource = 'appointments';
+        }
+      } catch (mirrorErr) {
+        console.warn('appointments mirror exception (non-blocking):', mirrorErr);
+      }
+
+      // Local fallback when Supabase schema/cache rejects the primary insert
+      if (!savedRecord) {
+        const canFallbackLocally =
+          !patientErrorMessage || isSchemaCacheError(patientErrorMessage);
+
+        if (canFallbackLocally) {
+          mirrorAppointmentToLocalStorage({
+            ...patientPayload,
+            ...appointmentsPayload,
+            source: PATIENT_BOOKING_SOURCE,
+            status: 'SCHEDULED',
+            queue_status: 'SCHEDULED',
+          });
+          savedRecord = patientPayload;
+          persistenceSource = 'local';
+        } else {
+          setErrorMessage(`Booking could not be saved. ${patientErrorMessage}`);
+          toast.error(`Booking failed: ${patientErrorMessage}`);
+          return;
+        }
+      } else {
+        mirrorAppointmentToLocalStorage({
+          ...patientPayload,
+          ...appointmentsPayload,
+          ...(savedRecord ?? {}),
+          source: PATIENT_BOOKING_SOURCE,
+          status: 'SCHEDULED',
+          queue_status: 'SCHEDULED',
+        });
+      }
 
       setBookedSummary({
         token: calculatedToken,
-        doctor: selectedDoctorName,
-        date: appointmentDate,
-        slot: slotTime,
+        doctor: rawDoctorName,
+        date: resolvedDate,
+        slot: selectedTime,
       });
       setSuccess(true);
 
-      runAuxiliarySyncs(newAppt);
+      if (persistenceSource === 'local') {
+        toast.warning(`Appointment saved locally. Token: ${tokenLabel}`);
+      } else {
+        toast.success(`Appointment confirmed! Token: ${tokenLabel}`);
+      }
 
       setTimeout(() => {
         router.push('/patient/appointments');
       }, 1000);
-    } catch (err) {
-      console.error('Unexpected booking failure:', err);
-      setErrorMessage('An unexpected error occurred while confirming your booking. Please try again.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error completing booking';
+      console.error('Unexpected booking error:', err);
+      toast.error(message);
+      setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -593,7 +682,7 @@ export default function BookAppointmentPage() {
                 <p>
                   Token:{' '}
                   <span className="font-black text-[#227B6B]">
-                    T-{String(bookedSummary.token).padStart(2, '0')}
+                    {formatHashTokenLabel(bookedSummary.token)}
                   </span>
                 </p>
                 <p>
