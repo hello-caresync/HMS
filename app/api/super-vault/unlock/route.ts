@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server';
 
 export const VAULT_SESSION_COOKIE = 'nexora_super_vault_session';
