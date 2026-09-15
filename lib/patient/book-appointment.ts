@@ -1,7 +1,16 @@
 import { createClient } from '@/lib/supabase/client';
-import { HOSPITAL_TENANT_ID, REGAL_FACILITY_CODE, REGAL_HOSPITAL_ID } from '@/lib/regal/constants';
-import { canonicalHospitalId, isUuidColumnError } from '@/lib/hospital/hospital-node';
+import { resolveDoctorBookingIdentity } from '@/lib/hospital/doctor-booking-identity';
+import { insertAppointmentRowResilient } from '@/lib/hospital/appointments';
+import { sanitizePhoneDigits, validatePhoneField } from '@/lib/hospital/indian-patient';
+import { resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
+import { REGAL_FACILITY_CODE, REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import { readPatientPortalSession, mintPatientUhid } from '@/lib/patient/portal-session';
+import { assertSlotAvailableForBooking } from '@/lib/scheduling/doctor-slot-service';
+import {
+  classifyConditionTier,
+  consultationDurationMinutes,
+  normalizeSlotTime,
+} from '@/lib/scheduling/dynamic-slots';
 
 export interface BookAppointmentPayload {
   patientId?: string;
@@ -9,12 +18,17 @@ export interface BookAppointmentPayload {
   patientName?: string;
   patient_name?: string;
   doctor?: {
+    id?: string;
     doctor_id?: string;
     employeeId?: string;
     department?: string;
     name?: string;
     full_name?: string;
   };
+  doctor_uuid?: string;
+  doctor_code?: string;
+  doctor_record_id?: string;
+  doctor_employee_id?: string;
   doctorId?: string;
   doctor_id?: string;
   doctorName?: string;
@@ -63,26 +77,29 @@ export async function bookAppointmentWithDoctor(
   const { data: authData } = await supabase.auth.getUser();
   const patientId =
     payload.patient_id || payload.patientId || authData?.user?.id || session?.patient_id || DEFAULT_PATIENT_ID;
-  const doctorCode = String(
-    payload.doctor?.employeeId ||
-      payload.doctor_id ||
-      payload.doctorId ||
-      payload.doctor?.doctor_id ||
-      '',
-  )
-    .trim()
-    .toUpperCase();
-  if (!doctorCode) {
+  const doctorIdentity = resolveDoctorBookingIdentity({
+    doctor_uuid: payload.doctor_uuid,
+    doctor_id: payload.doctor_id ?? payload.doctorId ?? payload.doctor?.doctor_id,
+    id: payload.doctor_record_id ?? payload.doctor?.id,
+    doctor_code: payload.doctor_code ?? payload.doctor?.employeeId,
+    employee_id: payload.doctor?.employeeId,
+    doctor_employee_id: payload.doctor_employee_id,
+    full_name: payload.doctor_name ?? payload.doctorName ?? payload.doctor?.full_name,
+    doctor_name: payload.doctor_name ?? payload.doctorName ?? payload.doctor?.name,
+    name: payload.doctor?.name,
+    department: payload.department ?? payload.doctor?.department,
+  });
+
+  const doctorCode = doctorIdentity.doctorCode;
+  const doctorUuid = doctorIdentity.doctorUuid;
+  if (!doctorCode && !doctorUuid) {
     throw new Error('Doctor selection is required.');
   }
-  const doctorName = String(
-    payload.doctor_name || payload.doctorName || payload.doctor?.full_name || payload.doctor?.name || '',
-  ).trim();
+  const doctorName = doctorIdentity.doctorName;
   if (!doctorName) {
     throw new Error('Doctor name is required.');
   }
-  const department =
-    payload.department || payload.doctor?.department || DEFAULT_DEPARTMENT;
+  const department = doctorIdentity.department || payload.department || DEFAULT_DEPARTMENT;
   if (!String(department).trim()) {
     throw new Error('Doctor department is required.');
   }
@@ -93,22 +110,52 @@ export async function bookAppointmentWithDoctor(
     DEFAULT_REASON;
   const appointmentDate =
     payload.appointment_date || payload.appointmentDate || localDateString();
-  const appointmentTime =
-    payload.appointment_time || payload.slotTime || '10:00 AM';
+  const appointmentTime = normalizeSlotTime(
+    String(payload.appointment_time || payload.slotTime || ''),
+  );
+  if (!appointmentTime) {
+    throw new Error('Please select a valid appointment time slot.');
+  }
+
+  await assertSlotAvailableForBooking(supabase, {
+    doctorId: doctorUuid || doctorCode,
+    appointmentDate,
+    slotTime: appointmentTime,
+  });
+
+  const conditionTier = classifyConditionTier(reasonForVisit);
+  const slotDurationMinutes = consultationDurationMinutes(conditionTier);
   const patientName =
     payload.patient_name || payload.patientName || session?.patient_name || 'Verified Patient';
-  const hospitalId = canonicalHospitalId(
-    payload.hospital_id || payload.hospitalId || session?.hospital_id || HOSPITAL_TENANT_ID,
-  );
+  const preferredHospital =
+    payload.hospital_id || payload.hospitalId || session?.hospital_id || REGAL_HOSPITAL_CODE;
+  const hospitalNodeTag = REGAL_HOSPITAL_CODE;
+  const hospitalUuid = await resolveHospitalUuid(supabase, preferredHospital);
   const uhid = session?.uhid || mintPatientUhid();
-  const phone = session?.phone || '+91 98450 12345';
+  const phoneCheck = validatePhoneField(
+    sanitizePhoneDigits(String(payload.phone ?? session?.phone ?? '')),
+    true,
+  );
+  if (!phoneCheck.ok) {
+    throw new Error(phoneCheck.message);
+  }
+  const phone = phoneCheck.phone!;
 
   let tokenNumber = 1;
   try {
     const { count, error: countError } = await supabase
       .from('appointments')
       .select('appointment_id', { count: 'exact', head: true })
-      .or(`doctor_id.eq.${doctorCode},doctor_code.eq.${doctorCode},doctor_employee_id.eq.${doctorCode}`)
+      .or(
+        [
+          doctorUuid ? `doctor_id.eq.${doctorUuid}` : '',
+          doctorCode ? `doctor_id.eq.${doctorCode}` : '',
+          doctorCode ? `doctor_code.eq.${doctorCode}` : '',
+          doctorCode ? `doctor_employee_id.eq.${doctorCode}` : '',
+        ]
+          .filter(Boolean)
+          .join(','),
+      )
       .eq('appointment_date', appointmentDate)
       .in('status', ACTIVE_BOOKING_STATUSES);
 
@@ -122,17 +169,18 @@ export async function bookAppointmentWithDoctor(
   const tokenLabel = `T-${tokenNumber.toString().padStart(2, '0')}`;
 
   const insertPayload: Record<string, unknown> = {
-    hospital_id: hospitalId,
-    hospital_code: hospitalId,
+    hospital_id: hospitalNodeTag,
+    hospital_code: REGAL_HOSPITAL_CODE,
     facility_code: REGAL_FACILITY_CODE,
     hospital_name: payload.hospitalName || session?.hospital_name || 'Regal Hospital',
     uhid,
     phone,
     patient_phone: phone,
     patient_name: patientName,
-    doctor_id: doctorCode,
-    doctor_code: doctorCode,
-    doctor_employee_id: doctorCode,
+    doctor_id: doctorUuid || doctorCode,
+    doctor_uuid: doctorUuid,
+    doctor_code: doctorCode || doctorUuid,
+    doctor_employee_id: doctorCode || doctorUuid,
     doctor_name: doctorName,
     department,
     reason_for_visit: reasonForVisit,
@@ -141,40 +189,30 @@ export async function bookAppointmentWithDoctor(
     appointment_time: appointmentTime,
     slot_time: appointmentTime,
     time_slot: appointmentTime,
-    status: 'waiting',
+    slot_duration_minutes: slotDurationMinutes,
+    consultation_duration_minutes: slotDurationMinutes,
+    status: 'WAITING',
+    queue_status: 'WAITING',
     billing_status: 'pending_checkout',
     consultation_fee: Number(payload.consultation_fee ?? payload.fee ?? 500) || 500,
     token_number: tokenLabel,
     source: 'patient_app',
+    created_at: new Date().toISOString(),
   };
 
   if (patientId && /^[0-9a-f-]{36}$/i.test(String(patientId))) {
     insertPayload.patient_id = patientId;
   }
 
-  let { data: apptData, error: apptError } = await supabase
-    .from('appointments')
-    .insert([insertPayload])
-    .select('appointment_id, id')
-    .single();
-
-  if (apptError && isUuidColumnError(apptError.message)) {
-    const retry = await supabase
-      .from('appointments')
-      .insert([{ ...insertPayload, hospital_id: REGAL_HOSPITAL_ID }])
-      .select('appointment_id, id')
-      .single();
-    apptData = retry.data;
-    apptError = retry.error;
-  }
+  const { data: apptData, error: apptError } = await insertAppointmentRowResilient(
+    supabase,
+    insertPayload,
+    { select: 'appointment_id, id' },
+  );
 
   if (apptError) {
-    const msg =
-      typeof apptError === 'object' && apptError !== null && 'message' in apptError
-        ? String((apptError as { message?: string }).message)
-        : 'Failed to insert appointment record.';
-    console.error('[Supabase Booking Error]:', msg);
-    throw new Error(msg);
+    console.error('[Supabase Booking Error]:', apptError.message);
+    throw apptError;
   }
 
   if (!apptData) {
@@ -185,7 +223,8 @@ export async function bookAppointmentWithDoctor(
 
   try {
     await supabase.from('hospital_opd_queue').insert({
-      hospital_id: hospitalId,
+      hospital_id: hospitalUuid || hospitalNodeTag,
+      hospital_code: REGAL_HOSPITAL_CODE,
       hospital_name: insertPayload.hospital_name,
       token_number: tokenLabel,
       uhid,

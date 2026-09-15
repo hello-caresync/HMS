@@ -44,7 +44,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Consultation EMR', href: APP_ROUTES.consultation, icon: Stethoscope },
   { label: 'Laboratory', href: APP_ROUTES.laboratory, icon: FlaskConical },
   { label: 'Radiology', href: APP_ROUTES.radiology, icon: ScanLine },
-  { label: 'Pharmacy', href: APP_ROUTES.pharmacy, icon: Package },
   { label: 'Billing & Finance', href: APP_ROUTES.billing, icon: IndianRupee },
   { label: 'Payment Processing', href: APP_ROUTES.payments, icon: Wallet },
   { label: 'IPD Management', href: APP_ROUTES.ipd, icon: BedDouble },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
@@ -9,6 +9,7 @@ import {
   Loader2,
   Megaphone,
   Play,
+  ClipboardList,
   Stethoscope,
   UserCheck,
   Users,
@@ -23,6 +24,13 @@ import {
   startEncounter,
 } from '@/lib/doctor/command-center/supabase-service';
 import type { LiveQueueRow } from '@/lib/doctor/command-center/types';
+import {
+  fetchPatient360History,
+  type Patient360HistoryItem,
+} from '@/lib/doctor/patient-360-history';
+import { createClient } from '@/lib/supabase/client';
+import { portalSurfaces } from '@/lib/shared/portal-surfaces';
+import { PortalEmptyState } from '@/components/shared/PortalEmptyState';
 
 interface QueueItem {
   id: string;
@@ -100,9 +108,9 @@ function toQueueItem(row: LiveQueueRow): QueueItem {
 
   return {
     id: row.id,
-    appointmentId: row.appointment_id,
-    tokenNumber: row.token_number,
-    patientName: row.patient_name,
+    appointmentId: row.appointment_id ?? null,
+    tokenNumber: String(row.token_number ?? '—'),
+    patientName: row.patient_name ?? 'Patient',
     ageGender: `${age ?? '—'} · ${gender}`,
     chiefComplaint:
       row.chief_complaint || row.reason_for_visit || 'General consultation',
@@ -137,6 +145,9 @@ export default function SmartQCommandCenter({
   const [calling, setCalling] = useState(false);
   const [starting, setStarting] = useState(false);
   const [emergencyPulse, setEmergencyPulse] = useState(false);
+  const [historyItems, setHistoryItems] = useState<Patient360HistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const doctorSurface = portalSurfaces.doctor;
 
   const queue = useMemo(
     () => queueTokens.map((token) => toQueueItem(tokenToQueueRow(token))),
@@ -158,6 +169,18 @@ export default function SmartQCommandCenter({
   const hasWaitingPatients = queue.some((q) => q.status === 'WAITING');
   const canCallNext = hasWaitingPatients && !calling;
   const canStartEncounter = Boolean(spotlight && spotlight.raw.status === 'CALLED' && !starting);
+
+  useEffect(() => {
+    const patientId = spotlight?.raw.patient_id;
+    if (!patientId) {
+      setHistoryItems([]);
+      return;
+    }
+    setHistoryLoading(true);
+    void fetchPatient360History(createClient(), { patient_id: String(patientId) })
+      .then(setHistoryItems)
+      .finally(() => setHistoryLoading(false));
+  }, [spotlight?.raw.patient_id]);
 
   const handleCallNext = async () => {
     if (!hasWaitingPatients) {
@@ -200,9 +223,9 @@ export default function SmartQCommandCenter({
   };
 
   return (
-    <div className="grid h-auto w-full grid-cols-1 gap-5 p-0 lg:grid-cols-12">
-      {/* LEFT PANEL: Live SmartQ Queue */}
-      <div className="flex h-auto flex-col rounded-2xl border border-slate-200/80 bg-white/80 p-5 shadow-sm backdrop-blur-md lg:col-span-6">
+    <div className={`grid h-auto w-full grid-cols-1 gap-5 p-0 lg:grid-cols-12 ${doctorSurface.page}`}>
+      {/* 1. PATIENT QUEUE */}
+      <div className={`flex h-auto flex-col rounded-2xl border p-5 shadow-sm backdrop-blur-md lg:col-span-4 ${doctorSurface.card}`}>
         <div>
           {/* Header & Live Status */}
           <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
@@ -212,7 +235,7 @@ export default function SmartQCommandCenter({
               </div>
               <div>
                 <h3 className="text-lg font-bold leading-tight text-slate-800">
-                  Live SmartQ Queue
+                  1. Patient Queue
                 </h3>
                 <p className="text-xs font-medium text-slate-400">
                   Real-time ML prediction engine
@@ -329,14 +352,14 @@ export default function SmartQCommandCenter({
         </div>
       </div>
 
-      {/* RIGHT PANEL: Action Bar & On-Deck Spotlight */}
-      <div className="flex h-auto flex-col rounded-2xl border border-slate-200/80 bg-white/80 p-5 shadow-sm backdrop-blur-md lg:col-span-6">
+      {/* 2. ACTIVE ENCOUNTER */}
+      <div className={`flex h-auto flex-col rounded-2xl border p-5 shadow-sm backdrop-blur-md lg:col-span-4 ${doctorSurface.card}`}>
         <div className="mb-4 flex items-center gap-2.5 border-b border-slate-100 pb-3">
           <div className="rounded-xl bg-indigo-50 p-2 text-indigo-600">
             <UserCheck className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold leading-tight text-slate-800">Action Bar</h3>
+            <h3 className="text-lg font-bold leading-tight text-slate-800">2. Active Encounter</h3>
             <p className="text-xs font-medium text-slate-400">On-deck spotlight & controls</p>
           </div>
         </div>
@@ -455,21 +478,73 @@ export default function SmartQCommandCenter({
             </button>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-indigo-50/50 px-4 py-8 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/80 bg-white/60 shadow-inner backdrop-blur-sm">
-              <Clock className="h-6 w-6 text-slate-400" />
-            </div>
-            <h4 className="text-sm font-bold text-slate-700">
-              {queue.length === 0
-                ? 'No Patient On Deck — Queue is clear for today'
-                : 'No Patient On Deck'}
-            </h4>
-            <p className="mx-auto mt-1.5 max-w-xs text-xs leading-relaxed text-slate-400">
-              {queue.length === 0
+          <PortalEmptyState
+            icon={UserCheck}
+            title={queue.length === 0 ? 'No patient selected' : 'No patient on deck'}
+            body={
+              queue.length === 0
                 ? 'New check-ins from the patient app will appear in the live queue automatically.'
-                : 'Call the next patient from the queue to populate the spotlight and begin the encounter workflow.'}
+                : 'Call the next patient from the queue to populate the spotlight and begin the encounter workflow.'
+            }
+            surfaceClass={doctorSurface.empty}
+            accentClass="text-indigo-300"
+          />
+        )}
+      </div>
+
+      {/* 3. 360° HISTORY */}
+      <div className={`flex h-auto min-h-[420px] flex-col rounded-2xl border p-5 shadow-sm lg:col-span-4 ${doctorSurface.card}`}>
+        <div className="mb-4 flex items-center gap-2.5 border-b border-slate-100 pb-3">
+          <div className="rounded-xl bg-[#EAF5F2] p-2 text-[#2A9D8F]">
+            <ClipboardList className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold leading-tight text-slate-800">3. 360° History</h3>
+            <p className="text-xs font-medium text-slate-400">
+              {spotlight ? spotlight.patientName : 'Select a patient from the queue'}
             </p>
-            <UserCheck className="mt-3 h-5 w-5 text-indigo-300" />
+          </div>
+        </div>
+
+        {historyLoading ? (
+          <div className="flex flex-1 items-center justify-center text-[#2A9D8F]">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Loading clinical timeline...
+          </div>
+        ) : !spotlight ? (
+          <PortalEmptyState
+            icon={ClipboardList}
+            title="No patient selected"
+            body="Call or select a patient to load consultations, prescriptions, and lab history."
+            surfaceClass={doctorSurface.empty}
+            accentClass="text-[#2A9D8F]/40"
+          />
+        ) : historyItems.length === 0 ? (
+          <PortalEmptyState
+            icon={ClipboardList}
+            title="No prior records"
+            body="This patient has no synced consultation or lab history yet."
+            surfaceClass={doctorSurface.empty}
+            accentClass="text-[#2A9D8F]/40"
+          />
+        ) : (
+          <div className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
+            {historyItems.slice(0, 12).map((item) => (
+              <article
+                key={`${item.type}-${item.id}`}
+                className="rounded-xl border border-[#D5E8E3] bg-[#FAFDFC] p-3"
+              >
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#2A9D8F]">
+                  {item.type}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-800">
+                  {item.diagnosis || item.title || item.summary || 'Clinical event'}
+                </p>
+                {item.doctor_name ? (
+                  <p className="mt-0.5 text-[11px] font-medium text-slate-500">{item.doctor_name}</p>
+                ) : null}
+              </article>
+            ))}
           </div>
         )}
       </div>

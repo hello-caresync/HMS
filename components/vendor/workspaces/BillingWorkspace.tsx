@@ -1,30 +1,39 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FileText, RefreshCw } from 'lucide-react';
+import { FileText, Loader2, RefreshCw } from 'lucide-react';
 
 import { VendorFeedbackBanner, useVendorFeedback } from '@/components/vendor/ui/useVendorFeedback';
-import { VendorModuleHeader, VendorStatusPill } from '@/components/vendor/ui/VendorModuleHeader';
+import { VendorModuleHeader } from '@/components/vendor/ui/VendorModuleHeader';
 import { VendorModal, vendorFieldClass, vendorLabelClass } from '@/components/vendor/ui/VendorModal';
+import { PROCUREMENT_PO_TABLE } from '@/lib/hospital/procurement';
+import { supabase } from '@/lib/supabaseClient';
 import { vendorClasses } from '@/lib/vendor/theme';
 import { matchesInvoiceLifecycle } from '@/lib/vendor/lifecycle';
 import { useActiveHospitalCode, useVendorAppStore } from '@/lib/vendor/store/vendor-app-store';
 import {
   GST_RATE,
   INVOICEABLE_PO_STATUSES,
+  VENDOR_ID,
   computeInvoiceTotals,
-  formatDate,
   formatInr,
-  invoiceDueDate,
   loadInvoices,
   loadPurchaseOrders,
-  nextInvoiceNumber,
-  poItemDetails,
-  submitInvoice,
+  resolvePoHospitalName,
   subscribeVendorPortal,
   type Invoice,
   type PurchaseOrder,
 } from '@/lib/vendor/v0/portal-service';
+
+function defaultDueDate(): string {
+  const due = new Date();
+  due.setDate(due.getDate() + 30);
+  return due.toISOString().slice(0, 10);
+}
+
+function generateInvoiceNumber(): string {
+  return `INV-${Date.now().toString().slice(-8)}`;
+}
 
 /** Nexora Vendor · billing & invoicing engine with GST auto-calc and invoice ledger. */
 function BillingWorkspace() {
@@ -34,9 +43,11 @@ function BillingWorkspace() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedPoId, setSelectedPoId] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [dueDate, setDueDate] = useState(defaultDueDate);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -49,6 +60,7 @@ function BillingWorkspace() {
       setOrders(poResult.rows);
       setLoadError(invoiceResult.error ?? poResult.error ?? null);
     } catch (error) {
+      console.error('[BillingWorkspace] Load error:', error);
       setInvoices([]);
       setOrders([]);
       setLoadError(error instanceof Error ? error.message : 'Could not load invoices.');
@@ -69,7 +81,10 @@ function BillingWorkspace() {
   );
 
   const invoiceableOrders = useMemo(
-    () => orders.filter((order) => INVOICEABLE_PO_STATUSES.includes(order.status.toUpperCase())),
+    () =>
+      orders.filter((order) =>
+        INVOICEABLE_PO_STATUSES.includes(String(order.status ?? '').toUpperCase()),
+      ),
     [orders],
   );
 
@@ -82,6 +97,10 @@ function BillingWorkspace() {
     () => (selectedPo ? computeInvoiceTotals(Number(selectedPo.total_amount)) : null),
     [selectedPo],
   );
+
+  const selectedHospitalName = selectedPo
+    ? resolvePoHospitalName(selectedPo) || 'Regal Hospital'
+    : 'Regal Hospital';
 
   const outstanding = useMemo(
     () =>
@@ -109,40 +128,105 @@ function BillingWorkspace() {
     (invoice: Invoice) => {
       if (invoice.hospital_name) return invoice.hospital_name;
       const match = orders.find((order) => order.id === invoice.po_id);
-      return match?.hospital_name ?? 'Regal Hospital';
+      return match ? resolvePoHospitalName(match) : 'Regal Hospital';
     },
     [orders],
   );
 
-  const openGenerate = () => {
+  const openCreateInvoiceModal = () => {
     setSelectedPoId(invoiceableOrders[0]?.id ?? '');
-    setOpen(true);
+    setInvoiceNumber(generateInvoiceNumber());
+    setDueDate(defaultDueDate());
+    setIsModalOpen(true);
   };
 
-  const generate = async () => {
+  const handleSubmitInvoice = async () => {
     if (!selectedPo || !totals) {
       showError('Select an accepted, dispatched, or goods-receipted purchase order.');
       return;
     }
 
-    const invoice_number = nextInvoiceNumber();
-    setSubmitting(true);
-    const result = await submitInvoice({
-      po_id: selectedPo.id,
-      invoice_number,
-      subtotal: totals.subtotal,
-      tax_amount: totals.tax_amount,
-      total_amount: totals.total_amount,
-    });
-    setSubmitting(false);
-
-    if (!result.ok) {
-      showError(result.error ?? 'Invoice submission failed.');
+    if (!invoiceNumber.trim()) {
+      showError('Invoice number is required.');
       return;
     }
 
-    showSuccess(`${invoice_number} submitted · PO marked INVOICED.`);
-    setOpen(false);
+    setSubmitting(true);
+
+    const subtotal = totals.subtotal;
+    const taxAmount = totals.tax_amount;
+    const totalAmount = totals.total_amount;
+    const hospital = resolvePoHospitalName(selectedPo) || 'Regal Hospital';
+    const timestamp = new Date().toISOString();
+
+    const invoicePayload: Record<string, unknown> = {
+      invoice_number: invoiceNumber.trim(),
+      vendor_id: VENDOR_ID,
+      po_id: selectedPo.id,
+      po_number: selectedPo.po_number,
+      hospital_name: hospital,
+      subtotal,
+      tax_amount: taxAmount,
+      total_amount: totalAmount,
+      due_date: dueDate,
+      status: 'SUBMITTED',
+      created_at: timestamp,
+      updated_at: timestamp,
+    };
+
+    let { error: invError } = await supabase.from('invoices').insert(invoicePayload);
+
+    if (invError && /column|does not exist/i.test(invError.message)) {
+      const trimmed = { ...invoicePayload };
+      for (const key of ['po_number', 'hospital_name', 'due_date', 'created_at', 'updated_at']) {
+        delete trimmed[key];
+        const retry = await supabase.from('invoices').insert(trimmed);
+        if (!retry.error) {
+          invError = null;
+          break;
+        }
+        invError = retry.error;
+      }
+    }
+
+    if (invError) {
+      console.error('[BillingWorkspace] Invoice insert failed:', invError);
+      setSubmitting(false);
+      showError(invError.message || 'Failed to create invoice.');
+      return;
+    }
+
+    let { data: poData, error: poError } = await supabase
+      .from(PROCUREMENT_PO_TABLE)
+      .update({ status: 'INVOICED', updated_at: timestamp })
+      .eq('id', selectedPo.id)
+      .select();
+
+    if (poError && /updated_at|column/i.test(poError.message)) {
+      ({ data: poData, error: poError } = await supabase
+        .from(PROCUREMENT_PO_TABLE)
+        .update({ status: 'INVOICED' })
+        .eq('id', selectedPo.id)
+        .select());
+    }
+
+    if (!poError && (!poData || poData.length === 0)) {
+      const legacy = await supabase
+        .from('purchase_orders')
+        .update({ status: 'INVOICED', updated_at: timestamp })
+        .eq('id', selectedPo.id)
+        .eq('vendor_id', VENDOR_ID)
+        .select();
+      if (legacy.error) {
+        console.warn('[BillingWorkspace] PO status update fallback failed:', legacy.error);
+      }
+    } else if (poError) {
+      console.warn('[BillingWorkspace] Procurement PO status update failed:', poError);
+    }
+
+    setSubmitting(false);
+    setIsModalOpen(false);
+    showSuccess(`Invoice ${invoiceNumber.trim()} submitted successfully.`);
     await load();
   };
 
@@ -155,8 +239,8 @@ function BillingWorkspace() {
           <>
             <button
               type="button"
-              onClick={openGenerate}
-              disabled={loading || invoiceableOrders.length === 0}
+              onClick={openCreateInvoiceModal}
+              disabled={loading}
               className={vendorClasses.btnPrimary}
             >
               <FileText className="h-4 w-4" aria-hidden />
@@ -190,119 +274,190 @@ function BillingWorkspace() {
           No invoices match the selected lifecycle stage.
         </p>
       ) : (
-        <div className={vendorClasses.tableWrap}>
-          <table className="w-full min-w-[980px] text-left">
-            <thead className="bg-vendor-cream/70">
-              <tr>
-                <th className={`px-4 py-3 ${vendorClasses.label}`}>Invoice</th>
-                <th className={`px-4 py-3 ${vendorClasses.label}`}>Hospital</th>
-                <th className={`px-4 py-3 ${vendorClasses.label}`}>Purchase order</th>
-                <th className={`px-4 py-3 ${vendorClasses.label}`}>Submitted</th>
-                <th className={`px-4 py-3 ${vendorClasses.label}`}>Due date</th>
-                <th className={`px-4 py-3 ${vendorClasses.label}`}>Subtotal</th>
-                <th className={`px-4 py-3 ${vendorClasses.label}`}>GST</th>
-                <th className={`px-4 py-3 ${vendorClasses.label}`}>Total</th>
-                <th className={`px-4 py-3 ${vendorClasses.label}`}>Payment</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleInvoices.map((invoice, index) => (
-                <tr
-                  key={invoice.id || `${invoice.invoice_number}-${index}`}
-                  className="border-t border-vendor-accent/15 text-sm"
-                >
-                  <td className="px-4 py-3 font-mono font-bold text-vendor-charcoal">
-                    {invoice.invoice_number}
-                  </td>
-                  <td className="px-4 py-3 text-vendor-charcoal">{hospitalName(invoice)}</td>
-                  <td className="px-4 py-3 font-mono text-vendor-charcoal">{orderLabel(invoice.po_id)}</td>
-                  <td className="px-4 py-3 text-vendor-muted">{formatDate(invoice.created_at)}</td>
-                  <td className="px-4 py-3 text-vendor-muted">{invoiceDueDate(invoice)}</td>
-                  <td className="px-4 py-3 font-mono text-vendor-charcoal">
-                    {formatInr(Number(invoice.subtotal ?? invoice.total_amount - invoice.tax_amount))}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-vendor-charcoal">
-                    {formatInr(Number(invoice.tax_amount ?? 0))}
-                  </td>
-                  <td className="px-4 py-3 font-mono font-bold text-vendor-charcoal">
-                    {formatInr(Number(invoice.total_amount))}
-                  </td>
-                  <td className="px-4 py-3">
-                    <VendorStatusPill label={invoice.status} tone={invoice.status === 'PAID' ? 'success' : 'warning'} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="w-full overflow-hidden rounded-xl border border-amber-200/70 bg-white shadow-sm">
+          <div className="grid grid-cols-12 items-center gap-3 border-b border-amber-100 bg-[#FFF9ED] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
+            <div className="col-span-2">Invoice #</div>
+            <div className="col-span-2">Hospital</div>
+            <div className="col-span-2">Purchase Order</div>
+            <div className="col-span-1">Submitted</div>
+            <div className="col-span-1">Due Date</div>
+            <div className="col-span-1 text-right">Subtotal</div>
+            <div className="col-span-1 text-right">GST (18%)</div>
+            <div className="col-span-1 text-right">Total</div>
+            <div className="col-span-1 text-center">Status</div>
+          </div>
+
+          <div className="divide-y divide-amber-100/60">
+            {visibleInvoices.map((inv, index) => (
+              <div
+                key={inv.id || `${inv.invoice_number}-${index}`}
+                className="grid grid-cols-12 items-center gap-3 px-6 py-4 text-xs transition-colors hover:bg-amber-50/40"
+              >
+                <div className="col-span-2 font-bold text-slate-900">{inv.invoice_number}</div>
+                <div className="col-span-2 text-slate-700">{hospitalName(inv)}</div>
+                <div className="col-span-2 font-mono text-slate-500">
+                  {inv.po_number || orderLabel(inv.po_id)}
+                </div>
+                <div className="col-span-1 text-slate-500">
+                  {new Date(inv.created_at).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                  })}
+                </div>
+                <div className="col-span-1 text-slate-500">
+                  {inv.due_date
+                    ? new Date(inv.due_date).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                      })
+                    : '-'}
+                </div>
+                <div className="col-span-1 text-right font-medium text-slate-700">
+                  ₹
+                  {Number(inv.subtotal ?? inv.total_amount - inv.tax_amount).toLocaleString('en-IN')}
+                </div>
+                <div className="col-span-1 text-right text-amber-700">
+                  ₹{Number(inv.tax_amount ?? 0).toLocaleString('en-IN')}
+                </div>
+                <div className="col-span-1 text-right font-bold text-slate-900">
+                  ₹{Number(inv.total_amount).toLocaleString('en-IN')}
+                </div>
+                <div className="col-span-1 text-center">
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                      inv.status === 'PAID'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}
+                  >
+                    {inv.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       <VendorModal
-        title="Create invoice"
-        open={open}
-        onClose={() => setOpen(false)}
+        title="Create Invoice"
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         footer={
-          <>
-            <button type="button" onClick={() => setOpen(false)} className={vendorClasses.btnGhost}>
-              Cancel
+          invoiceableOrders.length > 0 ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className={vendorClasses.btnGhost}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={submitting || !selectedPo || !totals}
+                onClick={() => void handleSubmitInvoice()}
+                className={vendorClasses.btnPrimary}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    Submitting…
+                  </>
+                ) : (
+                  'Submit Invoice'
+                )}
+              </button>
+            </>
+          ) : (
+            <button type="button" onClick={() => setIsModalOpen(false)} className={vendorClasses.btnGhost}>
+              Close
             </button>
-            <button
-              type="button"
-              disabled={submitting || !totals}
-              onClick={() => void generate()}
-              className={vendorClasses.btnPrimary}
-            >
-              {submitting ? 'Submitting…' : 'Submit invoice'}
-            </button>
-          </>
+          )
         }
       >
         {invoiceableOrders.length === 0 ? (
-          <p className="text-sm font-medium text-vendor-muted">
-            No purchase orders are ready for invoicing yet (accepted, dispatched, or goods receipt).
+          <p className="rounded-lg border border-amber-200/60 bg-amber-50/60 px-4 py-3 text-sm font-medium text-amber-900">
+            No accepted or dispatched orders available to invoice. Accept a purchase order first.
           </p>
         ) : (
           <div className="space-y-4">
             <label className={vendorLabelClass}>
-              Purchase order
+              Purchase Order
               <select
+                required
                 value={selectedPoId}
-                onChange={(event) => setSelectedPoId(event.target.value)}
+                onChange={(event) => {
+                  setSelectedPoId(event.target.value);
+                  setInvoiceNumber(generateInvoiceNumber());
+                }}
                 className={vendorFieldClass}
               >
                 <option value="">Select a purchase order…</option>
                 {invoiceableOrders.map((order, index) => (
                   <option key={order.id || `${order.po_number}-${index}`} value={order.id}>
-                    {order.po_number} · {order.hospital_name} · {poItemDetails(order)} · {order.status}
+                    {order.po_number} · {formatInr(Number(order.total_amount))}
                   </option>
                 ))}
               </select>
             </label>
 
-            {totals && selectedPo ? (
-              <dl className="space-y-2 rounded-xl border border-vendor-accent/20 bg-vendor-cream/60 p-4 text-sm">
-                <div className="flex justify-between">
-                  <dt className="font-medium text-vendor-muted">Items</dt>
-                  <dd className="font-medium text-vendor-charcoal">{poItemDetails(selectedPo)}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="font-medium text-vendor-muted">Subtotal</dt>
-                  <dd className="font-mono font-bold text-vendor-charcoal">{formatInr(totals.subtotal)}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="font-medium text-vendor-muted">GST @ {Math.round(GST_RATE * 100)}%</dt>
-                  <dd className="font-mono font-bold text-vendor-charcoal">{formatInr(totals.tax_amount)}</dd>
-                </div>
-                <div className="flex justify-between border-t border-vendor-accent/30 pt-2">
-                  <dt className="font-black text-vendor-charcoal">Total payable</dt>
-                  <dd className="font-mono font-black text-vendor-secondary">
-                    {formatInr(totals.total_amount)}
-                  </dd>
-                </div>
-              </dl>
-            ) : (
-              <p className="text-sm font-medium text-vendor-muted">Pick an order to preview the GST breakdown.</p>
-            )}
+            <label className={vendorLabelClass}>
+              Hospital Name
+              <input
+                readOnly
+                value={selectedHospitalName}
+                className={`${vendorFieldClass} bg-vendor-cream/60`}
+              />
+            </label>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <label className={vendorLabelClass}>
+                Subtotal
+                <input
+                  readOnly
+                  value={totals ? formatInr(totals.subtotal) : '—'}
+                  className={`${vendorFieldClass} bg-vendor-cream/60 font-mono`}
+                />
+              </label>
+              <label className={vendorLabelClass}>
+                GST Tax (18%)
+                <input
+                  readOnly
+                  value={totals ? formatInr(totals.tax_amount) : '—'}
+                  className={`${vendorFieldClass} bg-vendor-cream/60 font-mono text-amber-800`}
+                />
+              </label>
+              <label className={vendorLabelClass}>
+                Total Amount
+                <input
+                  readOnly
+                  value={totals ? formatInr(totals.total_amount) : '—'}
+                  className={`${vendorFieldClass} bg-vendor-cream/60 font-mono font-bold`}
+                />
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className={vendorLabelClass}>
+                Invoice Number
+                <input
+                  readOnly
+                  value={invoiceNumber}
+                  className={`${vendorFieldClass} bg-vendor-cream/60 font-mono`}
+                />
+              </label>
+              <label className={vendorLabelClass}>
+                Due Date
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(event) => setDueDate(event.target.value)}
+                  className={vendorFieldClass}
+                />
+              </label>
+            </div>
           </div>
         )}
       </VendorModal>

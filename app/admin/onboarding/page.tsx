@@ -38,6 +38,7 @@ import {
   REGAL_HOSPITAL_DOCTORS,
   setStoredActiveHospitalId,
 } from '@/lib/hospital/hospital-members.service';
+import { isDemoMode } from '@/lib/shared/demo-mode';
 
 const HOSPITAL_DASHBOARD_ROUTE = APP_ROUTES.hospitalDashboard;
 
@@ -194,10 +195,16 @@ export default function HospitalOnboardingPage() {
         }
       } catch {
         if (!cancelled) {
-          setMembers(REGAL_HOSPITAL_DOCTORS);
-          setMemberSource('seed');
-          setSelectedDepartments((prev) => Array.from(new Set([...prev, ...REGAL_DEPARTMENTS])));
-          toast.error('Could not reach Supabase — using local Regal seed roster.');
+          if (isDemoMode()) {
+            setMembers(REGAL_HOSPITAL_DOCTORS);
+            setMemberSource('seed');
+            setSelectedDepartments((prev) => Array.from(new Set([...prev, ...REGAL_DEPARTMENTS])));
+            toast.error('Could not reach Supabase — using local Regal seed roster.');
+          } else {
+            setMembers([]);
+            setMemberSource(null);
+            toast.error('Could not reach Supabase. Add staff manually or retry.');
+          }
         }
       } finally {
         if (!cancelled) setLoadingMembers(false);

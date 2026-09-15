@@ -1,5 +1,5 @@
-import { PatientsWorkspace } from '@/components/nexora-hospital/workspaces/PatientsWorkspace';
+import { DashboardTabRedirect } from '@/components/hospital/DashboardTabRedirect';
 
 export default function DashboardPatientsPage() {
-  return <PatientsWorkspace />;
+  return <DashboardTabRedirect tab="patients" />;
 }

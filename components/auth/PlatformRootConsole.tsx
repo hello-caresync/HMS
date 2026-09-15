@@ -14,20 +14,9 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { purgeLocalAdminSessions } from '@/lib/auth/active-session';
 import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
-
-const AUTHORIZED_EMAILS = [
-  'aishwaryaananya43@gmail.com',
-  'superadmin@nexora.health',
-  'superadmin@regalhealth.com',
-];
-
-const VALID_PASSCODES = [
-  'OPS-RH-AS26-A113',
-  'SUPER-MASTER-2026',
-  '123456',
-  'ADMIN-REGAL-2026',
-];
+import { authenticatePortalCredential } from '@/lib/auth/staff-credential-auth';
 
 const SUPER_ADMIN_VAULT_ROUTE = '/super-vault-access';
 
@@ -40,7 +29,8 @@ function PlatformRootConsoleForm() {
       ? redirectParam
       : SUPER_ADMIN_VAULT_ROUTE;
 
-  const [email, setEmail] = useState('aishwaryaananya43@gmail.com');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [passcode, setPasscode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,15 +38,9 @@ function PlatformRootConsoleForm() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const existing =
-      localStorage.getItem('nexora_superadmin_session') ||
-      localStorage.getItem('curasync_superadmin_session');
-    if (existing) {
-      router.replace(postAuthRoute);
-      return;
-    }
+    purgeLocalAdminSessions();
     setReady(true);
-  }, [router, postAuthRoute]);
+  }, []);
 
   const handleRootAuth = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -64,21 +48,22 @@ function PlatformRootConsoleForm() {
     setErrorMessage(null);
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPass = passcode.trim();
+    const cleanPass = passcode.trim() || password.trim();
 
-    const isEmailValid = AUTHORIZED_EMAILS.some(
-      (authorizedEmail) => authorizedEmail.toLowerCase() === cleanEmail,
-    );
-    const isPassValid = VALID_PASSCODES.includes(cleanPass);
+    const result = await authenticatePortalCredential({
+      email: cleanEmail,
+      passcode: cleanPass,
+      scope: 'super_admin',
+    });
 
-    if (!isEmailValid || !isPassValid) {
-      setErrorMessage('Invalid root credentials. Access denied.');
+    if (!result.ok) {
+      setErrorMessage(result.error);
       setLoading(false);
       return;
     }
 
     const rootSession = {
-      email: cleanEmail,
+      email: result.user.email,
       role: 'super_admin',
       accessLevel: 'level_0_root',
       authenticatedAt: new Date().toISOString(),
@@ -89,7 +74,7 @@ function PlatformRootConsoleForm() {
     setNexoraRoleCookie('super_admin');
 
     toast.success('Root Master Authentication Verified');
-    router.push(SUPER_ADMIN_VAULT_ROUTE);
+    router.push(postAuthRoute || SUPER_ADMIN_VAULT_ROUTE);
     setLoading(false);
   };
 
@@ -162,7 +147,7 @@ function PlatformRootConsoleForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="aishwaryaananya43@gmail.com"
+                placeholder="Enter platform email"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pr-4 pl-10 text-sm font-medium text-slate-900 transition-all focus:border-amber-500 focus:bg-white focus:outline-none"
               />
             </div>
@@ -177,9 +162,12 @@ function PlatformRootConsoleForm() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                placeholder="Enter OPS-RH-AS26-A113"
+                value={passcode || password}
+                onChange={(e) => {
+                  setPasscode(e.target.value);
+                  setPassword(e.target.value);
+                }}
+                placeholder="Enter root passcode"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pr-10 pl-10 font-mono text-sm font-medium text-slate-900 transition-all focus:border-amber-500 focus:bg-white focus:outline-none"
               />
               <button

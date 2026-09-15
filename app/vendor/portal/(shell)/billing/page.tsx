@@ -1,7 +1,7 @@
 'use client';
 
-import BillingWorkspace from '@/components/vendor/workspaces/BillingWorkspace';
+import BillingPaymentsWorkspace from '@/components/vendor/workspaces/BillingPaymentsWorkspace';
 
 export default function VendorBillingPage() {
-  return <BillingWorkspace />;
+  return <BillingPaymentsWorkspace />;
 }

@@ -1,5 +1,7 @@
-import { BillingWorkspace } from '@/components/nexora-hospital/workspaces/BillingWorkspace';
+'use client';
+
+import { DashboardTabRedirect } from '@/components/hospital/DashboardTabRedirect';
 
 export default function DashboardBillingPage() {
-  return <BillingWorkspace />;
+  return <DashboardTabRedirect tab="billing" />;
 }

@@ -18,9 +18,9 @@ import {
 } from 'lucide-react';
 
 import {
+  authenticateAdmin,
   isValidEmail,
   persistAdminSession,
-  validateAdminCredentials,
 } from '@/lib/admin/auth';
 
 type AuthStage = 'idle' | 'authenticating' | 'success' | 'error';
@@ -82,9 +82,10 @@ export default function LoginPanel({ redirectUrl }: LoginPanelProps) {
     await new Promise((r) => setTimeout(r, 550));
 
     const normalizedEmail = email.trim().toLowerCase();
-    if (validateAdminCredentials(normalizedEmail, password)) {
+    const authResult = await authenticateAdmin(normalizedEmail, password);
+    if (authResult.ok) {
       persistAdminSession(
-        { email: normalizedEmail, role: 'administrator', loggedInAt: new Date().toISOString() },
+        { email: authResult.email, role: 'administrator', loggedInAt: new Date().toISOString() },
         rememberDevice,
       );
       setAuthStage('success');
@@ -95,7 +96,7 @@ export default function LoginPanel({ redirectUrl }: LoginPanelProps) {
     }
 
     setAuthStage('error');
-    setFormError('Invalid email or password. Please try again.');
+    setFormError(authResult.error);
   };
 
   return (
@@ -177,7 +178,7 @@ export default function LoginPanel({ redirectUrl }: LoginPanelProps) {
                     if (authStage === 'error') setAuthStage('idle');
                   }}
                   onBlur={() => setEmailTouched(true)}
-                  placeholder="admin@regalhospital.com"
+                  placeholder="Enter admin email"
                   aria-invalid={!!emailError}
                   aria-describedby={emailError ? 'regal-email-error' : undefined}
                   className="w-full rounded-xl border border-[#DCE4F0] bg-[#F8FAFD] py-2.5 pl-10 pr-10 text-sm text-[#102033] outline-none transition-all placeholder:text-[#94A3B8] focus:border-[#0EA5A4] focus:bg-white focus:shadow-[0_0_0_3px_rgba(14,165,164,0.12)]"

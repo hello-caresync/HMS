@@ -58,7 +58,7 @@ export function TodaysAppointments({ appointments, isLoading, onRefresh }: Props
         <span className="text-xs font-bold text-[#5A7A94]">{appointments.length} scheduled</span>
       </div>
 
-      {isLoading ? (
+      {isLoading && appointments.length === 0 ? (
         <div className="flex items-center gap-2 py-8 text-sm font-semibold text-[#5A7A94]">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading appointments…
         </div>

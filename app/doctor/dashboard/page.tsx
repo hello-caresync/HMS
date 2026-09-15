@@ -1,17 +1,32 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { NotificationHandler } from '@/components/common/NotificationHandler';
+import { PatientQueue } from '@/components/doctor/command-center/PatientQueue';
+import { PatientHistory360Section } from '@/components/doctor/PatientHistory360Section';
+import { PatientHistorySection } from '@/components/doctor/PatientHistorySection';
+import { useDoctorQueue } from '@/lib/doctor/command-center/hooks';
+import { isQueueDoneStatus } from '@/lib/doctor/command-center/supabase-service';
+import { todayIsoDate, type QueueDateFilter } from '@/lib/scheduling/queue-date-filter';
 import {
-  appointmentBelongsToDoctor,
+  buildOptimisticFeedItem,
+  fetchDoctorConsultationFeed,
+  type DoctorConsultationFeedItem,
+} from '@/lib/doctor/doctor-consultation-feed';
+import type { DoctorQueueRow } from '@/lib/doctor/command-center/types';
+import {
+  clearDoctorSession,
+  fetchDoctorCredentialConsultationFee,
   getDoctorSession,
+  loadDoctorWorkspaceSession,
+  resolveDoctorConsultationFeeFromSources,
   resolveDoctorSessionIdentity,
-  type DoctorSession,
 } from '@/lib/doctor/session';
-import { CACHE_KEYS, readLocalJson, writeLocalJson } from '@/lib/persistence/local-cache';
-import { dedupeEncounterList } from '@/lib/queue/dedupe-encounters';
+import { CACHE_KEYS, writeLocalJson } from '@/lib/persistence/local-cache';
+import { handoffConsultationToHospitalBilling } from '@/lib/billing/consultation-billing-handoff';
 import { dispatchDigitalPrescription } from '@/lib/doctor/dispatch-prescription';
 import { toast } from 'sonner';
 import {
@@ -23,7 +38,6 @@ import {
   Trash2,
   User,
   CheckCircle2,
-  Siren,
   Pill,
   FileText,
   LogOut,
@@ -39,30 +53,7 @@ interface ActiveDoctorSession {
   portalRoute?: string;
 }
 
-type QueueAppointment = {
-  id: string;
-  appointment_id?: string;
-  patient_id?: string | null;
-  patient_name?: string;
-  name?: string;
-  uhid?: string;
-  age?: number | string;
-  gender?: string;
-  chief_complaint?: string;
-  reason_for_visit?: string;
-  status?: string;
-  queue_status?: string;
-  token_number?: string | number;
-  appointment_time?: string;
-  time_slot?: string;
-  vitals_summary?: string;
-  doctor_id?: string;
-  doctor_code?: string;
-  doctor_employee_id?: string;
-  doctor_name?: string;
-  created_at?: string;
-  _source_table?: string;
-};
+type QueueAppointment = DoctorQueueRow;
 
 type MedicationRow = {
   name: string;
@@ -70,34 +61,28 @@ type MedicationRow = {
   timing: string;
   duration: string;
   qty: number;
-  price: number;
 };
 
-type HistoryItem = {
-  type: string;
-  created_at: string;
-  diagnosis?: string;
-  clinical_notes?: string;
-  medications?: MedicationRow[];
-};
+const NO_NUMBER_SPINNER =
+  '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]';
 
-type EmergencyRecord = {
-  patient_name: string;
-  bed_number?: string;
-  chief_complaint?: string;
-  reason_for_visit?: string;
-  admitted_at: string;
-  status?: string;
-};
-
-type DoctorQueueCache = {
-  doctorId: string;
-  appointments: QueueAppointment[];
-  activePatientId?: string | null;
-};
+function formatIntakeVitals(patient: QueueAppointment): string {
+  if (patient.vitals_summary?.trim()) return patient.vitals_summary.trim();
+  const raw = patient.vitals;
+  if (!raw) return '';
+  if (typeof raw === 'string') return raw.trim();
+  const parts = [
+    raw.bp ? `BP ${String(raw.bp)}` : '',
+    raw.pulse ? `HR ${String(raw.pulse)}` : '',
+    raw.temp ? `Temp ${String(raw.temp)}` : '',
+    raw.spo2 ? `SpO2 ${String(raw.spo2)}` : '',
+    raw.weight ? `Wt ${String(raw.weight)}` : '',
+  ].filter(Boolean);
+  return parts.join(' · ');
+}
 
 function readDoctorSessionFromStorage(): ActiveDoctorSession | null {
-  const stored = getDoctorSession();
+  const stored = loadDoctorWorkspaceSession();
   if (!stored?.doctorId || !stored.doctorName) return null;
   return {
     doctorId: stored.doctorId,
@@ -109,15 +94,23 @@ function readDoctorSessionFromStorage(): ActiveDoctorSession | null {
   };
 }
 
-function readDoctorQueueCache(doctorId: string): DoctorQueueCache | null {
-  const cached = readLocalJson<DoctorQueueCache>(CACHE_KEYS.doctorQueue);
-  if (!cached || cached.doctorId !== doctorId || !Array.isArray(cached.appointments)) return null;
-  return cached;
-}
-
 function formatToken(token?: string | number | null): string {
   if (token === undefined || token === null || String(token).trim() === '') return '—';
   return `#${String(token).replace(/^#/, '')}`;
+}
+
+function resetEncounterForm(
+  setDiagnosis: (value: string) => void,
+  setClinicalNotes: (value: string) => void,
+  setDoctorAdvice: (value: string) => void,
+  setMedications: (value: MedicationRow[]) => void,
+  setDrugInput: (value: string) => void,
+) {
+  setDiagnosis('');
+  setClinicalNotes('');
+  setDoctorAdvice('');
+  setMedications([]);
+  setDrugInput('');
 }
 
 export default function DoctorWorkstation() {
@@ -125,24 +118,24 @@ export default function DoctorWorkstation() {
   const queryClient = useQueryClient();
   const [isMounted, setIsMounted] = useState(false);
 
-  const [session, setSession] = useState<ActiveDoctorSession | null>(() => readDoctorSessionFromStorage());
-  const [appointments, setAppointments] = useState<QueueAppointment[]>(() => {
-    const stored = readDoctorSessionFromStorage();
-    return stored ? readDoctorQueueCache(stored.doctorId)?.appointments ?? [] : [];
-  });
-  const [activePatient, setActivePatient] = useState<QueueAppointment | null>(() => {
-    const stored = readDoctorSessionFromStorage();
-    if (!stored) return null;
-    const cached = readDoctorQueueCache(stored.doctorId);
-    if (!cached?.appointments.length) return null;
-    return cached.appointments.find((row) => row.id === cached.activePatientId) || cached.appointments[0] || null;
-  });
+  const [session, setSession] = useState<ActiveDoctorSession | null>(null);
+  const [activePatient, setActivePatient] = useState<QueueAppointment | null>(null);
+  const [appointmentId, setAppointmentId] = useState('');
+  const [chiefComplaint, setChiefComplaint] = useState('');
+  const [intakeVitals, setIntakeVitals] = useState('');
   const [queueTab, setQueueTab] = useState<'waiting' | 'done'>('waiting');
+  const [queueDateMode, setQueueDateMode] = useState<'today' | 'tomorrow' | 'upcoming' | 'custom'>(
+    'today',
+  );
+  const [customQueueDate, setCustomQueueDate] = useState(todayIsoDate());
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(() => {
-    const stored = readDoctorSessionFromStorage();
-    return !(stored && (readDoctorQueueCache(stored.doctorId)?.appointments.length ?? 0) > 0);
-  });
+
+  const queueDateFilter: QueueDateFilter = useMemo(() => {
+    if (queueDateMode === 'custom') {
+      return { mode: 'custom', customDate: customQueueDate };
+    }
+    return { mode: queueDateMode };
+  }, [customQueueDate, queueDateMode]);
 
   const [diagnosis, setDiagnosis] = useState('');
   const [clinicalNotes, setClinicalNotes] = useState('');
@@ -152,17 +145,43 @@ export default function DoctorWorkstation() {
   const [dosageInput, setDosageInput] = useState('1-0-1');
   const [durationInput, setDurationInput] = useState('3 Days');
   const [qtyInput, setQtyInput] = useState(1);
-  const [priceInput, setPriceInput] = useState(150);
-  const [consultationFee, setConsultationFee] = useState(500);
+  const [consultationFee, setConsultationFee] = useState(() =>
+    resolveDoctorConsultationFeeFromSources([loadDoctorWorkspaceSession()]),
+  );
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [isBilling, setIsBilling] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
   );
 
-  const [rightTab, setRightTab] = useState<'history' | 'emergency'>('history');
-  const [patientHistory, setPatientHistory] = useState<HistoryItem[]>([]);
-  const [activeEmergencies, setActiveEmergencies] = useState<EmergencyRecord[]>([]);
-  const [emergencyArchive, setEmergencyArchive] = useState<EmergencyRecord[]>([]);
+  const [patientHistory, setPatientHistory] = useState<DoctorConsultationFeedItem[]>([]);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<DoctorConsultationFeedItem | null>(
+    null,
+  );
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [autoExpandFeedId, setAutoExpandFeedId] = useState<string | null>(null);
+
+  const {
+    tokens: appointments,
+    isLoading,
+    refetch,
+  } = useDoctorQueue(isMounted && session ? loadDoctorWorkspaceSession() : null, {
+    dateFilter: queueDateFilter,
+  });
+
+  const loadConsultationFeed = useCallback(async () => {
+    const workspace = loadDoctorWorkspaceSession();
+    if (!workspace?.doctorId) return;
+    setIsLoadingHistory(true);
+    try {
+      const feed = await fetchDoctorConsultationFeed(supabase, workspace);
+      setPatientHistory(feed);
+    } catch {
+      setPatientHistory([]);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
@@ -178,122 +197,77 @@ export default function DoctorWorkstation() {
     setSession(stored);
   }, [isMounted, router]);
 
-  const fetchCockpitData = useCallback(async (options?: { showLoader?: boolean }) => {
-    if (!session?.doctorId || !session?.doctorName) return;
-
-    try {
-      if (options?.showLoader) {
-        setIsLoading(true);
-      }
-
-      const [res1, res2] = await Promise.all([
-        supabase.from('patient_appointments').select('*').order('created_at', { ascending: false }),
-        supabase.from('appointments').select('*').order('created_at', { ascending: false }),
-      ]);
-
-      const doctorSession: DoctorSession = {
-        doctorId: session.doctorId,
-        doctorName: session.doctorName,
-        department: session.department,
-        employeeId: session.doctorId,
-      };
-
-      const isForCurrentDoctor = (item: QueueAppointment) =>
-        appointmentBelongsToDoctor(item as Record<string, unknown>, doctorSession);
-
-      const rows1 = (res1.data ?? []) as QueueAppointment[];
-      const rows2 = (res2.data ?? []) as QueueAppointment[];
-
-      const list1 = rows1.filter((item: QueueAppointment) => isForCurrentDoctor(item)).map((item: QueueAppointment) => ({
-        ...item,
-        _source_table: 'patient_appointments',
-        patient_name: item.patient_name || item.name || '',
-        chief_complaint: item.reason_for_visit || item.chief_complaint || '',
-        status: item.queue_status || item.status || 'WAITING',
-      }));
-
-      const list2 = rows2.filter((item: QueueAppointment) => isForCurrentDoctor(item)).map((item: QueueAppointment) => ({
-        ...item,
-        _source_table: 'appointments',
-        patient_name: item.patient_name || item.name || '',
-        chief_complaint: item.chief_complaint || item.reason_for_visit || '',
-        status: item.status || item.queue_status || 'WAITING',
-      }));
-
-      const merged = dedupeEncounterList([...list1, ...list2]).sort((a, b) => {
-        const tokenA = parseInt(String(a.token_number || '').replace(/\D/g, ''), 10) || 999;
-        const tokenB = parseInt(String(b.token_number || '').replace(/\D/g, ''), 10) || 999;
-        return tokenA - tokenB;
-      });
-
-      setAppointments(merged);
-      writeLocalJson(CACHE_KEYS.doctorQueue, {
-        doctorId: session.doctorId,
-        appointments: merged,
-        activePatientId: merged[0]?.id ?? null,
-      });
-
-      const isCompletedStatus = (s?: string) => {
-        const st = (s || '').trim().toUpperCase();
-        return st === 'COMPLETED' || st === 'DONE';
-      };
-
-      const waiting = merged.filter((a) => !isCompletedStatus(a.status));
-
-      setActivePatient((prev) => {
-        if (!prev && waiting.length > 0) return waiting[0];
-        if (prev) {
-          const updated = merged.find((a) => a.id === prev.id);
-          if (updated && isCompletedStatus(updated.status)) return waiting[0] || null;
-          return updated || prev;
-        }
-        return null;
-      });
-
-      const { data: emgActive } = await supabase
-        .from('emergency_admissions')
-        .select('*')
-        .eq('status', 'EMERGENCY_ACTIVE')
-        .order('admitted_at', { ascending: false });
-      setActiveEmergencies((emgActive as EmergencyRecord[]) || []);
-
-      const { data: emgAll } = await supabase
-        .from('emergency_admissions')
-        .select('*')
-        .order('admitted_at', { ascending: false })
-        .limit(10);
-      setEmergencyArchive((emgAll as EmergencyRecord[]) || []);
-    } catch (err) {
-      console.error('Data fetch error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [session]);
+  useEffect(() => {
+    if (!session?.doctorId) return;
+    void loadConsultationFeed();
+  }, [session?.doctorId, loadConsultationFeed]);
 
   useEffect(() => {
-    if (!session) return;
-    void fetchCockpitData({ showLoader: true });
+    if (!session?.doctorId) return;
+    void fetchDoctorCredentialConsultationFee(supabase, loadDoctorWorkspaceSession()).then(
+      setConsultationFee,
+    );
+  }, [session?.doctorId]);
 
-    const channel = supabase
-      .channel(`doc_node_${session.doctorId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'patient_appointments' }, () => {
-        void fetchCockpitData({ showLoader: false });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
-        void fetchCockpitData({ showLoader: false });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_admissions' }, () => {
-        void fetchCockpitData({ showLoader: false });
-      })
-      .subscribe();
+  useEffect(() => {
+    const workspace = loadDoctorWorkspaceSession();
+    const nextFee = resolveDoctorConsultationFeeFromSources([activePatient, workspace]);
+    if (nextFee > 0) setConsultationFee(nextFee);
+  }, [
+    activePatient?.id,
+    activePatient?.appointment_id,
+    activePatient?.consultation_fee,
+    activePatient?.fee,
+  ]);
 
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [fetchCockpitData, session]);
+  useEffect(() => {
+    if (!autoExpandFeedId) {
+      setSelectedHistoryItem(null);
+      return;
+    }
+    const match =
+      patientHistory.find(
+        (item) => item.id === autoExpandFeedId || item.appointment_id === autoExpandFeedId,
+      ) ?? null;
+    setSelectedHistoryItem(match);
+  }, [autoExpandFeedId, patientHistory]);
+
+  useEffect(() => {
+    const waiting = appointments.filter((row) => !isQueueDoneStatus(row.status));
+    setActivePatient((prev) => {
+      if (!prev) return waiting[0] || null;
+      const updated = appointments.find(
+        (row) => row.id === prev.id || row.appointment_id === prev.appointment_id,
+      );
+      if (!updated) return waiting[0] || null;
+      if (isQueueDoneStatus(updated.status) && queueTab === 'waiting') {
+        return waiting[0] || null;
+      }
+      return updated;
+    });
+  }, [appointments, queueTab]);
+
+  useEffect(() => {
+    if (!activePatient) {
+      setAppointmentId('');
+      setChiefComplaint('');
+      setIntakeVitals('');
+      return;
+    }
+    setAppointmentId(String(activePatient.appointment_id || activePatient.id || ''));
+    setChiefComplaint(activePatient.chief_complaint || activePatient.reason_for_visit || '');
+    setIntakeVitals(formatIntakeVitals(activePatient));
+  }, [activePatient?.id, activePatient?.appointment_id, activePatient?.patient_id, activePatient?.uhid]);
 
   const handleSelectPatient = async (patient: QueueAppointment) => {
+    const nextAppointmentId = String(patient.appointment_id || patient.id || '').trim();
+    const nextComplaint = patient.chief_complaint || patient.reason_for_visit || '';
+    const nextVitals = formatIntakeVitals(patient);
+
     setActivePatient(patient);
+    setAppointmentId(nextAppointmentId);
+    setChiefComplaint(nextComplaint);
+    setIntakeVitals(nextVitals);
     if (session?.doctorId) {
       writeLocalJson(CACHE_KEYS.doctorQueue, {
         doctorId: session.doctorId,
@@ -301,53 +275,14 @@ export default function DoctorWorkstation() {
         activePatientId: patient.id,
       });
     }
-    setDiagnosis(patient.chief_complaint || patient.reason_for_visit || '');
+    setDiagnosis(nextComplaint);
     setClinicalNotes('');
     setDoctorAdvice('');
     setMedications([]);
     setStatusMessage(null);
 
-    try {
-      const pName = (patient.patient_name || patient.name || '').trim();
-      const pId = patient.patient_id ? String(patient.patient_id) : null;
-
-      if (!pName && !pId) {
-        setPatientHistory([]);
-        return;
-      }
-
-      let qConsult = supabase.from('consultations').select('*').order('created_at', { ascending: false });
-      let qPrescript = supabase.from('prescriptions').select('*').order('created_at', { ascending: false });
-
-      if (pId) {
-        qConsult = qConsult.or(`patient_id.eq.${pId},patient_name.ilike.%${pName}%`);
-        qPrescript = qPrescript.or(`patient_id.eq.${pId},patient_name.ilike.%${pName}%`);
-      } else {
-        qConsult = qConsult.ilike('patient_name', `%${pName}%`);
-        qPrescript = qPrescript.ilike('patient_name', `%${pName}%`);
-      }
-
-      const [cRes, pRes] = await Promise.all([qConsult, qPrescript]);
-
-      const consultRows = (cRes.data ?? []) as Record<string, unknown>[];
-      const prescriptionRows = (pRes.data ?? []) as Record<string, unknown>[];
-
-      const timeline: HistoryItem[] = [
-        ...consultRows.map((c: Record<string, unknown>) => ({
-          ...(c as HistoryItem),
-          type: 'CONSULTATION',
-        })),
-        ...prescriptionRows.map((p: Record<string, unknown>) => ({
-          ...(p as HistoryItem),
-          type: 'PRESCRIPTION',
-        })),
-      ].sort((a: HistoryItem, b: HistoryItem) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
-
-      setPatientHistory(timeline);
-    } catch {
-      setPatientHistory([]);
+    if (isQueueDoneStatus(patient.status)) {
+      setAutoExpandFeedId(nextAppointmentId);
     }
   };
 
@@ -362,7 +297,6 @@ export default function DoctorWorkstation() {
         timing: 'After Food',
         duration: durationInput,
         qty: Math.max(1, Number(qtyInput) || 1),
-        price: Math.max(0, Number(priceInput) || 0),
       },
     ]);
     setDrugInput('');
@@ -373,16 +307,32 @@ export default function DoctorWorkstation() {
       toast.error('Please select an active patient encounter first.');
       return;
     }
+    await finalizeEncounter(activePatient, { source: 'dispatch' });
+  };
 
+  const handleCompleteAndBill = async (patient: QueueAppointment) => {
+    await finalizeEncounter(patient, { source: 'queue' });
+  };
+
+  const finalizeEncounter = async (
+    patient: QueueAppointment,
+    options: { source: 'dispatch' | 'queue' },
+  ) => {
     if (!session) {
       toast.error('Doctor session is missing. Please sign in again.');
       return;
     }
 
-    const activeAppointmentId = String(activePatient.appointment_id || activePatient.id || '').trim();
-    const patientId = String(activePatient.patient_id || activePatient.uhid || '').trim();
-    const patientName = (activePatient.patient_name || activePatient.name || '').trim();
-    const complaint = activePatient.chief_complaint || activePatient.reason_for_visit || '';
+    const activeAppointmentId = String(
+      appointmentId || patient.appointment_id || patient.id || '',
+    ).trim();
+    const patientId = String(patient.patient_id || patient.uhid || patient.id || '').trim();
+    const patientName = (patient.patient_name || patient.name || '').trim();
+    const complaint =
+      (options.source === 'dispatch' ? chiefComplaint : '') ||
+      patient.chief_complaint ||
+      patient.reason_for_visit ||
+      '';
 
     if (!patientId && !patientName) {
       toast.error('Please select an active patient encounter first.');
@@ -398,83 +348,183 @@ export default function DoctorWorkstation() {
       },
     );
 
-    setIsFinalizing(true);
+    const billingKey = String(patient.patient_id || patient.id);
+    if (options.source === 'dispatch') setIsFinalizing(true);
+    else setIsBilling(billingKey);
     setStatusMessage(null);
 
     try {
       const result = await dispatchDigitalPrescription(supabase, {
         appointmentId: activeAppointmentId,
-        sourceTable: activePatient._source_table,
+        sourceTable: patient._source_table,
         patientId: patientId || null,
         patientName: patientName || 'Patient',
-        uhid: activePatient.uhid || patientId || null,
+        uhid: patient.uhid || patientId || null,
         doctorId: doctor.employeeId || doctor.doctorId,
         doctorName: doctor.doctorName,
         department: doctor.department || session.department,
         diagnosis: diagnosis.trim() || complaint || 'General Consultation',
         clinicalNotes: clinicalNotes.trim(),
         doctorInstructions: doctorAdvice.trim(),
-        medications,
-        vitals: activePatient.vitals_summary || null,
+        medications: options.source === 'dispatch' ? medications : medications,
+        vitals: patient.vitals || intakeVitals || patient.vitals_summary || null,
         consultationFee,
         hospitalId: 'HOSP-01',
+        skipBilling: true,
       });
 
       if (!result.ok) {
         throw new Error(result.error || 'Failed to write prescription to the patient app.');
       }
 
+      const billing = await handoffConsultationToHospitalBilling(
+        supabase,
+        {
+          ...patient,
+          appointment_id: activeAppointmentId || patient.appointment_id,
+          booking_source: patient.source,
+          appointment_type: patient.appointment_type,
+        },
+        {
+          doctorId: doctor.employeeId || doctor.doctorId,
+          employeeId: doctor.employeeId,
+          doctorName: doctor.doctorName,
+          department: doctor.department || session.department,
+          consultationFee,
+          hospitalCode: 'HOSP-01',
+        },
+        {
+          consultationFee,
+          medicines: [],
+          diagnosis: diagnosis.trim() || complaint || 'General Consultation',
+          clinicalNotes: clinicalNotes.trim(),
+          doctorInstructions: doctorAdvice.trim(),
+          prescribedItems: medications.map((med) => ({
+            drug: med.name,
+            dosage: med.dosage,
+            frequency: med.dosage,
+            duration: med.duration,
+            instructions: doctorAdvice.trim() || med.timing,
+            quantity: med.qty,
+          })),
+        },
+      );
+
+      if (!billing.ok) {
+        throw new Error(billing.error || 'Error processing consultation and invoice.');
+      }
+
       await Promise.allSettled([
         queryClient.invalidateQueries({ queryKey: ['doctor-queue'] }),
         queryClient.invalidateQueries({ queryKey: ['doctor-records'] }),
+        queryClient.invalidateQueries({ queryKey: ['patient-records'] }),
         queryClient.invalidateQueries({ queryKey: ['patient-prescriptions'] }),
+        queryClient.invalidateQueries({ queryKey: ['hospital-billing'] }),
+        queryClient.invalidateQueries({ queryKey: ['billing-invoices'] }),
+        queryClient.invalidateQueries({ queryKey: ['opd-charges'] }),
       ]);
 
-      toast.success('Consultation billed and prescription dispatched to patient + hospital cashier.');
+      toast.success(
+        `Prescription dispatched. Consultation invoice (₹${billing.consultationFee}) sent to billing counter — pharmacy charges entered at dispense.`,
+      );
       setStatusMessage({
         type: 'success',
         text: 'Pending invoice posted to Hospital Billing & Checkout Queue.',
       });
-      setDiagnosis('');
-      setClinicalNotes('');
-      setDoctorAdvice('');
-      setMedications([]);
-      setDrugInput('');
-      await fetchCockpitData({ showLoader: false });
+      const optimisticFeedItem = buildOptimisticFeedItem({
+        appointmentId: activeAppointmentId,
+        patientName: patientName || 'Patient',
+        tokenNumber: patient.token_number,
+        status: 'billing_pending',
+        diagnosis: diagnosis.trim() || complaint || 'General Consultation',
+        clinicalNotes: clinicalNotes.trim(),
+        doctorInstructions: doctorAdvice.trim(),
+        vitalsSummary: intakeVitals || formatIntakeVitals(patient),
+        age: patient.age,
+        gender: patient.gender,
+        prescriptions: medications.map((med) => ({
+          name: med.name,
+          dosage: med.dosage,
+          frequency: med.dosage,
+          duration: med.duration,
+          quantity: med.qty,
+        })),
+      });
+      setPatientHistory((prev) => [
+        optimisticFeedItem,
+        ...prev.filter((item) => item.id !== activeAppointmentId),
+      ]);
+      setAutoExpandFeedId(activeAppointmentId);
+      void loadConsultationFeed();
+      resetEncounterForm(setDiagnosis, setClinicalNotes, setDoctorAdvice, setMedications, setDrugInput);
+      setAppointmentId('');
+      setChiefComplaint('');
+      setIntakeVitals('');
+
+      setQueueTab('done');
+      const refreshedQueue = await refetch();
+      const refreshedRows = refreshedQueue.data ?? appointments;
+      const completedPatient =
+        refreshedRows.find(
+          (row) =>
+            row.id === patient.id ||
+            row.appointment_id === patient.appointment_id ||
+            row.appointment_id === activeAppointmentId,
+        ) ?? null;
+
+      if (completedPatient) {
+        setActivePatient(completedPatient);
+        setChiefComplaint(
+          completedPatient.chief_complaint || completedPatient.reason_for_visit || complaint,
+        );
+        setIntakeVitals(formatIntakeVitals(completedPatient));
+        setAutoExpandFeedId(
+          String(completedPatient.appointment_id || completedPatient.id || activeAppointmentId),
+        );
+      } else {
+        setActivePatient(null);
+      }
     } catch (err: unknown) {
-      console.error('Error dispatching prescription:', err);
+      console.error('Error finalizing encounter:', err);
       const message = err instanceof Error ? err.message : 'Unknown database error';
       setStatusMessage({ type: 'error', text: `Dispatch failed: ${message}` });
       toast.error(`Dispatch failed: ${message}`);
     } finally {
       setIsFinalizing(false);
+      setIsBilling(null);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('active_doctor_session');
-    sessionStorage.removeItem('active_doctor_session');
+    clearDoctorSession();
     router.replace('/doctor/login');
   };
 
-  if (!isMounted || !session) {
+  if (!isMounted) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-[#F8FAFC]">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-          <RefreshCw className="w-4 h-4 animate-spin text-teal-600" />
-          Authenticating Clinician Node...
-        </div>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#00A896] border-t-transparent" />
       </div>
     );
   }
 
-  const isCompleted = (status?: string) => {
-    const s = (status || '').trim().toUpperCase();
-    return s === 'COMPLETED' || s === 'DONE';
-  };
+  if (!session) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-[#F8FAFC]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#00A896] border-t-transparent" />
+      </div>
+    );
+  }
+
+  const isCompleted = (status?: string) => isQueueDoneStatus(status);
 
   const waitingList = appointments.filter((a) => !isCompleted(a.status));
-  const completedList = appointments.filter((a) => isCompleted(a.status));
+  const completedList = appointments
+    .filter((a) => isCompleted(a.status))
+    .sort(
+      (a, b) =>
+        new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
+    );
 
   const filteredQueue = (queueTab === 'waiting' ? waitingList : completedList).filter((item) => {
     const name = item.patient_name || '';
@@ -483,8 +533,22 @@ export default function DoctorWorkstation() {
     return name.toLowerCase().includes(q) || token.toLowerCase().includes(q);
   });
 
+  const queueEmptyLabel =
+    queueTab === 'done'
+      ? queueDateMode === 'today'
+        ? 'No completed consultations today.'
+        : 'No completed consultations for this date.'
+      : queueDateMode === 'tomorrow'
+        ? 'No advance bookings for tomorrow.'
+        : queueDateMode === 'upcoming'
+          ? 'No upcoming advance bookings.'
+          : queueDateMode === 'custom'
+            ? `No patients scheduled for ${customQueueDate}.`
+            : 'No patients in waiting room.';
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#F8FAFC] text-slate-800 font-sans">
+      <NotificationHandler />
       <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between shrink-0 z-30">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center">
@@ -513,7 +577,7 @@ export default function DoctorWorkstation() {
 
           <button
             type="button"
-            onClick={() => void fetchCockpitData({ showLoader: true })}
+            onClick={() => void refetch()}
             className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-600 transition-all cursor-pointer"
             title="Refresh Live Data"
           >
@@ -530,26 +594,6 @@ export default function DoctorWorkstation() {
           </button>
         </div>
       </header>
-
-      {activeEmergencies.length > 0 && (
-        <div className="bg-rose-50 border-b border-rose-200 text-rose-900 px-6 py-2 flex items-center justify-between text-xs shrink-0 animate-pulse">
-          <div className="flex items-center gap-2 font-semibold">
-            <Siren className="w-4 h-4 text-rose-600" />
-            <span>
-              <strong>CODE RED ALERT:</strong> Patient{' '}
-              <span className="underline font-bold">{activeEmergencies[0].patient_name}</span> in Bed{' '}
-              {activeEmergencies[0].bed_number || '—'}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setRightTab('emergency')}
-            className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1 rounded-lg text-[11px] cursor-pointer"
-          >
-            Open ER Status →
-          </button>
-        </div>
-      )}
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3.5 p-3.5 overflow-hidden">
         <section className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl flex flex-col h-full overflow-hidden shadow-xs">
@@ -581,6 +625,39 @@ export default function DoctorWorkstation() {
               </div>
             </div>
 
+            <div className="mb-2 flex flex-wrap gap-1">
+              {(
+                [
+                  ['today', 'Today'],
+                  ['tomorrow', 'Tomorrow'],
+                  ['upcoming', 'All Upcoming'],
+                ] as const
+              ).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setQueueDateMode(mode)}
+                  className={`rounded-lg px-2 py-1 text-[10px] font-bold transition-all cursor-pointer ${
+                    queueDateMode === mode
+                      ? 'bg-teal-700 text-white'
+                      : 'bg-white text-slate-600 border border-slate-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+              <input
+                type="date"
+                value={queueDateMode === 'custom' ? customQueueDate : customQueueDate}
+                onChange={(event) => {
+                  setCustomQueueDate(event.target.value);
+                  setQueueDateMode('custom');
+                }}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700"
+                aria-label="Select queue date"
+              />
+            </div>
+
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
               <input
@@ -593,74 +670,46 @@ export default function DoctorWorkstation() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5 min-h-0">
-            {isLoading ? (
-              <div className="text-center py-12 text-xs text-slate-400">Loading queue...</div>
-            ) : filteredQueue.length === 0 ? (
-              <div className="text-center py-16 text-xs text-slate-400">
-                No assigned patients found for {session.doctorName}.
-              </div>
-            ) : (
-              filteredQueue.map((patient) => {
-                const isSelected = activePatient?.id === patient.id;
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <PatientQueue
+              queue={filteredQueue}
+              selectedTokenId={activePatient?.appointment_id || activePatient?.id || null}
+              isLoading={isLoading}
+              emptyLabel={queueEmptyLabel}
+              queueDateMode={queueDateMode}
+              onSelectPatient={handleSelectPatient}
+              renderActions={(patient) => {
                 const done = isCompleted(patient.status);
-
+                if (done) return null;
                 return (
-                  <div
-                    key={patient.id}
-                    onClick={() => handleSelectPatient(patient)}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer shrink-0 relative ${
-                      isSelected
-                        ? 'bg-teal-50/70 border-teal-500 shadow-xs ring-1 ring-teal-500'
-                        : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
+                  <button
+                    type="button"
+                    disabled={isBilling === String(patient.patient_id || patient.id)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleCompleteAndBill(patient);
+                    }}
+                    className="w-full rounded-lg bg-teal-800 px-2 py-1.5 text-[10px] font-black text-white disabled:opacity-50"
                   >
-                    {isSelected && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-teal-600 rounded-l-xl" />
-                    )}
-
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="w-8 h-8 rounded-xl bg-slate-900 text-teal-300 text-xs font-black flex items-center justify-center font-mono shrink-0">
-                          {formatToken(patient.token_number)}
-                        </span>
-                        <div className="min-w-0">
-                          <h4 className="text-xs font-bold text-slate-900 truncate">
-                            {patient.patient_name || '—'}
-                          </h4>
-                          <p className="text-[11px] text-slate-500">
-                            {patient.age ? `${patient.age} Yrs` : '—'} • {patient.gender || '—'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md shrink-0 ${
-                          done
-                            ? 'bg-slate-100 text-slate-600 border border-slate-200'
-                            : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                        }`}
-                      >
-                        {patient.status || 'WAITING'}
-                      </span>
-                    </div>
-
-                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                      <span className="truncate max-w-[140px] text-slate-600">
-                        {patient.chief_complaint || '—'}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {patient.appointment_time || patient.time_slot || '—'}
-                      </span>
-                    </div>
-                  </div>
+                    {isBilling === String(patient.patient_id || patient.id)
+                      ? 'Posting…'
+                      : 'Complete & Bill'}
+                  </button>
                 );
-              })
-            )}
+              }}
+            />
           </div>
         </section>
 
-        <section className="lg:col-span-6 bg-white border border-slate-200 rounded-2xl flex flex-col h-full overflow-hidden shadow-xs">
+        <section className="lg:col-span-6 bg-[#FAFDFC] border border-slate-200 rounded-2xl flex flex-col h-full overflow-hidden shadow-xs">
+          <div className="p-3.5 border-b border-slate-100 bg-slate-50/60 shrink-0">
+            <span className="text-xs font-black tracking-wider uppercase text-slate-700">
+              2. Active Consultation
+            </span>
+            <p className="mt-1 text-[10px] font-semibold text-slate-400">
+              {activePatient ? activePatient.patient_name || 'Selected patient' : 'Select a patient from the queue'}
+            </p>
+          </div>
           {activePatient ? (
             <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 gap-3.5">
               {statusMessage && (
@@ -677,10 +726,13 @@ export default function DoctorWorkstation() {
               )}
 
               <div className="bg-slate-900 text-white rounded-2xl p-4 flex items-center justify-between shadow-xs shrink-0">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-teal-800 border border-teal-600 text-teal-200 flex items-center justify-center font-black text-sm font-mono">
+                <div className="flex min-w-0 flex-1 items-center gap-3.5">
+                  <span
+                    className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl border border-teal-600 bg-teal-800 px-2.5 py-1 font-mono text-sm font-black tracking-tight text-teal-200"
+                    style={{ wordBreak: 'keep-all', overflowWrap: 'normal' }}
+                  >
                     {formatToken(activePatient.token_number)}
-                  </div>
+                  </span>
                   <div>
                     <h2 className="text-base font-extrabold text-white">
                       {activePatient.patient_name || '—'}
@@ -698,7 +750,7 @@ export default function DoctorWorkstation() {
                     Intake Vitals
                   </span>
                   <span className="text-xs font-mono font-bold text-emerald-400">
-                    {activePatient.vitals_summary || '—'}
+                    {intakeVitals || activePatient.vitals_summary || '—'}
                   </span>
                 </div>
               </div>
@@ -710,7 +762,7 @@ export default function DoctorWorkstation() {
                     Reported Chief Complaint
                   </span>
                   <p className="text-xs font-bold text-teal-950 mt-0.5">
-                    {activePatient.chief_complaint || activePatient.reason_for_visit || '—'}
+                    {chiefComplaint || activePatient.chief_complaint || activePatient.reason_for_visit || '—'}
                   </p>
                 </div>
               </div>
@@ -757,17 +809,13 @@ export default function DoctorWorkstation() {
                       min={0}
                       value={consultationFee}
                       onChange={(e) => setConsultationFee(Number(e.target.value) || 0)}
-                      className="mt-1 w-full text-xs font-mono font-bold p-2 bg-white border border-slate-200 rounded-xl outline-none"
+                      className={`mt-1 w-full text-xs font-mono font-bold p-2 bg-white border border-slate-200 rounded-xl outline-none ${NO_NUMBER_SPINNER}`}
                     />
                   </label>
                   <div className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-2">
-                    <div className="text-[10px] font-black uppercase text-teal-800">Bill preview</div>
-                    <div className="text-sm font-black text-teal-950 font-mono">
-                      ₹
-                      {consultationFee +
-                        medications.reduce((sum, med) => sum + med.qty * med.price, 0)}
-                    </div>
-                    <div className="text-[10px] text-teal-700">Consult + medicines → cashier</div>
+                    <div className="text-[10px] font-black uppercase text-teal-800">Billing handoff</div>
+                    <div className="text-sm font-black text-teal-950 font-mono">₹{consultationFee}</div>
+                    <div className="text-[10px] text-teal-700">Pharmacy charges settled at billing counter</div>
                   </div>
                 </div>
 
@@ -806,16 +854,8 @@ export default function DoctorWorkstation() {
                     min={1}
                     value={qtyInput}
                     onChange={(e) => setQtyInput(Number(e.target.value) || 1)}
-                    className="w-16 text-xs p-2 bg-white border border-slate-200 rounded-xl font-mono"
+                    className={`w-16 text-xs p-2 bg-white border border-slate-200 rounded-xl font-mono ${NO_NUMBER_SPINNER}`}
                     title="Quantity"
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    value={priceInput}
-                    onChange={(e) => setPriceInput(Number(e.target.value) || 0)}
-                    className="w-20 text-xs p-2 bg-white border border-slate-200 rounded-xl font-mono"
-                    title="Unit price"
                   />
                   <button
                     type="submit"
@@ -826,46 +866,49 @@ export default function DoctorWorkstation() {
                   </button>
                 </form>
 
-                <div className="flex-1 overflow-y-auto max-h-[140px] flex flex-col gap-1.5 pr-1">
-                  {medications.length === 0 ? (
-                    <div className="text-center py-6 text-xs text-slate-400 italic">
-                      No drugs added yet. Type medication above.
-                    </div>
-                  ) : (
-                    medications.map((med, i) => (
-                      <div
-                        key={i}
-                        className="bg-white border border-slate-200 rounded-xl px-3 py-2 flex items-center justify-between text-xs shrink-0"
-                      >
-                        <span className="font-bold text-slate-900">{med.name}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="bg-teal-50 text-teal-800 border border-teal-200 px-2 py-0.5 rounded font-mono text-[10px] font-bold">
-                            {med.dosage}
-                          </span>
-                          <span className="text-slate-600 text-[11px]">{med.duration}</span>
-                          <span className="font-mono text-[10px] font-bold text-slate-700">
-                            {med.qty} × ₹{med.price}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setMedications((prev) => prev.filter((_, idx) => idx !== i))}
-                            className="text-rose-500 hover:text-rose-700 ml-1 cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+                  <div className="flex max-h-[180px] min-h-[44px] flex-col gap-2.5 overflow-y-auto overflow-x-hidden pr-1">
+                    {medications.length === 0 ? (
+                      <div className="py-6 text-center text-xs italic text-slate-400">
+                        No drugs added yet. Type medication above.
                       </div>
-                    ))
-                  )}
-                </div>
+                    ) : (
+                      medications.map((med, i) => (
+                        <div
+                          key={i}
+                          className="flex min-h-[44px] w-full items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3"
+                        >
+                          <span className="min-w-0 truncate text-sm font-semibold text-slate-800">
+                            {med.name}
+                          </span>
+                          <div className="flex shrink-0 items-center gap-2.5 text-xs text-slate-600">
+                            <span className="rounded border border-emerald-200/60 bg-emerald-50 px-2 py-0.5 font-mono font-medium text-emerald-700">
+                              {med.dosage}
+                            </span>
+                            <span>{med.duration}</span>
+                            <span className="font-medium text-slate-700">Qty: {med.qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => setMedications((prev) => prev.filter((_, idx) => idx !== i))}
+                              className="ml-1 rounded p-1 text-rose-500 transition hover:bg-rose-50 hover:text-rose-700"
+                              title="Remove item"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
 
-                <input
-                  type="text"
-                  placeholder="Doctor's Instructions / Dietary Advice..."
-                  value={doctorAdvice}
-                  onChange={(e) => setDoctorAdvice(e.target.value)}
-                  className="mt-2.5 w-full text-xs p-2 bg-white border border-slate-200 rounded-xl text-slate-800 outline-none shrink-0"
-                />
+                  <input
+                    type="text"
+                    placeholder="Doctor's Instructions / Dietary Advice..."
+                    value={doctorAdvice}
+                    onChange={(e) => setDoctorAdvice(e.target.value)}
+                    className="w-full shrink-0 rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-800 outline-none"
+                  />
+                </div>
               </div>
 
               <button
@@ -879,92 +922,42 @@ export default function DoctorWorkstation() {
               </button>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#F0F7F5]">
+              <div className="w-14 h-14 rounded-2xl bg-white border border-[#D5E8E3] text-[#2A9D8F]/50 flex items-center justify-center mb-3 shadow-inner">
                 <User className="w-7 h-7" />
               </div>
-              <h3 className="font-bold text-slate-700 text-sm">No Patient Selected</h3>
-              <p className="text-xs text-slate-400 mt-1 max-w-xs">
-                Select an appointment from Section 1 to begin encounter.
+              <h3 className="font-bold text-[#173F5F] text-sm">No Patient Selected</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-xs leading-relaxed">
+                Select an appointment from Section 1 to begin the active consultation workflow.
               </p>
             </div>
           )}
         </section>
 
         <section className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl flex flex-col h-full overflow-hidden shadow-xs">
-          <div className="p-3.5 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between shrink-0">
-            <span className="text-xs font-black tracking-wider uppercase text-slate-600">3. Records & SOS</span>
-            <div className="flex bg-slate-200/80 p-0.5 rounded-xl text-[11px] font-bold">
-              <button
-                type="button"
-                onClick={() => setRightTab('history')}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                  rightTab === 'history' ? 'bg-white text-teal-900 shadow-xs' : 'text-slate-600'
-                }`}
-              >
-                360 History
-              </button>
-              <button
-                type="button"
-                onClick={() => setRightTab('emergency')}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                  rightTab === 'emergency' ? 'bg-white text-rose-800 shadow-xs' : 'text-slate-600'
-                }`}
-              >
-                SOS Archive
-              </button>
-            </div>
+          <div className="p-3.5 border-b border-slate-100 bg-slate-50/60 shrink-0">
+            <span className="text-xs font-black tracking-wider uppercase text-slate-600">
+              3. 360 HISTORY
+            </span>
+            <p className="mt-1 text-[10px] font-semibold text-slate-400">Consultations & prescriptions</p>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5 min-h-0">
-            {rightTab === 'history' ? (
-              patientHistory.length === 0 ? (
-                <div className="text-center py-16 text-xs text-slate-400">No prior consultation records.</div>
-              ) : (
-                patientHistory.map((item, idx) => (
-                  <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs shrink-0">
-                    <div className="flex items-center justify-between text-[10px] font-bold mb-1.5">
-                      <span className="text-teal-800 uppercase font-black">{item.type}</span>
-                      <span className="text-slate-500">
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    {item.diagnosis && (
-                      <p className="font-extrabold text-slate-900 text-xs mb-1">{item.diagnosis}</p>
-                    )}
-                    {item.clinical_notes && (
-                      <p className="text-slate-600 text-[11px] leading-relaxed mb-1.5">{item.clinical_notes}</p>
-                    )}
-                    {item.medications && Array.isArray(item.medications) && (
-                      <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-800">
-                        <span className="font-bold text-teal-800">Rx: </span>
-                        {item.medications.map((m) => m.name).join(', ')}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )
-            ) : emergencyArchive.length === 0 ? (
-              <div className="text-center py-16 text-xs text-slate-400">No emergency records logged.</div>
-            ) : (
-              emergencyArchive.map((emg, idx) => (
-                <div key={idx} className="p-3 bg-rose-50/70 border border-rose-200 rounded-xl text-xs shrink-0">
-                  <div className="flex items-center justify-between text-[10px] font-black mb-1">
-                    <span className="text-rose-800">BED {emg.bed_number || '—'}</span>
-                    <span className="text-slate-500">
-                      {new Date(emg.admitted_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  </div>
-                  <h5 className="font-bold text-slate-900 text-xs">{emg.patient_name}</h5>
-                  <p className="text-slate-600 text-[11px] mt-0.5">
-                    {emg.chief_complaint || emg.reason_for_visit || '—'}
-                  </p>
-                </div>
-              ))
-            )}
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">
+            <PatientHistory360Section activePatient={activePatient} />
+            <div className="mb-2 shrink-0 border-t border-slate-100 pt-3">
+              <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+                Consultation History
+              </p>
+            </div>
+            <PatientHistorySection
+              feed={patientHistory}
+              isLoading={isLoadingHistory}
+              autoExpandId={autoExpandFeedId}
+              onAutoExpandConsumed={() => {
+                setAutoExpandFeedId(null);
+                setSelectedHistoryItem(null);
+              }}
+            />
           </div>
         </section>
       </div>

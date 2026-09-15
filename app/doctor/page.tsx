@@ -12,7 +12,7 @@ export default function DoctorIndexPage() {
   useEffect(() => {
     const session = getDoctorSession();
     if (session?.doctorId) {
-      setMessage('Opening clinical workspace…');
+      setMessage('Opening doctor dashboard…');
       router.replace('/doctor/dashboard');
     } else {
       setMessage('Redirecting to login…');

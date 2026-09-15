@@ -6,7 +6,8 @@
 import type { RealtimePostgresChangesPayload, SupabaseClient } from '@supabase/supabase-js';
 
 import { createClient } from '@/lib/supabase/client';
-import { REGAL_HOSPITAL_ID } from '@/lib/ecosystem/messaging-service';
+import { resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
+import { REGAL_FACILITY_CODE, REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import {
   buildDoctorToHospitalPayload,
   HOSPITAL_ADMIN_ID,
@@ -63,7 +64,7 @@ const NON_PATIENT_IDS = new Set([
   'rh-admin',
   'vendor-01',
   'rh-blr-01',
-  REGAL_HOSPITAL_ID.toLowerCase(),
+  REGAL_HOSPITAL_CODE.toLowerCase(),
 ]);
 
 function normalizeSenderRole(raw: string): DoctorSenderRole {
@@ -324,18 +325,23 @@ export async function sendDoctorSecureMessage(
   const trimmed = input.text.trim();
   if (!trimmed) return { ok: false, error: 'Message cannot be empty.' };
 
+  const hospitalId = await resolveHospitalUuid(supabase);
+  if (!hospitalId) {
+    return { ok: false, error: 'Could not resolve hospital UUID for secure message.' };
+  }
+
   const payload: Record<string, unknown> =
     input.tab === 'hospital_desk'
       ? buildDoctorToHospitalPayload({
           doctorId: input.doctor.employee_id,
           doctorName: input.doctor.full_name,
           message: trimmed,
-          hospitalId: REGAL_HOSPITAL_ID,
+          hospitalId,
         })
       : {
-          hospital_id: REGAL_HOSPITAL_ID,
-          facility_code: 'RH-BLR-01',
-          hospital_code: 'RH-BLR-01',
+          hospital_id: hospitalId,
+          facility_code: REGAL_FACILITY_CODE,
+          hospital_code: REGAL_HOSPITAL_CODE,
           channel_type: 'patient_direct',
           sender_role: 'doctor',
           sender_id: input.doctor.employee_id,

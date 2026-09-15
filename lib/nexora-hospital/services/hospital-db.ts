@@ -48,7 +48,13 @@ function mapPatientRow(row: Record<string, unknown>): HospitalPatient {
     lastName: String(row.last_name ?? last),
     fullName: fullName || 'Unknown',
     phone: String(row.phone ?? ''),
-    age: Number(row.age ?? 0),
+    age: Number(row.patient_age ?? row.age ?? 0) || 0,
+    patient_age:
+      row.patient_age == null || row.patient_age === ''
+        ? Number.isFinite(Number(row.age))
+          ? Number(row.age)
+          : null
+        : Number(row.patient_age),
     gender: String(row.gender ?? '—'),
     bloodGroup: String(row.blood_group ?? '—'),
     medicalHistory: String(row.medical_history ?? row.medical_history_text ?? ''),
@@ -271,6 +277,7 @@ export async function registerPatient(input: Omit<HospitalPatient, 'id' | 'creat
           last_name: patient.lastName,
           phone: patient.phone,
           age: patient.age,
+          patient_age: patient.patient_age ?? patient.age,
           gender: patient.gender,
           blood_group: patient.bloodGroup,
           medical_history: patient.medicalHistory,

@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 
-import { isValidVaultMasterPasscode } from '@/lib/super-vault/constants';
-
 type SuperAdminVaultGateProps = {
   onUnlock: () => void;
 };
@@ -11,22 +9,31 @@ type SuperAdminVaultGateProps = {
 export function SuperAdminVaultGate({ onUnlock }: SuperAdminVaultGateProps) {
   const [passcode, setPasscode] = useState('');
   const [hasError, setHasError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAuthenticate = (event: React.FormEvent) => {
+  const handleAuthenticate = async (event: React.FormEvent) => {
     event.preventDefault();
-
-    if (isValidVaultMasterPasscode(passcode)) {
-      setHasError(false);
-      onUnlock();
-      return;
-    }
-
-    setHasError(true);
-  };
-
-  const handleDeveloperBypass = () => {
+    setIsSubmitting(true);
     setHasError(false);
-    onUnlock();
+
+    try {
+      const res = await fetch('/api/super-vault/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode }),
+      });
+
+      if (res.ok) {
+        onUnlock();
+        return;
+      }
+
+      setHasError(true);
+    } catch {
+      setHasError(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -37,15 +44,13 @@ export function SuperAdminVaultGate({ onUnlock }: SuperAdminVaultGateProps) {
             Super-Admin Vault
           </h2>
           <p className="text-xs text-slate-400">
-            Biometric master passcode required. This route is unlisted and excluded from public
-            navigation.
+            Master passcode required. This route is unlisted and excluded from public navigation.
           </p>
         </div>
 
         {hasError && (
           <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold text-center">
-            Invalid master passcode. Try <strong>admin123</strong> or{' '}
-            <strong>NEXORA@SUPER2026</strong>
+            Invalid master passcode.
           </div>
         )}
 
@@ -56,9 +61,10 @@ export function SuperAdminVaultGate({ onUnlock }: SuperAdminVaultGateProps) {
             </label>
             <div className="relative">
               <input
-                type="text"
+                type="password"
                 autoFocus
-                placeholder="Enter admin123 or NEXORA@SUPER2026"
+                autoComplete="current-password"
+                placeholder="Enter master passcode"
                 value={passcode}
                 onChange={(e) => {
                   setPasscode(e.target.value);
@@ -71,21 +77,12 @@ export function SuperAdminVaultGate({ onUnlock }: SuperAdminVaultGateProps) {
 
           <button
             type="submit"
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-600 hover:brightness-110 text-white font-black text-xs uppercase tracking-wider transition-all shadow-lg cursor-pointer"
+            disabled={isSubmitting}
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-600 hover:brightness-110 text-white font-black text-xs uppercase tracking-wider transition-all shadow-lg cursor-pointer disabled:opacity-60"
           >
-            Authenticate Vault Access
+            {isSubmitting ? 'Authenticating…' : 'Authenticate Vault Access'}
           </button>
         </form>
-
-        <div className="pt-2 border-t border-slate-800/80 text-center">
-          <button
-            type="button"
-            onClick={handleDeveloperBypass}
-            className="text-[11px] text-emerald-400 hover:text-emerald-300 font-bold underline cursor-pointer"
-          >
-            Developer 1-Click Bypass Unlock
-          </button>
-        </div>
       </div>
     </div>
   );

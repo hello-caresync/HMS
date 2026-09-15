@@ -40,15 +40,15 @@ export function QueueDrawer({ tokens }: { tokens: OpdToken[] }) {
               <div key={t.id} className={`p-4 ${ccClasses.cardSoft}`}>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-[#20639B]">#{t.token_number}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${statusBadge(t.status)}`}>
-                    {t.status.replace('_', ' ')}
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${statusBadge(t.status ?? 'ISSUED')}`}>
+                    {(t.status ?? 'ISSUED').replace('_', ' ')}
                   </span>
                 </div>
                 <p className="mt-1 font-black text-[#173F5F]">{t.patient_name}</p>
                 <p className="text-xs font-semibold text-[#5A7A94]">
                   {t.chief_complaint || 'General consultation'}
                 </p>
-                {t.status === 'IN_CONSULTATION' && (
+                {(t.status ?? 'ISSUED') === 'IN_CONSULTATION' && (
                   <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#2A9D8F]">
                     <Activity className="h-3 w-3 animate-pulse" /> On Deck
                   </span>

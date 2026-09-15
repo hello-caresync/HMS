@@ -6,9 +6,11 @@ import { Toaster } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
 import { EcosystemNotificationBell } from '@/components/ecosystem/EcosystemNotificationBell';
+import { RegalHospitalLogo } from '@/components/brand/RegalHospitalLogo';
 import { PatientSidebar } from '@/components/patient/Sidebar';
 import { PatientClinicalRealtimeBridge } from '@/components/patient/PatientClinicalRealtimeBridge';
 import { ensurePatientIdPersisted, resolveActivePatientId } from '@/lib/clinical/bridge';
+import { logoutPatientSession, readPatientAuthSession } from '@/lib/auth/patientAuth';
 import { PatientAuthProvider } from '@/lib/patient/auth/PatientAuthProvider';
 
 function isAuthRoute(pathname: string | null) {
@@ -29,18 +31,15 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
         return;
       }
 
-      const session =
-        localStorage.getItem('curasync_patient_session') ||
-        localStorage.getItem('patient_full_name');
-      const savedName = localStorage.getItem('patient_full_name');
-      if (savedName) setPatientName(savedName);
-      setPatientId(resolveActivePatientId());
-      ensurePatientIdPersisted();
-
-      if (!session && !savedName) {
+      const authSession = readPatientAuthSession();
+      if (!authSession) {
         router.replace('/patient/login');
         return;
       }
+
+      setPatientName(authSession.name);
+      setPatientId(authSession.patientId || resolveActivePatientId());
+      ensurePatientIdPersisted(authSession.patientId);
 
       setHydrated(true);
     }, 0);
@@ -48,8 +47,8 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
   }, [pathname, router]);
 
   const handleLogout = () => {
-    localStorage.removeItem('curasync_patient_session');
-    router.push('/patient/auth/login');
+    logoutPatientSession();
+    router.replace('/patient/login');
   };
 
   if (isAuthRoute(pathname)) {
@@ -82,15 +81,9 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto md:ml-64">
         <header className="bg-white border-b border-gray-100 py-3 px-6 shadow-xs sticky top-0 z-40">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 flex items-center justify-center shrink-0 aspect-square overflow-hidden">
-                <img
-                  src="/regal-logo-transparent.png"
-                  alt="Regal Hospital"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <span className="hidden sm:inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+            <div className="flex min-w-0 items-center gap-3">
+              <RegalHospitalLogo heightClass="h-7" showNodeBadge />
+              <span className="hidden rounded-full border border-blue-100 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 sm:inline-block">
                 SmartQ Patient Portal
               </span>
               <span className="truncate text-[11px] font-bold text-slate-500 hidden lg:inline">

@@ -4,37 +4,39 @@ import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
+/**
+ * Legacy `/login` shim — client redirect avoids Next.js dev Performance.measure
+ * errors from instant server-side redirect() on this route.
+ */
 function LegacyLoginRedirectInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const redirect = searchParams.get('redirect');
-    const qs = searchParams.toString();
-
-    // Prevent /login <-> /staff/login redirect loops and never bounce the root gateway
-    if (redirect === '/' || redirect === '/staff/login' || redirect?.startsWith('/staff/login')) {
-      router.replace('/staff/login');
-      return;
-    }
-
-    router.replace(qs ? `/staff/login?${qs}` : '/staff/login');
+    const redirectParam = searchParams.get('redirect') ?? searchParams.get('next');
+    const destination =
+      redirectParam && redirectParam.startsWith('/')
+        ? `/hospital/login?redirect=${encodeURIComponent(redirectParam)}`
+        : '/hospital/login';
+    router.replace(destination);
   }, [router, searchParams]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100">
-      <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+    <div className="flex min-h-screen items-center justify-center bg-[#0a2e47]">
+      <div className="flex flex-col items-center gap-3 text-cyan-100">
+        <Loader2 className="h-7 w-7 animate-spin text-cyan-300" aria-hidden />
+        <p className="text-sm font-semibold tracking-wide">Redirecting to hospital login…</p>
+      </div>
     </div>
   );
 }
 
-/** Legacy `/login` route — forwards to the dedicated operational staff login portal. */
 export default function LegacyLoginRedirectPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-100">
-          <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+        <div className="flex min-h-screen items-center justify-center bg-[#0a2e47]">
+          <Loader2 className="h-7 w-7 animate-spin text-cyan-300" aria-hidden />
         </div>
       }
     >

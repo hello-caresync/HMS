@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import {
-  buildWhitelistedSuperAdminUser,
-  isWhitelistedSuperAdminEmail,
+  buildSuperAdminUser,
   passesSuperAdminPasscodeCheck,
+  verifySuperAdminVaultCredentials,
 } from './super-admin-auth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -10,7 +10,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 /** Primary table name in spec; falls back to legacy hospital_staff_credentials. */
-const STAFF_TABLES = ['staff_members', 'hospital_staff_credentials'] as const;
+const STAFF_TABLES = ['hospital_staff', 'staff_members', 'hospital_staff_credentials'] as const;
 
 export type StaffCredentialRecord = {
   id: string;
@@ -38,7 +38,7 @@ function normalizeRecord(row: Record<string, unknown>): StaffCredentialRecord {
     hospital_id: String(row.hospital_id ?? ''),
     hospital_name: String(row.hospital_name ?? 'Regal Hospital Main'),
     full_name: String(row.full_name ?? ''),
-    staff_type: String(row.staff_type ?? ''),
+    staff_type: String(row.staff_type ?? row.role ?? ''),
     department: String(row.department ?? ''),
     email: String(row.email ?? '').toLowerCase(),
     temporary_passcode: String(row.temporary_passcode ?? row.passcode ?? ''),
@@ -49,11 +49,11 @@ function normalizeRecord(row: Record<string, unknown>): StaffCredentialRecord {
 }
 
 export function isSuperAdminCredential(user: StaffCredentialRecord): boolean {
-  if (isWhitelistedSuperAdminEmail(user.email)) return true;
+  const staffType = user.staff_type.toLowerCase().replace(/[\s_-]/g, '');
   const portal = user.portal_access.toLowerCase();
   const hospitalId = user.hospital_id.toUpperCase();
   return (
-    user.staff_type === 'SuperAdmin' ||
+    staffType === 'superadmin' ||
     portal.startsWith('/super-admin') ||
     hospitalId.startsWith('PLATFORM')
   );
@@ -105,47 +105,29 @@ async function authenticateSuperAdminLogin(
   cleanEmail: string,
   cleanPasscode: string,
 ): Promise<PortalAuthResult> {
-  if (isWhitelistedSuperAdminEmail(cleanEmail)) {
-    const existing = await lookupStaffByEmail(cleanEmail);
-
-    if (!passesSuperAdminPasscodeCheck(cleanPasscode, existing?.temporary_passcode)) {
-      return { ok: false, error: 'Invalid security passcode. Please verify your credentials.' };
+  const user = await lookupStaffByEmail(cleanEmail);
+  if (user) {
+    if (!isSuperAdminCredential(user)) {
+      return { ok: false, error: 'This account is not authorized for Super Admin access.' };
     }
-
-    if (existing?.status === 'Restricted') {
+    if (user.status === 'Restricted') {
       return {
         ok: false,
         error: 'This account has been restricted. Contact your hospital administrator.',
       };
     }
-
-    return {
-      ok: true,
-      user: buildWhitelistedSuperAdminUser(cleanEmail, cleanPasscode, existing),
-    };
+    if (!passesSuperAdminPasscodeCheck(cleanPasscode, user.temporary_passcode)) {
+      return { ok: false, error: 'Invalid security passcode. Please verify your credentials.' };
+    }
+    return { ok: true, user };
   }
 
-  const user = await lookupStaffByEmail(cleanEmail);
-  if (!user) {
-    return { ok: false, error: 'No account found with this email address.' };
+  const vaultOk = await verifySuperAdminVaultCredentials(cleanEmail, cleanPasscode);
+  if (vaultOk) {
+    return { ok: true, user: buildSuperAdminUser(cleanEmail, cleanPasscode) };
   }
 
-  if (!isSuperAdminCredential(user)) {
-    return { ok: false, error: 'This account is not authorized for Super Admin access.' };
-  }
-
-  if (user.status === 'Restricted') {
-    return {
-      ok: false,
-      error: 'This account has been restricted. Contact your hospital administrator.',
-    };
-  }
-
-  if (user.temporary_passcode !== cleanPasscode) {
-    return { ok: false, error: 'Invalid security passcode. Please verify your credentials.' };
-  }
-
-  return { ok: true, user };
+  return { ok: false, error: 'Invalid root credentials. Access denied.' };
 }
 
 export async function authenticatePortalCredential(params: {

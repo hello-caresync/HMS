@@ -10,7 +10,8 @@ import {
   resolveActivePatientId,
   writeJsonLocal,
 } from '@/lib/clinical/bridge';
-import type { ClinicalAdviceMessage, ClinicalNote } from '@/lib/clinical/types';
+import { subscribePatientChannelMessages } from '@/lib/patient/messages/patient-channel-messages';
+import type { ClinicalNote } from '@/lib/clinical/types';
 
 /** Global patient-side realtime bridge for Rx + doctor advice toasts. */
 export function PatientClinicalRealtimeBridge() {
@@ -45,51 +46,19 @@ export function PatientClinicalRealtimeBridge() {
           window.dispatchEvent(new CustomEvent('curasync:clinical-note', { detail: note }));
         },
       )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'patient_messages',
-          filter: `patient_id=eq.${patientId}`,
-        },
-        (payload: RealtimePostgresChangesPayload<any>) => {
-          const msg = payload.new as ClinicalAdviceMessage;
-          if (msg.sender_type && msg.sender_type !== 'doctor') return;
-
-          const msgs = readJsonLocal<ClinicalAdviceMessage[]>(CLINICAL_STORAGE.messages, []);
-          writeJsonLocal(CLINICAL_STORAGE.messages, [
-            {
-              id: String(msg.id || `msg_${Date.now()}`),
-              patient_id: String(msg.patient_id || patientId),
-              patient_name: String(msg.patient_name || ''),
-              doctor_id: String(msg.doctor_id || ''),
-              doctor_name: String(msg.doctor_name || 'Doctor'),
-              message: String(msg.message || ''),
-              priority: String(msg.priority || 'high'),
-              sender_type: 'doctor',
-              created_at: String(msg.created_at || new Date().toISOString()),
-            },
-            ...msgs,
-          ]);
-
-          toast.message('Update from your doctor', {
-            description: String(msg.message || 'A new clinical update is available.'),
-            action: {
-              label: 'View prescriptions',
-              onClick: () => {
-                window.location.href = '/patient/prescriptions/';
-              },
-            },
-          });
-
-          window.dispatchEvent(new CustomEvent('curasync:doctor-message', { detail: msg }));
-        },
-      )
       .subscribe();
+
+    const patientIds = [patientId].filter(Boolean);
+    const unsubscribeChat = subscribePatientChannelMessages(patientIds, (message) => {
+      toast.message(`Message from ${message.sender_name}`, {
+        description: message.message,
+      });
+      window.dispatchEvent(new CustomEvent('curasync:patient-channel-message', { detail: message }));
+    });
 
     return () => {
       void supabase.removeChannel(channel);
+      unsubscribeChat();
     };
   }, []);
 

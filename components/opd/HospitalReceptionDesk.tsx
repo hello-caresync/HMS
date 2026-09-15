@@ -1,15 +1,38 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Merge, Printer, UserPlus, Users } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BellRing, Merge, Printer, UserPlus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { NotificationHandler } from '@/components/common/NotificationHandler';
+import { ReceptionQueue } from '@/components/hospital/ReceptionQueue';
 import { AiSchedulingSummary } from '@/components/opd/AiSchedulingSummary';
 import { AppointmentPass } from '@/components/opd/AppointmentPass';
+import {
+  appointmentMatchesReceptionFilter,
+  fetchHospitalAppointments,
+  filterHospitalAppointmentsByDate,
+  filterReceptionAppointmentsBySearch,
+  filterReceptionQueueAppointments,
+  isReceptionQueueStatus,
+  mapHospitalAppointmentToReceptionRow,
+  mergeReceptionAppointmentRows,
+  type HospitalAppointmentDateFilter,
+  type HospitalAppointmentRecord,
+  type HospitalReceptionRow,
+} from '@/lib/hospital/appointments';
 import { opdUi } from '@/lib/opd/design-tokens';
 import { DEPARTMENTS } from '@/lib/ecosystem/seed';
 import { useDoctors } from '@/lib/ecosystem/hooks';
 import { useEcosystemStore } from '@/lib/ecosystem/store';
+import {
+  formatReceptionLiveBookingToast,
+  playReceptionDeskChime,
+} from '@/lib/notifications/opd-alerts';
+import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
+import { recordBelongsToHospitalNode } from '@/lib/hospital/hospital-node';
+import { todayIsoDate } from '@/lib/scheduling/queue-date-filter';
+import { supabase } from '@/lib/supabaseClient';
 
 export function HospitalReceptionDesk() {
   const registerWalkIn = useEcosystemStore((s) => s.registerWalkIn);
@@ -35,10 +58,165 @@ export function HospitalReceptionDesk() {
   const [reassignDate, setReassignDate] = useState('');
   const [reassignTime, setReassignTime] = useState('10:00');
   const [mergeDept, setMergeDept] = useState(DEPARTMENTS[0]);
+  const [allBookings, setAllBookings] = useState<HospitalReceptionRow[]>([]);
+  const [displayBookings, setDisplayBookings] = useState<HospitalReceptionRow[]>([]);
+  const [latestBanner, setLatestBanner] = useState<string | null>(null);
+  const [activeDateFilter, setActiveDateFilter] =
+    useState<HospitalAppointmentDateFilter>('today');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loadingOpdBookings, setLoadingOpdBookings] = useState(true);
+  const activeDateFilterRef = useRef(activeDateFilter);
+  const searchQueryRef = useRef(searchQuery);
+
+  const today = todayIsoDate();
+
+  useEffect(() => {
+    activeDateFilterRef.current = activeDateFilter;
+  }, [activeDateFilter]);
+
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
+
+  const loadAllBookingsForCounts = useCallback(async () => {
+    try {
+      const rows = await fetchHospitalAppointments(supabase, {
+        dateFilter: 'all',
+        hospitalId: REGAL_HOSPITAL_CODE,
+        limit: 500,
+        activeOnly: false,
+      });
+      setAllBookings(
+        filterReceptionQueueAppointments(rows).map(mapHospitalAppointmentToReceptionRow),
+      );
+    } catch (err) {
+      console.warn('Reception master booking fetch failed:', err);
+    }
+  }, []);
+
+  const loadDisplayBookings = useCallback(async () => {
+    setLoadingOpdBookings(true);
+    try {
+      const rows = await fetchHospitalAppointments(supabase, {
+        dateFilter: activeDateFilter,
+        hospitalId: REGAL_HOSPITAL_CODE,
+        limit: 300,
+        activeOnly: false,
+      });
+      setDisplayBookings(
+        filterReceptionQueueAppointments(rows).map(mapHospitalAppointmentToReceptionRow),
+      );
+    } catch (err) {
+      console.warn('Reception OPD booking fetch failed:', err);
+    } finally {
+      setLoadingOpdBookings(false);
+    }
+  }, [activeDateFilter]);
+
+  useEffect(() => {
+    void loadAllBookingsForCounts();
+    void loadDisplayBookings();
+  }, [loadAllBookingsForCounts, loadDisplayBookings]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('hospital-live-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'appointments',
+        },
+        (payload: { new?: Record<string, unknown> }) => {
+          const row = (payload.new ?? {}) as Record<string, unknown>;
+          if (!recordBelongsToHospitalNode(row, REGAL_HOSPITAL_CODE)) return;
+          if (!isReceptionQueueStatus(row as HospitalAppointmentRecord)) {
+            return;
+          }
+
+          const arrival = mapHospitalAppointmentToReceptionRow(row);
+
+          setAllBookings((previous) => mergeReceptionAppointmentRows(previous, arrival));
+
+          const currentFilter = activeDateFilterRef.current;
+          const currentSearch = searchQueryRef.current;
+          if (
+            appointmentMatchesReceptionFilter(row, currentFilter) &&
+            filterReceptionAppointmentsBySearch([arrival], currentSearch).length > 0
+          ) {
+            setDisplayBookings((previous) => mergeReceptionAppointmentRows(previous, arrival));
+          } else if (appointmentMatchesReceptionFilter(row, currentFilter)) {
+            void loadDisplayBookings();
+          }
+
+          const banner = formatReceptionLiveBookingToast(row);
+          setLatestBanner(banner);
+          toast.info(banner, { duration: 7000 });
+          void playReceptionDeskChime();
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'appointments',
+        },
+        (payload: { new?: Record<string, unknown> }) => {
+          const row = (payload.new ?? {}) as Record<string, unknown>;
+          if (!recordBelongsToHospitalNode(row, REGAL_HOSPITAL_CODE)) return;
+          const updated = mapHospitalAppointmentToReceptionRow(row);
+          const stillInReception = isReceptionQueueStatus(row as HospitalAppointmentRecord);
+
+          setAllBookings((previous) => {
+            if (!stillInReception) {
+              return previous.filter((entry) => entry.id !== updated.id);
+            }
+            return mergeReceptionAppointmentRows(previous, updated);
+          });
+
+          setDisplayBookings((previous) => {
+            if (!stillInReception) {
+              return previous.filter((entry) => entry.id !== updated.id);
+            }
+            const merged = mergeReceptionAppointmentRows(previous, updated);
+            return filterReceptionAppointmentsBySearch(
+              filterHospitalAppointmentsByDate(merged, activeDateFilterRef.current),
+              searchQueryRef.current,
+            );
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [loadDisplayBookings]);
 
   const effectiveDoctorId = doctorId || doctors[0]?.id || '';
   const selectedDoctor = doctors.find((d) => d.id === effectiveDoctorId) ?? doctors[0];
-  const today = new Date().toISOString().slice(0, 10);
+
+  const todayLiveBookings = useMemo(
+    () => filterHospitalAppointmentsByDate(allBookings, 'today'),
+    [allBookings],
+  );
+
+  const tomorrowBookings = useMemo(
+    () => filterHospitalAppointmentsByDate(allBookings, 'tomorrow'),
+    [allBookings],
+  );
+
+  const upcomingBookings = useMemo(
+    () => filterHospitalAppointmentsByDate(allBookings, 'upcoming'),
+    [allBookings],
+  );
+
+  const visibleOpdBookings = useMemo(
+    () => filterReceptionAppointmentsBySearch(displayBookings, searchQuery),
+    [displayBookings, searchQuery],
+  );
 
   const todayAppts = useMemo(
     () => appointments.filter((a) => a.date === today && !['Cancelled', 'Completed'].includes(a.status)),
@@ -83,6 +261,18 @@ export function HospitalReceptionDesk() {
 
   return (
     <div className={`min-h-screen ${opdUi.canvas} p-6`}>
+      <NotificationHandler />
+      {latestBanner ? (
+        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-950 shadow-sm">
+          <BellRing className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
+              Live OPD Booking
+            </p>
+            <p>{latestBanner}</p>
+          </div>
+        </div>
+      ) : null}
       <header className={`${opdUi.topBar} mb-6 rounded-2xl px-6 py-4`}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -101,6 +291,20 @@ export function HospitalReceptionDesk() {
           </div>
         </div>
       </header>
+
+      <ReceptionQueue
+        className={`mx-auto mb-6 max-w-6xl ${opdUi.card} p-5`}
+        activeDateFilter={activeDateFilter}
+        onDateFilterChange={setActiveDateFilter}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        todayCount={todayLiveBookings.length}
+        tomorrowCount={tomorrowBookings.length}
+        upcomingCount={upcomingBookings.length}
+        allCount={allBookings.length}
+        bookings={visibleOpdBookings}
+        loading={loadingOpdBookings}
+      />
 
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2">
         <section className={`${opdUi.card} p-6`}>
@@ -176,6 +380,19 @@ export function HospitalReceptionDesk() {
             Merge Department Queues
           </button>
           <ul className="mt-4 max-h-48 space-y-2 overflow-y-auto text-sm">
+            {allBookings.slice(0, 6).map((arrival: HospitalReceptionRow) => (
+              <li
+                key={arrival.id}
+                className="flex items-center justify-between rounded-lg border border-emerald-200/70 bg-emerald-50/60 px-3 py-2"
+              >
+                <span>
+                  {arrival.patient_name} → {arrival.doctor_name}
+                </span>
+                <span className="text-xs font-bold text-emerald-800">
+                  {arrival.appointment_time}
+                </span>
+              </li>
+            ))}
             {hospitalQueue.slice(0, 8).map((q) => (
               <li key={q.id} className="flex items-center justify-between rounded-lg border border-[#8E7692]/25 px-3 py-2">
                 <span>{q.patientName}</span>

@@ -17,10 +17,22 @@ import {
   loadShipments,
   markShipmentDelivered,
   poItemDetails,
+  resolvePoHospitalName,
   subscribeVendorPortal,
   type PurchaseOrder,
   type Shipment,
 } from '@/lib/vendor/v0/portal-service';
+
+function displayHospitalName(
+  source: Partial<Pick<PurchaseOrder, 'hospital_name' | 'facility_name' | 'facility_code' | 'hospital_code'>>,
+): string {
+  return resolvePoHospitalName({
+    hospital_name: source.hospital_name,
+    facility_name: source.facility_name,
+    facility_code: source.facility_code ?? '',
+    hospital_code: source.hospital_code ?? '',
+  });
+}
 
 type DispatchForm = {
   po_id: string;
@@ -53,8 +65,17 @@ function DeliveriesWorkspace() {
       ]);
       setShipments(shipmentResult.rows);
       setOrders(poResult.rows);
-      setLoadError(shipmentResult.error ?? poResult.error ?? null);
+
+      const nextError = shipmentResult.error ?? poResult.error ?? null;
+      if (nextError) {
+        console.error('[DeliveriesWorkspace] Load warning:', nextError);
+        setLoadError(nextError);
+        return;
+      }
+
+      setLoadError(null);
     } catch (error) {
+      console.error('[DeliveriesWorkspace] Load error:', error);
       setShipments([]);
       setOrders([]);
       setLoadError(error instanceof Error ? error.message : 'Could not load shipments.');
@@ -96,11 +117,11 @@ function DeliveriesWorkspace() {
     (poId: string) => {
       const match = orders.find((order) => order.id === poId);
       if (match) {
-        return `${match.po_number} · ${match.hospital_name} · ${poItemDetails(match)}`;
+        return `${match.po_number} · ${displayHospitalName(match)} · ${poItemDetails(match)}`;
       }
       const shipment = shipments.find((row) => row.po_id === poId);
       if (shipment?.po_number) {
-        return `${shipment.po_number} · ${shipment.hospital_name ?? 'Regal Hospital'}`;
+        return `${shipment.po_number} · ${displayHospitalName(shipment)}`;
       }
       return poId.slice(0, 8);
     },
@@ -224,7 +245,7 @@ function DeliveriesWorkspace() {
                   <div className="col-span-2 font-bold text-slate-900">{s.tracking_number}</div>
                   <div className="col-span-3 text-xs text-slate-700">
                     <span className="font-semibold text-slate-900">{s.po_number || orderLabel(s.po_id)}</span>
-                    <span className="text-slate-500"> · {s.hospital_name || 'Hospital'}</span>
+                    <span className="text-slate-500"> · {displayHospitalName(s)}</span>
                   </div>
                   <div className="col-span-2 text-slate-700">{s.carrier_name}</div>
                   <div className="col-span-2 text-xs text-slate-600">{s.driver_contact || 'N/A'}</div>
@@ -302,7 +323,7 @@ function DeliveriesWorkspace() {
                 <option value="">Select an accepted PO…</option>
                 {dispatchableOrders.map((order, index) => (
                   <option key={order.id || `${order.po_number}-${index}`} value={order.id}>
-                    {order.po_number} · {order.hospital_name} · {poItemDetails(order)} ·{' '}
+                    {order.po_number} · {displayHospitalName(order)} · {poItemDetails(order)} ·{' '}
                     {formatInr(Number(order.total_amount))}
                   </option>
                 ))}

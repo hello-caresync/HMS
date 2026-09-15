@@ -27,6 +27,24 @@ export function encounterAppointmentKey(item: unknown): string {
   return isUuidValue(id) ? id : '';
 }
 
+/** Collapse 11:30 AM / 11:30:00 and duplicate appointment ids into one queue card. */
+export function encounterIdentityKey(item: unknown): string {
+  const row = asRecord(item);
+  const token = String(row.token_number ?? row.token ?? row.uhid ?? '').trim().toUpperCase();
+  if (/^NX-(WLK|OPD)-/.test(token)) {
+    const date = String(row.appointment_date ?? row.created_at ?? '').slice(0, 10);
+    return date ? `walkin:${token}:${date}` : `walkin:${token}`;
+  }
+
+  const appointmentId = String(row.appointment_id ?? row.appointmentId ?? '').trim();
+  if (appointmentId) return `apt:${appointmentId}`;
+  const id = String(row.id ?? '').trim();
+  if (id) return `id:${id}`;
+  const patient = String(row.patient_id ?? row.patientId ?? '').trim();
+  if (patient && token) return `tok:${patient}-${token}`;
+  return encounterSlotKey(item);
+}
+
 export function encounterSlotKey(item: unknown): string {
   const row = asRecord(item);
   const patient = String(row.patientId ?? row.patient_id ?? row.patient_name ?? row.name ?? '')
@@ -59,32 +77,24 @@ function preferRicher<T>(current: T, incoming: T): T {
 
 /** Collapse the same encounter coming from appointments, tokens, and queue tables. */
 export function dedupeEncounterList<T>(rows: T[]): T[] {
-  const byAppointment = new Map<string, T>();
-  const leftovers: T[] = [];
-
+  const byIdentity = new Map<string, T>();
   for (const item of rows) {
-    const key = encounterAppointmentKey(item);
-    if (!key) {
-      leftovers.push(item);
-      continue;
-    }
-    const existing = byAppointment.get(key);
-    byAppointment.set(key, existing ? preferRicher(existing, item) : item);
+    const key = encounterIdentityKey(item);
+    const existing = byIdentity.get(key);
+    byIdentity.set(key, existing ? preferRicher(existing, item) : item);
   }
-
-  const claimedSlots = new Set(
-    [...byAppointment.values()].map((item) => encounterSlotKey(item)),
-  );
 
   const bySlot = new Map<string, T>();
-  for (const item of leftovers) {
+  for (const item of byIdentity.values()) {
     const slot = encounterSlotKey(item);
-    if (claimedSlots.has(slot) && slot.startsWith('enc:') && slot !== 'enc:::') {
+    const canMergeSlot = slot.startsWith('enc:') && slot !== 'enc:::';
+    const existing = canMergeSlot ? bySlot.get(slot) : undefined;
+    if (existing) {
+      bySlot.set(slot, preferRicher(existing, item));
       continue;
     }
-    const existing = bySlot.get(slot);
-    bySlot.set(slot, existing ? preferRicher(existing, item) : item);
+    bySlot.set(canMergeSlot ? slot : `${slot}:${encounterIdentityKey(item)}`, item);
   }
 
-  return [...byAppointment.values(), ...bySlot.values()];
+  return Array.from(bySlot.values());
 }

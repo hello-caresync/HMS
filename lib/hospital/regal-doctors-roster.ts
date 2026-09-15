@@ -1,6 +1,7 @@
 import type { OnboardingMemberDraft } from '@/lib/auth/hospital/member-types';
 
-export const REGAL_HOSPITAL_ID = 'a1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+/** Populated at onboarding insert time — not a persisted UUID. */
+export const REGAL_ROSTER_HOSPITAL_PLACEHOLDER = '';
 
 export type RegalDoctorRosterEntry = {
   id: string;
@@ -23,7 +24,7 @@ export type RegalDoctorRosterEntry = {
 export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   {
     id: 'd01',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr. SURIRAJU V',
     department: 'Urology',
     specialization: 'Urologist | Andrologist | Laparoscopic Surgeon',
@@ -33,7 +34,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd02',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr. GIRISH S KUNDARGI',
     department: 'Urology',
     specialization: 'Urologist | Andrologist | Laparoscopic Surgeon',
@@ -43,7 +44,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd03',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr SRIHARSHA GURRAM',
     department: 'Nephrology',
     specialization: 'Nephrologist | Renal Transplant Physician',
@@ -53,7 +54,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd04',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr HIMA BINDU B',
     department: 'Nephrology',
     specialization: 'Nephrologist',
@@ -63,7 +64,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd05',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr BHARAT KONAN',
     department: 'Gastroenterology',
     specialization: 'Surgical Gastroenterologist',
@@ -73,7 +74,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd06',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr CHANDRAKANTH S KESARI',
     department: 'General Surgery',
     specialization: 'General & Laparoscopic Surgery',
@@ -83,7 +84,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd07',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr SUDHAMSU REDDY',
     department: 'General Surgery',
     specialization: 'General & Laparoscopic Surgery',
@@ -93,7 +94,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd08',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr KANCHAN SANYAL',
     department: 'General Physician',
     specialization: 'General Physician',
@@ -103,7 +104,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd09',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr SURYA PRASAD',
     department: 'General Physician',
     specialization: 'General Physician',
@@ -113,7 +114,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd10',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr JAYARAMIREDDY',
     department: 'General Physician',
     specialization: 'General Physician',
@@ -123,7 +124,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd11',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr ARUNA JYOTHI',
     department: 'General Physician',
     specialization: 'General Physician',
@@ -133,7 +134,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd12',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr NAZIMA TABASSUM',
     department: 'Pediatrics & Pediatric Surgery',
     specialization: 'Pediatrics',
@@ -143,7 +144,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd13',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr SHIV TEJ N',
     department: 'Pediatrics & Pediatric Surgery',
     specialization: 'Pediatric Intensivist, Asthma & Allergy Specialist',
@@ -153,7 +154,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd14',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr AMBRISH C',
     department: 'Diabetology',
     specialization: 'Diabetologist & Endocrinologist',
@@ -163,7 +164,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd15',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr PRIYANKA S',
     department: 'Diabetology',
     specialization: 'Diabetologist & Endocrinologist',
@@ -173,7 +174,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd16',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr PRIYANKA B V',
     department: 'Obstetrics and Gynaecology',
     specialization: 'Obstetrics & Gynaecology',
@@ -183,7 +184,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd17',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr SYED AFREEN BEGUM',
     department: 'Obstetrics and Gynaecology',
     specialization: 'Obstetrics & Gynaecology',
@@ -193,7 +194,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd18',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr Annu Murali',
     department: 'Obstetrics and Gynaecology',
     specialization: 'Obstetrics & Gynaecology',
@@ -203,7 +204,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd19',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr PURUSHOTHAMA K',
     department: 'Orthopaedic',
     specialization: 'Orthopedic Surgeon',
@@ -213,7 +214,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd20',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr ABDUL HADI SHAREEF',
     department: 'Orthopaedic',
     specialization: 'Orthopedic Surgeon & Joint Replacement Specialist',
@@ -223,7 +224,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd21',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr DEVARAJ B.S',
     department: 'Orthopaedic',
     specialization: 'Orthopedic Surgeon - Trauma Specialist',
@@ -233,7 +234,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd22',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr KRISHNA PRASAD',
     department: 'Neurosurgery',
     specialization: 'Neuro Surgeon',
@@ -243,7 +244,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd23',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr TEJESH SHAVI',
     department: 'Neurosurgery',
     specialization: 'Neurosurgery | Neurointerventional Surgery',
@@ -253,7 +254,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd24',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr NIKHIL C HIREMATH',
     department: 'Neurosurgery',
     specialization: 'Neurologist',
@@ -263,7 +264,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd25',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr CHANDAN SAURAV MAHAPATRO',
     department: 'Cardiology',
     specialization: 'Cardiologist',
@@ -273,7 +274,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd26',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr MADHUSUDHAN RAIKAR',
     department: 'Cardiology',
     specialization: 'Cardiologist',
@@ -283,7 +284,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd27',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr AZHAR WAHAB',
     department: 'Cardiology',
     specialization: 'Cardiologist',
@@ -293,7 +294,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd28',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Mrs. ASHWINI',
     department: 'Physiotherapy',
     specialization: 'Physiotherapist',
@@ -303,7 +304,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd29',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Mr. Sai Harsha',
     department: 'Physiotherapy',
     specialization: 'Physiotherapist',
@@ -313,7 +314,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd30',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr MADHU KUMAR',
     department: 'Anesthesiology',
     specialization: 'Anesthesiology Specialist',
@@ -323,7 +324,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd31',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr OM SHIVA',
     department: 'Anesthesiology',
     specialization: 'Anesthesiology Specialist',
@@ -333,7 +334,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd32',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr SUHAS C.M.V',
     department: 'ENT',
     specialization: 'ENT Surgeon',
@@ -343,7 +344,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd33',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr SHRUTHI DECHAMMA',
     department: 'ENT',
     specialization: 'ENT Surgeon',
@@ -353,7 +354,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd34',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr CHETHAN SATISH',
     department: 'Cosmetic Surgery',
     specialization: 'Plastic Surgeon',
@@ -363,7 +364,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd35',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr BOBBY CYRRIAC',
     department: 'Dental',
     specialization: 'Dentist',
@@ -373,7 +374,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd36',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr ANCY',
     department: 'Dental',
     specialization: 'Periodontist',
@@ -383,7 +384,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd37',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr SATISH KUMARAN P',
     department: 'Dental',
     specialization: 'Dentist',
@@ -393,7 +394,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd38',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr NADEEM AHMED',
     department: 'Dermatology',
     specialization: 'Dermatologist',
@@ -403,7 +404,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd39',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr AMISHA SHAH',
     department: 'Radiology',
     specialization: 'Radiologist',
@@ -413,7 +414,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd40',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr Mahenthesh',
     department: 'Radiology',
     specialization: 'Radiologist',
@@ -423,7 +424,7 @@ export const REGAL_DOCTORS_DIRECTORY: RegalDoctorRosterEntry[] = [
   },
   {
     id: 'd41',
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: REGAL_ROSTER_HOSPITAL_PLACEHOLDER,
     full_name: 'Dr Arjun',
     department: 'Vascular Surgery',
     specialization: 'Vascular Surgeon',

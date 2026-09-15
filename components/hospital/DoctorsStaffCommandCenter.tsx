@@ -15,11 +15,15 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import {
+  classifyGovernancePersonnelRole,
+  governanceRoleDisplayLabel,
+} from '@/lib/hospital/governance-directory';
 import { formatConsultationFee } from '@/lib/hospital/hospital-staff-roster';
 import {
   createHospitalStaffMember,
   deleteHospitalStaffMember,
-  fetchHospitalStaffDirectory,
+  fetchCommandCenterPersonnel,
   toDashboardStaffRow,
   updateHospitalStaffMember,
   type HospitalStaffMember,
@@ -52,6 +56,42 @@ function roleLabel(role: StaffRole): string {
   return 'Doctor';
 }
 
+function memberRoleLabel(member: HospitalStaffMember): string {
+  if (member.raw_role) {
+    return governanceRoleDisplayLabel(
+      classifyGovernancePersonnelRole(member.raw_role),
+      member.raw_role,
+    );
+  }
+  return roleLabel(member.role);
+}
+
+function staffRecordId(member: HospitalStaffMember): string | null {
+  return member.staff_record_id ?? null;
+}
+
+function roleKey(member: HospitalStaffMember): string {
+  return String(member.raw_role ?? member.role ?? '')
+    .trim()
+    .toLowerCase();
+}
+
+function isDoctorMember(member: HospitalStaffMember): boolean {
+  return roleKey(member) === 'doctor';
+}
+
+function isAdminMember(member: HospitalStaffMember): boolean {
+  return roleKey(member) === 'admin';
+}
+
+function isOperationalStaffMember(member: HospitalStaffMember): boolean {
+  return ['nurse', 'staff', 'receptionist', 'pharmacist', 'admin'].includes(roleKey(member));
+}
+
+function matchesStaffTabMember(member: HospitalStaffMember): boolean {
+  return ['nurse', 'staff', 'receptionist', 'pharmacist'].includes(roleKey(member));
+}
+
 export function DoctorsStaffCommandCenter({
   hospitalId,
   hospitalName,
@@ -74,12 +114,12 @@ export function DoctorsStaffCommandCenter({
   const [isSaving, setIsSaving] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<HospitalStaffMember | null>(null);
 
-  const loadRoster = useCallback(
+  const fetchHospitalStaffDirectory = useCallback(
     async (silent = false) => {
       if (!supabase) return;
       if (!silent) setIsRefreshing(true);
       try {
-        const rows = await fetchHospitalStaffDirectory(supabase, nodeId);
+        const rows = await fetchCommandCenterPersonnel(supabase, nodeId);
         setMembers(rows);
         onRosterChanged?.(rows.map(toDashboardStaffRow));
       } catch (err: unknown) {
@@ -93,39 +133,55 @@ export function DoctorsStaffCommandCenter({
   );
 
   useEffect(() => {
-    void loadRoster();
-  }, [loadRoster]);
+    void fetchHospitalStaffDirectory();
+  }, [fetchHospitalStaffDirectory]);
 
   useEffect(() => {
     if (!supabase) return;
     const channel = supabase
-      .channel(`hospital_staff_directory_${nodeId}`)
+      .channel(`command_center_directory_${nodeId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'hospital_staff', filter: `hospital_id=eq.${nodeId}` },
-        () => void loadRoster(true),
+        { event: '*', schema: 'public', table: 'hospital_user_credentials' },
+        () => void fetchHospitalStaffDirectory(true),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'hospital_staff' },
+        () => void fetchHospitalStaffDirectory(true),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'doctors' },
+        () => void fetchHospitalStaffDirectory(true),
       )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [loadRoster, nodeId]);
+  }, [fetchHospitalStaffDirectory, nodeId]);
 
-  const counts = useMemo(
-    () => ({
-      all: members.length,
-      doctor: members.filter((row) => row.role === 'doctor').length,
-      staff: members.filter((row) => row.role === 'staff').length,
-      admin: members.filter((row) => row.role === 'admin').length,
-      activeDoctors: members.filter((row) => row.role === 'doctor' && row.is_active).length,
-    }),
-    [members],
-  );
+  const counts = useMemo(() => {
+    const active = members.filter((row) => row.is_active);
+    return {
+      all: active.length,
+      doctor: active.filter(isDoctorMember).length,
+      staff: active.filter(matchesStaffTabMember).length,
+      admin: active.filter(isAdminMember).length,
+      activeDoctors: active.filter(isDoctorMember).length,
+      operationalStaff: active.filter(isOperationalStaffMember).length,
+    };
+  }, [members]);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return members.filter((row) => {
-      if (roleFilter !== 'all' && row.role !== roleFilter) return false;
+      if (roleFilter === 'doctor' && !isDoctorMember(row)) return false;
+      if (roleFilter === 'staff' && !matchesStaffTabMember(row)) return false;
+      if (roleFilter === 'admin' && !isAdminMember(row)) return false;
+      if (roleFilter !== 'all' && roleFilter !== 'doctor' && roleFilter !== 'staff' && roleFilter !== 'admin') {
+        return false;
+      }
       if (!needle) return true;
       return (
         row.full_name.toLowerCase().includes(needle) ||
@@ -161,9 +217,15 @@ export function DoctorsStaffCommandCenter({
     if (!supabase || isSaving) return;
     setIsSaving(true);
     try {
+      const recordId = editor && editor !== 'create' ? staffRecordId(editor) : null;
+      if (editor && editor !== 'create' && !recordId) {
+        toast.error('No linked hospital_staff record — provision this account from the Staff Credentials Vault.');
+        return;
+      }
+
       const result =
-        editor && editor !== 'create'
-          ? await updateHospitalStaffMember(supabase, nodeId, editor.id, draft)
+        editor && editor !== 'create' && recordId
+          ? await updateHospitalStaffMember(supabase, nodeId, recordId, draft)
           : await createHospitalStaffMember(supabase, nodeId, draft);
       if (!result.ok) {
         toast.error(result.error || 'Could not save staff record');
@@ -171,7 +233,7 @@ export function DoctorsStaffCommandCenter({
       }
       toast.success(editor === 'create' ? `${draft.full_name} added to the directory` : `${draft.full_name} updated`);
       setEditor(null);
-      await loadRoster(true);
+      await fetchHospitalStaffDirectory(true);
     } finally {
       setIsSaving(false);
     }
@@ -181,14 +243,20 @@ export function DoctorsStaffCommandCenter({
     if (!supabase || !pendingDelete) return;
     setIsSaving(true);
     try {
-      const result = await deleteHospitalStaffMember(supabase, nodeId, pendingDelete.id);
+      const recordId = staffRecordId(pendingDelete);
+      if (!recordId) {
+        toast.error('No linked hospital_staff record — revoke this account from the Staff Credentials Vault.');
+        return;
+      }
+
+      const result = await deleteHospitalStaffMember(supabase, nodeId, recordId);
       if (!result.ok) {
         toast.error(result.error || 'Could not delete staff record');
         return;
       }
       toast.success(`${pendingDelete.full_name} removed from the directory`);
       setPendingDelete(null);
-      await loadRoster(true);
+      await fetchHospitalStaffDirectory(true);
     } finally {
       setIsSaving(false);
     }
@@ -218,7 +286,7 @@ export function DoctorsStaffCommandCenter({
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => void loadRoster()}
+            onClick={() => void fetchHospitalStaffDirectory()}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -253,7 +321,7 @@ export function DoctorsStaffCommandCenter({
           className={`rounded-2xl border bg-white p-5 text-left ${roleFilter === 'staff' ? 'border-cyan-600 ring-2 ring-cyan-100' : 'border-slate-200'}`}
         >
           <div className="font-mono text-[11px] font-bold uppercase text-slate-400">Operational Staff</div>
-          <div className="mt-2 text-3xl font-black text-slate-900">{counts.staff}</div>
+          <div className="mt-2 text-3xl font-black text-slate-900">{counts.operationalStaff}</div>
         </button>
         <button
           type="button"
@@ -336,14 +404,14 @@ export function DoctorsStaffCommandCenter({
                       ) : null}
                     </td>
                     <td className="px-3 py-3.5">
-                      {member.department || '—'} ({roleLabel(member.role)})
+                      {member.department || '—'} ({memberRoleLabel(member)})
                     </td>
                     <td className="px-3 py-3.5 font-mono">{member.email || '—'}</td>
                     <td className="px-3 py-3.5">
                       {member.role === 'doctor' ? (
                         <span className="inline-flex items-center gap-1 font-bold text-slate-800">
                           <IndianRupee className="h-3 w-3 text-cyan-700" />
-                          {formatConsultationFee(member.consultation_fee)}
+                          {formatConsultationFee(member.consultation_fee ?? 500)}
                         </span>
                       ) : (
                         <span className="text-slate-400">—</span>
@@ -369,16 +437,26 @@ export function DoctorsStaffCommandCenter({
                           <button
                             type="button"
                             onClick={() => openEdit(member)}
-                            className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50"
-                            title="Edit"
+                            disabled={!staffRecordId(member)}
+                            className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            title={
+                              staffRecordId(member)
+                                ? 'Edit'
+                                : 'Edit via Staff Credentials Vault — no linked roster row'
+                            }
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => setPendingDelete(member)}
-                            className="rounded-lg border border-rose-200 p-1.5 text-rose-600 hover:bg-rose-50"
-                            title="Delete"
+                            disabled={!staffRecordId(member)}
+                            className="rounded-lg border border-rose-200 p-1.5 text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            title={
+                              staffRecordId(member)
+                                ? 'Delete'
+                                : 'Revoke via Staff Credentials Vault — no linked roster row'
+                            }
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -431,7 +509,7 @@ export function DoctorsStaffCommandCenter({
                   setDraft((prev) => ({
                     ...prev,
                     role,
-                    consultation_fee: role === 'doctor' ? prev.consultation_fee || 500 : 0,
+                    consultation_fee: role === 'doctor' ? prev.consultation_fee ?? 500 : null,
                   }));
                 }}
                 className="rounded-xl border border-slate-200 px-3 py-2.5"
@@ -478,7 +556,7 @@ export function DoctorsStaffCommandCenter({
                     min={0}
                     step={50}
                     disabled={isSaving}
-                    value={draft.consultation_fee}
+                    value={draft.consultation_fee ?? 500}
                     onChange={(e) => setDraft((prev) => ({ ...prev, consultation_fee: Number(e.target.value) }))}
                     className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-mono font-medium normal-case"
                   />
@@ -520,7 +598,7 @@ export function DoctorsStaffCommandCenter({
           <div className="w-full max-w-md space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
             <h3 className="text-sm font-bold text-slate-900">Remove {pendingDelete.full_name}?</h3>
             <p className="text-xs text-slate-500">
-              This deletes the {roleLabel(pendingDelete.role).toLowerCase()} from the hospital staff table. Active
+              This deletes the {memberRoleLabel(pendingDelete).toLowerCase()} from the hospital staff table. Active
               doctors will disappear from Patient Booking immediately.
             </p>
             <div className="flex justify-end gap-3">

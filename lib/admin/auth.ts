@@ -89,34 +89,32 @@ export function getAdminRedirectPath(override?: string | null): string {
   return sanitizeAdminRedirectPath(override);
 }
 
-function getAllowedAdminEmails(): string[] {
-  return (
-    process.env.NEXT_PUBLIC_NEXORA_ADMIN_EMAILS ??
-    'admin@regalhospital.com,admin@nexora.com,admin@nexora.health,hospital@curasync.com'
-  )
-    .split(',')
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
-}
+/** Server-side admin credential check via API route (password never exposed to client bundle). */
+export async function authenticateAdmin(
+  email: string,
+  password: string,
+): Promise<{ ok: true; email: string } | { ok: false; error: string }> {
+  try {
+    const res = await fetch('/api/admin/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-/** Client-side mock auth — replace with server action before production. */
-export function validateAdminCredentials(email: string, password: string): boolean {
-  const normalizedEmail = email.trim().toLowerCase();
-  if (!getAllowedAdminEmails().includes(normalizedEmail)) {
-    return false;
+    const data = (await res.json()) as {
+      success?: boolean;
+      user?: { email: string; role: 'administrator' };
+      error?: string;
+    };
+
+    if (!res.ok || !data.success || !data.user?.email) {
+      return { ok: false, error: data.error ?? 'Invalid email or password.' };
+    }
+
+    return { ok: true, email: data.user.email };
+  } catch {
+    return { ok: false, error: 'Unable to reach the authentication service.' };
   }
-
-  const configuredPassword = process.env.NEXT_PUBLIC_NEXORA_ADMIN_PASSWORD;
-  if (configuredPassword) {
-    return password === configuredPassword;
-  }
-
-  if (process.env.NODE_ENV === 'development') {
-    const devPassword = process.env.NEXT_PUBLIC_NEXORA_ADMIN_DEV_PASSWORD ?? 'Admin@123';
-    return password === devPassword;
-  }
-
-  return false;
 }
 
 export function persistAdminSession(session: AdminSession, rememberDevice: boolean): void {

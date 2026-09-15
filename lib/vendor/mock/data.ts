@@ -30,10 +30,13 @@ export const MOCK_ORGANIZATION: VendorOrganization = {
 };
 
 export const MOCK_HOSPITALS: HospitalPartner[] = [
-  { id: 'hosp-1', name: 'Nexora City Hospital', networkCode: 'NX-CH-01', city: 'Bengaluru', activeContracts: 4 },
-  { id: 'hosp-2', name: 'Nexora Heart Institute', networkCode: 'NX-HI-02', city: 'Chennai', activeContracts: 2 },
-  { id: 'hosp-3', name: 'Nexora Diagnostics Network', networkCode: 'NX-DN-03', city: 'Hyderabad', activeContracts: 1 },
-  { id: 'consolidated', name: 'All Hospitals (Consolidated)', networkCode: 'NX-ALL', city: 'Multi-site', activeContracts: 7 },
+  {
+    id: 'RH-BLR-01',
+    name: 'Regal Hospital',
+    networkCode: 'RH-BLR-01',
+    city: 'Bengaluru',
+    activeContracts: 4,
+  },
 ];
 
 export const MOCK_DASHBOARD_METRICS: VendorDashboardMetrics = {

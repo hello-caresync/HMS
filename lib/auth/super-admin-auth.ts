@@ -1,4 +1,6 @@
-export type WhitelistedSuperAdminUser = {
+import { createClient } from '@supabase/supabase-js';
+
+export type SuperAdminUser = {
   id: string;
   hospital_id: string;
   hospital_name: string;
@@ -12,36 +14,15 @@ export type WhitelistedSuperAdminUser = {
   status?: string;
 };
 
-export const SUPER_ADMIN_WHITELIST = [
-  'aishwaryaananya43@gmail.com',
-  'superadmin@nexora.health',
-  'superadmin@regalhealth.com',
-  'admin@regalhealth.com',
-] as const;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
-export const SUPER_ADMIN_VALID_PASSCODES = [
-  'OPS-RH-AS26-A113',
-  'SUPER-MASTER-2026',
-  '123456',
-  'ADMIN-REGAL-2026',
-  'admin123',
-] as const;
-
-const normalizedWhitelist = SUPER_ADMIN_WHITELIST.map((email) => email.toLowerCase());
-
-export function isWhitelistedSuperAdminEmail(email: string): boolean {
-  return normalizedWhitelist.includes(email.trim().toLowerCase());
-}
-
-export function isValidSuperAdminPasscode(passcode: string): boolean {
-  return (SUPER_ADMIN_VALID_PASSCODES as readonly string[]).includes(passcode.trim());
-}
-
-export function buildWhitelistedSuperAdminUser(
+export function buildSuperAdminUser(
   email: string,
   passcode: string,
-  existing?: WhitelistedSuperAdminUser | null,
-): WhitelistedSuperAdminUser {
+  existing?: SuperAdminUser | null,
+): SuperAdminUser {
   const cleanEmail = email.trim().toLowerCase();
   const localPart = cleanEmail.split('@')[0] ?? 'admin';
 
@@ -50,9 +31,7 @@ export function buildWhitelistedSuperAdminUser(
       ...existing,
       email: cleanEmail,
       staff_type: 'SuperAdmin',
-      hospital_id: existing.hospital_id.startsWith('PLATFORM')
-        ? existing.hospital_id
-        : 'PLATFORM-00',
+      hospital_id: existing.hospital_id.startsWith('PLATFORM') ? existing.hospital_id : 'PLATFORM-00',
       hospital_name: existing.hospital_name || 'Regal Platform Root',
       portal_access: '/super-vault-access',
       temporary_passcode: passcode.trim(),
@@ -76,12 +55,48 @@ export function buildWhitelistedSuperAdminUser(
   };
 }
 
-export function passesSuperAdminPasscodeCheck(
+function isSuperAdminVaultRole(roleType: string): boolean {
+  return roleType.toUpperCase().includes('SUPER');
+}
+
+export async function verifySuperAdminVaultCredentials(
+  email: string,
   passcode: string,
-  dbPasscode?: string,
-): boolean {
-  const cleanPasscode = passcode.trim();
-  if (isValidSuperAdminPasscode(cleanPasscode)) return true;
-  if (dbPasscode && dbPasscode === cleanPasscode) return true;
+): Promise<boolean> {
+  if (!supabase) return false;
+
+  const { data, error } = await supabase
+    .from('super_admin_credentials_vault')
+    .select('identifier, passcode, role_type, is_active')
+    .eq('identifier', email.trim().toLowerCase())
+    .eq('is_active', true);
+
+  if (error || !Array.isArray(data)) return false;
+
+  return data.some((row) => {
+    const record = row as Record<string, unknown>;
+    const identifier = String(record.identifier ?? '').trim().toLowerCase();
+    const stored = String(record.passcode ?? '');
+    const roleType = String(record.role_type ?? '');
+    return (
+      identifier === email.trim().toLowerCase() &&
+      stored === passcode.trim() &&
+      isSuperAdminVaultRole(roleType)
+    );
+  });
+}
+
+/** @deprecated Hardcoded email lists were removed. Super Admin is vault/role based. */
+export function isWhitelistedSuperAdminEmail(_email: string): boolean {
   return false;
 }
+
+export function isValidSuperAdminPasscode(_passcode: string): boolean {
+  return false;
+}
+
+export function passesSuperAdminPasscodeCheck(passcode: string, dbPasscode?: string): boolean {
+  return Boolean(dbPasscode && dbPasscode === passcode.trim());
+}
+
+export const buildWhitelistedSuperAdminUser = buildSuperAdminUser;

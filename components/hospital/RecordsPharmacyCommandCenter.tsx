@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { RegalHospitalLogo } from '@/components/brand/RegalHospitalLogo';
 import {
   Activity,
   AlertTriangle,
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 
 import {
   addFormularyMedicine,
+  countTodayAppointments,
   dispensePrescription,
   fetchClinicalRecords,
   fetchFormularyMedicines,
@@ -104,10 +106,12 @@ export function RecordsPharmacyCommandCenter({
   hospitalId,
   hospitalName,
   onInventoryChanged,
+  hideTitle = false,
 }: {
   hospitalId: string;
   hospitalName: string;
   onInventoryChanged?: () => void;
+  hideTitle?: boolean;
 }) {
   const nodeId = hospitalId || HOSPITAL_TENANT_ID;
   const [isLoading, setIsLoading] = useState(true);
@@ -117,6 +121,7 @@ export function RecordsPharmacyCommandCenter({
   const [prescriptions, setPrescriptions] = useState<PharmacyPrescription[]>([]);
   const [medicines, setMedicines] = useState<FormularyMedicine[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
+  const [appointmentsToday, setAppointmentsToday] = useState(0);
   const [commandFilter, setCommandFilter] = useState<CommandFilter>('none');
   const [recordChip, setRecordChip] = useState<RecordChip>('all');
   const [recordQuery, setRecordQuery] = useState('');
@@ -135,16 +140,18 @@ export function RecordsPharmacyCommandCenter({
       if (!supabase) return;
       if (!silent) setIsRefreshing(true);
       try {
-        const [nextRecords, nextRx, nextMeds, nextTx] = await Promise.all([
+        const [nextRecords, nextRx, nextMeds, nextTx, nextAppts] = await Promise.all([
           fetchClinicalRecords(supabase, nodeId),
           fetchPharmacyPrescriptions(supabase, nodeId),
           fetchFormularyMedicines(supabase, nodeId),
           fetchInventoryTransactions(supabase, nodeId),
+          countTodayAppointments(supabase, nodeId),
         ]);
         setRecords(nextRecords);
         setPrescriptions(nextRx);
         setMedicines(nextMeds);
         setTransactions(nextTx);
+        setAppointmentsToday(nextAppts);
         setLastUpdated(new Date());
       } catch (err: unknown) {
         toast.error(err instanceof Error ? err.message : 'Unable to refresh pharmacy workspace');
@@ -166,13 +173,46 @@ export function RecordsPharmacyCommandCenter({
       .channel(`records_pharmacy_${nodeId}`)
       .on(
         'postgres_changes',
+        { event: '*', schema: 'public', table: 'clinical_medical_records', filter: `hospital_id=eq.${nodeId}` },
+        () => void loadAll(true),
+      )
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'hospital_clinical_records', filter: `hospital_id=eq.${nodeId}` },
+        () => void loadAll(true),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'hospital_appointments', filter: `hospital_id=eq.${nodeId}` },
         () => void loadAll(true),
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'hospital_prescriptions', filter: `hospital_id=eq.${nodeId}` },
         () => void loadAll(true),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'prescriptions', filter: `hospital_id=eq.${nodeId}` },
+        () => void loadAll(true),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'pharmacy_prescriptions', filter: `hospital_id=eq.${nodeId}` },
+        () => void loadAll(true),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'medical_records', filter: `hospital_id=eq.${nodeId}` },
+        () => void loadAll(true),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'pharmacy_inventory', filter: `hospital_id=eq.${nodeId}` },
+        () => {
+          void loadAll(true);
+          onInventoryChanged?.();
+        },
       )
       .on(
         'postgres_changes',
@@ -196,8 +236,8 @@ export function RecordsPharmacyCommandCenter({
   }, [commandFilter]);
 
   const recordsTodayCount = useMemo(
-    () => records.filter((row) => isSameLocalDay(row.created_at)).length,
-    [records],
+    () => Math.max(records.filter((row) => isSameLocalDay(row.created_at)).length, appointmentsToday),
+    [appointmentsToday, records],
   );
   const pendingRxCount = useMemo(
     () => prescriptions.filter((row) => row.status === 'new' || row.status === 'partially_dispensed').length,
@@ -381,15 +421,10 @@ export function RecordsPharmacyCommandCenter({
 
   return (
     <div className="space-y-6">
+      {!hideTitle ? (
       <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3.5">
-          <div className="flex h-11 w-11 shrink-0 aspect-square items-center justify-center p-0.5">
-            <img
-              src="/regal-logo-transparent.png"
-              alt="Regal Hospital"
-              className="h-full w-full object-contain"
-            />
-          </div>
+        <div className="flex items-center gap-3">
+          <RegalHospitalLogo heightClass="h-8" />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-black leading-tight text-slate-900">Records &amp; Pharmacy</h1>
@@ -398,7 +433,7 @@ export function RecordsPharmacyCommandCenter({
               </span>
             </div>
             <p className="mt-0.5 text-xs text-slate-500">
-              Patient medical records, prescriptions, and dispensary management
+              Patient medical records, prescriptions, and pharmacy operations
             </p>
           </div>
         </div>
@@ -426,6 +461,7 @@ export function RecordsPharmacyCommandCenter({
           </button>
         </div>
       </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
@@ -433,7 +469,7 @@ export function RecordsPharmacyCommandCenter({
             id: 'records-today' as const,
             label: 'Records Updated Today',
             value: recordsTodayCount,
-            hint: 'Today’s clinical activity',
+            hint: 'Today’s appointments + clinical notes',
           },
           {
             id: 'pending-rx' as const,
@@ -533,7 +569,7 @@ export function RecordsPharmacyCommandCenter({
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {visibleRecords.map((row) => (
-                      <tr key={row.id}>
+                      <tr key={`${row.id}|${row.uhid}|${row.activity}|${row.created_at}`}>
                         <td className="px-3 py-3 font-mono font-bold">{row.uhid || '—'}</td>
                         <td className="px-3 py-3 font-bold">{row.patient_name}</td>
                         <td className="px-3 py-3 text-slate-600">{row.activity}</td>
@@ -969,6 +1005,42 @@ export function RecordsPharmacyCommandCenter({
               </button>
             </div>
             <div className="flex-1 space-y-4 overflow-y-auto p-5">
+              <div className="rounded-2xl border border-slate-200 p-3">
+                <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Doctor notes</div>
+                <p className="mt-2 text-xs text-slate-800">
+                  {drawerRecord.clinical_notes || drawerRecord.diagnosis || drawerRecord.activity || 'No notes recorded'}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 p-3">
+                <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Vitals</div>
+                {Object.keys(drawerRecord.vitals ?? {}).length === 0 ? (
+                  <p className="mt-2 text-xs text-slate-500">No vitals captured</p>
+                ) : (
+                  <dl className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                    {Object.entries(drawerRecord.vitals ?? {}).map(([key, value]) => (
+                      <div key={key}>
+                        <dt className="text-[10px] font-bold uppercase text-slate-400">{key}</dt>
+                        <dd className="font-bold text-slate-800">{String(value)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </div>
+              <div className="rounded-2xl border border-slate-200 p-3">
+                <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Prescribed medications</div>
+                {(drawerRecord.medications ?? []).length === 0 ? (
+                  <p className="mt-2 text-xs text-slate-500">No medications on this record</p>
+                ) : (
+                  <ul className="mt-2 space-y-1.5 text-xs">
+                    {(drawerRecord.medications ?? []).map((med) => (
+                      <li key={med.name} className="rounded-xl bg-slate-50 px-3 py-2">
+                        <span className="font-bold">{med.name}</span>
+                        <span className="text-slate-500"> · {med.dosage || 'dose n/a'} · {med.frequency || 'freq n/a'}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               {patientTimeline.map((row) => (
                 <div key={row.id} className="rounded-2xl border border-slate-200 p-3">
                   <div className="flex items-center justify-between gap-2">

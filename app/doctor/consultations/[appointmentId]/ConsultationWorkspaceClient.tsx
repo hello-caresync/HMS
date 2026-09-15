@@ -12,12 +12,23 @@ import {
   type ConsultationAppointmentContext,
   type ConsultationMedicationItem,
 } from '@/lib/doctor/command-center/supabase-service';
+import { handoffConsultationToHospitalBilling } from '@/lib/billing/consultation-billing-handoff';
 import { dispatchDigitalPrescription } from '@/lib/doctor/dispatch-prescription';
-import { getDoctorSession, resolveDoctorSessionIdentity } from '@/lib/doctor/session';
+import { createLabOrder } from '@/lib/clinical/lab-orders-service';
+import { createRadiologyOrder } from '@/lib/clinical/radiology-orders-service';
+import { fetchActiveHospitalDoctors } from '@/lib/hospital/hospital-staff-roster';
+import { HOSPITAL_TENANT_ID } from '@/lib/regal/constants';
+import {
+  fetchDoctorCredentialConsultationFee,
+  getDoctorSession,
+  resolveDoctorConsultationFeeFromSources,
+  resolveDoctorSessionIdentity,
+} from '@/lib/doctor/session';
 import { supabase } from '@/lib/supabase/client';
 
 interface MedicationRow extends ConsultationMedicationItem {
   id: string;
+  quantity: string;
 }
 
 const emptyMed = (): MedicationRow => ({
@@ -27,6 +38,7 @@ const emptyMed = (): MedicationRow => ({
   frequency: '1-0-1',
   duration: '5 days',
   instructions: 'After food',
+  quantity: '1',
 });
 
 interface ConsultationWorkspaceClientProps {
@@ -57,6 +69,9 @@ export default function ConsultationWorkspaceClient({
   const [clinicalNotes, setClinicalNotes] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
   const [medications, setMedications] = useState<MedicationRow[]>([emptyMed()]);
+  const [labTestName, setLabTestName] = useState('');
+  const [radiologyStudy, setRadiologyStudy] = useState('');
+  const [orderingDiagnostics, setOrderingDiagnostics] = useState(false);
 
   useEffect(() => {
     if (!appointmentId) return;
@@ -96,6 +111,58 @@ export default function ConsultationWorkspaceClient({
     );
   };
 
+  const handleOrderLab = async () => {
+    if (!appointment || !labTestName.trim()) {
+      toast.error('Enter a lab test name');
+      return;
+    }
+    setOrderingDiagnostics(true);
+    try {
+      const doctorIdentity = resolveDoctorSessionIdentity(getDoctorSession());
+      const result = await createLabOrder(supabase, {
+        appointmentId: String(appointmentId),
+        patientId: String(appointment.patient_id ?? ''),
+        patientName: appointment.patient_name,
+        doctorId: doctorIdentity.employeeId,
+        doctorName: doctorIdentity.doctorName,
+        testName: labTestName.trim(),
+      });
+      if (!result.ok) throw new Error(result.error);
+      toast.success(`Lab order placed: ${labTestName.trim()}`);
+      setLabTestName('');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Lab order failed');
+    } finally {
+      setOrderingDiagnostics(false);
+    }
+  };
+
+  const handleOrderRadiology = async () => {
+    if (!appointment || !radiologyStudy.trim()) {
+      toast.error('Enter an imaging study');
+      return;
+    }
+    setOrderingDiagnostics(true);
+    try {
+      const doctorIdentity = resolveDoctorSessionIdentity(getDoctorSession());
+      const result = await createRadiologyOrder(supabase, {
+        appointmentId: String(appointmentId),
+        patientId: String(appointment.patient_id ?? ''),
+        patientName: appointment.patient_name,
+        doctorId: doctorIdentity.employeeId,
+        doctorName: doctorIdentity.doctorName,
+        studyName: radiologyStudy.trim(),
+      });
+      if (!result.ok) throw new Error(result.error);
+      toast.success(`Radiology order placed: ${radiologyStudy.trim()}`);
+      setRadiologyStudy('');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Radiology order failed');
+    } finally {
+      setOrderingDiagnostics(false);
+    }
+  };
+
   const handleFinalizeConsultation = async () => {
     if (!appointment) return;
 
@@ -121,6 +188,28 @@ export default function ConsultationWorkspaceClient({
         weight: weight || null,
       };
 
+      const doctors = await fetchActiveHospitalDoctors(supabase, HOSPITAL_TENANT_ID);
+      const matchedDoctor = doctors.find(
+        (doc) =>
+          doc.id === doctorIdentity.employeeId ||
+          doc.full_name === doctorIdentity.doctorName,
+      );
+      const profileFee = await fetchDoctorCredentialConsultationFee(supabase, getDoctorSession());
+      const consultationFee = resolveDoctorConsultationFeeFromSources([
+        appointment as Record<string, unknown>,
+        matchedDoctor,
+        getDoctorSession(),
+        { consultationFee: profileFee },
+      ]);
+
+      const medicineLines = prescribedMedicines.map((med) => ({
+        name: med.name.trim(),
+        dosage: med.dosage,
+        timing: med.frequency,
+        duration: med.duration,
+        qty: Math.max(1, Number(med.quantity) || 1),
+      }));
+
       const rxResult = await dispatchDigitalPrescription(supabase, {
         appointmentId: targetAppointmentId,
         patientId: targetPatientId || null,
@@ -131,17 +220,50 @@ export default function ConsultationWorkspaceClient({
         diagnosis: diagnosis.trim() || clinicalFindings.trim() || chiefComplaint.trim(),
         clinicalNotes: [clinicalFindings.trim(), clinicalNotes.trim()].filter(Boolean).join('\n'),
         doctorInstructions: doctorAdvice,
-        medications: prescribedMedicines.map((med) => ({
-          name: med.name.trim(),
-          dosage: med.dosage,
-          timing: med.frequency,
-          duration: med.duration,
-        })),
+        medications: medicineLines,
         vitals: vitalsSnapshot,
+        consultationFee,
+        skipBilling: true,
       });
 
       if (!rxResult.ok) {
         throw new Error(rxResult.error || 'Failed to write prescription to the patient app.');
+      }
+
+      const billing = await handoffConsultationToHospitalBilling(
+        supabase,
+        {
+          id: targetAppointmentId,
+          appointment_id: targetAppointmentId,
+          patient_id: targetPatientId || null,
+          patient_name: patientName,
+          token_number: appointment.token_number ?? null,
+          _source_table: 'appointments',
+          department: doctorIdentity.department || doctorIdentity.specialization,
+          booking_source: 'patient_app',
+        },
+        {
+          doctorId: doctorIdentity.employeeId,
+          doctorName: doctorIdentity.doctorName,
+          department: doctorIdentity.department || doctorIdentity.specialization,
+          consultationFee,
+        },
+        {
+          consultationFee,
+          medicines: [],
+          prescribedItems: prescribedMedicines.map((med) => ({
+            drug: med.name.trim(),
+            dosage: med.dosage,
+            frequency: med.frequency,
+            duration: med.duration,
+            instructions: med.instructions || '',
+            quantity: Math.max(1, Number(med.quantity) || 1),
+          })),
+        },
+      );
+
+      if (!billing.ok) {
+        throw new Error(billing.error || 'Failed to create hospital billing record.');
       }
 
       try {
@@ -170,7 +292,7 @@ export default function ConsultationWorkspaceClient({
         patientId: targetPatientId || null,
         patientName,
         tokenNumber: appointment.token_number ?? null,
-        status: 'completed',
+        status: 'billing_pending',
       });
 
       if (!appointmentUpdated) {
@@ -295,6 +417,48 @@ export default function ConsultationWorkspaceClient({
         </div>
       </section>
 
+      <section className="rounded-2xl border border-slate-200 bg-[#FAFDFC] p-6 shadow-sm">
+        <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">
+          Diagnostics Orders
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
+            <label className="text-[10px] font-bold uppercase text-slate-400">Lab test</label>
+            <input
+              value={labTestName}
+              onChange={(e) => setLabTestName(e.target.value)}
+              placeholder="e.g. CBC, LFT, HbA1c"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            />
+            <button
+              type="button"
+              disabled={orderingDiagnostics}
+              onClick={() => void handleOrderLab()}
+              className="rounded-xl bg-teal-600 px-3 py-2 text-xs font-bold text-white hover:bg-teal-700 disabled:opacity-50"
+            >
+              Order lab test
+            </button>
+          </div>
+          <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
+            <label className="text-[10px] font-bold uppercase text-slate-400">Radiology study</label>
+            <input
+              value={radiologyStudy}
+              onChange={(e) => setRadiologyStudy(e.target.value)}
+              placeholder="e.g. Chest X-Ray, MRI Brain"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            />
+            <button
+              type="button"
+              disabled={orderingDiagnostics}
+              onClick={() => void handleOrderRadiology()}
+              className="rounded-xl bg-teal-600 px-3 py-2 text-xs font-bold text-white hover:bg-teal-700 disabled:opacity-50"
+            >
+              Order imaging
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">
@@ -312,7 +476,7 @@ export default function ConsultationWorkspaceClient({
           {medications.map((med) => (
             <div
               key={med.id}
-              className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-5"
+              className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-6"
             >
               <input
                 placeholder="Medicine name"
@@ -337,6 +501,20 @@ export default function ConsultationWorkspaceClient({
                 value={med.duration}
                 onChange={(e) => updateMed(med.id, 'duration', e.target.value)}
                 className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+              />
+              <input
+                placeholder="Qty"
+                type="number"
+                min={1}
+                value={med.quantity}
+                onChange={(e) =>
+                  setMedications((prev) =>
+                    prev.map((row) =>
+                      row.id === med.id ? { ...row, quantity: e.target.value } : row,
+                    ),
+                  )
+                }
+                className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm font-mono"
               />
             </div>
           ))}

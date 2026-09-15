@@ -1,29 +1,47 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
 import {
   calculateNextOpdTokenNumber,
 } from '@/lib/hospital/operations/appointment-sync';
+import { REGAL_FACILITY_CODE, REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
+import { isHospitalUuid, resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
+import { formatDoctorBookingOptionLabel } from '@/lib/hospital/doctors';
 import {
-  HOSPITAL_TENANT_ID,
-  REGAL_FACILITY_CODE,
-  REGAL_HOSPITAL_ID,
-} from '@/lib/regal/constants';
-import {
-  fetchActiveHospitalDoctors,
+  fetchPatientBookableDoctors,
   formatConsultationFee,
   type DoctorStaffRecord,
 } from '@/lib/hospital/hospital-staff-roster';
-import { isUuidColumnError, isUuidValue } from '@/lib/hospital/hospital-node';
-import { readPatientPortalSession, mintPatientUhid } from '@/lib/patient/portal-session';
 import {
-  getActivePatientId,
-  getActivePatientName,
-  persistActivePatientNode,
-} from '@/lib/patient/active-patient-node';
+  DEFAULT_HOSPITAL_DEPARTMENT,
+  doctorsForDepartment,
+  mergeDepartmentOptions,
+} from '@/lib/hospital/departments';
+import {
+  insertAppointmentRowResilient,
+  missingColumnFromPostgrestError,
+} from '@/lib/hospital/appointments';
+import { resolveDoctorBookingIdentity } from '@/lib/hospital/doctor-booking-identity';
+import { isUuidValue } from '@/lib/hospital/hospital-node';
+import { bookDoctorTimeSlot } from '@/lib/doctor/scheduling/doctor-availability';
+import { DynamicSlotPicker } from '@/components/patient/DynamicSlotPicker';
+import {
+  assertSlotAvailableForBooking,
+  loadDynamicDoctorSchedule,
+  resolveAutoSelectedSlot,
+} from '@/lib/scheduling/doctor-slot-service';
+import type { DynamicSlot } from '@/lib/scheduling/dynamic-slots';
+import { consultationDurationMinutes, classifyConditionTier } from '@/lib/scheduling/dynamic-slots';
+import { parsePatientAge, validatePhoneField } from '@/lib/hospital/indian-patient';
+import {
+  mintPatientUhid,
+  readPatientPortalSession,
+  resolveActivePatientFormIdentity,
+} from '@/lib/patient/portal-session';
+import { getActivePatientId, persistActivePatientNode } from '@/lib/patient/active-patient-node';
 import {
   Stethoscope,
   Calendar,
@@ -53,7 +71,7 @@ interface FamilyMemberOption {
 
 function toDirectoryItem(doc: DoctorStaffRecord): DoctorDirectoryItem {
   return {
-    id: doc.id,
+    id: doc.doctor_id || doc.id,
     name: doc.full_name,
     department: doc.department,
     fee: formatConsultationFee(doc.consultation_fee),
@@ -84,24 +102,6 @@ function findDoctorDirectoryEntry(
   doctorName: string,
 ): DoctorDirectoryItem | undefined {
   return doctors.find((doctor) => doctor.name === doctorName);
-}
-
-function findDoctorFromUrlParam(
-  doctors: DoctorDirectoryItem[],
-  docParam: string,
-): DoctorDirectoryItem | undefined {
-  const normalized = decodeURIComponent(docParam).trim().toLowerCase();
-
-  return doctors.find((doctor) => {
-    const doctorName = doctor.name.toLowerCase();
-    const doctorLastName = doctorName.replace(/^dr\.?\s*/i, '');
-    return (
-      doctorName === normalized ||
-      doctorName.includes(normalized) ||
-      normalized.includes(doctorLastName) ||
-      doctorLastName.includes(normalized)
-    );
-  });
 }
 
 function mirrorAppointmentToLocalStorage(appointment: Record<string, unknown>): void {
@@ -149,6 +149,7 @@ interface FullyAliasedBookingInput {
   hospitalName: string;
   doctorName: string;
   doctorCode: string;
+  doctorUuid?: string | null;
   department: string;
   appointmentDate: string;
   slotTime: string;
@@ -156,20 +157,30 @@ interface FullyAliasedBookingInput {
   reason: string;
   tokenNumber: number;
   nowIso: string;
+  age?: number | null;
+  gender?: string;
 }
 
 /** Canonical Supabase insert — every column alias variation in one object. */
 function buildFullyAliasedBookingPayload(input: FullyAliasedBookingInput): Record<string, unknown> {
   const tokenString = formatBookingTokenLabel(input.tokenNumber);
   const patientName = input.patientName.trim();
-  const doctorCode = String(input.doctorCode || '').trim().toUpperCase();
-  const doctorName = input.doctorName.trim();
-  const department = input.department.trim();
+  const doctorIdentity = resolveDoctorBookingIdentity({
+    doctor_uuid: input.doctorUuid,
+    doctor_code: input.doctorCode,
+    doctor_id: input.doctorUuid || input.doctorCode,
+    id: input.doctorUuid,
+    full_name: input.doctorName,
+    department: input.department,
+  });
+  const doctorCode = doctorIdentity.doctorCode || String(input.doctorCode || '').trim().toUpperCase();
+  const doctorUuid = doctorIdentity.doctorUuid;
+  const doctorName = doctorIdentity.doctorName || input.doctorName.trim();
+  const department = doctorIdentity.department || input.department.trim();
   const clinicalReason = input.reason.trim();
   const slotTime = input.slotTime;
   const feeDisplay = input.consultationFee;
   const seq = Number.isFinite(input.tokenNumber) && input.tokenNumber > 0 ? input.tokenNumber : 1;
-  const hospitalId = input.hospitalId.trim() || HOSPITAL_TENANT_ID;
 
   const payload: Record<string, unknown> = {
     name: patientName,
@@ -178,18 +189,21 @@ function buildFullyAliasedBookingPayload(input: FullyAliasedBookingInput): Recor
     phone: input.phone,
     patient_phone: input.phone,
     doctor_name: doctorName,
-    doctor_code: doctorCode,
-    doctor_id: doctorCode,
-    doctor_employee_id: doctorCode,
+    doctor_code: doctorCode || doctorUuid,
+    doctor_uuid: doctorUuid,
+    doctor_id: doctorUuid || doctorCode,
+    doctor_employee_id: doctorCode || doctorUuid,
     department,
-    hospital_id: hospitalId,
-    hospital_code: hospitalId,
+    hospital_id: REGAL_HOSPITAL_CODE,
+    hospital_code: REGAL_HOSPITAL_CODE,
     facility_code: REGAL_FACILITY_CODE,
     hospital_name: input.hospitalName || REGAL_HOSPITAL,
     appointment_date: input.appointmentDate,
     slot_time: slotTime,
     appointment_time: slotTime,
     time_slot: slotTime,
+    slot_duration_minutes: consultationDurationMinutes(classifyConditionTier(input.reason)),
+    consultation_duration_minutes: consultationDurationMinutes(classifyConditionTier(input.reason)),
     fee: feeDisplay,
     consultation_fee: feeDisplay,
     reason: clinicalReason,
@@ -200,12 +214,20 @@ function buildFullyAliasedBookingPayload(input: FullyAliasedBookingInput): Recor
     token_label: tokenString,
     source: PATIENT_BOOKING_SOURCE,
     booking_source: PATIENT_BOOKING_SOURCE,
-    status: 'waiting',
+    status: PATIENT_BOOKING_STATUS,
     queue_status: PATIENT_BOOKING_STATUS,
     billing_status: 'pending_checkout',
     created_at: input.nowIso,
     updated_at: input.nowIso,
   };
+
+  if (typeof input.age === 'number' && Number.isFinite(input.age)) {
+    payload.age = input.age;
+    payload.patient_age = input.age;
+  }
+  if (input.gender?.trim()) {
+    payload.gender = input.gender.trim();
+  }
 
   if (isUuidValue(input.patientId)) {
     payload.patient_id = input.patientId;
@@ -231,7 +253,8 @@ function buildAppointmentsLedgerPayload(input: FullyAliasedBookingInput): Record
 
 function buildOpdQueuePayload(input: FullyAliasedBookingInput): Record<string, unknown> {
   return {
-    hospital_id: input.hospitalId,
+    hospital_id: REGAL_HOSPITAL_CODE,
+    hospital_code: REGAL_HOSPITAL_CODE,
     hospital_name: input.hospitalName || REGAL_HOSPITAL,
     token_number: formatBookingTokenLabel(input.tokenNumber),
     uhid: input.uhid,
@@ -246,11 +269,6 @@ function buildOpdQueuePayload(input: FullyAliasedBookingInput): Record<string, u
   };
 }
 
-function missingColumnFromError(message: string | null | undefined): string | null {
-  const match = String(message ?? '').match(/Could not find the '([^']+)' column/i);
-  return match?.[1] ?? null;
-}
-
 function toDirectDbPayload(payload: Record<string, unknown>): Record<string, unknown> {
   const { hospital_code: _hospitalCode, facility_code: _facilityCode, ...dbPayload } = payload;
   return dbPayload;
@@ -262,31 +280,17 @@ async function insertDirectLedgerRow(
 ): Promise<{ data: Record<string, unknown> | null; errorMessage: string | null }> {
   try {
     const dbPayload: Record<string, unknown> = toDirectDbPayload(payload);
-    let { data, error } = await supabase.from(table).insert([dbPayload]).select().maybeSingle();
-
-    let retries = 0;
-    while (error && retries < 8) {
-      const missingColumn = missingColumnFromError(error.message);
-      if (!missingColumn || !(missingColumn in dbPayload)) break;
-      delete dbPayload[missingColumn];
-      retries += 1;
-      const retry = await supabase.from(table).insert([dbPayload]).select().maybeSingle();
-      data = retry.data;
-      error = retry.error;
-    }
-
-    if (error && isUuidColumnError(error.message) && table === 'appointments') {
-      const uuidPayload: Record<string, unknown> = { ...dbPayload, hospital_id: REGAL_HOSPITAL_ID };
-      const retry = await supabase.from(table).insert([uuidPayload]).select().maybeSingle();
-      data = retry.data;
-      error = retry.error;
-    }
+    const { data, error } = await insertAppointmentRowResilient(supabase, dbPayload, { table });
 
     if (error) {
+      const missingColumn = missingColumnFromPostgrestError(error.message);
+      if (missingColumn) {
+        console.warn(`[${table}] omitted missing column: ${missingColumn}`);
+      }
       return { data: null, errorMessage: error.message || 'Booking failed' };
     }
 
-    return { data: (data as Record<string, unknown> | null) ?? null, errorMessage: null };
+    return { data, errorMessage: null };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : `${table} insert failed`;
     return { data: null, errorMessage: message };
@@ -324,35 +328,6 @@ function buildConfirmedLocalMirrorRecord(
   };
 }
 
-function applyClinicianFromUrlParams(
-  doctors: DoctorDirectoryItem[],
-  docParam: string | null,
-  deptParam: string | null,
-  feeParam: string | null,
-  setters: {
-    setDoctor: (value: string) => void;
-    setDoctorCode: (value: string) => void;
-    setDept: (value: string) => void;
-    setFee: (value: string) => void;
-  },
-): void {
-  if (docParam) {
-    const match = findDoctorFromUrlParam(doctors, docParam);
-    if (match) {
-      setters.setDoctor(match.name);
-      setters.setDoctorCode(match.id);
-      setters.setDept(match.department);
-      setters.setFee(match.fee);
-      return;
-    }
-
-    setters.setDoctor(decodeURIComponent(docParam));
-  }
-
-  if (deptParam) setters.setDept(decodeURIComponent(deptParam));
-  if (feeParam) setters.setFee(decodeURIComponent(feeParam));
-}
-
 export default function BookAppointmentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -366,15 +341,20 @@ export default function BookAppointmentPage() {
   const [isLoadingDoctors, setIsLoadingDoctors] = useState(true);
   const [selectedDoctorName, setSelectedDoctorName] = useState<string>('');
   const [selectedDoctorCode, setSelectedDoctorCode] = useState<string>('');
-  const [selectedDept, setSelectedDept] = useState<string>('');
+  const [selectedDept, setSelectedDept] = useState<string>(DEFAULT_HOSPITAL_DEPARTMENT);
   const [consultationFee, setConsultationFee] = useState<string>('');
   const [reason, setReason] = useState<string>('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
 
   // SCHEDULING DETAILS
   const [appointmentDate, setAppointmentDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
-  const [slotTime, setSlotTime] = useState<string>('10:30 AM');
+  const [slotTime, setSlotTime] = useState<string>('');
+  const [dynamicSlots, setDynamicSlots] = useState<DynamicSlot[]>([]);
+  const [selectedSlotId, setSelectedSlotId] = useState<string>('');
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -395,50 +375,71 @@ export default function BookAppointmentPage() {
     const applyRows = (rows: DoctorStaffRecord[]) => {
       if (cancelled) return;
       setDoctorList(rows);
-      const directory = rows.map(toDirectoryItem);
-      applyClinicianFromUrlParams(
-        directory,
-        searchParams.get('doctor'),
-        searchParams.get('department'),
-        searchParams.get('fee'),
-        {
-          setDoctor: setSelectedDoctorName,
-          setDoctorCode: setSelectedDoctorCode,
-          setDept: setSelectedDept,
-          setFee: setConsultationFee,
-        },
-      );
-      const preselected =
-        rows.find((row) => row.id === searchParams.get('doctor') || row.full_name === searchParams.get('doctor')) ||
-        rows[0] ||
+      const requested = searchParams.get('doctor');
+      const requestedMatch =
+        rows.find((row) => row.id === requested || row.full_name === requested) ||
+        (requested
+          ? rows.find((row) => row.full_name.toLowerCase().includes(requested.toLowerCase()))
+          : null) ||
         null;
-      if (preselected && !searchParams.get('doctor')) {
-        setSelectedDoctor(preselected);
-        setSelectedDoctorName(preselected.full_name);
-        setSelectedDoctorCode(preselected.id);
-        setSelectedDept(preselected.department);
-        setConsultationFee(formatConsultationFee(preselected.consultation_fee));
-      } else if (preselected) {
-        setSelectedDoctor(preselected);
-      } else {
-        setSelectedDoctor(null);
-      }
+      const department = requestedMatch?.department || DEFAULT_HOSPITAL_DEPARTMENT;
+      setSelectedDept(department);
+      const inDepartment = doctorsForDepartment(rows, department);
+      const preselected =
+        requestedMatch &&
+        inDepartment.some(
+          (row) =>
+            row.doctor_id === requestedMatch.doctor_id || row.id === requestedMatch.id,
+        )
+          ? requestedMatch
+          : null;
+      setSelectedDoctor(preselected);
+      setSelectedDoctorName(preselected?.full_name ?? '');
+      setSelectedDoctorCode(preselected?.doctor_id ?? preselected?.id ?? '');
+      setConsultationFee(preselected ? formatConsultationFee(preselected.consultation_fee) : '');
       setIsLoadingDoctors(false);
     };
 
     setIsLoadingDoctors(true);
-    void fetchActiveHospitalDoctors(supabase, HOSPITAL_TENANT_ID).then(applyRows);
+    let channel: ReturnType<NonNullable<typeof supabase>['channel']> | undefined;
 
-    const channel = supabase
-      ?.channel('patient_book_doctors')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'hospital_staff', filter: `hospital_id=eq.${HOSPITAL_TENANT_ID}` },
-        () => {
-          void fetchActiveHospitalDoctors(supabase, HOSPITAL_TENANT_ID).then(applyRows);
-        },
-      )
-      .subscribe();
+    void (async () => {
+      const hospitalId =
+        readPatientPortalSession()?.hospital_id ||
+        (await resolveHospitalUuid(supabase)) ||
+        REGAL_HOSPITAL_CODE;
+
+      const loadBookableDoctors = () => {
+        void fetchPatientBookableDoctors(supabase, hospitalId)
+          .then(applyRows)
+          .catch((err: unknown) => {
+            console.error('Error fetching registered doctors:', err);
+            if (!cancelled) {
+              setDoctorList([]);
+              setSelectedDoctor(null);
+              setSelectedDoctorName('');
+              setSelectedDoctorCode('');
+              setConsultationFee('');
+              setIsLoadingDoctors(false);
+            }
+          });
+      };
+
+      loadBookableDoctors();
+
+      const refreshDoctors = () => {
+        loadBookableDoctors();
+      };
+
+      channel = supabase
+        ?.channel('patient_book_doctors')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'doctors', filter: `hospital_id=eq.${hospitalId}` },
+          refreshDoctors,
+        )
+        .subscribe();
+    })();
 
     return () => {
       cancelled = true;
@@ -446,9 +447,46 @@ export default function BookAppointmentPage() {
     };
   }, [searchParams]);
 
+  useEffect(() => {
+    const doctorCode = selectedDoctorCode || selectedDoctor?.id;
+    if (!doctorCode || !appointmentDate) {
+      setDynamicSlots([]);
+      setSlotTime('');
+      setSelectedSlotId('');
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingSlots(true);
+    void loadDynamicDoctorSchedule(supabase, doctorCode, appointmentDate, reason).then(({ slots }) => {
+      if (cancelled) return;
+      setDynamicSlots(slots);
+      const auto = resolveAutoSelectedSlot(slots, slotTime);
+      if (auto) {
+        setSlotTime(auto.time);
+        setSelectedSlotId(`dynamic-${doctorCode}-${appointmentDate}-${auto.time.replace(/\s/g, '')}`);
+      } else {
+        setSlotTime('');
+        setSelectedSlotId('');
+      }
+      setLoadingSlots(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [appointmentDate, selectedDoctor?.id, selectedDoctorCode, reason]);
+
   const loadPatientAndFamilyOptions = async () => {
-    const activePatientId = getActivePatientId();
-    let primaryName = getActivePatientName();
+    const sessionIdentity = resolveActivePatientFormIdentity();
+    if (!sessionIdentity) {
+      toast.error('Session expired. Please log in again.');
+      router.push('/patient/login');
+      return;
+    }
+
+    const activePatientId = sessionIdentity.patient_id || getActivePatientId();
+    let primaryName = sessionIdentity.patient_name;
     let familyMembersList: FamilyMemberOption[] = [];
 
     if (typeof window !== 'undefined') {
@@ -457,15 +495,24 @@ export default function BookAppointmentPage() {
       if (savedProfile) {
         try {
           const parsed = JSON.parse(savedProfile) as {
+            patient_id?: string;
+            id?: string;
             full_name?: string;
             family_members?: FamilyMemberOption[];
           };
-          if (parsed.full_name) primaryName = parsed.full_name;
-          if (Array.isArray(parsed.family_members)) {
-            familyMembersList = parsed.family_members;
+          const profilePatientId = String(parsed.patient_id ?? parsed.id ?? '').trim();
+          const profileMatchesSession =
+            !profilePatientId ||
+            profilePatientId === activePatientId ||
+            profilePatientId === sessionIdentity.patient_id;
+
+          if (profileMatchesSession) {
+            if (Array.isArray(parsed.family_members)) {
+              familyMembersList = parsed.family_members;
+            }
           }
         } catch {
-          /* use active node name */
+          /* ignore stale cached profile */
         }
       }
     }
@@ -489,8 +536,13 @@ export default function BookAppointmentPage() {
           profileQueries.find((result) => !result.error && result.data)?.data ?? null;
 
         if (profileRecord) {
-          if (profileRecord.full_name) primaryName = String(profileRecord.full_name);
-          if (Array.isArray(profileRecord.family_members)) {
+          const profilePatientId = String(profileRecord.patient_id ?? profileRecord.id ?? '').trim();
+          const profileMatchesSession =
+            !profilePatientId ||
+            profilePatientId === activePatientId ||
+            profilePatientId === sessionIdentity.patient_id;
+
+          if (profileMatchesSession && Array.isArray(profileRecord.family_members)) {
             familyMembersList = profileRecord.family_members as FamilyMemberOption[];
           }
         }
@@ -513,18 +565,40 @@ export default function BookAppointmentPage() {
     setPatientId(activePatientId);
     setPatientOptions(options);
     setSelectedPatientName(options[0]?.name ?? `${primaryName} (Self)`);
+    if (sessionIdentity.age != null && Number.isFinite(sessionIdentity.age)) {
+      setAge(String(sessionIdentity.age));
+    }
+    if (sessionIdentity.gender) setGender(sessionIdentity.gender);
   };
 
-  // Handle selecting a doctor from the full 41-doctor list
-  const handleDoctorSelectionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const doctorId = e.target.value;
-    const match = doctorList.find((d) => d.id === doctorId);
-    if (!match) return;
+  const applySelectedDoctor = (match: DoctorStaffRecord | null) => {
     setSelectedDoctor(match);
-    setSelectedDoctorName(match.full_name);
-    setSelectedDoctorCode(match.id);
-    setSelectedDept(match.department);
-    setConsultationFee(formatConsultationFee(match.consultation_fee));
+    setSelectedDoctorName(match?.full_name ?? '');
+    setSelectedDoctorCode(match?.doctor_id ?? match?.id ?? '');
+    setConsultationFee(match ? formatConsultationFee(match.consultation_fee) : '');
+  };
+
+  const handleDoctorSelectionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const match =
+      doctorList.find(
+        (doctor) => doctor.doctor_id === e.target.value || doctor.id === e.target.value,
+      ) ?? null;
+    applySelectedDoctor(match);
+  };
+
+  const departmentOptions = useMemo(
+    () => mergeDepartmentOptions(doctorList.map((doc) => doc.department)),
+    [doctorList],
+  );
+  const doctorsInDepartment = useMemo(
+    () => doctorsForDepartment(doctorList, selectedDept || DEFAULT_HOSPITAL_DEPARTMENT),
+    [doctorList, selectedDept],
+  );
+
+  const handleDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const department = e.target.value;
+    setSelectedDept(department);
+    applySelectedDoctor(null);
   };
 
   const handleBookAppointment = async (e?: React.FormEvent) => {
@@ -561,27 +635,73 @@ export default function BookAppointmentPage() {
         return;
       }
 
+      const departmentEligible = doctorsInDepartment.some(
+        (doctor) =>
+          doctor.doctor_id === selectedDoctor.doctor_id || doctor.id === selectedDoctor.id,
+      );
+      if (!departmentEligible) {
+        setErrorMessage(`Select a doctor assigned to ${selectedDept}.`);
+        toast.error('Selected doctor is not assigned to this department.');
+        return;
+      }
+
       const rawDoctorName = selectedDoctorName.trim();
       const rawDoctorCode = selectedDoctorCode.trim().toUpperCase();
-      const department = (selectedDept || doctorEntry?.department || '').trim();
+      const department = (selectedDept || selectedDoctor.department || doctorEntry?.department || '').trim();
       if (!department) {
         setErrorMessage('Doctor department is required.');
         toast.error('Doctor department is required.');
         return;
       }
 
-      const targetHospitalId = patientSession.hospital_id || HOSPITAL_TENANT_ID;
+      const parsedAge = parsePatientAge(age);
+      if (parsedAge == null) {
+        setErrorMessage('Enter a valid patient age between 1 and 120.');
+        toast.error('Patient age is required.');
+        return;
+      }
+      const phoneCheck = validatePhoneField(patientSession.phone, true);
+      if (!phoneCheck.ok) {
+        setErrorMessage(phoneCheck.message);
+        toast.error(phoneCheck.message);
+        return;
+      }
+      const bookingPhone = phoneCheck.phone!;
+
+      const targetHospitalId = REGAL_HOSPITAL_CODE;
       const tokenUhid = patientSession.uhid || mintPatientUhid();
-      const selectedTime = slotTime;
+      const resolvedDate = appointmentDate || new Date().toISOString().split('T')[0];
+      const selectedTime = slotTime.trim();
+      if (!selectedTime) {
+        setErrorMessage('Select an available time slot before confirming.');
+        toast.error('Time slot is required.');
+        return;
+      }
+
+      const doctorIdentity = resolveDoctorBookingIdentity({
+        doctor_uuid: selectedDoctor.id,
+        doctor_code: rawDoctorCode,
+        doctor_id: selectedDoctor.doctor_id,
+        id: selectedDoctor.id,
+        full_name: rawDoctorName,
+        department,
+      });
+      const bookingDoctorKey = doctorIdentity.doctorUuid || doctorIdentity.doctorCode || rawDoctorCode;
+
+      await assertSlotAvailableForBooking(supabase, {
+        doctorId: bookingDoctorKey,
+        appointmentDate: resolvedDate,
+        slotTime: selectedTime,
+      });
+
       const calculatedToken = await calculateNextTokenNumber(
-        rawDoctorCode,
+        bookingDoctorKey,
         rawDoctorName,
-        appointmentDate,
+        resolvedDate,
       );
       const clinicalReason = reason.trim();
       const nowIso = new Date().toISOString();
       const resolvedPatientId = resolveBookingPatientId();
-      const resolvedDate = appointmentDate || new Date().toISOString().split('T')[0];
 
       persistActivePatientNode(resolvedPatientId, cleanPatientName);
 
@@ -589,18 +709,23 @@ export default function BookAppointmentPage() {
         patientId: resolvedPatientId,
         patientName: cleanPatientName,
         uhid: tokenUhid,
-        phone: patientSession.phone,
+        phone: bookingPhone,
         hospitalId: targetHospitalId,
         hospitalName: patientSession.hospital_name,
         doctorName: rawDoctorName,
-        doctorCode: rawDoctorCode,
+        doctorCode: doctorIdentity.doctorCode || rawDoctorCode,
+        doctorUuid: doctorIdentity.doctorUuid,
         department,
         appointmentDate: resolvedDate,
         slotTime: selectedTime,
-        consultationFee,
+        consultationFee: selectedDoctor
+          ? formatConsultationFee(selectedDoctor.consultation_fee)
+          : consultationFee,
         reason: clinicalReason,
         tokenNumber: calculatedToken,
         nowIso,
+        age: parsedAge,
+        gender: gender.trim() || patientSession.gender,
       };
 
       const patientPayload = buildPatientAppointmentPayload(bookingInput);
@@ -631,6 +756,23 @@ export default function BookAppointmentPage() {
         setErrorMessage(`Booking failed: ${failMessage}`);
         toast.error(`Booking failed: ${failMessage}`);
         return;
+      }
+
+      const appointmentRecordId = String(
+        savedRecord.appointment_id ?? savedRecord.id ?? appointmentsPayload.appointment_id ?? '',
+      );
+      if (selectedSlotId && appointmentRecordId) {
+        const slotResult = await bookDoctorTimeSlot(
+          supabase,
+          selectedSlotId,
+          appointmentRecordId,
+          resolvedPatientId,
+          cleanPatientName,
+        );
+        if (!slotResult.ok) {
+          toast.error(slotResult.error ?? 'Selected slot was taken. Pick another slot.');
+          return;
+        }
       }
 
       mirrorAppointmentToLocalStorage(
@@ -749,42 +891,91 @@ export default function BookAppointmentPage() {
           </select>
         </div>
 
-        {/* CLINICIAN (ALL 41 DOCTORS INCLUDED) */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-[10px] font-black uppercase text-[#227B6B]">
+            Age (years) *
+            <input
+              required
+              type="number"
+              min={1}
+              max={120}
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              placeholder="Enter age"
+              className="mt-1.5 w-full rounded-2xl border border-[#D5E8E3] bg-white p-4 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
+            />
+          </label>
+          <label className="block text-[10px] font-black uppercase text-[#227B6B]">
+            Gender
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="mt-1.5 w-full rounded-2xl border border-[#D5E8E3] bg-white p-4 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
+            >
+              <option value="">Select gender</option>
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+        </div>
+
         <div>
           <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
-            <User className="h-3.5 w-3.5 text-[#227B6B]" /> SELECT CLINICIAN ({doctorList.length || 41} SPECIALISTS AVAILABLE) *
+            <Stethoscope className="h-3.5 w-3.5 text-[#227B6B]" /> CLINICAL DEPARTMENT *
           </label>
           <select
-            value={selectedDoctor?.id || selectedDoctorCode}
+            required
+            value={selectedDept}
+            onChange={handleDepartmentChange}
+            disabled={isSubmitting}
+            className="w-full rounded-2xl border border-[#D5E8E3] bg-white p-4 text-xs font-black text-[#113831] focus:border-[#113831] focus:outline-none shadow-sm cursor-pointer disabled:opacity-60"
+          >
+            {departmentOptions.map((dept) => (
+              <option key={dept} value={dept}>
+                {dept}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
+            <User className="h-3.5 w-3.5 text-[#227B6B]" /> SELECT CLINICIAN *
+          </label>
+          <select
+            value={selectedDoctor?.doctor_id || selectedDoctorCode}
             onChange={handleDoctorSelectionChange}
-            disabled={isLoadingDoctors || isSubmitting}
+            disabled={isLoadingDoctors || isSubmitting || doctorList.length === 0}
             className="w-full rounded-2xl border border-[#D5E8E3] bg-white p-4 text-xs font-black text-[#113831] focus:border-[#113831] focus:outline-none shadow-sm cursor-pointer disabled:opacity-60"
           >
             {isLoadingDoctors ? (
               <option value="">Loading specialists…</option>
+            ) : doctorsInDepartment.length === 0 ? (
+              <option value="" disabled>
+                No doctors assigned to {selectedDept}
+              </option>
             ) : (
-              doctorList.map((doc) => (
-                <option key={doc.id} value={doc.id}>
-                  {doc.full_name} — {doc.department} ({formatConsultationFee(doc.consultation_fee)})
-                </option>
-              ))
+              <>
+                <option value="">Select consulting doctor</option>
+                {doctorsInDepartment.map((doc) => {
+                  const doctorKey = doc.doctor_id || doc.id;
+                  return (
+                    <option key={doctorKey} value={doctorKey}>
+                      {formatDoctorBookingOptionLabel(doc)}
+                    </option>
+                  );
+                })}
+              </>
             )}
           </select>
-          {selectedDoctor && (
-            <div className="mt-2 rounded-xl border border-[#D5E8E3] bg-[#EAF5F2]/60 px-3 py-2 text-[11px] font-semibold text-[#113831]">
-              {selectedDoctor.department}
-              {selectedDoctor.qualification ? ` · ${selectedDoctor.qualification}` : ''}
-              {' · '}
-              {formatConsultationFee(selectedDoctor.consultation_fee)}
-            </div>
-          )}
         </div>
 
         {/* DEPARTMENT & FEE SUMMARY */}
         <div className="grid gap-6 md:grid-cols-2">
           <div>
             <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
-              <Stethoscope className="h-3.5 w-3.5 text-[#227B6B]" /> CLINICAL DEPARTMENT
+              ASSIGNED DEPARTMENT
             </label>
             <input
               type="text"
@@ -840,22 +1031,19 @@ export default function BookAppointmentPage() {
             <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
               <Clock className="h-3.5 w-3.5 text-[#227B6B]" /> TIME SLOT *
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {['09:30 AM', '10:30 AM', '11:30 AM', '02:00 PM', '03:30 PM', '05:00 PM'].map((slot) => (
-                <button
-                  type="button"
-                  key={slot}
-                  onClick={() => setSlotTime(slot)}
-                  className={`p-2.5 rounded-xl text-[11px] font-black border transition ${
-                    slotTime === slot
-                      ? 'bg-[#113831] text-white border-[#113831] shadow-sm'
-                      : 'bg-[#F4F8F7] text-[#0E2924] border-[#D5E8E3] hover:border-[#113831]'
-                  }`}
-                >
-                  {slot}
-                </button>
-              ))}
-            </div>
+            <DynamicSlotPicker
+              variant="grid"
+              slots={dynamicSlots}
+              selectedTime={slotTime}
+              loading={loadingSlots}
+              clinicalReason={reason}
+              onSelect={(slot) => {
+                setSlotTime(slot.time);
+                setSelectedSlotId(
+                  `dynamic-${selectedDoctorCode || selectedDoctor?.id}-${appointmentDate}-${slot.time.replace(/\s/g, '')}`,
+                );
+              }}
+            />
           </div>
         </div>
 
@@ -868,7 +1056,15 @@ export default function BookAppointmentPage() {
         {/* SUBMIT BUTTON */}
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={
+            isSubmitting ||
+            isLoadingDoctors ||
+            loadingSlots ||
+            !selectedDoctor ||
+            doctorsInDepartment.length === 0 ||
+            !slotTime ||
+            !dynamicSlots.some((slot) => slot.isSelectable)
+          }
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#113831] py-4 text-xs font-black text-white shadow-lg hover:bg-[#227B6B] transition disabled:opacity-50"
         >
           {isSubmitting ? (

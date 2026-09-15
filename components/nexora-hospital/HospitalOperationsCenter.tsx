@@ -63,6 +63,7 @@ import {
   SEED_PRESCRIPTIONS,
   SEED_STAFF,
 } from '@/components/nexora-hospital/hospital-ops-seed';
+import { isDemoMode } from '@/lib/shared/demo-mode';
 
 /* â”€â”€ Design tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
@@ -307,7 +308,7 @@ async function safeSelect(tables: readonly string[], fallback: Row[]): Promise<R
       /* try the next candidate table */
     }
   }
-  return fallback;
+  return isDemoMode() ? fallback : [];
 }
 
 async function tryUpdate(tables: readonly string[], id: string, patch: Row): Promise<boolean> {
@@ -627,11 +628,13 @@ export default function HospitalOperationsCenter() {
   const [appointments, setAppointments] = useState<Row[]>([]);
   const [patients, setPatients] = useState<Row[]>([]);
   const [patientsLoading, setPatientsLoading] = useState(true);
-  const [beds, setBeds] = useState<Row[]>(SEED_BEDS as Row[]);
-  const [prescriptions, setPrescriptions] = useState<Row[]>(SEED_PRESCRIPTIONS as Row[]);
+  const [beds, setBeds] = useState<Row[]>(isDemoMode() ? (SEED_BEDS as Row[]) : []);
+  const [prescriptions, setPrescriptions] = useState<Row[]>(
+    isDemoMode() ? (SEED_PRESCRIPTIONS as Row[]) : [],
+  );
   const [triages, setTriages] = useState<Row[]>([]);
   const [bills, setBills] = useState<Row[]>([]);
-  const [staff, setStaff] = useState<Row[]>(SEED_STAFF as Row[]);
+  const [staff, setStaff] = useState<Row[]>(isDemoMode() ? (SEED_STAFF as Row[]) : []);
 
   const load = useCallback(async () => {
     const [ap, pt, bd, rx, tr, billRows, st] = await Promise.all([
@@ -652,7 +655,11 @@ export default function HospitalOperationsCenter() {
     setPrescriptions(rx);
     setTriages(tr);
     setBills(billRows);
-    setStaff(st.length >= REGAL_DOCTORS.length ? st : (SEED_STAFF as Row[]));
+    setStaff(
+      st.length >= REGAL_DOCTORS.length || !isDemoMode()
+        ? st
+        : (SEED_STAFF as Row[]),
+    );
   }, []);
 
   useEffect(() => {

@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
+import { logoutPatientSession, readPatientAuthSession } from '@/lib/auth/patientAuth';
 import {
   clearPatientSession,
   getPatientSession,
@@ -19,7 +20,6 @@ import {
 } from '@/lib/patient/auth/dev-auth';
 import { persistPatientPortalSession, readPatientPortalSession } from '@/lib/patient/portal-session';
 import { usePatientAppStore } from '@/lib/patient/store/patient-app-store';
-import { CACHE_KEYS, removeLocalJson } from '@/lib/persistence/local-cache';
 
 export type PatientAuthPatient = {
   id: string;
@@ -60,6 +60,7 @@ function readLocalPatientSnapshot(): {
 } | null {
   if (typeof window === 'undefined') return null;
 
+  const authSession = readPatientAuthSession();
   const v0 = getPatientSession();
   const portal = readPatientPortalSession();
   const fallbackEmail = (localStorage.getItem('curasync_patient_email') || '').trim();
@@ -75,12 +76,12 @@ function readLocalPatientSnapshot(): {
   ).trim();
   const loggedIn = localStorage.getItem('curasync_patient_logged_in') === 'true';
 
-  const id = (v0?.patientId || portal?.patient_id || fallbackId).trim();
-  const email = (v0?.email || portal?.email || fallbackEmail).trim();
-  const name = (v0?.fullName || portal?.patient_name || fallbackName).trim();
-  const uhid = (portal?.uhid || v0?.mrn || id).trim();
+  const id = (authSession?.patientId || v0?.patientId || portal?.patient_id || fallbackId).trim();
+  const email = (authSession?.email || v0?.email || portal?.email || fallbackEmail).trim();
+  const name = (authSession?.name || v0?.fullName || portal?.patient_name || fallbackName).trim();
+  const uhid = (authSession?.uhid || portal?.uhid || v0?.mrn || id).trim();
 
-  if (!v0 && !portal && !fallbackEmail && !loggedIn) {
+  if (!authSession && !v0 && !portal && !fallbackEmail && !loggedIn) {
     return null;
   }
 
@@ -175,14 +176,7 @@ export function PatientAuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(() => {
     clearPatientSession();
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('curasync_patient_email');
-      localStorage.removeItem('curasync_patient_logged_in');
-      localStorage.removeItem('curasync_patient_session');
-      removeLocalJson(CACHE_KEYS.patientAppointments);
-      removeLocalJson(CACHE_KEYS.patientAppointmentsAlt);
-      removeLocalJson(CACHE_KEYS.patientPrescriptions);
-    }
+    logoutPatientSession();
     setSession(null);
     setPatient(null);
   }, []);

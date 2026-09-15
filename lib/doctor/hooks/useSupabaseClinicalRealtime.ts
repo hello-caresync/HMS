@@ -46,6 +46,7 @@ export function useSupabaseClinicalRealtime() {
         () => {
           queryClient.invalidateQueries({ queryKey: ['care-center'] });
           queryClient.invalidateQueries({ queryKey: ['opd', 'queue'] });
+          queryClient.invalidateQueries({ queryKey: ['doctor-queue'] });
         },
       )
       .on(

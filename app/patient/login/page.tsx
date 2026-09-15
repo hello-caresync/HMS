@@ -17,10 +17,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase/client';
-import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
-import { SESSION_KEYS } from '@/lib/auth/ecosystem-sessions';
+import { persistPatientAuthSession } from '@/lib/auth/patientAuth';
 import { loadHospitalOptionsForLogin } from '@/lib/auth/staff-credential-auth';
-import { ensurePatientIdPersisted } from '@/lib/clinical/bridge';
+import { RegalHospitalLogo } from '@/components/brand/RegalHospitalLogo';
+import { isDemoMode } from '@/lib/shared/demo-mode';
 
 type HospitalOption = {
   id: string;
@@ -93,46 +93,6 @@ function serializeAuthError(err: unknown): string {
   return 'Failed to complete request.';
 }
 
-function persistPatientAuthSession(params: {
-  id: string;
-  uhid: string;
-  email: string;
-  fullName: string;
-  hospitalId: string;
-  hospitalName: string;
-  phone?: string;
-}) {
-  const loginTime = new Date().toISOString();
-  const payload = {
-    uhid: params.uhid,
-    patient_id: params.id,
-    patient_name: params.fullName,
-    full_name: params.fullName,
-    email: params.email,
-    phone: params.phone,
-    hospital_id: params.hospitalId,
-    hospital_name: params.hospitalName,
-    hospital: params.hospitalName,
-    role: 'patient',
-    authenticated: true,
-    authenticatedAt: loginTime,
-    login_time: loginTime,
-  };
-
-  localStorage.setItem('curasync_active_patient_id', params.id);
-  localStorage.setItem('curasync_patient_id', params.id);
-  localStorage.setItem('curasync_patient_name', params.fullName);
-  localStorage.setItem('patient_full_name', params.fullName);
-  localStorage.setItem('curasync_patient_email', params.email);
-  localStorage.setItem('curasync_selected_hospital', params.hospitalName);
-  localStorage.setItem('selected_hospital_name', params.hospitalName);
-  localStorage.setItem('curasync_patient_logged_in', 'true');
-  localStorage.setItem(SESSION_KEYS.patient, JSON.stringify(payload));
-  document.cookie = 'curasync_patient_session=active; path=/; max-age=86400; SameSite=Lax';
-  setNexoraRoleCookie('patient');
-  ensurePatientIdPersisted(params.id);
-}
-
 const DEMO_PATIENT_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const DEMO_EMAILS = new Set(['patient@regalhospital.com', 'test@regalhospital.com']);
 const DEMO_PASSWORDS = new Set(['Patient@2026', '123456']);
@@ -203,10 +163,10 @@ function PatientAuthForm() {
 
   const completeLogin = (patient: PatientRecord, toastMessage?: string) => {
     persistPatientAuthSession({
-      id: patient.id,
+      patientId: patient.id,
       uhid: patient.uhid,
       email: patient.email,
-      fullName: patient.full_name,
+      name: patient.full_name,
       hospitalId: selectedHospitalId || 'HOSP-01',
       hospitalName: selectedHospital?.name || 'Regal Hospital',
       phone: patient.phone,
@@ -277,7 +237,10 @@ function PatientAuthForm() {
         return;
       }
 
-      if (isDemoPatientCredential(cleanEmail, cleanPhone, password.trim())) {
+      if (
+        isDemoMode() &&
+        isDemoPatientCredential(cleanEmail, cleanPhone, password.trim())
+      ) {
         enterDemoPatientSession(cleanEmail, cleanPhone);
         return;
       }
@@ -360,8 +323,8 @@ function PatientAuthForm() {
 
       <div className="max-w-md w-full mx-auto my-auto p-8 rounded-3xl bg-white backdrop-blur-xl text-slate-950 shadow-2xl border border-slate-200 relative z-10 space-y-5">
         <div className="text-center space-y-1.5">
-          <div className="inline-flex p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 shadow-xs mb-1">
-            <ShieldCheck className="w-7 h-7" />
+          <div className="mb-1 flex justify-center">
+            <RegalHospitalLogo heightClass="h-9" showNodeBadge />
           </div>
           <h1 className="text-2xl font-black tracking-tight text-slate-950">Patient Portal</h1>
           <p className="text-xs font-medium text-slate-600">Secure access to appointments, queue tracking, and records</p>

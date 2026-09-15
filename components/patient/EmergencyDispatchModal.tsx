@@ -10,6 +10,7 @@ import {
   type EmergencyAlert,
   type GpsCoords,
 } from '@/lib/patient/emergency/rakshak-sos.service';
+import { createClient } from '@/lib/supabase/client';
 import { ensureRegalHospitalSelected, type SelectedHospital } from '@/lib/patient/hospital-context';
 
 type EmergencyDispatchModalProps = {
@@ -42,7 +43,7 @@ export function EmergencyDispatchModal({
   useEffect(() => {
     if (!open) return;
 
-    setHospital(ensureRegalHospitalSelected());
+    void ensureRegalHospitalSelected(createClient()).then(setHospital);
     setEmergencyLocation('');
     setEmergencyDescription('');
     setCoords(null);

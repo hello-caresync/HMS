@@ -256,7 +256,25 @@ export const useHospitalStore = create<HospitalState & HospitalActions>()(
 
       setActivityFeed: (items) => set({ activityFeed: items }),
     }),
-    { name: STORAGE_KEY, partialize: (s) => s },
+    {
+      name: STORAGE_KEY,
+      partialize: (s) => s,
+      onRehydrateStorage: () => (state) => {
+        if (!state || isDemoMode()) return;
+        state.setPatients([]);
+        state.setAppointments([]);
+        state.setOpdVisits([]);
+        state.setAdmissions([]);
+        state.setInvoices([]);
+        state.setInventory([]);
+        state.setVendors([]);
+        state.setPurchaseOrders([]);
+        state.setNotifications([]);
+        state.setActivityFeed([]);
+        state.hydrated = true;
+        state.recomputeMetrics();
+      },
+    },
   ),
 );
 

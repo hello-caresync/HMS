@@ -20,6 +20,9 @@ import {
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
+import { OnboardHospitalModal, type OnboardHospitalResult } from '@/components/admin/OnboardHospitalModal';
+import { credentialRoleToStaffType } from '@/lib/auth/hospitalAuth';
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
@@ -87,31 +90,37 @@ export default function SuperAdminHospitalBlocksDashboard() {
   const [showOnboardModal, setShowOnboardModal] = useState(false);
   const [createdPacket, setCreatedPacket] = useState<StaffCredential | null>(null);
 
-  // Form Fields
-  const [newHospId, setNewHospId] = useState('HOSP-04');
-  const [newHospName, setNewHospName] = useState('');
-  const [newHospCity, setNewHospCity] = useState('Bengaluru');
-  const [adminName, setAdminName] = useState('');
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminPhone, setAdminPhone] = useState('+91 98450 00000');
-  const [adminPasscode, setAdminPasscode] = useState('');
-  const [modalSubmitting, setModalSubmitting] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
-
   // Load all hospitals and credentials
   const loadPlatformData = async () => {
     setIsLoading(true);
     if (supabase) {
       try {
-        const [hospRes, tenantRes, credRes] = await Promise.all([
+        const [hospRes, tenantRes, userCredRes, legacyCredRes] = await Promise.all([
           supabase.from('hospitals').select('*').order('id', { ascending: true }),
           supabase.from('hospital_tenants').select('*').order('hospital_id', { ascending: true }),
+          supabase.from('hospital_user_credentials').select('*').order('created_at', { ascending: false }),
           supabase.from('hospital_staff_credentials').select('*').order('created_at', { ascending: false }),
         ]);
 
-        const creds = (credRes.data ?? []).map((row) =>
+        const userCreds = (userCredRes.data ?? []).map((row) => {
+          const record = row as Record<string, unknown>;
+          return normalizeCredential({
+            ...record,
+            staff_type: credentialRoleToStaffType(String(record.role ?? 'staff') as 'admin' | 'doctor' | 'staff' | 'nurse'),
+            temporary_passcode: record.passcode,
+          });
+        });
+
+        const legacyCreds = (legacyCredRes.data ?? []).map((row) =>
           normalizeCredential(row as Record<string, unknown>),
         );
+
+        const merged = new Map<string, StaffCredential>();
+        [...legacyCreds, ...userCreds].forEach((cred) => {
+          const key = cred.email.toLowerCase();
+          if (!merged.has(key)) merged.set(key, cred);
+        });
+        const creds = Array.from(merged.values());
         setCredentials(creds);
 
         const fromHospitals = (hospRes.data ?? []).map((row) =>
@@ -155,6 +164,9 @@ export default function SuperAdminHospitalBlocksDashboard() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_tenants' }, () => {
           void loadPlatformData();
         })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_user_credentials' }, () => {
+          void loadPlatformData();
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_staff_credentials' }, () => {
           void loadPlatformData();
         })
@@ -166,114 +178,28 @@ export default function SuperAdminHospitalBlocksDashboard() {
     }
   }, []);
 
-  // Passcode Generator with Hospital Initials
-  const generateDeterministicAdminPasscode = () => {
-    if (!adminName.trim()) {
-      setModalError('Please enter Admin Full Name before generating a passcode.');
-      return;
-    }
-    setModalError(null);
-
-    const cleanHosp =
-      newHospName
-        .replace(/hospital|super|speciality|clinic|care|institute|center/gi, '')
-        .trim()
-        .split(/\s+/)[0]
-        ?.toUpperCase() || 'HOSP';
-
-    const trimmedName = adminName.trim();
-    const nameParts = trimmedName.replace(/^(Dr\.|Mr\.|Mrs\.|Ms\.)\s+/i, '').split(/\s+/);
-    const firstInit = nameParts[0]?.charAt(0).toUpperCase() || 'A';
-    const lastInit = (
-      nameParts.length > 1 ? nameParts[nameParts.length - 1].charAt(0) : 'X'
-    ).toUpperCase();
-    const initials = `${firstInit}${lastInit}`;
-    const nameLength = trimmedName.length || 8;
-
-    setAdminPasscode(`${cleanHosp}#2026@${initials}${nameLength}`);
-  };
-
-  const handleOnboardSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setModalError(null);
-    setModalSubmitting(true);
-
-    try {
-      if (!supabase) {
-        throw new Error('Supabase client unavailable.');
-      }
-
-      const hospitalId = newHospId.trim().toUpperCase();
-        const { error: hospErr } = await supabase.from('hospitals').upsert({
-          id: hospitalId,
-          name: newHospName.trim(),
-          city: newHospCity.trim(),
-          status: 'Active',
-          setup_completed: false,
-        });
-        if (hospErr) {
-          await supabase.from('hospital_tenants').upsert(
-            {
-              hospital_id: hospitalId,
-              hospital_name: newHospName.trim(),
-              city: newHospCity.trim(),
-              setup_completed: false,
-            },
-            { onConflict: 'hospital_id' },
-          );
-        } else {
-          await supabase.from('hospital_tenants').upsert(
-            {
-              hospital_id: hospitalId,
-              hospital_name: newHospName.trim(),
-              city: newHospCity.trim(),
-              setup_completed: false,
-            },
-            { onConflict: 'hospital_id' },
-          );
-        }
-
-        const adminId = `${hospitalId}-ADM01`;
-        const newAdminRecord: StaffCredential = {
-          id: adminId,
-          hospital_id: hospitalId,
-          hospital_name: newHospName.trim(),
-          full_name: adminName.trim(),
-          staff_type: 'Admin',
-          department: 'Hospital Administration',
-          email: adminEmail.trim().toLowerCase(),
-          temporary_passcode: adminPasscode.trim(),
-          phone: adminPhone.trim(),
-          portal_access: '/dashboard/staff-credentials',
-          status: 'Active',
-          created_at: new Date().toISOString()
-        };
-
-        const { error: credErr } = await supabase
-          .from('hospital_staff_credentials')
-          .upsert(newAdminRecord, { onConflict: 'email' });
-        if (credErr) throw credErr;
-
-        setCreatedPacket(newAdminRecord);
-        setShowOnboardModal(false);
-        loadPlatformData();
-
-        // Reset
-        setNewHospName('');
-        setAdminName('');
-        setAdminEmail('');
-        setAdminPasscode('');
-    } catch (err: unknown) {
-      setModalError(err instanceof Error ? err.message : 'Failed to onboard hospital.');
-    } finally {
-      setModalSubmitting(false);
-    }
+  const handleOnboardSuccess = (result: OnboardHospitalResult) => {
+    setCreatedPacket({
+      id: result.credential.id,
+      hospital_id: result.hospitalId,
+      hospital_name: result.hospitalName,
+      full_name: result.credential.full_name,
+      staff_type: 'Admin',
+      department: result.credential.department,
+      email: result.credential.email,
+      temporary_passcode: result.passcode,
+      phone: result.credential.phone,
+      portal_access: result.credential.portal_access,
+      status: 'Active',
+      created_at: new Date().toISOString(),
+    });
+    void loadPlatformData();
   };
 
   const resolveAdminLoginUrl = () => {
     const baseUrl =
       typeof window !== 'undefined' ? window.location.origin : 'https://nexora-doctorapp.pages.dev';
-    return `${baseUrl}/admin/login`;
+    return `${baseUrl}/hospital/login`;
   };
 
   const copyLoginPacket = (staff: StaffCredential) => {
@@ -571,133 +497,11 @@ export default function SuperAdminHospitalBlocksDashboard() {
           </div>
         )}
 
-        {/* Modal: Onboard Hospital */}
-        {showOnboardModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
-                    <Hospital className="w-5 h-5"/>
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900">Onboard New Hospital Entity</h3>
-                    <p className="text-xs text-slate-500">Registers block card and issues master admin credentials.</p>
-                  </div>
-                </div>
-                <button type="button" onClick={() => setShowOnboardModal(false)} className="text-slate-400 hover:text-slate-700">
-                  <X className="w-5 h-5"/>
-                </button>
-              </div>
-
-              {modalError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold rounded-xl">
-                  ⚠️ {modalError}
-                </div>
-              )}
-
-              <form onSubmit={handleOnboardSubmit} className="space-y-4 text-xs">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase">Hospital Node ID</label>
-                    <input
-                      type="text"
-                      required
-                      value={newHospId}
-                      onChange={(e) => setNewHospId(e.target.value)}
-                      placeholder="e.g. HOSP-04"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-mono font-bold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase">City / Location</label>
-                    <input
-                      type="text"
-                      required
-                      value={newHospCity}
-                      onChange={(e) => setNewHospCity(e.target.value)}
-                      placeholder="e.g. Bengaluru"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase">Hospital Official Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={newHospName}
-                    onChange={(e) => setNewHospName(e.target.value)}
-                    placeholder="e.g. Aster CMI Super Speciality Hospital"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-medium"
-                  />
-                </div>
-
-                <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-100 space-y-3">
-                  <div className="text-[11px] font-bold text-purple-900 uppercase flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-purple-600"/>
-                    Master Hospital Admin Account
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase">Admin Full Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={adminName}
-                        onChange={(e) => setAdminName(e.target.value)}
-                        placeholder="e.g. Rajesh Sharma"
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase">Admin Official Email</label>
-                      <input
-                        type="email"
-                        required
-                        value={adminEmail}
-                        onChange={(e) => setAdminEmail(e.target.value)}
-                        placeholder="admin@astercmi.com"
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase">Structured Passcode</label>
-                      <button
-                        type="button"
-                        onClick={generateDeterministicAdminPasscode}
-                        className="text-[10px] font-bold text-purple-700 flex items-center gap-1 cursor-pointer"
-                      >
-                        <Sparkles className="w-3 h-3"/> Generate
-                      </button>
-                    </div>
-                    <input
-                      type="text"
-                      required
-                      value={adminPasscode}
-                      onChange={(e) => setAdminPasscode(e.target.value)}
-                      placeholder="Click Generate (e.g. REGAL#2026@AS13)"
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-purple-800 font-mono font-bold"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={modalSubmitting}
-                  className="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-purple-700/30 transition cursor-pointer"
-                >
-                  {modalSubmitting ? 'Onboarding...' : 'Create Block & Issue Admin Pass'}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
+        <OnboardHospitalModal
+          open={showOnboardModal}
+          onClose={() => setShowOnboardModal(false)}
+          onSuccess={handleOnboardSuccess}
+        />
 
         {/* Modal: Handover Pass */}
         {createdPacket && (

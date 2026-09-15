@@ -29,6 +29,8 @@ export type VendorSession = {
   email?: string;
   category: string;
   hospital_id?: string;
+  vendor_code?: string;
+  token?: string;
 };
 
 export function parseJsonSession<T>(raw: string | null): T | null {
@@ -86,6 +88,18 @@ export function isHospitalAppRole(role?: string | null): boolean {
   return (HOSPITAL_APP_ROLES as readonly string[]).includes(role);
 }
 
+/** Hospital workspace administrators who may access the credentials vault. */
+export function isHospitalAdminRole(role?: string | null): boolean {
+  const normalized = String(role ?? '')
+    .trim()
+    .toLowerCase();
+  return normalized === 'admin' || normalized === 'superadmin';
+}
+
+export function isHospitalAdminSession(session?: StaffPortalSession | null): boolean {
+  return isHospitalAdminRole(session?.staff_type);
+}
+
 export function readHospitalAppSession(): StaffPortalSession | null {
   if (typeof window === 'undefined') return null;
 
@@ -117,19 +131,39 @@ export function persistVendorSession(session: VendorSession): void {
   if (typeof window === 'undefined') return;
   const payload = JSON.stringify(session);
   localStorage.setItem(SESSION_KEYS.vendor, payload);
+  localStorage.setItem('vendor_session', payload);
   setNexoraRoleCookie('vendor');
   mirrorSessionCookie(SESSION_KEYS.vendor, payload);
 }
 
 export function getVendorSession(): VendorSession | null {
   if (typeof window === 'undefined') return null;
-  return parseJsonSession<VendorSession>(localStorage.getItem(SESSION_KEYS.vendor));
+  return (
+    parseJsonSession<VendorSession>(localStorage.getItem(SESSION_KEYS.vendor)) ??
+    parseJsonSession<VendorSession>(localStorage.getItem('vendor_session'))
+  );
+}
+
+export function resolveVendorCompanyDisplayName(session: VendorSession | null | undefined): string {
+  if (!session) return 'Vendor Portal';
+
+  const company = String(session.company_name ?? session.vendor_name ?? '').trim();
+  if (company) return company;
+
+  const fullName = String((session as VendorSession & { full_name?: string }).full_name ?? '').trim();
+  if (fullName) {
+    const fromParen = fullName.match(/\(([^)]+)\)/)?.[1]?.trim();
+    if (fromParen) return fromParen;
+    return fullName;
+  }
+
+  return 'Vendor Portal';
 }
 
 export function resolveStaffDepartmentRoute(staffType: string): string {
   const role = staffType.trim();
-  if (role === 'Admin') return '/admin/login';
-  if (role === 'Doctor') return '/doctor/workspace';
+  if (role === 'Admin') return '/hospital/login';
+  if (role === 'Doctor') return '/doctor/dashboard';
   if (['Nurse', 'Pharmacist', 'Receptionist', 'Staff'].includes(role)) return '/dashboard';
-  return '/staff/login';
+  return '/hospital/login';
 }

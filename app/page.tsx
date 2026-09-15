@@ -6,13 +6,14 @@ import {
   Crown,
   ShieldCheck,
   Stethoscope,
-  Users2,
   HeartPulse,
   Truck,
   ArrowRight,
   Sparkles,
   Building2,
 } from 'lucide-react';
+
+import { RegalHospitalLogo } from '@/components/brand/RegalHospitalLogo';
 
 interface PortalOption {
   title: string;
@@ -51,13 +52,13 @@ export default function BalancedEcosystemGateway() {
       },
     },
     {
-      title: 'Hospital Admin',
-      role: 'Hospital Operations & Command',
+      title: 'Hospital Portal',
+      role: 'Admin, Nursing, Desk & Pharmacy',
       description:
-        'Manage rosters, bed inventory, staff provisioning, billing audits, and institutional compliance.',
+        'Unified Regal Hospital workspace for administrators and operational staff — triage, tokens, billing, and pharmacy.',
       icon: ShieldCheck,
-      href: '/admin/login',
-      badge: 'Administration',
+      href: '/hospital/login',
+      badge: 'Hospital OS',
       colorScheme: {
         iconBg: 'bg-blue-500/10 border-blue-500/20',
         iconColor: 'text-blue-600',
@@ -82,23 +83,6 @@ export default function BalancedEcosystemGateway() {
         badgeText: 'text-teal-700',
         borderHover: 'hover:border-teal-400 hover:shadow-teal-500/10',
         arrowHover: 'group-hover:text-teal-600',
-      },
-    },
-    {
-      title: 'Hospital Staff',
-      role: 'Nursing Triage, Desk & Pharmacy',
-      description:
-        'Sign in with admin-provisioned credentials for triage, token registration, and pharmacy operations.',
-      icon: Users2,
-      href: '/staff/login',
-      badge: 'Operational Staff',
-      colorScheme: {
-        iconBg: 'bg-indigo-500/10 border-indigo-500/20',
-        iconColor: 'text-indigo-600',
-        badgeBg: 'bg-indigo-50 border-indigo-200',
-        badgeText: 'text-indigo-700',
-        borderHover: 'hover:border-indigo-400 hover:shadow-indigo-500/10',
-        arrowHover: 'group-hover:text-indigo-600',
       },
     },
     {
@@ -146,7 +130,10 @@ export default function BalancedEcosystemGateway() {
       <div className="pointer-events-none absolute -bottom-32 left-1/3 h-96 w-96 rounded-full bg-indigo-200/35 blur-3xl" />
 
       {/* Header Section */}
-      <header className="z-10 mx-auto w-full max-w-6xl shrink-0 space-y-2 pt-2 text-center">
+      <header className="z-10 mx-auto w-full max-w-6xl shrink-0 space-y-3 pt-2 text-center">
+        <div className="flex justify-center">
+          <RegalHospitalLogo heightClass="h-9" showNodeBadge className="justify-center" />
+        </div>
         <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur-md">
           <Sparkles className="h-3.5 w-3.5 animate-pulse text-teal-600" />
           <span>Regal Healthcare &bull; Unified Clinical Platform</span>

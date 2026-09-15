@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { EntityEmptyState } from '@/components/nexora-hospital/ui/EntityEmptyState';
 import { Badge, Modal, ui } from '@/components/nexora-hospital/ui/primitives';
+import { isValidIndianMobile, parsePatientAge } from '@/lib/hospital/indian-patient';
 import { registerPatient } from '@/lib/nexora-hospital/services/hospital-db';
 import { useHospitalStore } from '@/lib/nexora-hospital/store';
 import type { HospitalPatient } from '@/lib/nexora-hospital/types';
@@ -21,7 +22,7 @@ export function PatientsWorkspace() {
     lastName: '',
     uhid: '',
     phone: '',
-    age: 30,
+    age: '',
     gender: 'Male',
     bloodGroup: 'O+',
     department: 'General Medicine',
@@ -78,6 +79,7 @@ export function PatientsWorkspace() {
               <tr>
                 <th className={ui.th}>UHID</th>
                 <th className={ui.th}>Name</th>
+                <th className={ui.th}>Age</th>
                 <th className={ui.th}>Department</th>
                 <th className={ui.th}>Phone</th>
                 <th className={ui.th}>Status</th>
@@ -89,6 +91,9 @@ export function PatientsWorkspace() {
                 <tr key={p.id}>
                   <td className={ui.td}>{p.uhid}</td>
                   <td className={ui.td}>{p.fullName}</td>
+                  <td className={ui.td}>
+                    {p.patient_age ?? p.age ? `${p.patient_age ?? p.age}y` : 'Age N/A'}
+                  </td>
                   <td className={ui.td}>{p.department}</td>
                   <td className={ui.td}>{p.phone}</td>
                   <td className={ui.td}><Badge status={p.status} /></td>
@@ -108,7 +113,9 @@ export function PatientsWorkspace() {
           <aside className={ui.drawer}>
             <div className="p-6">
               <h2 className={ui.sectionTitle}>{selected.fullName}</h2>
-              <p className="text-sm text-slate-600">{selected.uhid} · {selected.age}y · {selected.gender}</p>
+              <p className="text-sm text-slate-600">
+                {selected.uhid} · {selected.patient_age ?? selected.age ? `${selected.patient_age ?? selected.age}y` : 'Age N/A'} · {selected.gender}
+              </p>
               <dl className="mt-6 space-y-3 text-base">
                 <div><dt className="text-sm font-bold text-slate-500">Phone</dt><dd>{selected.phone}</dd></div>
                 <div><dt className="text-sm font-bold text-slate-500">Blood Group</dt><dd>{selected.bloodGroup}</dd></div>
@@ -133,17 +140,46 @@ export function PatientsWorkspace() {
               className={ui.input}
               placeholder={field.replace(/([A-Z])/g, ' $1')}
               value={String(form[field] ?? '')}
-              onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+              maxLength={field === 'phone' ? 10 : undefined}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  [field]: field === 'phone' ? e.target.value.replace(/\D/g, '').slice(0, 10) : e.target.value,
+                })
+              }
             />
           ))}
+          <input
+            className={ui.input}
+            type="number"
+            min={1}
+            max={120}
+            placeholder="Age (1-120)"
+            value={form.age}
+            onChange={(e) => setForm({ ...form, age: e.target.value })}
+          />
           <button
             type="button"
             disabled={busy || !form.firstName || !form.uhid}
             className={`${ui.btnPrimary} sm:col-span-2`}
             onClick={() => {
               void (async () => {
+                const parsedAge = parsePatientAge(form.age);
+                if (parsedAge == null) {
+                  toast.error('Enter a valid age between 1 and 120');
+                  return;
+                }
+                if (!isValidIndianMobile(form.phone)) {
+                  toast.error('Enter a valid 10-digit Indian mobile number starting with 6-9');
+                  return;
+                }
                 setBusy(true);
-                await registerPatient({ ...form, status: 'Active' });
+                await registerPatient({
+                  ...form,
+                  age: parsedAge,
+                  patient_age: parsedAge,
+                  status: 'Active',
+                });
                 setBusy(false);
                 toast.success('Patient registered');
                 setShowRegister(false);

@@ -29,6 +29,7 @@ export type DispatchPrescriptionInput = {
   vitals?: Record<string, unknown> | string | null;
   consultationFee?: number;
   hospitalId?: string;
+  skipBilling?: boolean;
 };
 
 function missingColumnFromError(message: string | null | undefined): string | null {
@@ -71,10 +72,13 @@ function medicinePayload(medications: DispatchMedication[]): Record<string, unkn
   return medications.map((med) => ({
     drug: med.name,
     name: med.name,
+    medicine_name: med.name,
     dose: med.dosage,
     dosage: med.dosage,
     frequency: med.timing || med.dosage,
     duration: med.duration,
+    quantity: med.qty ?? 1,
+    qty: med.qty ?? 1,
     instructions: med.timing || '',
   }));
 }
@@ -86,8 +90,8 @@ async function completeAppointmentRows(
 ): Promise<void> {
   try {
     const now = new Date().toISOString();
-    const fullPatch = { status: 'completed', queue_status: 'COMPLETED', completed_at: now };
-    const statusOnly = { status: 'completed' };
+    const fullPatch = { status: 'billing_pending', queue_status: 'BILLING_PENDING', completed_at: now };
+    const statusOnly = { status: 'billing_pending' };
     const tables = Array.from(
       new Set(
         [sourceTable, 'appointments', 'patient_appointments', 'hospital_opd_queue'].filter(Boolean),
@@ -111,7 +115,7 @@ async function completeAppointmentRows(
       ]),
     );
   } catch (err: unknown) {
-    console.error('Failed to mark appointment completed:', err);
+    console.error('Failed to mark appointment billing_pending:', err);
   }
 }
 
@@ -126,30 +130,19 @@ async function notifyPatient(
   const message = `${input.doctorName} has finalized your consultation and issued your prescription for ${diagnosisLabel}.`;
   const now = new Date().toISOString();
 
-  await Promise.allSettled([
-    insertWithColumnRetry(supabase, 'system_notifications', {
-      recipient_id: recipientId,
-      recipient_role: 'patient',
-      recipient_type: 'patient',
-      title,
-      message,
-      type: 'prescription',
-      category: 'Clinical',
-      entity_id: prescriptionId || null,
-      read: false,
-      is_read: false,
-      created_at: now,
-    }),
-    insertWithColumnRetry(supabase, 'patient_notifications', {
-      patient_id: input.patientId || null,
-      title,
-      message,
-      type: 'prescription',
-      source_app: 'doctor_app',
-      entity_id: prescriptionId || null,
-      created_at: now,
-    }),
-  ]);
+  await insertWithColumnRetry(supabase, 'system_notifications', {
+    recipient_id: recipientId,
+    recipient_role: 'patient',
+    recipient_type: 'patient',
+    title,
+    message,
+    type: 'prescription',
+    category: 'Clinical',
+    entity_id: prescriptionId || null,
+    read: false,
+    is_read: false,
+    created_at: now,
+  });
 }
 
 const REGAL_HOSPITAL_BRANCH = 'Regal Hospital • Main Branch';
@@ -180,11 +173,13 @@ export async function dispatchDigitalPrescription(
     const advice = input.doctorInstructions.trim();
     const vitals = parseVitals(input.vitals);
 
+    const patientKey = input.patientId || input.uhid || input.appointmentId || input.patientName;
     const prescriptionPayload: Record<string, unknown> = {
       appointment_id: input.appointmentId || null,
-      patient_id: input.patientId || input.uhid || null,
+      patient_id: patientKey,
+      encounter_id: input.appointmentId || null,
       patient_name: input.patientName,
-      uhid: input.uhid || input.patientId || null,
+      uhid: input.uhid || input.patientId || patientKey,
       doctor_id: input.doctorId,
       doctor_name: input.doctorName,
       department: input.department || null,
@@ -198,39 +193,53 @@ export async function dispatchDigitalPrescription(
       dietary_instructions: advice,
       doctor_instructions: advice,
       vitals,
-      status: 'issued',
+      status: 'active',
+      issued_status: 'active',
       issued_at: now,
       dispatched_at: now,
       created_at: now,
     };
 
     const rx = await insertWithColumnRetry(supabase, 'prescriptions', prescriptionPayload);
+    if (rx.errorMessage && /issued|check constraint|invalid input/i.test(rx.errorMessage)) {
+      const issuedRetry = await insertWithColumnRetry(supabase, 'prescriptions', {
+        ...prescriptionPayload,
+        status: 'issued',
+      });
+      if (!issuedRetry.errorMessage) {
+        Object.assign(rx, issuedRetry);
+      }
+    }
     if (rx.errorMessage) {
       return { ok: false, error: rx.errorMessage };
     }
 
     const prescriptionId = rx.data?.id ? String(rx.data.id) : undefined;
 
-    await Promise.allSettled([
-      insertWithColumnRetry(supabase, 'consultations', {
+    const consultationWrite = await insertWithColumnRetry(supabase, 'consultations', {
+      appointment_id: input.appointmentId || null,
+      patient_id: patientKey,
+      uhid: input.uhid || input.patientId || patientKey,
+      encounter_id: input.appointmentId || null,
+      patient_name: input.patientName,
+      doctor_id: input.doctorId,
+      doctor_name: input.doctorName,
+      chief_complaint: diagnosis,
+      diagnosis,
+      clinical_notes: notes,
+      doctor_notes: notes,
+      clinical_examination: notes,
+      instructions: advice,
+      status: 'COMPLETED',
+      created_at: now,
+    });
+
+    const medicalWrite = await insertWithColumnRetry(supabase, 'medical_records', {
+        patient_id: patientKey,
+        uhid: input.uhid || input.patientId || patientKey,
+        doctor_id: input.doctorId,
         appointment_id: input.appointmentId || null,
-        patient_id: input.patientId || input.uhid || null,
         patient_name: input.patientName,
-        doctor_id: input.doctorId,
-        doctor_name: input.doctorName,
-        chief_complaint: diagnosis,
-        diagnosis,
-        clinical_notes: notes,
-        doctor_notes: notes,
-        clinical_examination: notes,
-        instructions: advice,
-        status: 'COMPLETED',
-        created_at: now,
-      }),
-      insertWithColumnRetry(supabase, 'medical_records', {
-        patient_id: input.patientId || input.uhid || null,
-        doctor_id: input.doctorId,
-        appointment_id: input.appointmentId || null,
         record_type: 'digital_prescription',
         summary: [
           `Doctor: ${input.doctorName}`,
@@ -248,27 +257,54 @@ export async function dispatchDigitalPrescription(
           .join('\n'),
         doctor_name: input.doctorName,
         created_at: now,
-      }),
+    });
+
+    await insertWithColumnRetry(supabase, 'hospital_clinical_records', {
+      hospital_id: input.hospitalId || 'HOSP-01',
+      patient_id: patientKey,
+      uhid: input.uhid || input.patientId || patientKey,
+      appointment_id: input.appointmentId || null,
+      patient_name: input.patientName,
+      doctor_id: input.doctorId,
+      doctor_name: input.doctorName,
+      diagnosis,
+      clinical_notes: notes,
+      medications: medicines,
+      record_type: 'consultation',
+      created_at: now,
+    });
+
+    if (consultationWrite.errorMessage) {
+      console.warn('Consultation record insert skipped:', consultationWrite.errorMessage);
+    }
+    if (medicalWrite.errorMessage) {
+      console.warn('Medical record insert skipped:', medicalWrite.errorMessage);
+    }
+
+    await Promise.allSettled([
       notifyPatient(supabase, input, prescriptionId),
       input.appointmentId
         ? completeAppointmentRows(supabase, input.appointmentId, input.sourceTable)
         : Promise.resolve(),
-      createPendingConsultationInvoice(supabase, {
-        appointmentId: input.appointmentId || null,
-        hospitalId: input.hospitalId,
-        uhid: input.uhid || input.patientId || input.patientName,
-        patientName: input.patientName,
-        doctorId: input.doctorId,
-        doctorName: input.doctorName,
-        consultationFee: input.consultationFee ?? 500,
-        medicines: input.medications.map((med) => ({
-          name: med.name,
-          qty: med.qty ?? 1,
-          price: med.price ?? 0,
-        })),
-      }),
-      input.appointmentId
-        ? generatePostConsultationBill(supabase, {
+      input.skipBilling
+        ? Promise.resolve()
+        : createPendingConsultationInvoice(supabase, {
+            appointmentId: input.appointmentId || null,
+            hospitalId: input.hospitalId,
+            uhid: input.uhid || input.patientId || input.patientName,
+            patientName: input.patientName,
+            doctorId: input.doctorId,
+            doctorName: input.doctorName,
+            consultationFee: input.consultationFee ?? 500,
+            medicines: input.medications.map((med) => ({
+              name: med.name,
+              qty: med.qty ?? 1,
+              price: med.price ?? 0,
+            })),
+          }),
+      input.skipBilling || !input.appointmentId
+        ? Promise.resolve()
+        : generatePostConsultationBill(supabase, {
             appointmentId: input.appointmentId,
             patientId: input.patientId || input.uhid || input.patientName,
             patientName: input.patientName,
@@ -277,8 +313,7 @@ export async function dispatchDigitalPrescription(
             doctorName: input.doctorName,
             consultationFee: input.consultationFee ?? 500,
             prescriptions: input.medications.map((med) => ({ medicine_name: med.name })),
-          })
-        : Promise.resolve(),
+          }),
       postConsultationPharmacyBridge(supabase, {
         hospitalId: input.hospitalId,
         appointmentId: input.appointmentId,

@@ -37,9 +37,9 @@ import AuthLoginShell, {
 } from './AuthLoginShell';
 
 const ROLE_DEFAULTS: Record<LoginPortalRole, string> = {
-  Staff: 'staff@curasync.com',
-  Doctor: 'doctor@curasync.com',
-  Admin: 'hospital@curasync.com',
+  Staff: '',
+  Doctor: '',
+  Admin: '',
 };
 
 const ROLE_META: Record<
@@ -88,7 +88,7 @@ export default function StaffLoginForm() {
   const searchParams = useSearchParams();
   const { setSession } = useAuth();
 
-  const [identifier, setIdentifier] = useState('hospital@curasync.com');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [portalRole, setPortalRole] = useState<LoginPortalRole>('Doctor');
   const [showPassword, setShowPassword] = useState(false);
@@ -125,41 +125,6 @@ export default function StaffLoginForm() {
     event.preventDefault();
     setLoading(true);
     setError(null);
-
-    const email = identifier.trim().toLowerCase();
-    const isDevMockBypass = email === 'hospital@curasync.com' && password === '123456';
-
-    if (isDevMockBypass) {
-      const now = new Date().toISOString();
-      const mockProfile: HospitalStaffProfile = {
-        userId: 'USR-DEV-ADMIN',
-        employeeId: 'EMP-DEV-001',
-        email: 'hospital@curasync.com',
-        displayName: 'Dr. Aishwarya D S',
-        role: 'hospital_admin',
-        department: 'Clinical Operations',
-        shiftLabel: 'Hospital Operations',
-        permissions: ['*'],
-        authMethod: 'password',
-        issuedAtUtc: now,
-        lastActivityAtUtc: now,
-        mfaPending: false,
-      };
-
-      const completed = await completeStaffLogin(mockProfile);
-      setLoading(false);
-
-      if (completed.ok === false) {
-        setError(completed.error);
-        toast.error('Sign-in failed', { description: completed.error });
-        return;
-      }
-
-      const destination =
-        portalRole === 'Doctor' ? '/doctor/dashboard' : redirect ?? APP_ROUTES.dashboard;
-      finishLogin(mockProfile, destination);
-      return;
-    }
 
     const result = await authenticateHospitalMember(identifier, password, portalRole);
     setLoading(false);
@@ -262,7 +227,7 @@ export default function StaffLoginForm() {
           label="Employee Identifier / Access Mail"
           value={identifier}
           onChange={setIdentifier}
-          placeholder="hospital@curasync.com or RH-D02"
+          placeholder="Enter work email or staff ID"
           autoComplete="username"
           icon={Mail}
         />

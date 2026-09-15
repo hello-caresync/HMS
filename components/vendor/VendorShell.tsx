@@ -3,16 +3,20 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, PanelLeftClose, PanelLeftOpen, Wifi } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { HospitalSelector } from '@/components/vendor/HospitalSelector';
 import { VendorWorkflowBar } from '@/components/vendor/VendorWorkflowBar';
+import {
+  getVendorSession,
+  resolveVendorCompanyDisplayName,
+} from '@/lib/auth/ecosystem-sessions';
 import {
   VENDOR_NAV_ITEMS,
   VENDOR_PORTAL_ROUTES,
   isVendorNavActive,
 } from '@/lib/vendor/navigation';
-import { vendorClasses, VENDOR_BRAND } from '@/lib/vendor/theme';
+import { vendorClasses } from '@/lib/vendor/theme';
 import { useVendorAppStore } from '@/lib/vendor/store/vendor-app-store';
 
 type VendorShellProps = { children: ReactNode };
@@ -22,7 +26,18 @@ export function VendorShell({ children }: VendorShellProps) {
   const collapsed = useVendorAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useVendorAppStore((s) => s.toggleSidebar);
   const realtimeConnected = useVendorAppStore((s) => s.realtimeConnected);
-  const organization = useVendorAppStore((s) => s.organization);
+  const [companyName, setCompanyName] = useState('Vendor Portal');
+
+  useEffect(() => {
+    setCompanyName(resolveVendorCompanyDisplayName(getVendorSession()));
+  }, []);
+
+  const companyInitials = companyName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
 
   const sidebarWidth = collapsed ? 'w-[4.5rem]' : 'w-64';
 
@@ -35,11 +50,13 @@ export function VendorShell({ children }: VendorShellProps) {
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 pb-3 pt-6">
           {!collapsed ? (
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold tracking-wider text-vendor-primary">{VENDOR_BRAND.name}</p>
-              <p className="truncate text-[10px] font-medium text-white/70">{organization.tradeName}</p>
+              <p className="truncate text-sm font-bold uppercase tracking-wider text-vendor-primary">
+                {companyName}
+              </p>
+              <p className="truncate text-[10px] font-medium text-white/70">Supplier Portal</p>
             </div>
           ) : (
-            <span className="mx-auto text-xs font-black text-vendor-primary">NX</span>
+            <span className="mx-auto text-xs font-black text-vendor-primary">{companyInitials || 'VP'}</span>
           )}
           <button
             type="button"

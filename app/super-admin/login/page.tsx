@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
@@ -13,28 +13,39 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { purgeLocalAdminSessions } from '@/lib/auth/active-session';
 import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
+import { createClient } from '@/lib/supabase/client';
 
-const SUPER_ADMIN_WHITELIST = [
+const ALLOWED_SUPER_ADMINS = [
   'aishwaryaananya43@gmail.com',
-  'superadmin@nexora.health',
-  'superadmin@regalhealth.com',
+  'superadmin@regalhospital.com',
 ];
 
-const VALID_PASSCODES = [
-  'OPS-RH-AS26-A113',
-  'SUPER-MASTER-2026',
-  '123456',
-  'ADMIN-REGAL-2026',
-];
+function isAllowlistedSuperAdmin(email: string): boolean {
+  return ALLOWED_SUPER_ADMINS.includes(email.trim().toLowerCase());
+}
+
+function isAuthorizedGatewayRole(role: unknown): boolean {
+  const normalized = String(role ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+  return normalized === 'super_admin' || normalized === 'admin' || normalized === 'superadmin';
+}
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('aishwaryaananya43@gmail.com');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [passcode, setPasscode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    purgeLocalAdminSessions();
+  }, []);
 
   const handleSuperAdminLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -42,21 +53,49 @@ export default function SuperAdminLoginPage() {
     setErrorMessage(null);
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPasscode = passcode.trim();
+    const cleanPasscode = passcode.trim() || password.trim();
 
-    if (!SUPER_ADMIN_WHITELIST.includes(cleanEmail) || !VALID_PASSCODES.includes(cleanPasscode)) {
-      setErrorMessage('Invalid root credentials. Access denied.');
+    if (!cleanEmail || !cleanPasscode) {
+      setErrorMessage('Invalid email or passcode.');
+      setLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('hospital_staff')
+      .select('*')
+      .ilike('email', cleanEmail)
+      .eq('passcode_key', cleanPasscode)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error || !data) {
+      setErrorMessage('Invalid email or passcode.');
+      setLoading(false);
+      return;
+    }
+
+    if (
+      !isAllowlistedSuperAdmin(cleanEmail) &&
+      !isAuthorizedGatewayRole(data.role) &&
+      !isAuthorizedGatewayRole(data.staff_type)
+    ) {
+      setErrorMessage('This account is not authorized for Super Admin access.');
       setLoading(false);
       return;
     }
 
     const sessionPayload = {
+      ...data,
       email: cleanEmail,
       role: 'super_admin',
       accessLevel: 'level_0_root',
       authenticatedAt: new Date().toISOString(),
+      portal_access: '/super-vault-access',
     };
 
+    localStorage.setItem('super_admin_session', JSON.stringify(data));
     localStorage.setItem('nexora_superadmin_session', JSON.stringify(sessionPayload));
     localStorage.setItem('curasync_superadmin_session', JSON.stringify(sessionPayload));
     setNexoraRoleCookie('super_admin');
@@ -123,9 +162,10 @@ export default function SuperAdminLoginPage() {
               <input
                 type="email"
                 required
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="aishwaryaananya43@gmail.com"
+                placeholder="Enter platform email"
                 className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pr-4 pl-10 text-sm font-medium text-slate-900 shadow-xs placeholder:text-slate-400 transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-100 focus:outline-none"
               />
             </div>
@@ -140,8 +180,12 @@ export default function SuperAdminLoginPage() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
+                autoComplete="current-password"
+                value={passcode || password}
+                onChange={(e) => {
+                  setPasscode(e.target.value);
+                  setPassword(e.target.value);
+                }}
                 placeholder="Enter root passcode"
                 className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pr-10 pl-10 font-mono text-sm font-bold text-slate-900 shadow-xs placeholder:text-slate-400 transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-100 focus:outline-none"
               />

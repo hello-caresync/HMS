@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import PatientMessagesClient from './PatientMessagesClient';
 
-export default function PatientMessagesRedirect() {
-  redirect('/patient/prescriptions');
+export default function PatientMessagesPage() {
+  return <PatientMessagesClient />;
 }

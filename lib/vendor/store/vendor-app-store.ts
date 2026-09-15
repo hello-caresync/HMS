@@ -3,9 +3,26 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-import { ALL_HOSPITALS_CODE, VENDOR_HOSPITALS } from '@/lib/vendor/hospitals';
+import {
+  ALL_HOSPITALS_CODE,
+  DEFAULT_HOSPITAL_CODE,
+  resolveActiveHospitalId,
+  VENDOR_HOSPITALS,
+} from '@/lib/vendor/hospitals';
 import { MOCK_ORGANIZATION } from '@/lib/vendor/mock/data';
+import { isDemoMode } from '@/lib/shared/demo-mode';
 import type { HospitalPartner, VendorOrganization, VendorThemeMode } from '@/lib/vendor/types/domain';
+
+const EMPTY_VENDOR_ORG: VendorOrganization = {
+  id: '',
+  legalName: '',
+  tradeName: '',
+  gstin: '',
+  pan: '',
+  vendorRating: 0,
+  scorecardGrade: 'C',
+  primaryCategory: 'Medicines',
+};
 import type { LifecycleStage } from '@/lib/vendor/lifecycle';
 
 type VendorAppState = {
@@ -18,6 +35,7 @@ type VendorAppState = {
   mfaEnabled: boolean;
   biometricEnabled: boolean;
   realtimeConnected: boolean;
+  setHospitals: (hospitals: HospitalPartner[]) => void;
   setActiveHospitalId: (id: string) => void;
   setTheme: (theme: VendorThemeMode) => void;
   toggleSidebar: () => void;
@@ -32,9 +50,9 @@ type VendorAppState = {
 export const useVendorAppStore = create<VendorAppState>()(
   persist(
     (set) => ({
-      organization: MOCK_ORGANIZATION,
+      organization: isDemoMode() ? MOCK_ORGANIZATION : EMPTY_VENDOR_ORG,
       hospitals: VENDOR_HOSPITALS,
-      activeHospitalId: ALL_HOSPITALS_CODE,
+      activeHospitalId: DEFAULT_HOSPITAL_CODE,
       theme: 'light',
       sidebarCollapsed: false,
       workflowStage: 'ALL',
@@ -42,6 +60,11 @@ export const useVendorAppStore = create<VendorAppState>()(
       biometricEnabled: false,
       realtimeConnected: false,
       notificationUnreadCount: 0,
+      setHospitals: (hospitals) =>
+        set((state) => ({
+          hospitals,
+          activeHospitalId: resolveActiveHospitalId(state.activeHospitalId, hospitals),
+        })),
       setActiveHospitalId: (id) => set({ activeHospitalId: id }),
       setTheme: (theme) => set({ theme }),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),

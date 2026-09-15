@@ -94,6 +94,28 @@ export function clearActiveSession(): void {
   document.cookie = `sb-access-token=; ${attrs}`;
 }
 
+/** Wipe leftover Super Admin and Hospital Admin tokens so login forms never auto-skip. */
+export function purgeLocalAdminSessions(): void {
+  if (typeof window === 'undefined') return;
+
+  clearHospitalOsSessionTokens();
+  clearStaleAuthArtifacts();
+  localStorage.removeItem('nexora_superadmin_session');
+  localStorage.removeItem('curasync_superadmin_session');
+  localStorage.removeItem('super_admin_session');
+  localStorage.removeItem('nexora_admin_session');
+  sessionStorage.removeItem('nexora_admin_session');
+  sessionStorage.removeItem('nexora_superadmin_session');
+
+  const attrs = 'path=/; max-age=0; SameSite=Lax';
+  document.cookie = `nexora_superadmin_session=; ${attrs}`;
+  document.cookie = `curasync_superadmin_session=; ${attrs}`;
+  document.cookie = `nexora_admin_session=; ${attrs}`;
+  document.cookie = `auth-token=; ${attrs}`;
+  document.cookie = `sb-access-token=; ${attrs}`;
+  clearNexoraRoleCookie();
+}
+
 /** Drop leftover hospital Admin/staff tokens so tenant hops always show the login form. Does not touch Super Admin. */
 export function clearHospitalOsSessionTokens(): void {
   if (typeof window === 'undefined') return;

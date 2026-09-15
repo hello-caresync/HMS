@@ -1,9 +1,8 @@
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
 import { createClient } from '@/lib/supabase/client';
-
-/** Shared Regal Hospital facility UUID (RH-BLR-01). */
-export const REGAL_HOSPITAL_ID = '11111111-1111-1111-1111-111111111111';
+import { resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
+import { REGAL_FACILITY_CODE } from '@/lib/regal/constants';
 
 export type EcosystemApp = 'hospital' | 'doctor' | 'patient' | 'vendor';
 
@@ -21,8 +20,9 @@ export type NotificationCategory =
 
 export type NotificationStatus = 'Delivered' | 'Pending' | 'Read';
 
-export const REGAL_FACILITY_CODE = 'RH-BLR-01';
 export const REGAL_OPERATIONS_SENDER = 'Regal Hospital Operations Desk';
+
+export { REGAL_FACILITY_CODE };
 
 export type SystemNotificationRow = {
   id: string;
@@ -137,7 +137,7 @@ export function normalizeNotificationRow(row: Record<string, unknown>): SystemNo
 
   return {
     id: String(row.id ?? ''),
-    hospital_id: row.hospital_id ? String(row.hospital_id) : REGAL_HOSPITAL_ID,
+    hospital_id: row.hospital_id ? String(row.hospital_id) : '',
     facility_code: row.facility_code
       ? String(row.facility_code)
       : row.facility
@@ -197,7 +197,13 @@ export function resolveBroadcastRecipientId(recipientId?: string | null): string
 export async function dispatchEcosystemNotification(
   supabase: SupabaseClient,
   input: DispatchNotificationInput,
+  options?: { hospitalId?: string },
 ): Promise<{ ok: boolean; error?: string; notification?: SystemNotificationRow }> {
+  const hospitalId = options?.hospitalId ?? (await resolveHospitalUuid(supabase));
+  if (!hospitalId) {
+    return { ok: false, error: 'Could not resolve hospital UUID for notification dispatch.' };
+  }
+
   const recipientType = normalizeRecipientType(input.recipient_type);
   const priority =
     typeof input.priority === 'string' ? mapHospitalPriority(input.priority) : input.priority ?? 'normal';
@@ -208,7 +214,7 @@ export async function dispatchEcosystemNotification(
     (recipientType === 'all' ? 'All Audience' : recipientId === 'ALL' ? 'All Audience' : recipientId);
 
   const payload: Record<string, unknown> = {
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: hospitalId,
     facility_code: REGAL_FACILITY_CODE,
     facility: REGAL_FACILITY_CODE,
     recipient_type: recipientType,
@@ -235,6 +241,7 @@ export async function dispatchEcosystemNotification(
   const notification = normalizeNotificationRow((data ?? payload) as Record<string, unknown>);
 
   await emitEcosystemSystemEvent(supabase, {
+    hospitalId,
     event_type: 'ECOSYSTEM_MESSAGE_DISPATCHED',
     source_app: 'hospital',
     severity: priority === 'urgent' ? 'critical' : priority === 'high' ? 'warning' : 'info',
@@ -258,10 +265,15 @@ export async function dispatchEcosystemNotification(
 
 export async function emitEcosystemSystemEvent(
   supabase: SupabaseClient,
-  input: EmitSystemEventInput,
+  input: EmitSystemEventInput & { hospitalId?: string },
 ): Promise<{ ok: boolean; error?: string }> {
+  const hospitalId = input.hospitalId ?? (await resolveHospitalUuid(supabase));
+  if (!hospitalId) {
+    return { ok: false, error: 'Could not resolve hospital UUID for system event.' };
+  }
+
   const row = {
-    hospital_id: REGAL_HOSPITAL_ID,
+    hospital_id: hospitalId,
     event_type: input.event_type,
     source_app: input.source_app,
     payload: input.payload ?? {},
@@ -277,12 +289,16 @@ export async function emitEcosystemSystemEvent(
 
 export async function loadHospitalSentNotifications(
   supabase: SupabaseClient,
+  hospitalId?: string,
 ): Promise<SystemNotificationRow[]> {
   try {
+    const resolvedId = hospitalId ?? (await resolveHospitalUuid(supabase));
+    if (!resolvedId) return [];
+
     const { data, error } = await supabase
       .from('system_notifications')
       .select('*')
-      .eq('hospital_id', REGAL_HOSPITAL_ID)
+      .eq('hospital_id', resolvedId)
       .order('created_at', { ascending: false })
       .limit(200);
 
@@ -297,12 +313,16 @@ export async function loadNotificationsForApp(
   supabase: SupabaseClient,
   app: Exclude<EcosystemApp, 'hospital'>,
   recipientId?: string,
+  hospitalId?: string,
 ): Promise<SystemNotificationRow[]> {
   try {
+    const resolvedId = hospitalId ?? (await resolveHospitalUuid(supabase));
+    if (!resolvedId) return [];
+
     const { data, error } = await supabase
       .from('system_notifications')
       .select('*')
-      .eq('hospital_id', REGAL_HOSPITAL_ID)
+      .eq('hospital_id', resolvedId)
       .or(`recipient_type.eq.all,recipient_type.eq.${app}`)
       .order('created_at', { ascending: false })
       .limit(100);
@@ -382,7 +402,7 @@ export function subscribeEcosystemMessaging(
         }
         options.onEvent?.({
           id: String(raw.id ?? ''),
-          hospital_id: raw.hospital_id ? String(raw.hospital_id) : REGAL_HOSPITAL_ID,
+          hospital_id: raw.hospital_id ? String(raw.hospital_id) : '',
           event_type: String(raw.event_type ?? ''),
           source_app: raw.source_app ? String(raw.source_app) : undefined,
           payload: (raw.payload as Record<string, unknown>) ?? {},

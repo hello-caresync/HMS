@@ -30,9 +30,6 @@ export function useHospitalOpsRealtime(onRefresh: () => void) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_triage' }, () =>
         onRefresh(),
       )
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_triages' }, () =>
-        onRefresh(),
-      )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'prescriptions' }, () => onRefresh())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'system_events' }, () =>
         onRefresh(),

@@ -6,6 +6,7 @@ export type HospitalPatient = {
   fullName: string;
   phone: string;
   age: number;
+  patient_age?: number | null;
   gender: string;
   bloodGroup: string;
   medicalHistory: string;

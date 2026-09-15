@@ -1,8 +1,13 @@
-export const REGAL_HOSPITAL_ID = 'a1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+import {
+  isHospitalUuid,
+  readStoredHospitalUuid,
+} from '@/lib/hospital/resolve-hospital-context';
+import { REGAL_HOSPITAL_CODE, REGAL_HOSPITAL_NAME } from '@/lib/regal/constants';
 
 export const REGAL_HOSPITAL = {
-  id: REGAL_HOSPITAL_ID,
-  name: 'Regal Hospital',
+  name: REGAL_HOSPITAL_NAME,
   address: 'No.30, CMR Complex, Chokkanahalli Hegdenagar Main Rd, Tirumanahalli, Bengaluru',
 } as const;
 
@@ -16,10 +21,10 @@ export type SelectedHospital = {
 
 export function getSelectedHospital(): SelectedHospital {
   if (typeof window === 'undefined') {
-    return { id: REGAL_HOSPITAL.id, name: REGAL_HOSPITAL.name };
+    return { id: '', name: REGAL_HOSPITAL.name };
   }
 
-  const id = localStorage.getItem(SELECTED_HOSPITAL_ID_KEY) ?? REGAL_HOSPITAL.id;
+  const id = localStorage.getItem(SELECTED_HOSPITAL_ID_KEY) ?? readStoredHospitalUuid() ?? '';
   const name = localStorage.getItem(SELECTED_HOSPITAL_NAME_KEY) ?? REGAL_HOSPITAL.name;
 
   return { id, name };
@@ -31,11 +36,29 @@ export function setSelectedHospital(hospital: SelectedHospital): void {
   localStorage.setItem(SELECTED_HOSPITAL_NAME_KEY, hospital.name);
 }
 
-/** Ensure Regal Hospital is persisted as the active registered hospital */
-export function ensureRegalHospitalSelected(): SelectedHospital {
+/** Resolve Regal Hospital UUID from DB and persist as the active registered hospital. */
+export async function ensureRegalHospitalSelected(
+  supabase: SupabaseClient,
+): Promise<SelectedHospital> {
   const current = getSelectedHospital();
-  if (current.id === REGAL_HOSPITAL.id) return current;
+  if (isHospitalUuid(current.id)) return current;
 
-  setSelectedHospital({ id: REGAL_HOSPITAL.id, name: REGAL_HOSPITAL.name });
-  return { id: REGAL_HOSPITAL.id, name: REGAL_HOSPITAL.name };
+  const { data } = await supabase
+    .from('hospitals')
+    .select('id, name')
+    .eq('hospital_code', REGAL_HOSPITAL_CODE)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (data?.id && isHospitalUuid(String(data.id))) {
+    const resolved = {
+      id: String(data.id),
+      name: String(data.name ?? REGAL_HOSPITAL.name),
+    };
+    setSelectedHospital(resolved);
+    return resolved;
+  }
+
+  return current;
 }

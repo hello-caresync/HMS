@@ -22,7 +22,6 @@ import {
   Stethoscope,
   UserCog,
   Users,
-  Workflow,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -48,7 +47,6 @@ export const NEXORA_HMS_NAV: NavSection[] = [
     defaultOpen: true,
     items: [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { id: 'hp-workspace', label: 'HP Workspace', icon: Workflow, shortcut: 'Professional Console' },
       { id: 'patients', label: 'Patients', icon: Users },
       { id: 'appointments', label: 'Appointments', icon: Calendar },
       { id: 'admissions', label: 'Admissions', icon: Building2 },

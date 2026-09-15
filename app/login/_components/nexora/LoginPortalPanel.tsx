@@ -19,9 +19,9 @@ import {
 } from 'lucide-react';
 
 import {
+  authenticateAdmin,
   isValidEmail,
   persistAdminSession,
-  validateAdminCredentials,
 } from '@/lib/admin/auth';
 
 type AuthStage = 'idle' | 'authenticating' | 'verifying' | 'granted' | 'success' | 'error';
@@ -85,9 +85,10 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
     await new Promise((r) => setTimeout(r, 700));
 
     const normalizedEmail = email.trim().toLowerCase();
-    if (validateAdminCredentials(normalizedEmail, password)) {
+    const authResult = await authenticateAdmin(normalizedEmail, password);
+    if (authResult.ok) {
       persistAdminSession(
-        { email: normalizedEmail, role: 'administrator', loggedInAt: new Date().toISOString() },
+        { email: authResult.email, role: 'administrator', loggedInAt: new Date().toISOString() },
         rememberDevice,
       );
       setAuthStage('granted');
@@ -100,7 +101,7 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
     }
 
     setAuthStage('error');
-    setFormError('Unable to authenticate. Please verify your credentials and try again.');
+    setFormError(authResult.error);
   };
 
   return (
@@ -167,7 +168,7 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
                     autoComplete="email"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setEmailError(''); setFormError(''); if (authStage === 'error') setAuthStage('idle'); }}
-                    placeholder="admin@nexora.health"
+                    placeholder="Enter admin email"
                     aria-invalid={!!emailError}
                     className="w-full rounded-[14px] border border-[#D9E2F2] bg-[#F9FBFF] py-2.5 pl-10 pr-4 text-sm text-[#14213D] outline-none transition-all placeholder:text-[#94A3B8] focus:border-[#3B82F6] focus:bg-white focus:shadow-[0_0_0_4px_rgba(59,130,246,0.10)]"
                   />

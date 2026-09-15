@@ -6,7 +6,8 @@
 import type { RealtimePostgresChangesPayload, SupabaseClient } from '@supabase/supabase-js';
 
 import { createClient } from '@/lib/supabase/client';
-import { REGAL_HOSPITAL_ID } from '@/lib/ecosystem/messaging-service';
+import { resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
+import { REGAL_FACILITY_CODE, REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import { DEFAULT_VENDOR_ID } from '@/lib/vendor-supabase/constants';
 import {
   buildDoctorToHospitalPayload,
@@ -66,7 +67,7 @@ function normalizeRow(row: Record<string, unknown>): EcosystemChannelMessage {
     message: String(row.message ?? row.message_text ?? '').trim(),
     created_at: row.created_at ? String(row.created_at) : new Date().toISOString(),
     is_read: Boolean(row.is_read),
-    hospital_id: row.hospital_id ? String(row.hospital_id) : REGAL_HOSPITAL_ID,
+    hospital_id: row.hospital_id ? String(row.hospital_id) : '',
   };
 }
 
@@ -159,19 +160,24 @@ export async function sendHospitalEcosystemMessage(
   const trimmed = input.message.trim();
   if (!trimmed) return { ok: false, error: 'Message cannot be empty.' };
 
+  const hospitalId = await resolveHospitalUuid(supabase);
+  if (!hospitalId) {
+    return { ok: false, error: 'Could not resolve hospital UUID for ecosystem message.' };
+  }
+
   let payload: Record<string, unknown>;
 
   if (input.channel === 'doctor') {
     payload = buildHospitalToDoctorPayload({
       doctorId: input.recipientId,
       message: trimmed,
-      hospitalId: REGAL_HOSPITAL_ID,
+      hospitalId,
     });
   } else if (input.channel === 'patient') {
     payload = {
-      hospital_id: REGAL_HOSPITAL_ID,
-      facility_code: 'RH-BLR-01',
-      hospital_code: 'RH-BLR-01',
+      hospital_id: hospitalId,
+      facility_code: REGAL_FACILITY_CODE,
+      hospital_code: REGAL_HOSPITAL_CODE,
       channel_type: 'patient',
       sender_role: 'hospital',
       sender_id: ECOSYSTEM_HOSPITAL_ADMIN_ID,
@@ -186,9 +192,9 @@ export async function sendHospitalEcosystemMessage(
     };
   } else if (input.channel === 'vendor') {
     payload = {
-      hospital_id: REGAL_HOSPITAL_ID,
-      facility_code: 'RH-BLR-01',
-      hospital_code: 'RH-BLR-01',
+      hospital_id: hospitalId,
+      facility_code: REGAL_FACILITY_CODE,
+      hospital_code: REGAL_HOSPITAL_CODE,
       channel_type: 'vendor',
       sender_role: 'hospital',
       sender_id: ECOSYSTEM_HOSPITAL_ADMIN_ID,
@@ -228,18 +234,23 @@ export async function sendPartnerEcosystemMessage(
   const trimmed = input.message.trim();
   if (!trimmed) return { ok: false, error: 'Message cannot be empty.' };
 
+  const hospitalId = await resolveHospitalUuid(supabase);
+  if (!hospitalId) {
+    return { ok: false, error: 'Could not resolve hospital UUID for ecosystem message.' };
+  }
+
   const payload: Record<string, unknown> =
     input.sender_role === 'doctor'
       ? buildDoctorToHospitalPayload({
           doctorId: input.sender_id,
           doctorName: input.sender_name,
           message: trimmed,
-          hospitalId: REGAL_HOSPITAL_ID,
+          hospitalId,
         })
       : {
-          hospital_id: REGAL_HOSPITAL_ID,
-          facility_code: 'RH-BLR-01',
-          hospital_code: 'RH-BLR-01',
+          hospital_id: hospitalId,
+          facility_code: REGAL_FACILITY_CODE,
+          hospital_code: REGAL_HOSPITAL_CODE,
           channel_type: input.channel,
           sender_role: input.sender_role,
           sender_id: input.sender_id,

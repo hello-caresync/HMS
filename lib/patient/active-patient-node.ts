@@ -1,3 +1,4 @@
+import { readPatientAuthSession } from '@/lib/auth/patientAuth';
 import { readPatientPortalSession } from '@/lib/patient/portal-session';
 
 export const ACTIVE_PATIENT_ID_KEY = 'curasync_active_patient_id';
@@ -36,18 +37,19 @@ export function readStoredPatientIdentity(): StoredPatientIdentity {
     };
   }
 
+  const authSession = readPatientAuthSession();
   const storedId = (localStorage.getItem(ACTIVE_PATIENT_ID_KEY) || '').trim();
   const session = readPatientPortalSession();
-  const sessionId = (session?.patient_id || '').trim();
-  const uhid = (session?.uhid || '').trim();
-  const email = (session?.email || '').trim();
-  const activePatientId =
-    storedId || sessionId || uhid || email || DEFAULT_PATIENT_FALLBACK_ID;
+  const sessionId = (authSession?.patientId || session?.patient_id || '').trim();
+  const uhid = (authSession?.uhid || session?.uhid || '').trim();
+  const email = (authSession?.email || session?.email || '').trim();
+  const activePatientId = storedId || sessionId || uhid || email || '';
 
   return {
     activePatientId,
     identifiers: uniqueIdentifiers([storedId, sessionId, uhid, email, activePatientId]),
     patientName: (
+      authSession?.name ||
       session?.patient_name ||
       (typeof window !== 'undefined' ? localStorage.getItem(ACTIVE_PATIENT_NAME_KEY) : '') ||
       ''
@@ -58,15 +60,23 @@ export function readStoredPatientIdentity(): StoredPatientIdentity {
 }
 
 export const getActivePatientId = (): string => {
-  if (typeof window === 'undefined') return DEFAULT_PATIENT_FALLBACK_ID;
+  if (typeof window === 'undefined') return '';
+  const authSession = readPatientAuthSession();
+  if (authSession?.patientId) return authSession.patientId;
   const stored = (localStorage.getItem(ACTIVE_PATIENT_ID_KEY) || '').trim();
   if (stored) return stored;
   return readStoredPatientIdentity().activePatientId;
 };
 
 export const getActivePatientName = (): string => {
-  if (typeof window === 'undefined') return 'Aishwarya D S';
-  return localStorage.getItem(ACTIVE_PATIENT_NAME_KEY) || 'Aishwarya D S';
+  if (typeof window === 'undefined') return '';
+  const authSession = readPatientAuthSession();
+  if (authSession?.name) return authSession.name;
+  const portalSession = readPatientPortalSession();
+  if (portalSession?.patient_name && portalSession.patient_name !== 'Verified Patient') {
+    return portalSession.patient_name;
+  }
+  return localStorage.getItem(ACTIVE_PATIENT_NAME_KEY) || '';
 };
 
 export function persistActivePatientNode(id: string, name: string): void {

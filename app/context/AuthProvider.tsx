@@ -85,6 +85,7 @@ function isProtectedPath(pathname: string): boolean {
 const PUBLIC_AUTH_PATHS = [
   '/',
   '/login',
+  '/hospital/login',
   '/admin/login',
   '/admin/onboarding',
   '/doctor/login',

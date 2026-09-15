@@ -1,7 +1,7 @@
 'use client';
 
-import DeliveriesWorkspace from '@/components/vendor/workspaces/DeliveriesWorkspace';
+import ShipmentsDeliveriesWorkspace from '@/components/vendor/workspaces/ShipmentsDeliveriesWorkspace';
 
 export default function VendorDeliveriesPage() {
-  return <DeliveriesWorkspace />;
+  return <ShipmentsDeliveriesWorkspace />;
 }

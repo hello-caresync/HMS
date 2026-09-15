@@ -396,7 +396,7 @@ export default function DoctorRecordsPage() {
 
                     return (
                       <article
-                        key={`${entry.type}-${entry.id}-${entry.date}`}
+                        key={`${entry.type}-${entry.id}-${entry.date ?? entry.created_at}`}
                         className="rounded-xl border border-[#D5E8E3] bg-white p-4"
                       >
                         <div className="flex items-start gap-3">
@@ -405,7 +405,7 @@ export default function DoctorRecordsPage() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <h4 className="text-sm font-black text-[#0E2924]">{entry.title}</h4>
+                              <h4 className="text-sm font-black text-[#0E2924]">{entry.title ?? entry.type.replace('_', ' ')}</h4>
                               <span
                                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${timelineBadgeClass(entry.type)}`}
                               >
@@ -416,7 +416,7 @@ export default function DoctorRecordsPage() {
                               <p className="text-xs text-[#227B6B] mt-1">{subtitle}</p>
                             ) : null}
                             <p className="text-[10px] text-[#227B6B]/80 mt-2 font-semibold">
-                              {formatDateLabel(entry.date)}
+                              {formatDateLabel(entry.date ?? entry.created_at)}
                             </p>
                           </div>
                         </div>

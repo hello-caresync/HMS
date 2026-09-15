@@ -7,10 +7,12 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
-  Stethoscope,
   User,
   Users,
 } from 'lucide-react';
+
+import { RegalHospitalLogoMark } from '@/components/brand/RegalHospitalLogo';
+import { logoutPatientSession } from '@/lib/auth/patientAuth';
 
 const PATIENT_NAV = [
   { label: 'Dashboard', href: '/patient/dashboard', icon: LayoutDashboard },
@@ -46,8 +48,8 @@ export function PatientSidebar({ patientName = 'Patient', onLogout }: PatientSid
       onLogout();
       return;
     }
-    localStorage.removeItem('curasync_patient_session');
-    router.push('/patient/auth/login');
+    logoutPatientSession();
+    router.replace('/patient/login');
   };
 
   const avatarInitial = patientName.trim().charAt(0).toUpperCase() || 'P';
@@ -59,9 +61,7 @@ export function PatientSidebar({ patientName = 'Patient', onLogout }: PatientSid
     >
       <div className="shrink-0 border-b border-[#153A32] px-5 pb-5 pt-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#227B6B]/40 bg-[#113831] text-[#38D9BA] shadow-sm">
-            <Stethoscope className="h-5 w-5" aria-hidden />
-          </div>
+          <RegalHospitalLogoMark heightClass="h-8" className="h-11 w-11 rounded-xl border border-[#227B6B]/40 bg-white p-1" />
           <div>
             <h2 className="text-base font-black tracking-tight text-white">Regal Hospital</h2>
             <p className="text-[10px] font-bold uppercase tracking-wider text-teal-400">Patient Portal</p>

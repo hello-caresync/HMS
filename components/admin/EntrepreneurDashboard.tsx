@@ -60,8 +60,8 @@ function getAdminSession(): AdminSession | null {
 export default function EntrepreneurDashboard() {
   const router = useRouter();
   const [session, setSession] = useState<AdminSession | null>(null);
-  const [email, setEmail] = useState('admin@nexora.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [fetching, setFetching] = useState(false);
@@ -126,7 +126,7 @@ export default function EntrepreneurDashboard() {
           </div>
           <input
             className="mb-3 w-full rounded-lg border border-[#E6E3C5] px-3 py-2 text-sm"
-            placeholder="admin@nexora.com"
+            placeholder="Enter admin email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -144,9 +144,6 @@ export default function EntrepreneurDashboard() {
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
-          <p className="mt-4 text-center text-xs text-[#5A584A]">
-            Demo: admin@nexora.com / admin123
-          </p>
           <Link href="/doctor/dashboard" className="mt-4 block text-center text-xs text-[#A39E75] hover:underline">
             ← Doctor portal
           </Link>

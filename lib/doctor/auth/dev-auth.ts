@@ -7,6 +7,8 @@ export const DEV_SESSION_STORAGE_KEY = 'nexora_doctor_dev_session';
 
 export const DEV_HOSPITAL_ID = '00000000-0000-4000-a000-000000000001';
 
+const IS_NON_PRODUCTION = process.env.NODE_ENV !== 'production';
+
 export type DevDoctorAccount = {
   id: string;
   userId: string;
@@ -33,62 +35,67 @@ export type DevDoctorSession = {
   accessToken?: string;
 };
 
-/** Demo accounts for local development */
-export const DEV_DOCTOR_ACCOUNTS: DevDoctorAccount[] = [
-  {
-    id: '00000000-0000-4000-a000-000000000101',
-    userId: 'dev-user-general',
-    hospitalId: DEV_HOSPITAL_ID,
-    email: 'hospital@curasync.com',
-    password: '123456',
-    fullName: 'Dr. Aishwarya D S',
-    specialization: 'Internal Medicine · General Physician',
-    role: 'CONSULTANT',
-    licenseNumber: 'REG_NEX_MD_9021',
-  },
-  {
-    id: '00000000-0000-4000-a000-000000000102',
-    userId: 'dev-user-cardio',
-    hospitalId: DEV_HOSPITAL_ID,
-    email: 'doctor@nexora.com',
-    password: 'doctor123',
-    fullName: 'Dr. Rajesh Kumar',
-    specialization: 'Cardiology · Interventional',
-    role: 'CONSULTANT',
-    licenseNumber: 'REG-NEX-CARD-002',
-  },
-  {
-    id: '00000000-0000-4000-a000-000000000103',
-    userId: 'dev-user-ortho',
-    hospitalId: DEV_HOSPITAL_ID,
-    email: 'ortho@nexora.com',
-    password: 'doctor123',
-    fullName: 'Dr. Meera Iyer',
-    specialization: 'Orthopedic Surgery · Trauma',
-    role: 'SURGEON',
-    licenseNumber: 'REG-NEX-ORT-003',
-  },
-  {
-    id: '00000000-0000-4000-a000-000000000104',
-    userId: 'dev-user-peds',
-    hospitalId: DEV_HOSPITAL_ID,
-    email: 'pediatric@nexora.com',
-    password: 'doctor123',
-    fullName: 'Dr. Priya Menon',
-    specialization: 'Pediatrics · Neonatology',
-    role: 'CONSULTANT',
-    licenseNumber: 'REG-NEX-PED-004',
-  },
-];
+/** Demo accounts for local development only */
+export const DEV_DOCTOR_ACCOUNTS: DevDoctorAccount[] = IS_NON_PRODUCTION
+  ? [
+      {
+        id: '00000000-0000-4000-a000-000000000101',
+        userId: 'dev-user-general',
+        hospitalId: DEV_HOSPITAL_ID,
+        email: 'hospital@curasync.com',
+        password: '123456',
+        fullName: 'Dr. Aishwarya D S',
+        specialization: 'Internal Medicine · General Physician',
+        role: 'CONSULTANT',
+        licenseNumber: 'REG_NEX_MD_9021',
+      },
+      {
+        id: '00000000-0000-4000-a000-000000000102',
+        userId: 'dev-user-cardio',
+        hospitalId: DEV_HOSPITAL_ID,
+        email: 'doctor@nexora.com',
+        password: 'doctor123',
+        fullName: 'Dr. Rajesh Kumar',
+        specialization: 'Cardiology · Interventional',
+        role: 'CONSULTANT',
+        licenseNumber: 'REG-NEX-CARD-002',
+      },
+      {
+        id: '00000000-0000-4000-a000-000000000103',
+        userId: 'dev-user-ortho',
+        hospitalId: DEV_HOSPITAL_ID,
+        email: 'ortho@nexora.com',
+        password: 'doctor123',
+        fullName: 'Dr. Meera Iyer',
+        specialization: 'Orthopedic Surgery · Trauma',
+        role: 'SURGEON',
+        licenseNumber: 'REG-NEX-ORT-003',
+      },
+      {
+        id: '00000000-0000-4000-a000-000000000104',
+        userId: 'dev-user-peds',
+        hospitalId: DEV_HOSPITAL_ID,
+        email: 'pediatric@nexora.com',
+        password: 'doctor123',
+        fullName: 'Dr. Priya Menon',
+        specialization: 'Pediatrics · Neonatology',
+        role: 'CONSULTANT',
+        licenseNumber: 'REG-NEX-PED-004',
+      },
+    ]
+  : [];
 
-export const DEV_DEMO_ACCOUNT_LABELS = [
-  { key: 'general', label: 'Doctor', account: DEV_DOCTOR_ACCOUNTS[0] },
-  { key: 'cardio', label: 'Cardiologist', account: DEV_DOCTOR_ACCOUNTS[1] },
-  { key: 'ortho', label: 'Orthopedic', account: DEV_DOCTOR_ACCOUNTS[2] },
-  { key: 'pediatric', label: 'Pediatrician', account: DEV_DOCTOR_ACCOUNTS[3] },
-] as const;
+export const DEV_DEMO_ACCOUNT_LABELS = IS_NON_PRODUCTION
+  ? [
+      { key: 'general', label: 'Doctor', account: DEV_DOCTOR_ACCOUNTS[0] },
+      { key: 'cardio', label: 'Cardiologist', account: DEV_DOCTOR_ACCOUNTS[1] },
+      { key: 'ortho', label: 'Orthopedic', account: DEV_DOCTOR_ACCOUNTS[2] },
+      { key: 'pediatric', label: 'Pediatrician', account: DEV_DOCTOR_ACCOUNTS[3] },
+    ] as const
+  : [];
 
 export function findDevAccount(email: string, password: string): DevDoctorAccount | null {
+  if (!IS_NON_PRODUCTION) return null;
   const normalized = email.trim().toLowerCase();
   return (
     DEV_DOCTOR_ACCOUNTS.find(
@@ -98,6 +105,7 @@ export function findDevAccount(email: string, password: string): DevDoctorAccoun
 }
 
 export function findDevAccountById(doctorId: string): DevDoctorAccount | null {
+  if (!IS_NON_PRODUCTION) return null;
   return DEV_DOCTOR_ACCOUNTS.find((a) => a.id === doctorId) ?? null;
 }
 
@@ -129,7 +137,10 @@ export function getDevSession(): DevDoctorSession | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as DevDoctorSession;
-    if (!parsed?.doctorId || !findDevAccountById(parsed.doctorId)) return null;
+    if (!parsed?.doctorId) return null;
+    if (IS_NON_PRODUCTION && !findDevAccountById(parsed.doctorId) && !parsed.accessToken) {
+      return null;
+    }
     return parsed;
   } catch {
     return null;
@@ -158,6 +169,9 @@ export function devLogin(
   password: string,
   rememberMe: boolean,
 ): { ok: true; session: DevDoctorSession } | { ok: false; error: string } {
+  if (!IS_NON_PRODUCTION) {
+    return { ok: false, error: 'Demo login is disabled in production.' };
+  }
   const account = findDevAccount(email, password);
   if (!account) {
     return { ok: false, error: 'Invalid email or password.' };
@@ -208,7 +222,7 @@ export async function apiLogin(
     saveDevSession(session);
     return { ok: true, session };
   } catch {
-    return devLogin(email, password, rememberMe);
+    return { ok: false, error: 'Unable to reach the authentication service.' };
   }
 }
 

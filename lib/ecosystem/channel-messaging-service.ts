@@ -9,7 +9,8 @@ import { createClient } from '@/lib/supabase/client';
 import { DEFAULT_VENDOR_ID } from '@/lib/vendor-supabase/constants';
 import { ALL_HOSPITALS_CODE, DEFAULT_HOSPITAL_CODE } from '@/lib/vendor/hospitals';
 
-import { REGAL_HOSPITAL_ID } from './messaging-service';
+import { resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
+import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import { ECOSYSTEM_HOSPITAL_ADMIN_ID, ECOSYSTEM_VENDOR_TARGET_ID } from './ecosystem-channels';
 
 export const REGAL_FACILITY_CODE = 'RH-BLR-01';
@@ -104,7 +105,7 @@ export function normalizeChannelMessageRow(row: Record<string, unknown>): Channe
 
   return {
     id: String(row.id ?? ''),
-    hospital_id: String(row.hospital_id ?? REGAL_HOSPITAL_ID),
+    hospital_id: String(row.hospital_id ?? ''),
     channel_type: String(row.channel_type ?? 'general'),
     recipient_type: String(row.recipient_type ?? 'all').toLowerCase(),
     recipient_id: row.recipient_id ? String(row.recipient_id) : null,
@@ -188,6 +189,10 @@ export async function loadChannelMessages(
   filter: ChannelMessageFilter,
 ): Promise<LoadChannelResult> {
   const limit = filter.limit ?? 200;
+  const hospitalId = filter.hospital_id ?? (await resolveHospitalUuid(supabase));
+  if (!hospitalId) {
+    return { rows: [], error: 'Could not resolve hospital UUID for channel messages.' };
+  }
 
   try {
     const channelTypes =
@@ -208,7 +213,7 @@ export async function loadChannelMessages(
       .select(
         'id, hospital_id, channel_type, recipient_type, recipient_id, sender_id, sender_role, sender_name, subject, message, message_text, priority, is_read, created_at, hospital_code, vendor_id',
       )
-      .eq('hospital_id', filter.hospital_id ?? REGAL_HOSPITAL_ID)
+      .eq('hospital_id', hospitalId)
       .in('channel_type', channelTypes)
       .order('created_at', { ascending: true })
       .limit(limit);
@@ -283,9 +288,15 @@ export async function sendChannelMessage(
   const trimmed = input.message.trim();
   if (!trimmed) return { ok: false, error: 'Message cannot be empty.' };
 
+  const hospitalId = input.hospital_id ?? (await resolveHospitalUuid(supabase));
+  if (!hospitalId) {
+    return { ok: false, error: 'Could not resolve hospital UUID for channel message.' };
+  }
+
   const facilityCode = input.hospital_code ?? REGAL_FACILITY_CODE;
   const payload: Record<string, unknown> = {
-    hospital_id: input.hospital_id ?? REGAL_HOSPITAL_ID,
+    hospital_id: hospitalId,
+    hospital_code: REGAL_HOSPITAL_CODE,
     channel_type: input.channel_type,
     recipient_type: input.recipient_type,
     recipient_id: input.recipient_id ?? null,
@@ -296,7 +307,7 @@ export async function sendChannelMessage(
     message_text: trimmed,
     priority: input.priority ?? 'normal',
     is_read: false,
-    hospital_code: facilityCode,
+    facility_code: facilityCode,
     created_at: nowIso(),
   };
 

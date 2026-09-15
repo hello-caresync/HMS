@@ -115,8 +115,11 @@ export function ConsultationWorkspace({ appointmentId }: { appointmentId: string
     await completeMutation.mutateAsync({
       consultationId: cid,
       patientId: token.patient_id,
+      patientName: token.patient_name,
+      uhid: token.uhid,
       doctorId: doctorUuid,
       doctorName,
+      department: token.department || ctx?.department,
       chiefComplaint,
       symptoms,
       clinicalExamination: clinicalExam,
@@ -129,6 +132,11 @@ export function ConsultationWorkspace({ appointmentId }: { appointmentId: string
       labTests: [...labs, ...radiology],
       vitals,
       appointmentId: token.appointment_id ?? appointmentId,
+      sourceTable: (token as { _source_table?: string })._source_table,
+      appointmentType: (token as { appointment_type?: string }).appointment_type,
+      source: (token as { source?: string }).source,
+      bookingSource: (token as { booking_source?: string }).booking_source,
+      tokenNumber: token.token_number,
     });
 
     toast.success('Prescription signed · Post-consultation bill dispatched to Patient & Cashier');

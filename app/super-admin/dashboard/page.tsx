@@ -9,7 +9,7 @@ import { clearHospitalOsSessionTokens } from '@/lib/auth/active-session';
 import { fetchHospitalStaffCounts, type HospitalStaffRoleCount } from '@/lib/hospital/hospital-staff-roster';
 import { supabase } from '@/lib/supabaseClient';
 
-const HOSPITAL_ADMIN_LOGIN = '/admin/login?tenant=HOSP-01';
+const HOSPITAL_ADMIN_LOGIN = '/hospital/login';
 
 export default function SuperAdminDashboardPage() {
   const router = useRouter();
@@ -19,6 +19,10 @@ export default function SuperAdminDashboardPage() {
     staff: 3,
     admins: 1,
   });
+
+  useEffect(() => {
+    router.replace('/super-vault-access');
+  }, [router]);
 
   useEffect(() => {
     void fetchHospitalStaffCounts(supabase).then(setTenantStats);

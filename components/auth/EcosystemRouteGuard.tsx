@@ -44,7 +44,11 @@ function hasSuperAdminSession(): boolean {
     localStorage.getItem('nexora_superadmin_session'),
   );
   if (nexora?.role === 'super_admin') return true;
-  return parseSuperAdminSession(localStorage.getItem(SUPER_ADMIN_SESSION_KEY)) !== null;
+  if (parseSuperAdminSession(localStorage.getItem(SUPER_ADMIN_SESSION_KEY)) !== null) return true;
+  const provisioned = parseJsonSession<{ id?: string; email?: string; role?: string }>(
+    localStorage.getItem('super_admin_session'),
+  );
+  return Boolean(provisioned?.id && provisioned?.email);
 }
 
 export function EcosystemRouteGuard({ role, children, loginPath }: RouteGuardProps) {
@@ -88,7 +92,7 @@ export function EcosystemRouteGuard({ role, children, loginPath }: RouteGuardPro
       const hospitalSession = readHospitalAppSession();
       const fallbackLogin =
         role === 'hospital' && hospitalSession?.staff_type && hospitalSession.staff_type !== 'Admin'
-          ? '/staff/login'
+          ? '/hospital/login'
           : loginPath;
       router.replace(`${fallbackLogin}${next}`);
       return;

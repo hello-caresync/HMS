@@ -7,6 +7,8 @@ import { ArrowRight, PackageCheck, Receipt, RefreshCw, Truck } from 'lucide-reac
 import { VendorFeedbackBanner, useVendorFeedback } from '@/components/vendor/ui/useVendorFeedback';
 import { VendorModuleHeader, VendorStatusPill } from '@/components/vendor/ui/VendorModuleHeader';
 import { VendorStatCard } from '@/components/vendor/ui/VendorStatCard';
+import { PROCUREMENT_PO_TABLE } from '@/lib/hospital/procurement';
+import { supabase } from '@/lib/supabaseClient';
 import { VENDOR_PORTAL_ROUTES } from '@/lib/vendor/navigation';
 import { vendorClasses } from '@/lib/vendor/theme';
 import { matchesPurchaseOrderLifecycle } from '@/lib/vendor/lifecycle';
@@ -19,7 +21,6 @@ import {
   loadLatestPurchaseOrders,
   poItemDetails,
   poStatusTone,
-  setPurchaseOrderStatus,
   subscribeDashboard,
   type DashboardKpis,
   type PurchaseOrder,
@@ -95,24 +96,96 @@ function DashboardWorkspace() {
     showSuccess('Dashboard refreshed from Supabase.');
   };
 
-  const respond = async (order: PurchaseOrder, decision: 'ACCEPTED' | 'REJECTED') => {
+  const refreshMetrics = useCallback(async () => {
+    const kpiResult = await loadDashboardKpis(hospitalCode);
+    setKpis(kpiResult.kpis);
+    if (kpiResult.error) setLoadError(kpiResult.error);
+  }, [hospitalCode]);
+
+  const persistOrderDecision = async (
+    order: PurchaseOrder,
+    decision: 'ACCEPTED' | 'REJECTED',
+  ) => {
+    const targetId = order.id;
+    const targetPoNumber = order.po_number;
+    const wasPending = order.status.toUpperCase() === 'ISSUED';
+
     setBusyPoId(order.id);
-    setRecentOrders((current) =>
-      current.map((row) => (row.id === order.id ? { ...row, status: decision } : row)),
+    setRecentOrders((prevOrders) =>
+      prevOrders.map((o) =>
+        o.id === targetId || o.po_number === targetPoNumber ? { ...o, status: decision } : o,
+      ),
     );
+    if (wasPending) {
+      setKpis((current) => ({ ...current, pendingPos: Math.max(0, current.pendingPos - 1) }));
+    }
 
-    const result = await setPurchaseOrderStatus([order.id], decision);
-    setBusyPoId(null);
+    const procurementStatus = decision.toLowerCase();
+    const legacyStatus = decision;
+    const updatedAt = new Date().toISOString();
 
-    if (!result.ok) {
-      showError(result.error ?? 'Could not update the purchase order.');
+    let query = supabase.from(PROCUREMENT_PO_TABLE).update({
+      status: procurementStatus,
+      updated_at: updatedAt,
+    });
+
+    if (targetId && targetPoNumber) {
+      query = query.or(`id.eq.${targetId},po_number.eq.${targetPoNumber}`);
+    } else if (targetId) {
+      query = query.eq('id', targetId);
+    } else if (targetPoNumber) {
+      query = query.eq('po_number', targetPoNumber);
+    } else {
+      setBusyPoId(null);
+      showError('Missing purchase order identifier');
       await load();
       return;
     }
 
-    showSuccess(`${order.po_number} ${decision === 'ACCEPTED' ? 'accepted' : 'rejected'}.`);
-    await load();
+    const { data, error } = await query.select();
+
+    if (!error && (!data || data.length === 0)) {
+      let fallbackQuery = supabase
+        .from('purchase_orders')
+        .update({ status: legacyStatus, updated_at: updatedAt })
+        .eq('vendor_id', VENDOR_ID);
+
+      if (targetId && targetPoNumber) {
+        fallbackQuery = fallbackQuery.or(`id.eq.${targetId},po_number.eq.${targetPoNumber}`);
+      } else if (targetId) {
+        fallbackQuery = fallbackQuery.eq('id', targetId);
+      } else {
+        fallbackQuery = fallbackQuery.eq('po_number', targetPoNumber);
+      }
+
+      const fallback = await fallbackQuery.select();
+
+      if (fallback.error || !fallback.data || fallback.data.length === 0) {
+        console.error('Update failed to affect any row:', fallback.error);
+        showError('Failed to update order status in database');
+        setBusyPoId(null);
+        await load();
+        return;
+      }
+    } else if (error) {
+      console.error('Supabase update error:', error);
+      showError(error.message || 'Failed to update order');
+      setBusyPoId(null);
+      await load();
+      return;
+    }
+
+    setBusyPoId(null);
+    showSuccess(
+      decision === 'ACCEPTED'
+        ? 'Purchase order marked as accepted'
+        : `${order.po_number} rejected.`,
+    );
+    await refreshMetrics();
   };
+
+  const handleAccept = (order: PurchaseOrder) => persistOrderDecision(order, 'ACCEPTED');
+  const handleReject = (order: PurchaseOrder) => persistOrderDecision(order, 'REJECTED');
 
   const visibleOrders = recentOrders.filter((order) =>
     matchesPurchaseOrderLifecycle(lifecycleStage, order.status),
@@ -154,7 +227,7 @@ function DashboardWorkspace() {
               value={kpis.pendingPos}
               icon={Receipt}
               tone="warning"
-              hint="purchase_orders · ISSUED"
+              hint={`${PROCUREMENT_PO_TABLE} · ISSUED`}
             />
             <VendorStatCard
               label="Active shipments"
@@ -218,7 +291,7 @@ function DashboardWorkspace() {
                             <button
                               type="button"
                               disabled={busyPoId === order.id}
-                              onClick={() => void respond(order, 'ACCEPTED')}
+                              onClick={() => void handleAccept(order)}
                               className="rounded-lg bg-vendor-primary px-3 py-1.5 text-xs font-bold text-vendor-charcoal transition hover:bg-vendor-secondary hover:text-white disabled:opacity-60"
                             >
                               {busyPoId === order.id ? '…' : 'Accept'}
@@ -226,7 +299,7 @@ function DashboardWorkspace() {
                             <button
                               type="button"
                               disabled={busyPoId === order.id}
-                              onClick={() => void respond(order, 'REJECTED')}
+                              onClick={() => void handleReject(order)}
                               className="rounded-lg border border-vendor-danger/40 px-3 py-1.5 text-xs font-bold text-vendor-danger transition hover:bg-vendor-danger/10 disabled:opacity-60"
                             >
                               Reject

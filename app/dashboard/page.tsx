@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Activity,
@@ -9,7 +10,6 @@ import {
   Bell,
   CheckCircle2,
   ChevronRight,
-  ClipboardCheck,
   Clock,
   HeartHandshake,
   IndianRupee,
@@ -21,9 +21,11 @@ import {
   PackageCheck,
   Phone,
   Plus,
+  Printer,
   QrCode,
   RefreshCw,
   Search,
+  ShieldCheck,
   Siren,
   Smartphone,
   Stethoscope,
@@ -36,22 +38,101 @@ import { toast } from 'sonner';
 import { isHospitalSetupCompleted } from '@/lib/auth/admin-setup';
 import { clearActiveSession } from '@/lib/auth/active-session';
 import {
+  isHospitalAdminRole,
   isHospitalAppRole,
   readHospitalAppSession,
 } from '@/lib/auth/ecosystem-sessions';
-import { hospitalIdQueryValues } from '@/lib/hospital/hospital-node';
-import { HOSPITAL_TENANT_ID } from '@/lib/regal/constants';
-import { CACHE_KEYS, readLocalJson, writeLocalJson } from '@/lib/persistence/local-cache';
-import { dedupeEncounterList } from '@/lib/queue/dedupe-encounters';
 import {
-  clearConsultationInvoice,
-  createPendingConsultationInvoice,
+  buildHospitalDirectoryOrFilter,
+  hospitalDirectoryFilterIds,
+  hospitalIdQueryValues,
+  isUuidColumnError,
+  isUuidValue,
+  recordBelongsToHospitalNode,
+} from '@/lib/hospital/hospital-node';
+import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
+import { CACHE_KEYS, readLocalJson, writeLocalJson } from '@/lib/persistence/local-cache';
+import { dedupeEncounterList, encounterIdentityKey } from '@/lib/queue/dedupe-encounters';
+import { computeCheckoutTotal, isConsultationBillingEligible } from '@/lib/billing/invoice-breakdown';
+import {
   mapBillingInvoiceRow,
   type InvoiceMedicineLine,
+  type PrescribedItem,
 } from '@/lib/billing/post-consultation-invoice';
-import { RecordsPharmacyCommandCenter } from '@/components/hospital/RecordsPharmacyCommandCenter';
+import {
+  PharmacyBillingModal,
+  type DirectBillingSeed,
+} from '@/components/hospital/PharmacyBillingModal';
 import { DoctorsStaffCommandCenter } from '@/components/hospital/DoctorsStaffCommandCenter';
+import { IpdBedCensus } from '@/components/hospital/IpdBedCensus';
+import { SupplyOrdersCommandCenter } from '@/components/hospital/SupplyOrdersCommandCenter';
+import { DiagnosticsFulfillmentDesk } from '@/components/hospital/DiagnosticsFulfillmentDesk';
+import { RegalHospitalLogoMark } from '@/components/brand/RegalHospitalLogo';
+import { DASHBOARD_TAB_STORAGE_KEY } from '@/components/hospital/DashboardTabRedirect';
 import { mapHospitalStaffMember, toDashboardStaffRow } from '@/lib/hospital/staff-directory';
+import {
+  fetchActiveHospitalDoctors,
+  formatConsultationFee,
+  type DoctorStaffRecord,
+} from '@/lib/hospital/hospital-staff-roster';
+import { formatDoctorBookingOptionLabel } from '@/lib/hospital/doctors';
+import {
+  isTenDigitPhone,
+  parsePatientAge,
+  validatePhoneField,
+} from '@/lib/hospital/indian-patient';
+import { PhoneNumberInput } from '@/components/ui/PhoneNumberInput';
+import { acknowledgeEmergencyAlert } from '@/lib/hospital/operations/emergency-alert-sync';
+import {
+  createPurchaseOrder,
+  DELIVERY_WINDOWS,
+  fetchHospitalVendors,
+  formatVendorOptionLabel,
+  isEligibleHospitalVendor,
+  mapPurchaseOrderRow,
+  markPurchaseOrderDelivered,
+  PO_CATEGORIES,
+  resolvePoVendorId,
+  saveHospitalVendorRecord,
+  type HospitalVendor,
+  type PurchaseOrderRow,
+} from '@/lib/hospital/procurement';
+import { OfficialReceiptModal } from '@/components/hospital/OfficialReceiptModal';
+import type { PrintableInvoice } from '@/lib/hospital/invoice-receipt';
+import { EMPTY_SUPPLY_FORM } from '@/lib/hospital/po-form';
+import {
+  filterHospitalAppointmentsByDate,
+  type HospitalAppointmentDateFilter,
+} from '@/lib/hospital/appointments';
+import { OutpatientStatusCell } from '@/components/hospital/OutpatientStatusCell';
+import {
+  formatAdvanceBookingToast,
+  formatBillingReadyToast,
+  isAdvanceBookingRecord,
+  isBillingPendingEncounterStatus,
+  playBillingCheckoutChime,
+} from '@/lib/notifications/opd-alerts';
+import { resolveDoctorConsultationFee } from '@/lib/hospital/doctors';
+import {
+  clinicSessionWaitMinutes,
+  formatClinicWait,
+  isSlaBreachWaiting,
+} from '@/lib/hospital/smartq-wait';
+import { formatQueueDateBadge } from '@/lib/scheduling/queue-date-filter';
+import {
+  BED_STATUS_OPTIONS,
+  BED_TYPE_RATES,
+  defaultRateForBedType,
+  formatInr as formatBedRate,
+  inferBedTypeFromWard,
+  WARD_OPTIONS,
+  type BedType,
+} from '@/lib/hospital/ward-beds';
+import {
+  DEFAULT_HOSPITAL_DEPARTMENT,
+  doctorsForDepartment,
+  mergeDepartmentOptions,
+} from '@/lib/hospital/departments';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -62,11 +143,37 @@ type NavModule =
   | 'smartq'
   | 'patients'
   | 'ipd'
-  | 'pharmacy'
   | 'emergency'
   | 'billing'
   | 'supply'
   | 'staff';
+
+const NAV_MODULES: NavModule[] = [
+  'dashboard',
+  'smartq',
+  'patients',
+  'ipd',
+  'emergency',
+  'billing',
+  'supply',
+  'staff',
+];
+
+function isNavModule(value: string | null | undefined): value is NavModule {
+  return Boolean(value && NAV_MODULES.includes(value as NavModule));
+}
+
+function readInitialDashboardTab(): NavModule {
+  if (typeof window === 'undefined') return 'dashboard';
+  const fromQuery = new URLSearchParams(window.location.search).get('tab');
+  if (isNavModule(fromQuery)) return fromQuery;
+  const stored = sessionStorage.getItem(DASHBOARD_TAB_STORAGE_KEY);
+  if (isNavModule(stored)) {
+    sessionStorage.removeItem(DASHBOARD_TAB_STORAGE_KEY);
+    return stored;
+  }
+  return 'dashboard';
+}
 
 type ModalKind = 'opd' | 'pharmacy' | 'bed' | 'invoice' | 'supply' | null;
 
@@ -95,6 +202,7 @@ type QueueChannel = 'walk-in' | 'online';
 type QueueRow = {
   id: string;
   token: string;
+  token_number: string;
   uhid: string;
   patient_name: string;
   department: string;
@@ -103,11 +211,14 @@ type QueueRow = {
   status: string;
   created_at: string;
   appointment_date: string;
+  slot_time: string;
+  reschedule_status: string;
   source: string;
   channel: QueueChannel;
   source_table: string;
   gender: string;
   age: number | null;
+  consultation_fee: number;
 };
 
 type IncomingBookingAlert = {
@@ -117,12 +228,22 @@ type IncomingBookingAlert = {
   token: string;
 };
 
+type BillingCheckoutAlert = {
+  id: string;
+  patientName: string;
+  token: string;
+  doctorName: string;
+  consultationFee: number;
+};
+
 type WalkInTokenSource = {
   uhid?: string | null;
   token?: string | null;
   appointment_date?: string | null;
   created_at?: string | null;
 };
+
+type PatientBillingStatus = 'none' | 'awaiting_consultation' | 'pending_payment' | 'paid';
 
 type PatientProfile = {
   id: string;
@@ -135,7 +256,14 @@ type PatientProfile = {
   first_registered: string;
   gender: string;
   age: number | null;
+  patient_age: number | null;
   record_status: string;
+  booking_source?: string;
+  appointment_id?: string;
+  encounter_status?: string;
+  doctor_name?: string;
+  billing_status?: PatientBillingStatus;
+  pending_invoice_id?: string;
 };
 
 type PharmacyRow = {
@@ -183,9 +311,26 @@ type BedRow = {
   id: string;
   ward_name: string;
   bed_number: string;
+  bed_type: string;
+  daily_rate: number;
   status: string;
   patient_name: string;
 };
+
+function mapBedRow(row: Record<string, unknown>): BedRow {
+  const ward = String(row.ward_name ?? row.ward ?? '');
+  const inferred = inferBedTypeFromWard(ward);
+  const bedType = String(row.bed_type ?? inferred) as BedType;
+  return {
+    id: String(row.id ?? ''),
+    ward_name: ward,
+    bed_number: String(row.bed_number ?? ''),
+    bed_type: bedType,
+    daily_rate: Number(row.daily_rate ?? row.rate ?? defaultRateForBedType(inferred)),
+    status: String(row.status ?? (row.is_occupied ? 'occupied' : 'available')),
+    patient_name: String(row.patient_name ?? '-'),
+  };
+}
 
 type InvoiceRow = {
   id: string;
@@ -194,47 +339,23 @@ type InvoiceRow = {
   amount: number;
   status: string;
   uhid?: string;
+  invoice_number?: string;
   doctor_name?: string;
+  department?: string;
   consultation_fee?: number;
+  medicine_fee?: number;
   medicines_total?: number;
   medicines?: InvoiceMedicineLine[];
+  prescribed_items?: PrescribedItem[];
   payment_method?: string;
   paid_at?: string;
+  appointment_id?: string;
+  booking_source?: string;
+  patient_id?: string;
+  token_number?: string | number | null;
 };
 
-type SupplyRow = {
-  id: string;
-  po_number: string;
-  vendor_name: string;
-  item_description: string;
-  quantity: number;
-  total_amount: number;
-  status: string;
-};
-
-type HospitalVendorRow = {
-  id: string;
-  hospital_id: string;
-  company_name: string;
-  vendor_email: string;
-  category: string;
-  status: string;
-  passcode?: string;
-  created_at?: string;
-};
-
-function mapHospitalVendor(row: Record<string, unknown>): HospitalVendorRow {
-  return {
-    id: String(row.id ?? ''),
-    hospital_id: String(row.hospital_id ?? HOSPITAL_TENANT_ID),
-    company_name: String(row.company_name ?? row.vendor_name ?? row.name ?? 'Vendor'),
-    vendor_email: String(row.vendor_email ?? row.email ?? row.rep_email ?? ''),
-    category: String(row.category ?? 'Pharmaceuticals'),
-    status: String(row.status ?? 'active'),
-    passcode: row.passcode ? String(row.passcode) : undefined,
-    created_at: row.created_at ? String(row.created_at) : undefined,
-  };
-}
+type SupplyRow = PurchaseOrderRow;
 
 type EmergencyRow = {
   id: string;
@@ -279,15 +400,23 @@ function mapCheckoutInvoice(row: Record<string, unknown>): InvoiceRow {
       id: bill.id,
       patient_name: bill.patient_name,
       service_type: 'OPD Consultation + Pharmacy',
-      amount: bill.total_amount,
+      amount: bill.total_payable ?? bill.total_amount,
       status: bill.payment_status,
-      uhid: bill.uhid,
+      uhid: bill.patient_uhid ?? bill.uhid,
+      invoice_number: bill.invoice_number,
       doctor_name: bill.doctor_name,
+      department: bill.department,
       consultation_fee: bill.consultation_fee,
+      medicine_fee: bill.medicine_fee,
       medicines_total: bill.medicines_total,
       medicines: bill.medicines,
+      prescribed_items: bill.prescribed_items,
       payment_method: bill.payment_method,
       paid_at: bill.paid_at,
+      appointment_id: bill.appointment_id,
+      booking_source: bill.booking_source ?? (row.booking_source ? String(row.booking_source) : undefined),
+      patient_id: row.patient_id ? String(row.patient_id) : undefined,
+      token_number: row.token_number != null ? (row.token_number as string | number) : undefined,
     };
   }
   return {
@@ -313,21 +442,11 @@ function nodeCodeFor(hospitalId: string): string {
   return hospitalId;
 }
 
-const OPD_DEPARTMENTS = [
-  'General Medicine',
-  'Cardiology',
-  'Neurology',
-  'Orthopedics',
-  'Pediatrics',
-  'Dermatology',
-  'ENT',
-  'Obstetrics & Gynecology',
-] as const;
-
 const WALK_IN_TOKEN_PREFIX = 'NX-WLK';
 
 function todayIsoDate(): string {
-  return new Date().toISOString().split('T')[0];
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 const getNextWalkInToken = (queue: WalkInTokenSource[], prefix = WALK_IN_TOKEN_PREFIX) => {
@@ -420,15 +539,19 @@ function formatEncounter(isoDate: string): string {
 
 function mapQueueRow(row: Record<string, unknown>, sourceTable: string): QueueRow | null {
   const status = String(row.status ?? row.queue_status ?? 'Waiting');
-  const id = String(row.id ?? row.appointment_id ?? row.token_number ?? row.uhid ?? '');
+  const token = String(row.token_number ?? row.uhid ?? row.token ?? '').trim();
+  const rawId = String(row.id ?? '').trim();
+  const rawAppointmentId = String(row.appointment_id ?? '').trim();
+  const id = isUuidValue(rawId) ? rawId : isUuidValue(rawAppointmentId) ? rawAppointmentId : '';
   const patientName = String(row.patient_name ?? row.name ?? '').trim();
-  if (!id && !patientName) return null;
+  if (!id && !token && !patientName) return null;
   const ageRaw = row.age ?? row.patient_age;
   const channel = classifyQueueSource(row);
   return {
-    id: id || `enc-${patientName}-${String(row.appointment_date ?? row.created_at ?? '')}`,
-    token: String(row.token_number ?? row.uhid ?? row.token ?? row.id ?? '—'),
-    uhid: String(row.uhid ?? row.token_number ?? row.id ?? ''),
+    id,
+    token: token || (isUuidValue(rawId) ? rawId.slice(0, 8) : rawId) || '—',
+    token_number: token,
+    uhid: String(row.uhid ?? token ?? ''),
     patient_name: patientName || 'Unnamed Patient',
     department: String(row.department ?? 'General Medicine'),
     phone: String(row.phone ?? row.patient_phone ?? ''),
@@ -436,12 +559,38 @@ function mapQueueRow(row: Record<string, unknown>, sourceTable: string): QueueRo
     status,
     created_at: String(row.created_at ?? ''),
     appointment_date: String(row.appointment_date ?? row.created_at ?? ''),
+    slot_time: String(row.slot_time ?? row.time_slot ?? row.appointment_time ?? ''),
+    reschedule_status: String(row.reschedule_status ?? ''),
     source: String(row.source ?? (channel === 'walk-in' ? 'WALK_IN' : 'PATIENT_APP')),
     channel,
     source_table: sourceTable,
     gender: String(row.gender ?? row.sex ?? ''),
-    age: ageRaw == null || ageRaw === '' ? null : Number(ageRaw),
+    age:
+      ageRaw == null || ageRaw === ''
+        ? null
+        : Number.isFinite(Number(ageRaw))
+          ? Number(ageRaw)
+          : null,
+    consultation_fee: resolveDoctorConsultationFee(row),
   };
+}
+
+function patchMasterQueueRow(
+  previous: QueueRow[],
+  row: Record<string, unknown>,
+  sourceTable: string,
+): QueueRow[] {
+  const mapped = mapQueueRow(row, sourceTable);
+  if (!mapped) return previous;
+  const key = encounterIdentityKey(mapped);
+  let found = false;
+  const next = previous.map((entry) => {
+    if (encounterIdentityKey(entry) !== key) return entry;
+    found = true;
+    return { ...entry, ...mapped };
+  });
+  if (found) return next;
+  return dedupeEncounterList([mapped, ...previous]);
 }
 
 function patientKey(name: string, phone: string, uhid: string): string {
@@ -463,10 +612,12 @@ function buildPatientDirectory(queue: QueueRow[], extraPatients: Record<string, 
     created_at: string;
     gender: string;
     age: number | null;
+    patient_age?: number | null;
     visits?: number;
   }) => {
     const key = patientKey(input.patient_name, input.phone, input.uhid);
     const existing = directory.get(key);
+    const resolvedAge = input.patient_age ?? input.age;
     if (!existing) {
       directory.set(key, {
         id: input.id,
@@ -478,7 +629,8 @@ function buildPatientDirectory(queue: QueueRow[], extraPatients: Record<string, 
         last_encounter: input.created_at,
         first_registered: input.created_at,
         gender: input.gender,
-        age: input.age,
+        age: resolvedAge,
+        patient_age: resolvedAge,
         record_status: 'Verified Profile',
       });
       return;
@@ -492,7 +644,8 @@ function buildPatientDirectory(queue: QueueRow[], extraPatients: Record<string, 
       existing.first_registered = input.created_at;
     }
     if (!existing.gender && input.gender) existing.gender = input.gender;
-    if (existing.age == null && input.age != null) existing.age = input.age;
+    if (existing.age == null && resolvedAge != null) existing.age = resolvedAge;
+    if (existing.patient_age == null && resolvedAge != null) existing.patient_age = resolvedAge;
     if (existing.uhid.startsWith('NX-OPD-') && input.uhid && !input.uhid.startsWith('NX-OPD-')) {
       existing.uhid = input.uhid;
     }
@@ -508,10 +661,12 @@ function buildPatientDirectory(queue: QueueRow[], extraPatients: Record<string, 
       created_at: visit.created_at || visit.appointment_date,
       gender: visit.gender,
       age: visit.age,
+      patient_age: visit.age,
     });
   }
 
   for (const row of extraPatients) {
+    const ageRaw = row.patient_age ?? row.age;
     upsert({
       id: String(row.id ?? row.uhid ?? ''),
       uhid: String(row.uhid ?? row.id ?? ''),
@@ -520,7 +675,18 @@ function buildPatientDirectory(queue: QueueRow[], extraPatients: Record<string, 
       department: String(row.department ?? 'General Outpatient'),
       created_at: String(row.created_at ?? row.last_visit_at ?? ''),
       gender: String(row.gender ?? row.sex ?? ''),
-      age: row.age == null || row.age === '' ? null : Number(row.age),
+      age:
+        ageRaw == null || ageRaw === ''
+          ? null
+          : Number.isFinite(Number(ageRaw))
+            ? Number(ageRaw)
+            : null,
+      patient_age:
+        row.patient_age == null || row.patient_age === ''
+          ? null
+          : Number.isFinite(Number(row.patient_age))
+            ? Number(row.patient_age)
+            : null,
       visits: Number(row.visit_count ?? 0) || 1,
     });
   }
@@ -537,48 +703,137 @@ function buildPatientDirectory(queue: QueueRow[], extraPatients: Record<string, 
   });
 }
 
+function resolveInvoiceBookingSource(
+  invoice: InvoiceRow,
+  queue: QueueRow[],
+): string | undefined {
+  if (invoice.booking_source) return invoice.booking_source;
+  const match = queue.find(
+    (row) =>
+      (invoice.appointment_id && row.id === invoice.appointment_id) ||
+      (invoice.uhid && row.uhid === invoice.uhid),
+  );
+  return match?.source;
+}
+
+function enrichPatientsWithBilling(
+  patients: PatientProfile[],
+  queue: QueueRow[],
+  invoiceRows: InvoiceRow[],
+): PatientProfile[] {
+  return patients.map((patient) => {
+    const key = patientKey(patient.patient_name, patient.phone, patient.uhid);
+    const encounters = queue
+      .filter((row) => patientKey(row.patient_name, row.phone, row.uhid) === key)
+      .sort((a, b) => String(b.created_at || b.appointment_date).localeCompare(String(a.created_at || a.appointment_date)));
+    const latest = encounters[0];
+    const pendingInvoice = invoiceRows.find(
+      (inv) =>
+        /pending|unpaid|unbilled/i.test(inv.status) &&
+        ((inv.uhid && inv.uhid === patient.uhid) ||
+          (latest?.id && inv.appointment_id === latest.id) ||
+          inv.patient_name.trim().toLowerCase() === patient.patient_name.trim().toLowerCase()),
+    );
+    const paidInvoice = invoiceRows.find(
+      (inv) =>
+        /paid/i.test(inv.status) &&
+        ((inv.uhid && inv.uhid === patient.uhid) ||
+          (latest?.id && inv.appointment_id === latest.id)),
+    );
+
+    let billing_status: PatientBillingStatus = 'none';
+    if (paidInvoice && latest && isConsultationBillingEligible(latest.status)) {
+      billing_status = 'paid';
+    } else if (pendingInvoice && latest && isConsultationBillingEligible(latest.status)) {
+      billing_status = 'pending_payment';
+    } else if (latest && !isConsultationBillingEligible(latest.status)) {
+      billing_status = 'awaiting_consultation';
+    }
+
+    return {
+      ...patient,
+      booking_source: latest?.source,
+      appointment_id: latest?.id,
+      encounter_status: latest?.status,
+      doctor_name: latest?.doctor_name || pendingInvoice?.doctor_name,
+      billing_status,
+      pending_invoice_id: pendingInvoice?.id,
+    };
+  });
+}
+
 async function selectScoped(table: string, hospitalId: string): Promise<Record<string, unknown>[]> {
   if (!supabase || !hospitalId) return [];
-  const { data, error } = await supabase.from(table).select('*').eq('hospital_id', hospitalId);
-  if (!error && Array.isArray(data)) return data as Record<string, unknown>[];
+  const orFilter = buildHospitalDirectoryOrFilter(hospitalDirectoryFilterIds(hospitalId));
+  const { data, error } = await supabase.from(table).select('*').or(orFilter);
+  if (!error && Array.isArray(data)) {
+    return (data as Record<string, unknown>[]).filter((row) =>
+      recordBelongsToHospitalNode(row, hospitalId),
+    );
+  }
 
   const aliases = hospitalIdQueryValues(hospitalId);
-  const aliased = await supabase.from(table).select('*').in('hospital_id', aliases);
+  const ids = isUuidColumnError(error?.message) ? aliases.filter(isUuidValue) : aliases;
+  if (ids.length === 0) return [];
+  const aliased = await supabase.from(table).select('*').in('hospital_id', ids);
   if (aliased.error || !Array.isArray(aliased.data)) return [];
-  return aliased.data as Record<string, unknown>[];
+  return (aliased.data as Record<string, unknown>[]).filter((row) =>
+    recordBelongsToHospitalNode(row, hospitalId),
+  );
 }
 
 /** Facility-wide appointments for this hospital node — never filtered by doctor. */
 async function fetchNodeAppointments(hospitalId: string): Promise<Record<string, unknown>[]> {
   if (!supabase || !hospitalId) return [];
+  const tables = ['hospital_appointments', 'appointments'] as const;
+  const orFilter = buildHospitalDirectoryOrFilter(hospitalDirectoryFilterIds(hospitalId));
+  const merged: Record<string, unknown>[] = [];
+  const seen = new Set<string>();
 
-  const primary = await supabase
-    .from('appointments')
-    .select('*')
-    .eq('hospital_id', hospitalId)
-    .order('created_at', { ascending: false });
+  for (const table of tables) {
+    const primary = await supabase
+      .from(table)
+      .select('*')
+      .or(orFilter)
+      .order('created_at', { ascending: false });
 
-  if (!primary.error && Array.isArray(primary.data) && primary.data.length > 0) {
-    return primary.data as Record<string, unknown>[];
+    let rows: Record<string, unknown>[] = [];
+    if (!primary.error && Array.isArray(primary.data)) {
+      rows = primary.data as Record<string, unknown>[];
+    } else {
+      const aliases = hospitalIdQueryValues(hospitalId);
+      const fallback = await supabase
+        .from(table)
+        .select('*')
+        .in('hospital_id', aliases.length > 0 ? aliases : [hospitalId])
+        .order('created_at', { ascending: false });
+      rows = (fallback.data as Record<string, unknown>[] | null) ?? [];
+    }
+
+    for (const row of rows) {
+      if (!recordBelongsToHospitalNode(row, hospitalId)) continue;
+      const id = String(row.id ?? row.appointment_id ?? '');
+      if (id && seen.has(id)) continue;
+      if (id) seen.add(id);
+      merged.push(row);
+    }
   }
 
-  const aliases = hospitalIdQueryValues(hospitalId);
-  const aliased = await supabase
-    .from('appointments')
-    .select('*')
-    .in('hospital_id', aliases)
-    .order('created_at', { ascending: false });
+  return merged;
+}
 
-  if (aliased.error || !Array.isArray(aliased.data)) return [];
-  return aliased.data as Record<string, unknown>[];
+function queueIdentityKey(row: QueueRow): string {
+  return encounterIdentityKey(row);
 }
 
 function dedupeQueueRows(rows: Array<QueueRow | null>): QueueRow[] {
   const seen = new Set<string>();
   const next: QueueRow[] = [];
   for (const row of rows) {
-    if (!row || seen.has(row.id)) continue;
-    seen.add(row.id);
+    if (!row) continue;
+    const key = queueIdentityKey(row);
+    if (seen.has(key)) continue;
+    seen.add(key);
     next.push(row);
   }
   return next;
@@ -699,6 +954,112 @@ function missingInsertColumn(message: string | null | undefined): string | null 
   return postgres?.[1] ?? null;
 }
 
+async function updateByIdWithColumnRetry(
+  table: string,
+  id: string,
+  patch: Record<string, unknown>,
+): Promise<{ updated: boolean; errorMessage: string | null }> {
+  return updateMatchingRowWithColumnRetry(table, 'id', id, patch);
+}
+
+async function updateMatchingRowWithColumnRetry(
+  table: string,
+  column: string,
+  value: string,
+  patch: Record<string, unknown>,
+): Promise<{ updated: boolean; errorMessage: string | null }> {
+  if (!supabase || !value) return { updated: false, errorMessage: 'Missing row id' };
+  if (column === 'id' && !isUuidValue(value) && table !== 'hospital_opd_queue') {
+    return { updated: false, errorMessage: 'Unable to offer reschedule: Missing appointment ID' };
+  }
+
+  const row = { ...patch };
+  let { data, error } = await supabase.from(table).update(row).eq(column, value).select('id');
+  let attempts = 0;
+  while (error && attempts < 12) {
+    if (isUuidColumnError(error.message) && column === 'id') {
+      return { updated: false, errorMessage: error.message };
+    }
+    const missing = missingInsertColumn(error.message);
+    if (missing && missing in row) {
+      delete row[missing];
+    } else if (/check constraint|invalid input value|violates/i.test(error.message) && 'status' in row) {
+      delete row.status;
+    } else {
+      break;
+    }
+    if (Object.keys(row).length === 0) break;
+    attempts += 1;
+    const retry = await supabase.from(table).update(row).eq(column, value).select('id');
+    data = retry.data;
+    error = retry.error;
+  }
+  if (error) return { updated: false, errorMessage: error.message };
+  const count = Array.isArray(data) ? data.length : data ? 1 : 0;
+  return { updated: count > 0, errorMessage: count > 0 ? null : 'No matching row' };
+}
+
+async function offerRescheduleOnLiveRow(item: QueueRow): Promise<{ updated: boolean; errorMessage: string | null }> {
+  const now = new Date().toISOString();
+  const patch: Record<string, unknown> = {
+    reschedule_status: 'offered',
+    status: 'reschedule_offered',
+    reschedule_offered_at: now,
+    updated_at: now,
+  };
+  const tables = Array.from(
+    new Set(
+      [item.source_table, 'appointments', 'hospital_appointments', 'hospital_opd_queue'].filter(
+        (table): table is string => Boolean(table),
+      ),
+    ),
+  );
+  const uuid = isUuidValue(item.id) ? item.id : '';
+  const token = String(item.token_number || item.token || item.uhid || '').trim();
+  let lastError = 'Could not offer reschedule';
+
+  for (const table of tables) {
+    if (uuid) {
+      const byId = await updateMatchingRowWithColumnRetry(table, 'id', uuid, patch);
+      if (byId.updated) return byId;
+      lastError = byId.errorMessage || lastError;
+    }
+    if (!token) continue;
+    for (const column of ['token_number', 'uhid', 'token'] as const) {
+      const byToken = await updateMatchingRowWithColumnRetry(table, column, token, patch);
+      if (byToken.updated) return byToken;
+      lastError = byToken.errorMessage || lastError;
+    }
+  }
+
+  if (!uuid) {
+    return { updated: false, errorMessage: 'Unable to offer reschedule: Missing appointment ID' };
+  }
+  return { updated: false, errorMessage: lastError };
+}
+
+async function insertWithColumnRetry(
+  table: string,
+  payload: Record<string, unknown>,
+): Promise<{ ok: boolean; errorMessage: string | null }> {
+  if (!supabase) return { ok: false, errorMessage: 'Supabase is not configured' };
+  const row = { ...payload };
+  let { error } = await supabase.from(table).insert([row]);
+  let attempts = 0;
+  while (error && attempts < 10) {
+    const column = missingInsertColumn(error.message);
+    if (column && column in row) {
+      delete row[column];
+    } else {
+      break;
+    }
+    attempts += 1;
+    const retry = await supabase.from(table).insert([row]);
+    error = retry.error;
+  }
+  return { ok: !error, errorMessage: error?.message ?? null };
+}
+
 function EmptyState({
   icon: Icon,
   title,
@@ -731,7 +1092,7 @@ function EmptyState({
 
 export default function HospitalMasterDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<NavModule>('dashboard');
+  const [activeTab, setActiveTab] = useState<NavModule>(readInitialDashboardTab);
   const [currentUserRole, setCurrentUserRole] = useState(() => readHospitalAppSession()?.staff_type || 'Staff');
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
@@ -744,10 +1105,12 @@ export default function HospitalMasterDashboard() {
     const scope = readCachedHospitalInfo();
     return readCachedPlatform(scope?.id || '')?.staffMembers ?? [];
   });
-  const [opdQueue, setOpdQueue] = useState<QueueRow[]>(() => {
+  const [walkInDoctorPool, setWalkInDoctorPool] = useState<DoctorStaffRecord[]>([]);
+  const [masterOpdQueue, setMasterOpdQueue] = useState<QueueRow[]>(() => {
     const scope = readCachedHospitalInfo();
     return readCachedPlatform(scope?.id || '')?.opdQueue ?? [];
   });
+  const [activeDateFilter, setActiveDateFilter] = useState<HospitalAppointmentDateFilter>('today');
   const [patientRegistry, setPatientRegistry] = useState<PatientProfile[]>(() => {
     const scope = readCachedHospitalInfo();
     return readCachedPlatform(scope?.id || '')?.patientRegistry ?? [];
@@ -790,33 +1153,85 @@ export default function HospitalMasterDashboard() {
   const [emPatientInfo, setEmPatientInfo] = useState('');
   const [emSeverity, setEmSeverity] = useState('code_red');
   const [emArrival, setEmArrival] = useState('Ambulance');
-  const [showAddInvoiceModal, setShowAddInvoiceModal] = useState(false);
-  const [isSubmittingInvoice, setIsSubmittingInvoice] = useState(false);
-  const [invPatientName, setInvPatientName] = useState('');
-  const [invUhid, setInvUhid] = useState('');
-  const [invDoctorName, setInvDoctorName] = useState('');
-  const [invConsultationFee, setInvConsultationFee] = useState(500);
-  const [invMedicines, setInvMedicines] = useState<InvoiceMedicineLine[]>([{ name: '', qty: 1, price: 0 }]);
+  const [directBillingOpen, setDirectBillingOpen] = useState(false);
+  const [directBillingSeed, setDirectBillingSeed] = useState<DirectBillingSeed | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<PrintableInvoice | null>(null);
+  const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
 
   const [isSubmittingToken, setIsSubmittingToken] = useState(false);
   const [isSubmittingFormulary, setIsSubmittingFormulary] = useState(false);
   const [onlineBookingAlert, setOnlineBookingAlert] = useState<IncomingBookingAlert | null>(null);
+  const [billingCheckoutAlert, setBillingCheckoutAlert] = useState<BillingCheckoutAlert | null>(null);
   const [opdTokenPreview, setOpdTokenPreview] = useState(() => getNextWalkInToken([]));
-  const [opdForm, setOpdForm] = useState({ patientName: '', department: 'General Medicine', phone: '' });
+  const [opdForm, setOpdForm] = useState<{
+    patientName: string;
+    department: string;
+    doctorId: string;
+    phone: string;
+    age: string;
+    bp: string;
+    pulse: string;
+    temp: string;
+    spo2: string;
+    weight: string;
+  }>({
+    patientName: '',
+    department: DEFAULT_HOSPITAL_DEPARTMENT,
+    doctorId: '',
+    phone: '',
+    age: '',
+    bp: '',
+    pulse: '',
+    temp: '',
+    spo2: '',
+    weight: '',
+  });
   const [medForm, setMedForm] = useState({ name: '', category: 'Medicine', stock: 100 });
-  const [bedForm, setBedForm] = useState({ ward: 'General Ward', bedNumber: '', patientName: '' });
+  const [bedForm, setBedForm] = useState<{
+    ward: string;
+    bedNumber: string;
+    bedType: BedType;
+    dailyRate: number;
+    status: string;
+    patientName: string;
+  }>({
+    ward: WARD_OPTIONS[0],
+    bedNumber: '',
+    bedType: 'General',
+    dailyRate: BED_TYPE_RATES.General,
+    status: 'available',
+    patientName: '',
+  });
   const [invoiceForm, setInvoiceForm] = useState({ patientName: '', service: 'OPD Consultation', amount: 800 });
-  const [supplyForm, setSupplyForm] = useState({ vendor: '', item: '', quantity: 1, amount: 0 });
-  const [vendorsList, setVendorsList] = useState<HospitalVendorRow[]>([]);
+  const [supplyForm, setSupplyForm] = useState({ ...EMPTY_SUPPLY_FORM, category: PO_CATEGORIES[0] as string });
+  const [markingPoId, setMarkingPoId] = useState<string | null>(null);
+  const [vendorsList, setVendorsList] = useState<HospitalVendor[]>([]);
   const [isProvisioningVendor, setIsProvisioningVendor] = useState(false);
   const [vendorCompany, setVendorCompany] = useState('');
   const [vendorEmail, setVendorEmail] = useState('');
   const [vendorCategory, setVendorCategory] = useState('Pharmaceuticals');
   const [vendorPasscode, setVendorPasscode] = useState('');
 
+  const todayOpdQueue = useMemo(
+    () => filterHospitalAppointmentsByDate(masterOpdQueue, 'today'),
+    [masterOpdQueue],
+  );
+  const tomorrowOpdQueue = useMemo(
+    () => filterHospitalAppointmentsByDate(masterOpdQueue, 'tomorrow'),
+    [masterOpdQueue],
+  );
+  const upcomingOpdQueue = useMemo(
+    () => filterHospitalAppointmentsByDate(masterOpdQueue, 'upcoming'),
+    [masterOpdQueue],
+  );
+  const opdQueue = useMemo(
+    () => filterHospitalAppointmentsByDate(masterOpdQueue, activeDateFilter),
+    [activeDateFilter, masterOpdQueue],
+  );
+
   const loadPlatformData = useCallback(async (hospitalId?: string) => {
     if (!supabase) return;
-    const activeNode = hospitalId || hospitalInfo.id || HOSPITAL_TENANT_ID;
+    const activeNode = hospitalId || hospitalInfo.id;
     if (!activeNode) return;
     setIsLoading(true);
 
@@ -860,6 +1275,9 @@ export default function HospitalMasterDashboard() {
       );
       setStaffMembers(mappedStaff);
 
+      const bookableDoctors = await fetchActiveHospitalDoctors(supabase, activeNode);
+      setWalkInDoctorPool(bookableDoctors);
+
       const liveAppointments = aptRows || [];
       const liveQueue = dedupeEncounterList(
         dedupeQueueRows([
@@ -867,7 +1285,7 @@ export default function HospitalMasterDashboard() {
           ...(opdRows || []).map((row) => mapQueueRow(row, 'hospital_opd_queue')),
         ]).filter((row): row is QueueRow => Boolean(row)),
       );
-      setOpdQueue(liveQueue);
+      setMasterOpdQueue(liveQueue);
       setPatientRegistry(
         buildPatientDirectory(liveQueue, [...(patientRows || []), ...(hospitalPatientRows || [])]),
       );
@@ -875,15 +1293,8 @@ export default function HospitalMasterDashboard() {
       const pharmacySource = (pharmRows || []).length > 0 ? pharmRows : inventoryRows || [];
       setPharmacyItems(dedupePharmacyItems(pharmacySource.map(mapPharmacyRow)));
 
-      setBeds(
-        (bedRows || []).map((row) => ({
-          id: String(row.id ?? ''),
-          ward_name: String(row.ward_name ?? row.ward ?? ''),
-          bed_number: String(row.bed_number ?? ''),
-          status: String(row.status ?? (row.is_occupied ? 'Occupied' : 'Available')),
-          patient_name: String(row.patient_name ?? '-'),
-        })),
-      );
+      const mappedBeds = (bedRows || []).map(mapBedRow);
+      setBeds(mappedBeds);
 
       const invoiceSource = (invoiceRows || []).length > 0 ? invoiceRows : billRows || [];
       const checkoutSource = (checkoutRows || []).length > 0 ? checkoutRows : invoiceSource;
@@ -891,18 +1302,10 @@ export default function HospitalMasterDashboard() {
       setInvoices(mappedInvoices);
       setPendingInvoices(mappedInvoices.filter((inv) => /pending|unpaid|unbilled/i.test(inv.status)));
 
-      const supplySource = (supplyRows || []).length > 0 ? supplyRows : poRows || [];
-      setSupplyOrders(
-        supplySource.map((row) => ({
-          id: String(row.id ?? ''),
-          po_number: String(row.po_number ?? row.id ?? ''),
-          vendor_name: String(row.vendor_name ?? ''),
-          item_description: String(row.item_description ?? row.item_details ?? ''),
-          quantity: Number(row.quantity ?? row.quantity_ordered ?? 1),
-          total_amount: Number(row.total_amount ?? 0),
-          status: String(row.status ?? 'ISSUED'),
-        })),
-      );
+      const supplySource =
+        (poRows || []).length > 0 ? poRows : (supplyRows || []).length > 0 ? supplyRows : [];
+      const mappedSupply = supplySource.map(mapPurchaseOrderRow);
+      setSupplyOrders(mappedSupply);
 
       const emergencySource = (emergencyRows || []).length > 0 ? emergencyRows : hospitalEmergencyRows || [];
       const nextEmergencies = emergencySource.map((row) => ({
@@ -927,23 +1330,9 @@ export default function HospitalMasterDashboard() {
         patientRegistry: buildPatientDirectory(liveQueue, [...(patientRows || []), ...(hospitalPatientRows || [])]),
         staffMembers: mappedStaff,
         pharmacyItems: dedupePharmacyItems(pharmacySource.map(mapPharmacyRow)),
-        beds: (bedRows || []).map((row) => ({
-          id: String(row.id ?? ''),
-          ward_name: String(row.ward_name ?? row.ward ?? ''),
-          bed_number: String(row.bed_number ?? ''),
-          status: String(row.status ?? (row.is_occupied ? 'Occupied' : 'Available')),
-          patient_name: String(row.patient_name ?? '-'),
-        })),
+        beds: mappedBeds,
         invoices: checkoutSource.map(mapCheckoutInvoice),
-        supplyOrders: supplySource.map((row) => ({
-          id: String(row.id ?? ''),
-          po_number: String(row.po_number ?? row.id ?? ''),
-          vendor_name: String(row.vendor_name ?? ''),
-          item_description: String(row.item_description ?? row.item_details ?? ''),
-          quantity: Number(row.quantity ?? row.quantity_ordered ?? 1),
-          total_amount: Number(row.total_amount ?? 0),
-          status: String(row.status ?? 'ISSUED'),
-        })),
+        supplyOrders: mappedSupply,
         emergencies: nextEmergencies,
       });
     } catch (err: unknown) {
@@ -956,7 +1345,7 @@ export default function HospitalMasterDashboard() {
 
   const loadPharmacyData = useCallback(async () => {
     if (!supabase) return;
-    const activeHospital = hospitalInfo.id || HOSPITAL_TENANT_ID;
+    const activeHospital = hospitalInfo.id;
     try {
       const pharmRows = await selectScoped('hospital_pharmacy_inventory', activeHospital);
       const inventoryRows = pharmRows.length > 0 ? [] : await selectScoped('inventory_items', activeHospital);
@@ -969,8 +1358,12 @@ export default function HospitalMasterDashboard() {
   }, [hospitalInfo.id]);
 
   const loadBillingInvoices = useCallback(async () => {
-    if (!supabase) return;
-    const activeNode = hospitalInfo.id || HOSPITAL_TENANT_ID;
+    if (!supabase) {
+      setInvoices([]);
+      setPendingInvoices([]);
+      return;
+    }
+    const activeNode = hospitalInfo.id;
 
     try {
       const { data, error } = await supabase
@@ -979,31 +1372,48 @@ export default function HospitalMasterDashboard() {
         .eq('hospital_id', activeNode)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Billing invoices table empty or not yet seeded:', error.message);
+        setInvoices([]);
+        setPendingInvoices([]);
+        return;
+      }
+
       const mapped = (data || []).map((row) => mapCheckoutInvoice(row as Record<string, unknown>));
       setInvoices(mapped);
       setPendingInvoices(mapped.filter((inv) => /pending|unpaid|unbilled/i.test(inv.status)));
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unable to load billing invoices';
-      console.error('Failed to load billing invoices:', message);
+    } catch {
+      console.warn('Billing data unavailable, defaulting to empty state.');
+      setInvoices([]);
+      setPendingInvoices([]);
     }
   }, [hospitalInfo.id]);
 
   const loadBillingQueue = loadBillingInvoices;
 
   const loadEmergencyData = useCallback(async () => {
-    if (!supabase) return;
-    const activeNode = hospitalInfo.id || HOSPITAL_TENANT_ID;
+    if (!supabase) {
+      setActiveEmergencies([]);
+      setEmergencies([]);
+      return;
+    }
+    const activeNode = hospitalInfo.id;
 
     try {
       const { data, error } = await supabase
         .from('emergency_alerts')
         .select('*')
         .eq('hospital_id', activeNode)
-        .eq('status', 'active')
+        .in('status', ['active', 'Pending', 'Acknowledged', 'ACKNOWLEDGED', 'Dispatched'])
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Emergency alerts table empty or not yet seeded:', error.message);
+        setActiveEmergencies([]);
+        setEmergencies([]);
+        return;
+      }
+
       const alerts = (data || []).map((row) => mapEmergencyAlert(row as Record<string, unknown>));
       setActiveEmergencies(alerts);
       setEmergencies(
@@ -1015,25 +1425,20 @@ export default function HospitalMasterDashboard() {
           status: alert.status,
         })),
       );
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unable to load emergency alerts';
-      console.error('Failed to load emergency data:', message);
+    } catch {
+      console.warn('Emergency data unavailable, defaulting to empty state.');
+      setActiveEmergencies([]);
+      setEmergencies([]);
     }
   }, [hospitalInfo.id]);
 
   const loadVendors = useCallback(async () => {
     if (!supabase) return;
-    const activeHospital = hospitalInfo.id || HOSPITAL_TENANT_ID;
+    const activeHospital = hospitalInfo.id;
 
     try {
-      const { data, error } = await supabase
-        .from('hospital_vendors')
-        .select('*')
-        .eq('hospital_id', activeHospital)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setVendorsList((data || []).map((row) => mapHospitalVendor(row as Record<string, unknown>)));
+      const rows = await fetchHospitalVendors(supabase, activeHospital);
+      setVendorsList(rows);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unable to load vendors';
       console.error('Failed to load vendors:', message);
@@ -1047,7 +1452,7 @@ export default function HospitalMasterDashboard() {
     setCurrentUserRole(staffType);
 
     if (!hospitalId || !isHospitalAppRole(staffType)) {
-      router.replace('/admin/login?tenant=HOSP-01');
+      router.replace('/hospital/login');
       return;
     }
 
@@ -1074,8 +1479,19 @@ export default function HospitalMasterDashboard() {
   }, [router]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('unauthorized') === 'staff-credentials') {
+      toast.error('Staff credential vault is restricted to hospital administrators.');
+      params.delete('unauthorized');
+      const next = params.toString();
+      window.history.replaceState({}, '', next ? `/dashboard?${next}` : '/dashboard');
+    }
+  }, []);
+
+  useEffect(() => {
     if (isVerifying) return;
-    const activeNode = hospitalInfo.id || HOSPITAL_TENANT_ID;
+    const activeNode = hospitalInfo.id;
     void loadPlatformData(activeNode);
     void loadEmergencyData();
     void loadBillingInvoices();
@@ -1102,49 +1518,51 @@ export default function HospitalMasterDashboard() {
         token,
       };
       setOnlineBookingAlert(alert);
-      toast.success(
-        token
-          ? `New Patient App booking: ${name} · ${department} · ${token}`
-          : `New Patient App booking: ${name} · ${department}`,
-      );
+      const message = isAdvanceBookingRecord(row)
+        ? formatAdvanceBookingToast(row)
+        : token
+          ? `New Patient App booking: ${name}  ·  ${department}  ·  ${token}`
+          : `New Patient App booking: ${name}  ·  ${department}`;
+      toast.success(message);
     };
 
-    let channel = supabase.channel(`hospital_dashboard_realtime_${activeNode}`);
-    for (const nodeId of hospitalIdQueryValues(activeNode)) {
-      channel = channel.on(
+    let channel = supabase
+      .channel(`hospital_dashboard_realtime_${activeNode}`)
+      .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'appointments',
-          filter: `hospital_id=eq.${nodeId}`,
-        },
+        { event: 'INSERT', schema: 'public', table: 'appointments' },
         (payload) => {
-          announceOnlineBooking(payload.new);
+          const row = (payload.new ?? {}) as Record<string, unknown>;
+          if (!recordBelongsToHospitalNode(row, activeNode)) return;
+          announceOnlineBooking(row);
           reload();
         },
-      );
-      channel = channel.on(
+      )
+      .on(
         'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'appointments',
-          filter: `hospital_id=eq.${nodeId}`,
+        { event: 'UPDATE', schema: 'public', table: 'appointments' },
+        (payload) => {
+          const row = (payload.new ?? {}) as Record<string, unknown>;
+          const previous = (payload.old ?? {}) as Record<string, unknown>;
+          if (!recordBelongsToHospitalNode(row, activeNode)) return;
+
+          const becameBillingPending =
+            isBillingPendingEncounterStatus(row.status ?? row.queue_status) &&
+            !isBillingPendingEncounterStatus(previous.status ?? previous.queue_status);
+
+          if (becameBillingPending) {
+            announceBillingCheckout(row);
+          }
+
+          setMasterOpdQueue((current) => patchMasterQueueRow(current, row, 'appointments'));
+          reload();
         },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'appointments' },
         reload,
       );
-      channel = channel.on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'appointments',
-          filter: `hospital_id=eq.${nodeId}`,
-        },
-        reload,
-      );
-    }
     channel = channel
       .on(
         'postgres_changes',
@@ -1206,6 +1624,37 @@ export default function HospitalMasterDashboard() {
         },
         reload,
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'purchase_orders',
+        },
+        reload,
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'emergency_alerts',
+        },
+        () => {
+          void loadEmergencyData();
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'emergency_triage',
+        },
+        () => {
+          void loadEmergencyData();
+        },
+      )
       .subscribe();
 
     return () => {
@@ -1218,7 +1667,7 @@ export default function HospitalMasterDashboard() {
     void loadBillingQueue();
 
     if (!supabase) return;
-    const activeNode = hospitalInfo.id || HOSPITAL_TENANT_ID;
+    const activeNode = hospitalInfo.id;
 
     const billingChannel = supabase
       .channel(`hospital_billing_feed_${activeNode}`)
@@ -1234,7 +1683,7 @@ export default function HospitalMasterDashboard() {
           if (payload.eventType === 'INSERT') {
             const incoming = payload.new as Record<string, unknown>;
             toast.info(
-              `💳 New Invoice Ready: ${String(incoming.patient_name ?? 'Patient')} — Total: ₹${Number(incoming.total_amount ?? 0)}`,
+              `New invoice ready: ${String(incoming.patient_name ?? 'Patient')} — Total: ₹${Number(incoming.total_amount ?? 0)}`,
               { duration: 5000 },
             );
           }
@@ -1253,7 +1702,7 @@ export default function HospitalMasterDashboard() {
     void loadPharmacyData();
 
     if (!supabase) return;
-    const activeHospital = hospitalInfo.id || HOSPITAL_TENANT_ID;
+    const activeHospital = hospitalInfo.id;
     const channelName = `pharmacy_inventory_feed_${activeHospital}`;
 
     const channel = supabase
@@ -1309,7 +1758,7 @@ export default function HospitalMasterDashboard() {
     void loadVendors();
 
     if (!supabase) return;
-    const activeHospital = hospitalInfo.id || HOSPITAL_TENANT_ID;
+    const activeHospital = hospitalInfo.id;
     const vendorChannelName = `vendors_realtime_${activeHospital}`;
 
     const vendorChannel = supabase
@@ -1319,14 +1768,13 @@ export default function HospitalMasterDashboard() {
         {
           event: '*',
           schema: 'public',
-          table: 'hospital_vendors',
-          filter: `hospital_id=eq.${activeHospital}`,
+          table: 'vendors',
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
             const incoming = payload.new as Record<string, unknown>;
             toast.success(
-              `🏢 Vendor ${String(incoming.company_name ?? incoming.vendor_name ?? 'partner')} provisioned in real time!`,
+              `Vendor ${String(incoming.company_name ?? 'partner')} provisioned in real time!`,
             );
           }
           void loadVendors();
@@ -1352,8 +1800,8 @@ export default function HospitalMasterDashboard() {
 
   useEffect(() => {
     if (activeModal !== 'opd') return;
-    setOpdTokenPreview(getNextWalkInToken(opdQueue));
-  }, [activeModal, opdQueue]);
+    setOpdTokenPreview(getNextWalkInToken(todayOpdQueue));
+  }, [activeModal, todayOpdQueue]);
 
   useEffect(() => {
     if (!onlineBookingAlert) return;
@@ -1372,24 +1820,80 @@ export default function HospitalMasterDashboard() {
 
     setIsSubmittingToken(true);
 
-    // Sequential walk-in slot for today — never write this into UUID `id`.
-    const tokenString = getNextWalkInToken(opdQueue);
+    // Sequential walk-in slot for today - never write this into UUID `id`.
+    const tokenString = getNextWalkInToken(todayOpdQueue);
 
     try {
-      const activeHospitalId = hospitalInfo?.id || HOSPITAL_TENANT_ID;
-      const contactMobile = opdForm.phone.trim();
-      const clinicalDepartment = opdForm.department || 'General Medicine';
+      const activeHospitalId = hospitalInfo?.id;
+      const phoneCheck = validatePhoneField(opdForm.phone, true);
+      if (!phoneCheck.ok) {
+        toast.error(phoneCheck.message);
+        return;
+      }
+      const contactMobile = phoneCheck.phone!;
+      const parsedAge = parsePatientAge(opdForm.age);
+      if (parsedAge == null) {
+        toast.error('Enter a valid patient age between 1 and 120');
+        return;
+      }
+      const clinicalDepartment = opdForm.department || DEFAULT_HOSPITAL_DEPARTMENT;
+      const assignedDoctor =
+        walkInDoctors.find(
+          (doctor) => doctor.doctor_id === opdForm.doctorId || doctor.id === opdForm.doctorId,
+        ) ?? walkInDoctors[0] ?? null;
+      if (walkInDoctors.length > 0 && !assignedDoctor) {
+        toast.error('Select a consulting doctor for this department');
+        return;
+      }
+
+      const vitals = {
+        bp: opdForm.bp.trim(),
+        pulse: opdForm.pulse.trim(),
+        temp: opdForm.temp.trim(),
+        spo2: opdForm.spo2.trim(),
+        weight: opdForm.weight.trim(),
+      };
+      const vitalsSummary = [
+        vitals.bp ? `BP ${vitals.bp}` : '',
+        vitals.pulse ? `HR ${vitals.pulse}` : '',
+        vitals.temp ? `Temp ${vitals.temp}` : '',
+        vitals.spo2 ? `SpO2 ${vitals.spo2}` : '',
+        vitals.weight ? `Wt ${vitals.weight}` : '',
+      ]
+        .filter(Boolean)
+        .join(' · ');
+
+      const assignedDoctorId = assignedDoctor?.id || null;
 
       const insertPayload: Record<string, unknown> = {
         // DO NOT provide an `id` field here. Postgres will generate the UUID automatically.
         uhid: tokenString,
         hospital_id: activeHospitalId,
+        patient_id: tokenString,
         patient_name: patientFullName,
         department: clinicalDepartment,
-        phone: contactMobile ? `+91 ${contactMobile}` : '+91 98450 12345',
-        status: 'active',
+        doctor_id: assignedDoctorId,
+        doctor_name: assignedDoctor?.full_name || null,
+        doctor_code: assignedDoctorId,
+        doctor_employee_id: assignedDoctorId,
+        consultation_fee: assignedDoctor?.consultation_fee ?? null,
+        phone: contactMobile,
+        patient_phone: contactMobile,
+        status: 'waiting',
+        queue_status: 'waiting',
+        appointment_type: 'walk_in',
         source: 'WALK_IN',
+        booking_source: 'WALK-IN',
+        token_number: tokenString,
         appointment_date: todayIsoDate(),
+        slot_time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        appointment_time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        age: parsedAge,
+        patient_age: parsedAge,
+        chief_complaint: 'Walk-in consultation',
+        reason_for_visit: 'Walk-in consultation',
+        vitals,
+        vitals_summary: vitalsSummary || null,
       };
       delete insertPayload.id;
 
@@ -1427,7 +1931,18 @@ export default function HospitalMasterDashboard() {
 
       toast.success(`Token ${tokenString} created for ${patientFullName}`);
 
-      setOpdForm({ patientName: '', department: 'General Medicine', phone: '' });
+      setOpdForm({
+        patientName: '',
+        department: DEFAULT_HOSPITAL_DEPARTMENT,
+        doctorId: '',
+        phone: '',
+        age: '',
+        bp: '',
+        pulse: '',
+        temp: '',
+        spo2: '',
+        weight: '',
+      });
       setActiveModal(null);
 
       await loadPlatformData(activeHospitalId);
@@ -1449,7 +1964,7 @@ export default function HospitalMasterDashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          hospitalId: hospitalInfo.id || HOSPITAL_TENANT_ID,
+          hospitalId: hospitalInfo.id,
           doctorId,
         }),
       });
@@ -1484,18 +1999,39 @@ export default function HospitalMasterDashboard() {
     const stage = triageStage(item.status);
     if (stage === 'Completed') return;
     const nextStatus: TriageStage = stage === 'In Consultation' ? 'Completed' : 'In Consultation';
-    setAdvancingTokenId(item.id);
+    const lockKey = item.id || item.token;
+    setAdvancingTokenId(lockKey);
     try {
-      const tables = Array.from(new Set([item.source_table, 'hospital_opd_queue', 'appointments']));
+      const tables = Array.from(
+        new Set(
+          [item.source_table, 'hospital_opd_queue', 'appointments', 'hospital_appointments'].filter(
+            (table): table is string => Boolean(table),
+          ),
+        ),
+      );
       let lastError = 'Unable to update triage status';
       let updated = false;
+      const patch = { status: nextStatus };
       for (const table of tables) {
-        const { error } = await supabase.from(table).update({ status: nextStatus }).eq('id', item.id);
-        if (!error) {
-          updated = true;
-          break;
+        if (isUuidValue(item.id)) {
+          const byId = await updateMatchingRowWithColumnRetry(table, 'id', item.id, patch);
+          if (byId.updated) {
+            updated = true;
+            break;
+          }
+          lastError = byId.errorMessage || lastError;
         }
-        lastError = error.message;
+        const token = item.token_number || item.token;
+        if (!token) continue;
+        for (const column of ['token_number', 'uhid', 'token'] as const) {
+          const byToken = await updateMatchingRowWithColumnRetry(table, column, token, patch);
+          if (byToken.updated) {
+            updated = true;
+            break;
+          }
+          lastError = byToken.errorMessage || lastError;
+        }
+        if (updated) break;
       }
       if (!updated) {
         toast.error(lastError);
@@ -1503,6 +2039,53 @@ export default function HospitalMasterDashboard() {
       }
       toast.success(nextStatus === 'In Consultation' ? `Called ${item.token}` : `${item.token} marked complete`);
       void loadPlatformData(hospitalInfo.id);
+    } finally {
+      setAdvancingTokenId(null);
+    }
+  };
+
+  const handleOfferReschedule = async (patient: QueueRow) => {
+    if (!supabase || advancingTokenId) return;
+    const lockKey = patient.id || patient.token_number || patient.token;
+    if (!lockKey) {
+      toast.error('Unable to offer reschedule: Missing appointment ID');
+      return;
+    }
+    setAdvancingTokenId(lockKey);
+    try {
+      const result = await offerRescheduleOnLiveRow(patient);
+      if (!result.updated) {
+        console.error('Failed to offer reschedule:', result.errorMessage);
+        toast.error(result.errorMessage || 'Could not offer reschedule');
+        return;
+      }
+
+      const recipientId = patient.uhid || patient.phone || patient.patient_name;
+      const notifyPayload: Record<string, unknown> = {
+        recipient_id: recipientId,
+        recipient_role: 'patient',
+        recipient_type: 'patient',
+        patient_id: patient.uhid || null,
+        title: 'Reschedule offered',
+        message: `Your wait for ${patient.token} has exceeded 45 minutes. You can keep waiting, cancel, or rebook the next slot with no extra consultation fee.`,
+        type: 'reschedule',
+        category: 'Queue',
+        entity_id: patient.id || patient.token,
+        hospital_id: hospitalInfo.id,
+        read: false,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      };
+      await Promise.allSettled([
+        insertWithColumnRetry('system_notifications', notifyPayload),
+        insertWithColumnRetry('patient_notifications', notifyPayload),
+      ]);
+
+      toast.success(`Reschedule offer sent to ${patient.patient_name || patient.token}`);
+      void loadPlatformData(hospitalInfo.id);
+    } catch (err: unknown) {
+      console.error('Failed to offer reschedule:', err);
+      toast.error(err instanceof Error ? err.message : 'Could not offer reschedule');
     } finally {
       setAdvancingTokenId(null);
     }
@@ -1535,7 +2118,7 @@ export default function HospitalMasterDashboard() {
     setIsSubmittingFormulary(true);
 
     try {
-      const activeHospital = hospitalInfo.id || HOSPITAL_TENANT_ID;
+      const activeHospital = hospitalInfo.id;
       const status = stock > 0 ? 'In Stock' : 'Out of Stock';
 
       let { error } = await supabase
@@ -1577,7 +2160,7 @@ export default function HospitalMasterDashboard() {
   const handleAddBed = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!bedForm.bedNumber.trim()) return;
-    const occupied = Boolean(bedForm.patientName.trim());
+    const occupied = bedForm.status === 'occupied';
     const error = await insertFirst([
       {
         table: 'hospital_beds',
@@ -1586,9 +2169,12 @@ export default function HospitalMasterDashboard() {
           ward: bedForm.ward,
           ward_name: bedForm.ward,
           bed_number: bedForm.bedNumber.trim(),
-          status: occupied ? 'Occupied' : 'Available',
+          bed_type: bedForm.bedType,
+          daily_rate: bedForm.dailyRate,
+          rate: bedForm.dailyRate,
+          status: bedForm.status,
           is_occupied: occupied,
-          patient_name: occupied ? bedForm.patientName.trim() : null,
+          patient_name: occupied ? bedForm.patientName.trim() || null : null,
         },
       },
     ]);
@@ -1597,7 +2183,14 @@ export default function HospitalMasterDashboard() {
       return;
     }
     toast.success('Bed registered');
-    setBedForm({ ward: 'General Ward', bedNumber: '', patientName: '' });
+    setBedForm({
+      ward: WARD_OPTIONS[0],
+      bedNumber: '',
+      bedType: 'General',
+      dailyRate: BED_TYPE_RATES.General,
+      status: 'available',
+      patientName: '',
+    });
     closeModal();
     void loadPlatformData(hospitalInfo.id);
   };
@@ -1640,69 +2233,63 @@ export default function HospitalMasterDashboard() {
     void loadPlatformData(hospitalInfo.id);
   };
 
-  const handleCollectPayment = async (invoiceId: string, paymentMethod: 'cash' | 'upi' | 'card') => {
-    if (!supabase || isProcessingPayment) return;
-    setIsProcessingPayment(true);
-    setSettlingInvoiceId(invoiceId);
-    try {
-      const result = await clearConsultationInvoice(supabase, invoiceId, paymentMethod);
-      if (!result.ok) throw new Error(result.error || 'Payment settlement failed.');
-
-      toast.success(`Payment of invoice cleared via ${paymentMethod.toUpperCase()}!`);
-      await loadBillingInvoices();
-      await loadPlatformData(hospitalInfo.id);
-    } catch (err: unknown) {
-      console.error('Payment collection error:', err);
-      toast.error(err instanceof Error ? err.message : 'Payment settlement failed.');
-    } finally {
-      setIsProcessingPayment(false);
-      setSettlingInvoiceId(null);
-    }
+  const openDirectBilling = (seed?: DirectBillingSeed) => {
+    setDirectBillingSeed(seed ?? null);
+    setDirectBillingOpen(true);
   };
 
-  const handleCreateInvoiceSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (isSubmittingInvoice) return;
-    if (!supabase) {
-      toast.error('Database is not configured.');
+  const openBillingModalForPatient = (item: QueueRow) => {
+    openDirectBilling({
+      appointmentId: item.id || undefined,
+      token: item.token_number || item.token || item.uhid,
+    });
+  };
+
+  const announceBillingCheckout = (row: Record<string, unknown>) => {
+    const patientName = String(row.patient_name ?? row.name ?? 'Patient').trim() || 'Patient';
+    const token = String(row.token_number ?? row.token_label ?? row.token ?? 'T-01');
+    const doctorName = String(row.doctor_name ?? 'Attending doctor');
+    const consultationFee = resolveDoctorConsultationFee(row);
+    setBillingCheckoutAlert({
+      id: String(row.id ?? row.appointment_id ?? `${patientName}-${token}`),
+      patientName,
+      token,
+      doctorName,
+      consultationFee,
+    });
+    void playBillingCheckoutChime();
+    toast.info(formatBillingReadyToast(row), { duration: 6000 });
+  };
+
+  const closeDirectBilling = () => {
+    setDirectBillingOpen(false);
+    setDirectBillingSeed(null);
+  };
+
+  const openPatientCheckout = (patient: PatientProfile) => {
+    const invoice = invoices.find((inv) => inv.id === patient.pending_invoice_id);
+    if (!invoice) {
+      toast.error('No pending invoice found for this patient. Complete consultation billing first.');
       return;
     }
-
-    const patientName = invPatientName.trim();
-    if (!patientName) {
-      toast.error('Patient name is required');
+    if (!patient.encounter_status || !isConsultationBillingEligible(patient.encounter_status)) {
+      toast.error('Billing is available only after the doctor completes the consultation.');
       return;
     }
+    openDirectBilling({
+      token: String(invoice.token_number ?? patient.uhid ?? invoice.uhid ?? ''),
+      invoiceId: invoice.id,
+      appointmentId: patient.appointment_id || invoice.appointment_id,
+    });
+  };
 
-    setIsSubmittingInvoice(true);
-    try {
-      const validMedicines = invMedicines.filter((med) => med.name.trim() !== '');
-      const consultationFee = Number(invConsultationFee) || 500;
-      const result = await createPendingConsultationInvoice(supabase, {
-        hospitalId: hospitalInfo.id || HOSPITAL_TENANT_ID,
-        uhid: invUhid.trim() || `UHID-${Date.now().toString().slice(-6)}`,
-        patientName,
-        doctorName: invDoctorName.trim() || 'Duty doctor',
-        consultationFee,
-        medicines: validMedicines,
-      });
-
-      if (!result.ok) throw new Error(result.error || 'Could not save invoice');
-
-      toast.success(`Invoice for ${patientName} routed to the checkout queue.`);
-      setInvPatientName('');
-      setInvUhid('');
-      setInvDoctorName('');
-      setInvConsultationFee(500);
-      setInvMedicines([{ name: '', qty: 1, price: 0 }]);
-      setShowAddInvoiceModal(false);
-      await loadBillingInvoices();
-    } catch (err: unknown) {
-      console.error('Failed to create invoice:', err);
-      toast.error(err instanceof Error ? err.message : 'Could not save invoice');
-    } finally {
-      setIsSubmittingInvoice(false);
-    }
+  const openInvoiceCheckout = (invoice: InvoiceRow) => {
+    if (!/pending|unpaid|unbilled/i.test(invoice.status)) return;
+    openDirectBilling({
+      token: String(invoice.token_number ?? invoice.uhid ?? ''),
+      invoiceId: invoice.id,
+      appointmentId: invoice.appointment_id,
+    });
   };
 
   const handleEmergencySubmit = async (event: React.FormEvent) => {
@@ -1722,7 +2309,7 @@ export default function HospitalMasterDashboard() {
     setIsSubmittingEmergency(true);
     try {
       const payload: Record<string, unknown> = {
-        hospital_id: hospitalInfo.id || HOSPITAL_TENANT_ID,
+        hospital_id: hospitalInfo.id,
         patient_info: patientInfo,
         patient_name: patientInfo,
         severity: emSeverity,
@@ -1743,7 +2330,7 @@ export default function HospitalMasterDashboard() {
 
       if (error) throw error;
 
-      toast.error('🚨 CODE RED INITIATED', { duration: 6000 });
+      toast.error('ðŸš¨ CODE RED INITIATED', { duration: 6000 });
       setEmPatientInfo('');
       setEmSeverity('code_red');
       setEmArrival('Ambulance');
@@ -1754,6 +2341,19 @@ export default function HospitalMasterDashboard() {
       toast.error(err instanceof Error ? err.message : 'Could not sound the alarm');
     } finally {
       setIsSubmittingEmergency(false);
+    }
+  };
+
+  const handleAcknowledgeEmergency = async (id: string) => {
+    if (!supabase || !id) return;
+    try {
+      const result = await acknowledgeEmergencyAlert(supabase, id);
+      if (!result.ok) throw new Error(result.error ?? 'Acknowledge failed');
+      toast.success('Alert acknowledged — triage case opened');
+      await loadEmergencyData();
+    } catch (err: unknown) {
+      console.error('Failed to acknowledge emergency:', err);
+      toast.error(err instanceof Error ? err.message : 'Could not acknowledge alert');
     }
   };
 
@@ -1795,31 +2395,16 @@ export default function HospitalMasterDashboard() {
 
     setIsProvisioningVendor(true);
     try {
-      const activeHospital = hospitalInfo.id || HOSPITAL_TENANT_ID;
-      const payload: Record<string, unknown> = {
-        hospital_id: activeHospital,
+      const activeHospital = hospitalInfo.id;
+      const result = await saveHospitalVendorRecord(supabase, activeHospital, {
         company_name: company,
-        vendor_name: company,
-        vendor_email: email,
         email,
-        rep_email: email,
-        category: vendorCategory,
+        gstin: '',
         passcode,
-        status: 'active',
-      };
+        portal_pin: passcode,
+      });
 
-      let { error } = await supabase.from('hospital_vendors').insert([payload]);
-      let attempts = 0;
-      while (error && attempts < 8) {
-        const column = missingInsertColumn(error.message);
-        if (!column || !(column in payload)) break;
-        delete payload[column];
-        attempts += 1;
-        const retry = await supabase.from('hospital_vendors').insert([payload]);
-        error = retry.error;
-      }
-
-      if (error) throw error;
+      if (!result.ok) throw new Error(result.error || 'Failed to provision vendor');
 
       toast.success(`Access successfully provisioned for ${company}!`);
       setVendorCompany('');
@@ -1835,72 +2420,152 @@ export default function HospitalMasterDashboard() {
     }
   };
 
-  const handleToggleVendorStatus = async (vendorId: string, currentStatus: string) => {
-    if (!supabase || !vendorId) return;
-    const nextStatus = currentStatus === 'active' ? 'suspended' : 'active';
-    try {
-      const { error } = await supabase
-        .from('hospital_vendors')
-        .update({ status: nextStatus })
-        .eq('id', vendorId);
-
-      if (error) throw error;
-      toast.info(`Vendor marked as ${nextStatus}`);
-      await loadVendors();
-    } catch (err: unknown) {
-      console.error('Status update failed:', err);
-      toast.error('Failed to change vendor status');
-    }
+  const handleToggleVendorStatus = async (_vendorId: string, _currentStatus: string) => {
+    toast.info('Vendor suspend/resume is not supported on public.vendors.');
   };
 
   const handleAddSupply = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!supplyForm.vendor.trim() || !supplyForm.item.trim()) return;
-    const error = await insertFirst([
-      {
-        table: 'hospital_supply_orders',
-        payload: {
-          hospital_id: hospitalInfo.id,
-          po_number: `PO-${Date.now()}`,
-          vendor_name: supplyForm.vendor.trim(),
-          item_description: supplyForm.item.trim(),
-          quantity: Number(supplyForm.quantity) || 1,
-          total_amount: Number(supplyForm.amount) || 0,
-          status: 'ISSUED',
-        },
-      },
-      {
-        table: 'purchase_orders',
-        payload: {
-          hospital_id: hospitalInfo.id,
-          hospital_name: hospitalInfo.name,
-          po_number: `PO-${Date.now()}`,
-          vendor_name: supplyForm.vendor.trim(),
-          item_details: supplyForm.item.trim(),
-          quantity_ordered: Number(supplyForm.quantity) || 1,
-          total_amount: Number(supplyForm.amount) || 0,
-          status: 'ISSUED',
-        },
-      },
-    ]);
-    if (error) {
-      toast.error(error);
+    if (!supabase) {
+      toast.error('Database is not configured.');
       return;
     }
-    toast.success('Purchase order issued');
-    setSupplyForm({ vendor: '', item: '', quantity: 1, amount: 0 });
+    if (!supplyForm.vendor.trim() || !supplyForm.item.trim()) {
+      toast.error('Select a vendor and enter the item name');
+      return;
+    }
+    if (Number(supplyForm.quantity) < 1) {
+      toast.error('Quantity must be at least 1');
+      return;
+    }
+    const rawUnitPrice = parseFloat(String(supplyForm.unitPrice).trim()) || 0;
+    const rawQuantity = parseInt(String(supplyForm.quantity).trim(), 10) || 1;
+    if (rawUnitPrice <= 0) {
+      toast.error('Please enter a valid unit price greater than 0');
+      return;
+    }
+    const totalAmount = parseFloat((rawUnitPrice * rawQuantity).toFixed(2));
+    const selectedVendor = vendorsList.find((vendor) => vendor.company_name === supplyForm.vendor);
+    const result = await createPurchaseOrder(
+      supabase,
+      hospitalInfo.id,
+      hospitalInfo.name || 'Regal Hospital',
+      {
+        vendorName: supplyForm.vendor.trim(),
+        vendorId: resolvePoVendorId(selectedVendor?.id) ?? undefined,
+        vendorEmail: selectedVendor?.email?.trim().toLowerCase(),
+        category: supplyForm.category,
+        itemName: supplyForm.item.trim(),
+        skuDescription: supplyForm.sku.trim(),
+        quantity: rawQuantity,
+        unitPrice: rawUnitPrice,
+        deliveryWindow: supplyForm.deliveryWindow,
+      },
+    );
+    if (!result.ok) {
+      toast.error(result.error || 'Could not issue purchase order');
+      return;
+    }
+    toast.success(`Purchase order ${result.order?.po_number} issued for ₹${totalAmount.toFixed(2)}`);
+    setSupplyForm({ ...EMPTY_SUPPLY_FORM, category: PO_CATEGORIES[0], deliveryWindow: DELIVERY_WINDOWS[1] });
     closeModal();
     void loadPlatformData(hospitalInfo.id);
+  };
+
+  const handleMarkDelivered = async (order: SupplyRow) => {
+    if (!supabase || markingPoId) return;
+    setMarkingPoId(order.id);
+    setSupplyOrders((prev) =>
+      prev.map((row) => (row.id === order.id ? { ...row, status: 'DELIVERED' } : row)),
+    );
+    try {
+      const result = await markPurchaseOrderDelivered(supabase, hospitalInfo.id, order);
+      if (!result.ok) {
+        setSupplyOrders((prev) =>
+          prev.map((row) => (row.id === order.id ? { ...row, status: order.status } : row)),
+        );
+        throw new Error(result.error || 'Could not mark delivered');
+      }
+      if (result.error) {
+        toast.success(`Delivery confirmed and recorded successfully (${result.error})`);
+      } else {
+        toast.success('Delivery confirmed and recorded successfully');
+      }
+      await loadPharmacyData();
+      void loadPlatformData(hospitalInfo.id);
+    } catch {
+      toast.error('Could not confirm delivery. Please try again.');
+    } finally {
+      setMarkingPoId(null);
+    }
   };
 
   const handleLogout = () => {
     const role = currentUserRole;
     clearActiveSession();
-    router.push(role === 'Admin' ? '/admin/login' : '/staff/login');
+    router.push('/hospital/login');
   };
 
-  const doctorCount = staffMembers.filter((s) => s.staff_type === 'Doctor').length;
-  const canProvisionStaff = currentUserRole === 'Admin';
+  const doctorCount = Math.max(
+    staffMembers.filter((s) => s.staff_type === 'Doctor').length,
+    walkInDoctorPool.length,
+  );
+  const provisionedStaffCount = Math.max(staffMembers.length, walkInDoctorPool.length);
+  const rosterDoctors = useMemo(() => {
+    const fromStaff: DoctorStaffRecord[] = staffMembers
+      .filter((member) => member.staff_type === 'Doctor')
+      .map((member) => ({
+        doctor_id: member.id,
+        id: member.id,
+        full_name: member.full_name,
+        name: member.full_name,
+        doctor_name: member.full_name,
+        department: member.department,
+        specialization: member.department,
+        specialty: member.department,
+        qualification: '',
+        consultation_fee: 0,
+      }));
+
+    const merged = [...walkInDoctorPool];
+    const seen = new Set(
+      merged.map((doctor) => (doctor.doctor_id || doctor.id || doctor.full_name).toLowerCase()),
+    );
+    for (const doctor of fromStaff) {
+      const key = (doctor.doctor_id || doctor.id || doctor.full_name).toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(doctor);
+    }
+
+    return merged.sort((a, b) => a.full_name.localeCompare(b.full_name));
+  }, [staffMembers, walkInDoctorPool]);
+  const walkInDepartmentOptions = useMemo(
+    () => mergeDepartmentOptions(rosterDoctors.map((member) => member.department)),
+    [rosterDoctors],
+  );
+  const walkInDoctors = useMemo(
+    () => doctorsForDepartment(rosterDoctors, opdForm.department),
+    [opdForm.department, rosterDoctors],
+  );
+
+  useEffect(() => {
+    if (walkInDoctors.length === 0) {
+      if (opdForm.doctorId) setOpdForm((prev) => ({ ...prev, doctorId: '' }));
+      return;
+    }
+    const selectedId = opdForm.doctorId;
+    const stillValid = walkInDoctors.some(
+      (doctor) => doctor.doctor_id === selectedId || doctor.id === selectedId,
+    );
+    if (!stillValid) {
+      setOpdForm((prev) => ({
+        ...prev,
+        doctorId: walkInDoctors[0]?.doctor_id || walkInDoctors[0]?.id || '',
+      }));
+    }
+  }, [opdForm.doctorId, walkInDoctors]);
+  const canProvisionStaff = isHospitalAdminRole(currentUserRole);
   const occupiedBeds = beds.filter((b) => /occup/i.test(b.status)).length;
   const occupancyRate = beds.length > 0 ? Math.round((occupiedBeds / beds.length) * 100) : 0;
   const pendingCheckout = pendingInvoices;
@@ -1913,21 +2578,21 @@ export default function HospitalMasterDashboard() {
   const openBillsCount = invoices.filter((inv) => /pending|unpaid|unbilled/i.test(inv.status)).length;
   const totalCollections = collectedTotal;
   const outstanding = pendingCheckoutTotal;
-  const invoiceMedicinesTotal = invMedicines.reduce(
-    (sum, med) => sum + (med.name.trim() ? Number(med.qty) * Number(med.price) : 0),
-    0,
-  );
-  const invoiceGrandTotal = Number(invConsultationFee) + invoiceMedicinesTotal;
-
   const waitingCount = opdQueue.filter((q) => triageStage(q.status) === 'Waiting').length;
   const inConsultCount = opdQueue.filter((q) => triageStage(q.status) === 'In Consultation').length;
   const waitingMinutes = opdQueue
     .filter((q) => triageStage(q.status) === 'Waiting')
-    .map((q) => waitMinutes(q.created_at))
+    .map((q) => clinicSessionWaitMinutes(q))
     .filter((mins): mins is number => mins != null);
+  const supplyPoTotal = parseFloat(
+    (
+      (parseInt(String(supplyForm.quantity || 1).trim(), 10) || 1) *
+      (parseFloat(String(supplyForm.unitPrice || 0).trim()) || 0)
+    ).toFixed(2),
+  );
   const avgWaitLabel = waitingMinutes.length === 0
-    ? '—'
-    : `~${Math.round(waitingMinutes.reduce((sum, mins) => sum + mins, 0) / waitingMinutes.length)}m`;
+    ? '-- mins'
+    : `~${Math.round(waitingMinutes.reduce((sum, mins) => sum + mins, 0) / waitingMinutes.length)} mins`;
 
   const filteredPatients = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -1950,12 +2615,16 @@ export default function HospitalMasterDashboard() {
     });
   }, [patientRegistry, searchQuery, genderFilter, ageFilter]);
 
+  const patientsWithBilling = useMemo(
+    () => enrichPatientsWithBilling(filteredPatients, masterOpdQueue, invoices),
+    [filteredPatients, masterOpdQueue, invoices],
+  );
+
   const navLinks: Array<{ id: NavModule; label: string; icon: typeof LayoutGrid; badge?: number }> = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
     { id: 'smartq', label: 'SmartQ OPD', icon: ListOrdered, badge: opdQueue.length },
     { id: 'patients', label: 'Patients', icon: Users, badge: patientRegistry.length },
     { id: 'ipd', label: 'IPD & Bed Census', icon: BedDouble, badge: beds.length },
-    { id: 'pharmacy', label: 'Records & Pharmacy', icon: ClipboardCheck, badge: pharmacyItems.length },
     { id: 'emergency', label: 'Emergency Desk', icon: AlertTriangle, badge: activeEmergencies.length },
     { id: 'billing', label: 'Billing & Checkout', icon: IndianRupee, badge: pendingCheckout.length },
     { id: 'supply', label: 'Supply & Orders', icon: PackageCheck, badge: supplyOrders.length + vendorsList.length },
@@ -1964,22 +2633,16 @@ export default function HospitalMasterDashboard() {
 
   const sidebar = (
     <>
-      <div className="p-5 border-b border-slate-800/80">
+      <div className="p-4 border-b border-slate-800/80">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 flex items-center justify-center shrink-0 aspect-square overflow-hidden">
-            <img
-              src="/regal-logo-transparent.png"
-              alt="Regal Hospital Logo"
-              className="w-full h-full object-contain"
-            />
-          </div>
+          <RegalHospitalLogoMark heightClass="h-7" className="h-10" />
           <div>
             <h2 className="text-sm font-extrabold text-white leading-tight tracking-wide">
               {hospitalInfo.name || 'Regal Hospital'}
             </h2>
             <div className="mt-1 flex items-center gap-1.5">
               <span className="text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                {hospitalInfo.id || HOSPITAL_TENANT_ID}
+                {hospitalInfo.id}
               </span>
               <span className="text-[10px] text-slate-400">Bengaluru</span>
             </div>
@@ -2056,16 +2719,10 @@ export default function HospitalMasterDashboard() {
             <button type="button" className="md:hidden p-2 rounded-xl border border-slate-200" onClick={() => setMobileNavOpen(true)} aria-label="Open modules">
               <Menu className="w-4 h-4" />
             </button>
-            <div className="w-10 h-10 shrink-0 aspect-square flex items-center justify-center">
-              <img
-                src="/regal-logo-transparent.png"
-                alt="Regal Hospital"
-                className="w-full h-full object-contain"
-              />
-            </div>
+            <RegalHospitalLogoMark heightClass="h-7" className="h-10 border border-slate-200" />
             <div>
               <h2 className="text-base font-black text-slate-900 leading-tight">
-                {navLinks.find((n) => n.id === activeTab)?.label} Command Center
+                {`${navLinks.find((n) => n.id === activeTab)?.label} Command Center`}
               </h2>
               <p className="text-xs text-slate-500">
                 Active Node: <span className="font-mono text-cyan-800 font-bold">{hospitalInfo.id} ({hospitalInfo.name})</span>
@@ -2078,10 +2735,13 @@ export default function HospitalMasterDashboard() {
               Issue OPD Token
             </button>
             {canProvisionStaff && (
-              <button type="button" onClick={() => setActiveTab('staff')} className="px-4 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Provision Staff
-              </button>
+              <Link
+                href="/dashboard/staff-credentials"
+                className="px-4 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold flex items-center gap-2"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Staff Credentials Vault
+              </Link>
             )}
             <button type="button" onClick={() => void loadPlatformData(hospitalInfo.id)} className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50">
               <RefreshCw className={`w-4 h-4 text-cyan-600 ${isLoading ? 'animate-spin' : ''}`} />
@@ -2090,6 +2750,55 @@ export default function HospitalMasterDashboard() {
         </header>
 
         <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+          {billingCheckoutAlert && (
+            <div className="flex items-start justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 shadow-xs">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="p-2 rounded-xl bg-white border border-amber-300 text-amber-700 shrink-0">
+                  <IndianRupee className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-amber-800">
+                    Ready for billing
+                  </div>
+                  <p className="text-sm font-bold text-slate-900 mt-0.5 truncate">
+                    {billingCheckoutAlert.patientName}
+                    <span className="font-semibold text-slate-600">
+                      {' '}
+                      · {billingCheckoutAlert.token} · {billingCheckoutAlert.doctorName} · ₹
+                      {billingCheckoutAlert.consultationFee.toLocaleString('en-IN')}
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-amber-900/80 mt-0.5">
+                    Consultation finished — settle pharmacy charges and print the official receipt.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    openDirectBilling({
+                      token: billingCheckoutAlert.token,
+                      appointmentId: billingCheckoutAlert.id,
+                    });
+                    setBillingCheckoutAlert(null);
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-600 text-white text-[11px] font-bold cursor-pointer"
+                >
+                  Settle Bill &amp; Receipt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingCheckoutAlert(null)}
+                  className="p-1.5 rounded-lg text-amber-600 hover:text-amber-900 hover:bg-amber-100 cursor-pointer"
+                  aria-label="Dismiss billing alert"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {onlineBookingAlert && (
             <div className="flex items-start justify-between gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 shadow-xs">
               <div className="flex items-start gap-3 min-w-0">
@@ -2104,8 +2813,8 @@ export default function HospitalMasterDashboard() {
                     {onlineBookingAlert.name}
                     <span className="font-semibold text-slate-600">
                       {' '}
-                      · {onlineBookingAlert.department}
-                      {onlineBookingAlert.token ? ` · ${onlineBookingAlert.token}` : ''}
+                       ·  {onlineBookingAlert.department}
+                      {onlineBookingAlert.token ? `  ·  ${onlineBookingAlert.token}` : ''}
                     </span>
                   </p>
                   <p className="text-[11px] text-violet-800/80 mt-0.5">
@@ -2150,7 +2859,7 @@ export default function HospitalMasterDashboard() {
                 </button>
                 <button type="button" onClick={() => setActiveTab('staff')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
                   <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">PROVISIONED STAFF</div>
-                  <div className="text-3xl font-black text-slate-900 mt-2">{staffMembers.length}</div>
+                  <div className="text-3xl font-black text-slate-900 mt-2">{provisionedStaffCount}</div>
                   <div className="text-xs font-medium text-cyan-700 mt-1">{doctorCount} doctors verified</div>
                 </button>
                 <button type="button" onClick={() => setActiveTab('ipd')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
@@ -2159,7 +2868,9 @@ export default function HospitalMasterDashboard() {
                   <div className="text-xs font-medium text-cyan-700 mt-1">{occupiedBeds}/{beds.length} occupied</div>
                 </button>
                 <button type="button" onClick={() => setActiveTab('billing')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">COLLECTIONS (₹)</div>
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Total Collections (₹)
+                  </span>
                   <div className="text-3xl font-black text-slate-900 mt-2">{inr(totalCollections)}</div>
                   <div className="text-xs font-medium text-emerald-600 mt-1">{inr(outstanding)} outstanding</div>
                 </button>
@@ -2186,7 +2897,7 @@ export default function HospitalMasterDashboard() {
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {opdQueue.slice(0, 6).map((q) => (
-                          <tr key={q.id}>
+                          <tr key={queueIdentityKey(q)}>
                             <td className="py-2.5 px-3">
                               <div className="font-mono font-bold text-cyan-800">{q.token}</div>
                               <div className="mt-1">
@@ -2195,7 +2906,12 @@ export default function HospitalMasterDashboard() {
                             </td>
                             <td className="py-2.5 px-3 font-bold">{q.patient_name}</td>
                             <td className="py-2.5 px-3">{q.department}</td>
-                            <td className="py-2.5 px-3">{q.status}</td>
+                            <td className="py-2.5 px-3">
+                              <OutpatientStatusCell
+                                status={q.status}
+                                onSettleBill={() => openBillingModalForPatient(q)}
+                              />
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2216,26 +2932,27 @@ export default function HospitalMasterDashboard() {
                     ) : (
                       activeEmergencies.slice(0, 3).map((alert) => (
                         <div key={alert.id} className="p-3 rounded-xl border border-rose-200 bg-rose-50 text-xs">
-                          <div className="font-bold text-rose-800">{alert.patient_info} · {severityLabel(alert.severity)}</div>
+                          <div className="font-bold text-rose-800">{alert.patient_info}  ·  {severityLabel(alert.severity)}</div>
                           <p className="text-rose-700">{alert.arrival}</p>
                         </div>
                       ))
                     )}
                   </div>
-                  <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-3">
+                  <div className="bg-[#FAFBFD] rounded-2xl border border-slate-200 p-6 space-y-3">
                     <h4 className="text-sm font-black text-slate-900">Vendor Supply</h4>
                     {supplyOrders.length === 0 ? (
-                      <EmptyState icon={PackageCheck} title="No purchase orders" body="No procurement records for this node." actionLabel="Create Purchase Order" onAction={() => setActiveModal('supply')} />
+                      <EmptyState icon={PackageCheck} title="No purchase orders" body="No procurement records for this node." actionLabel="Create Purchase Order" onAction={() => setActiveTab('supply')} />
                     ) : (
                       supplyOrders.slice(0, 3).map((po) => (
                         <div key={po.id} className="p-3 rounded-xl border border-slate-200 text-xs">
                           <div className="font-mono font-bold text-cyan-800">{po.po_number}</div>
                           <div className="font-bold text-slate-900">{po.item_description}</div>
-                          <div className="text-slate-500">{po.vendor_name} · {inr(po.total_amount)}</div>
+                          <div className="text-slate-500">{po.vendor_name}  ·  {inr(po.total_amount || po.quantity * po.unit_price || 0)}</div>
                         </div>
                       ))
                     )}
                   </div>
+                  <DiagnosticsFulfillmentDesk />
                 </div>
               </div>
             </div>
@@ -2251,6 +2968,29 @@ export default function HospitalMasterDashboard() {
                   </div>
                   <h3 className="text-lg font-black text-slate-900">SmartQ OPD Consultation Queue</h3>
                   <p className="text-xs text-slate-500">Live token orchestration synchronized with Doctor Workspace examination rooms.</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {(
+                      [
+                        ['today', "Today's OPD", todayOpdQueue.length],
+                        ['tomorrow', "Tomorrow's Schedule", tomorrowOpdQueue.length],
+                        ['upcoming', 'All Upcoming Bookings', upcomingOpdQueue.length],
+                        ['all', 'All Appointments', masterOpdQueue.length],
+                      ] as const
+                    ).map(([filter, label, count]) => (
+                      <button
+                        key={filter}
+                        type="button"
+                        onClick={() => setActiveDateFilter(filter)}
+                        className={`rounded-lg px-3 py-1.5 text-[10px] font-black transition cursor-pointer ${
+                          activeDateFilter === filter
+                            ? 'bg-cyan-700 text-white'
+                            : 'bg-white text-slate-600 border border-slate-200'
+                        }`}
+                      >
+                        {label} ({count})
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -2260,7 +3000,7 @@ export default function HospitalMasterDashboard() {
                     className="px-4 py-2.5 rounded-xl bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition cursor-pointer disabled:opacity-50"
                   >
                     <ListOrdered className="w-4 h-4" />
-                    <span>{advancingTokenId === 'interleave' ? 'Calling…' : 'Call Next (Interleaved)'}</span>
+                    <span>{advancingTokenId === 'interleave' ? 'Calling...' : 'Call Next (Interleaved)'}</span>
                   </button>
                   <button
                     type="button"
@@ -2323,6 +3063,7 @@ export default function HospitalMasterDashboard() {
                           <th className="py-3 px-4">Source</th>
                           <th className="py-3 px-4">Patient Name</th>
                           <th className="py-3 px-4">Department</th>
+                          <th className="py-3 px-4">Clinic Date</th>
                           <th className="py-3 px-4">Assigned Doctor</th>
                           <th className="py-3 px-4">Wait Time</th>
                           <th className="py-3 px-4">Triage Stage</th>
@@ -2332,39 +3073,77 @@ export default function HospitalMasterDashboard() {
                       <tbody className="divide-y divide-slate-100">
                         {opdQueue.map((item) => {
                           const stage = triageStage(item.status);
+                          const waitMins = clinicSessionWaitMinutes(item);
+                          const slaBreach = isSlaBreachWaiting(item.status, waitMins);
                           return (
-                            <tr key={`${item.source_table}-${item.id}`} className={`hover:bg-cyan-50/40 transition ${item.channel === 'online' ? 'bg-violet-50/25' : 'bg-emerald-50/20'}`}>
+                            <tr key={queueIdentityKey(item)} className={`hover:bg-cyan-50/40 transition ${item.channel === 'online' ? 'bg-violet-50/25' : 'bg-emerald-50/20'}`}>
                               <td className="py-3.5 px-4 font-mono font-black text-cyan-800">{item.token}</td>
                               <td className="py-3.5 px-4">
                                 <QueueChannelBadge channel={item.channel} />
                               </td>
                               <td className="py-3.5 px-4 font-bold text-slate-900">{item.patient_name}</td>
                               <td className="py-3.5 px-4 text-slate-600">{item.department}</td>
-                              <td className="py-3.5 px-4 text-slate-600">{item.doctor_name || 'Unassigned'}</td>
-                              <td className="py-3.5 px-4 font-mono text-slate-500">{formatWait(item.created_at)}</td>
                               <td className="py-3.5 px-4">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  stage === 'In Consultation'
-                                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                    : stage === 'Completed'
-                                      ? 'bg-slate-100 text-slate-600 border border-slate-200'
-                                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                }`}>
-                                  {stage}
-                                </span>
+                                {String(item.appointment_date ?? '').slice(0, 10) > todayIsoDate() ? (
+                                  <span className="rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                                    {formatQueueDateBadge(String(item.appointment_date ?? '').slice(0, 10))}
+                                  </span>
+                                ) : (
+                                  <span className="font-mono text-slate-600">
+                                    {String(item.appointment_date ?? '').slice(0, 10) || 'Today'}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-600">{item.doctor_name || 'Unassigned'}</td>
+                              <td className={`py-3.5 px-4 font-mono ${slaBreach ? 'font-black text-rose-700' : 'text-slate-500'}`}>
+                                {formatClinicWait(waitMins)}
+                                {slaBreach ? <div className="text-[10px] font-bold uppercase">SLA 45m+</div> : null}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                {isBillingPendingEncounterStatus(item.status) ? (
+                                  <OutpatientStatusCell
+                                    status={item.status}
+                                    onSettleBill={() => openBillingModalForPatient(item)}
+                                  />
+                                ) : (
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    stage === 'In Consultation'
+                                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                      : stage === 'Completed'
+                                        ? 'bg-slate-100 text-slate-600 border border-slate-200'
+                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  }`}>
+                                    {stage}
+                                  </span>
+                                )}
                               </td>
                               <td className="py-3.5 px-4 text-right">
                                 {stage === 'Completed' ? (
                                   <span className="text-[11px] font-bold text-slate-400">Closed</span>
                                 ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => void handleAdvanceTriage(item)}
-                                    disabled={advancingTokenId === item.id}
-                                    className="px-2.5 py-1 rounded-lg border border-slate-200 hover:border-cyan-600 bg-white text-[11px] font-bold text-slate-700 hover:text-cyan-800 transition cursor-pointer disabled:opacity-50"
-                                  >
-                                    {advancingTokenId === item.id ? 'Updating…' : stage === 'In Consultation' ? 'Mark Complete' : 'Call Next'}
-                                  </button>
+                                  <div className="inline-flex flex-wrap justify-end gap-1.5">
+                                    {slaBreach && item.reschedule_status !== 'offered' ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleOfferReschedule(item)}
+                                        disabled={advancingTokenId === (item.id || item.token)}
+                                        className="px-2.5 py-1 rounded-lg border border-amber-300 bg-amber-50 text-[11px] font-bold text-amber-800 disabled:opacity-50"
+                                      >
+                                        Offer Reschedule
+                                      </button>
+                                    ) : null}
+                                    {item.reschedule_status === 'offered' ? (
+                                      <span className="px-2 py-1 text-[10px] font-bold uppercase text-amber-700">Offered</span>
+                                    ) : null}
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleAdvanceTriage(item)}
+                                      disabled={advancingTokenId === (item.id || item.token)}
+                                      className="px-2.5 py-1 rounded-lg border border-slate-200 hover:border-cyan-600 bg-white text-[11px] font-bold text-slate-700 hover:text-cyan-800 transition cursor-pointer disabled:opacity-50"
+                                    >
+                                      {advancingTokenId === (item.id || item.token) ? 'Updating…' : stage === 'In Consultation' ? 'Mark Complete' : 'Call Next'}
+                                    </button>
+                                  </div>
                                 )}
                               </td>
                             </tr>
@@ -2413,7 +3192,7 @@ export default function HospitalMasterDashboard() {
                   >
                     <option value="all">All Ages</option>
                     <option value="pediatric">Pediatric (&lt;18)</option>
-                    <option value="adult">Adult (18–59)</option>
+                    <option value="adult">Adult (18-59)</option>
                     <option value="senior">Senior (60+)</option>
                   </select>
                 </div>
@@ -2439,37 +3218,69 @@ export default function HospitalMasterDashboard() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
-                      <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                      <thead className="bg-gray-50 dark:bg-zinc-800 text-gray-500 uppercase tracking-wider font-semibold text-[11px]">
                         <tr>
                           <th className="py-3 px-4">Permanent UHID</th>
                           <th className="py-3 px-4">Full Name</th>
                           <th className="py-3 px-4">Contact Number</th>
                           <th className="py-3 px-4">Total Visits</th>
                           <th className="py-3 px-4">Last Encounter</th>
-                          <th className="py-3 px-4 text-right">Clinical Record Status</th>
+                          <th className="py-3 px-4">Clinical Record Status</th>
+                          <th className="py-3 px-4 text-center">Billing & Settlement</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {filteredPatients.map((patient) => (
-                          <tr key={patient.id} className="hover:bg-slate-50/70 transition">
+                        {patientsWithBilling.map((patient) => {
+                          const pendingInvoice = invoices.find((inv) => inv.id === patient.pending_invoice_id);
+                          const breakdown = pendingInvoice
+                            ? computeCheckoutTotal({
+                                consultationFee: pendingInvoice.consultation_fee ?? 0,
+                                pharmacyAmount: pendingInvoice.medicine_fee ?? pendingInvoice.medicines_total ?? 0,
+                              })
+                            : null;
+                          return (
+                          <tr key={patientKey(patient.patient_name, patient.phone, patient.uhid)} className="hover:bg-slate-50/70 transition">
                             <td className="py-3.5 px-4 font-mono font-bold text-cyan-800">{patient.uhid}</td>
                             <td className="py-3.5 px-4">
                               <div className="font-bold text-slate-900">{patient.patient_name}</div>
                               <div className="text-[10px] text-slate-400">
                                 {patient.gender || 'Sex n/a'}
-                                {patient.age != null ? ` · ${patient.age}y` : ''}
+                                {'  ·  '}
+                                {patient.patient_age ?? patient.age ? `${patient.patient_age ?? patient.age}y` : 'Age N/A'}
                               </div>
                             </td>
                             <td className="py-3.5 px-4 font-mono text-slate-600">{patient.phone || 'Not Provided'}</td>
                             <td className="py-3.5 px-4 font-mono font-bold text-slate-800">{patient.visits}</td>
                             <td className="py-3.5 px-4 font-mono text-slate-500">{formatEncounter(patient.last_encounter)}</td>
-                            <td className="py-3.5 px-4 text-right">
+                            <td className="py-3.5 px-4">
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                 {patient.record_status}
                               </span>
                             </td>
+                            <td className="py-3.5 px-4 text-center">
+                              {patient.billing_status === 'pending_payment' && pendingInvoice ? (
+                                <button
+                                  type="button"
+                                  disabled={isProcessingPayment}
+                                  onClick={() => openPatientCheckout(patient)}
+                                  className="inline-flex flex-col items-center gap-0.5 rounded-xl bg-amber-50 px-3 py-1.5 text-[10px] font-black uppercase text-amber-800 border border-amber-200 hover:bg-amber-100 disabled:opacity-50"
+                                >
+                                  <span>Collect {breakdown ? inr(breakdown.totalAmount) : inr(pendingInvoice.amount)}</span>
+                                  <span className="font-normal normal-case text-[9px] text-amber-700">Consultation complete</span>
+                                </button>
+                              ) : patient.billing_status === 'paid' ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  Settled
+                                </span>
+                              ) : patient.billing_status === 'awaiting_consultation' ? (
+                                <span className="text-[10px] text-slate-400 font-semibold">Awaiting consultation</span>
+                              ) : (
+                                <span className="text-[10px] text-slate-300">—</span>
+                              )}
+                            </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -2478,25 +3289,17 @@ export default function HospitalMasterDashboard() {
             </div>
           )}
 
-          {activeTab === 'pharmacy' && (
-            <RecordsPharmacyCommandCenter
-              hospitalId={hospitalInfo.id || HOSPITAL_TENANT_ID}
-              hospitalName={hospitalInfo.name || 'Regal Hospital'}
-              onInventoryChanged={() => void loadPharmacyData()}
-            />
-          )}
-
           {activeTab === 'billing' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-black text-slate-900">Billing &amp; Checkout Command Center</h3>
                   <p className="text-xs text-slate-500">
-                    Live invoices from Doctor Workspace · Node {hospitalInfo.id || HOSPITAL_TENANT_ID}
+                    Live invoices from Doctor Workspace  ·  Node {hospitalInfo.id}
                   </p>
                 </div>
-                <button type="button" onClick={() => setShowAddInvoiceModal(true)} className="px-3.5 py-2 rounded-xl bg-cyan-700 text-white text-xs font-bold flex items-center gap-1.5">
-                  <Plus className="w-3.5 h-3.5" /> Add Invoice
+                <button type="button" onClick={() => openDirectBilling()} className="px-3.5 py-2 rounded-xl bg-cyan-700 text-white text-xs font-bold flex items-center gap-1.5">
+                  <Plus className="w-3.5 h-3.5" /> Settle by Token
                 </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -2516,7 +3319,7 @@ export default function HospitalMasterDashboard() {
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 {invoices.length === 0 ? (
                   <div className="p-6">
-                    <EmptyState icon={IndianRupee} title="Checkout queue is empty" body="Itemized bills appear here when a doctor completes a consultation or a cashier posts a direct invoice." actionLabel="+ Add Invoice" onAction={() => setShowAddInvoiceModal(true)} />
+                    <EmptyState icon={IndianRupee} title="Checkout queue is empty" body="Itemized bills appear here when a doctor completes a consultation or a cashier posts a direct invoice." actionLabel="Settle by Token" onAction={() => openDirectBilling()} />
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -2543,19 +3346,29 @@ export default function HospitalMasterDashboard() {
                               <td className="py-3.5 px-4">{inv.doctor_name || 'Duty doctor'}</td>
                               <td className="py-3.5 px-4 font-mono">{inr(inv.consultation_fee ?? 0)}</td>
                               <td className="py-3.5 px-4">
-                                {(inv.medicines ?? []).length === 0 ? (
-                                  <span className="text-slate-400">—</span>
+                                {(inv.prescribed_items ?? []).length === 0 ? (
+                                  <span className="text-slate-400">Settled at counter</span>
                                 ) : (
                                   <ul className="space-y-1">
-                                    {(inv.medicines ?? []).map((med) => (
-                                      <li key={`${inv.id}-${med.name}`} className="text-slate-600">
-                                        {med.name} × {med.qty} @ {inr(med.price)} = <span className="font-mono font-bold">{inr(med.qty * med.price)}</span>
+                                    {(inv.prescribed_items ?? []).map((med) => (
+                                      <li key={`${inv.id}-${med.drug}`} className="text-slate-600">
+                                        {med.drug} · Qty {med.quantity ?? 1}
+                                        {med.frequency ? ` · ${med.frequency}` : ''}
                                       </li>
                                     ))}
                                   </ul>
                                 )}
                               </td>
-                              <td className="py-3.5 px-4 font-black text-emerald-700">{inr(inv.amount)}</td>
+                              <td className="py-3.5 px-4 font-black text-emerald-700">
+                                {inr(
+                                  /pending|unpaid|unbilled/i.test(inv.status)
+                                    ? inv.consultation_fee ?? 0
+                                    : inv.amount,
+                                )}
+                                {/pending|unpaid|unbilled/i.test(inv.status) ? (
+                                  <span className="block text-[9px] font-normal text-slate-400">+ pharmacy at checkout</span>
+                                ) : null}
+                              </td>
                               <td className="py-3.5 px-4">
                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${pending ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
                                   {pending ? 'Pending' : 'Paid'}
@@ -2563,29 +3376,46 @@ export default function HospitalMasterDashboard() {
                               </td>
                               <td className="py-3.5 px-4 text-right">
                                 {pending ? (
-                                  <div className="inline-flex flex-wrap justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    disabled={isProcessingPayment}
+                                    onClick={() => openInvoiceCheckout(inv)}
+                                    className="px-3 py-1.5 rounded-lg bg-cyan-700 text-white text-[10px] font-bold uppercase disabled:opacity-50"
+                                  >
+                                    Settle &amp; Print
+                                  </button>
+                                ) : (
+                                  <div className="inline-flex items-center justify-end gap-2">
+                                    <span className="text-[10px] text-slate-500 font-mono">
+                                      {inv.paid_at ? formatEncounter(inv.paid_at) : 'Cleared'}
+                                      {inv.payment_method ? `  ·  ${inv.payment_method}` : ''}
+                                    </span>
                                     <button
                                       type="button"
-                                      disabled={isProcessingPayment}
-                                      onClick={() => void handleCollectPayment(inv.id, 'upi')}
-                                      className="px-2.5 py-1.5 rounded-lg bg-cyan-700 text-white text-[10px] font-bold uppercase disabled:opacity-50"
+                                      onClick={() => {
+                                        setReceiptPreview({
+                                          id: inv.id,
+                                          invoice_number: inv.invoice_number,
+                                          uhid: inv.uhid,
+                                          patient_name: inv.patient_name,
+                                          doctor_name: inv.doctor_name,
+                                          department: inv.department,
+                                          token_number: inv.token_number ?? inv.uhid,
+                                          consultation_fee: inv.consultation_fee,
+                                          pharmacy_amount: inv.medicine_fee ?? inv.medicines_total ?? 0,
+                                          prescribed_items: inv.prescribed_items,
+                                          amount: inv.amount,
+                                          payment_method: inv.payment_method,
+                                          paid_at: inv.paid_at,
+                                        });
+                                        setReceiptPreviewOpen(true);
+                                      }}
+                                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 text-[10px] font-bold uppercase"
                                     >
-                                      UPI
-                                    </button>
-                                    <button
-                                      type="button"
-                                      disabled={isProcessingPayment}
-                                      onClick={() => void handleCollectPayment(inv.id, 'cash')}
-                                      className="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-bold uppercase disabled:opacity-50"
-                                    >
-                                      Cash
+                                      <Printer className="w-3 h-3" />
+                                      Receipt
                                     </button>
                                   </div>
-                                ) : (
-                                  <span className="text-[10px] text-slate-500 font-mono">
-                                    {inv.paid_at ? formatEncounter(inv.paid_at) : 'Cleared'}
-                                    {inv.payment_method ? ` · ${inv.payment_method}` : ''}
-                                  </span>
                                 )}
                               </td>
                             </tr>
@@ -2600,179 +3430,46 @@ export default function HospitalMasterDashboard() {
           )}
 
           {activeTab === 'supply' && (
-            <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-slate-900">Vendor Access Control</h3>
-                  <p className="text-xs text-slate-500">Provision portal credentials for Node {hospitalInfo.id || HOSPITAL_TENANT_ID}.</p>
-                </div>
-              </div>
-              <form onSubmit={(event) => void handleProvisionVendorSubmit(event)} className="grid gap-3 md:grid-cols-2">
-                <input
-                  required
-                  disabled={isProvisioningVendor}
-                  value={vendorCompany}
-                  onChange={(e) => setVendorCompany(e.target.value)}
-                  placeholder="Company name"
-                  className="rounded-xl border border-slate-200 px-3 py-2.5 text-xs disabled:opacity-60"
-                />
-                <input
-                  required
-                  type="email"
-                  disabled={isProvisioningVendor}
-                  value={vendorEmail}
-                  onChange={(e) => setVendorEmail(e.target.value)}
-                  placeholder="Vendor email"
-                  className="rounded-xl border border-slate-200 px-3 py-2.5 text-xs disabled:opacity-60"
-                />
-                <select
-                  disabled={isProvisioningVendor}
-                  value={vendorCategory}
-                  onChange={(e) => setVendorCategory(e.target.value)}
-                  className="rounded-xl border border-slate-200 px-3 py-2.5 text-xs disabled:opacity-60"
-                >
-                  <option>Pharmaceuticals</option>
-                  <option>Surgical Implants</option>
-                  <option>Diagnostic Consumables</option>
-                  <option>Biomedical Equipment</option>
-                </select>
-                <input
-                  required
-                  disabled={isProvisioningVendor}
-                  value={vendorPasscode}
-                  onChange={(e) => setVendorPasscode(e.target.value)}
-                  placeholder="Vendor passcode"
-                  className="rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-mono disabled:opacity-60"
-                />
-                <button
-                  type="submit"
-                  disabled={isProvisioningVendor}
-                  className="md:col-span-2 rounded-xl bg-orange-600 hover:bg-orange-500 py-3 text-xs font-bold text-white uppercase disabled:opacity-60 flex items-center justify-center gap-2"
-                >
-                  {isProvisioningVendor ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Provisioning…
-                    </>
-                  ) : (
-                    'Provision Vendor Portal Access'
-                  )}
-                </button>
-              </form>
-              {vendorsList.length === 0 ? (
-                <p className="text-xs text-slate-400">No vendor accounts provisioned for this node yet.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase">
-                      <tr>
-                        <th className="py-2.5 px-3">Company</th>
-                        <th className="py-2.5 px-3">Email</th>
-                        <th className="py-2.5 px-3">Category</th>
-                        <th className="py-2.5 px-3">Status</th>
-                        <th className="py-2.5 px-3 text-right">Access</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {vendorsList.map((vendor) => (
-                        <tr key={vendor.id}>
-                          <td className="py-3 px-3 font-bold text-slate-900">{vendor.company_name}</td>
-                          <td className="py-3 px-3 font-mono">{vendor.vendor_email}</td>
-                          <td className="py-3 px-3">{vendor.category}</td>
-                          <td className="py-3 px-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${vendor.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
-                              {vendor.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => void handleToggleVendorStatus(vendor.id, vendor.status)}
-                              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold uppercase"
-                            >
-                              {vendor.status === 'active' ? 'Suspend' : 'Reactivate'}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-slate-900">Procurement &amp; Vendor Dispatch</h3>
-                  <p className="text-xs text-slate-500">Purchase requests scoped to {hospitalInfo.id}.</p>
-                </div>
-                <button type="button" onClick={() => setActiveModal('supply')} className="px-3.5 py-2 rounded-xl bg-cyan-700 text-white text-xs font-bold flex items-center gap-1.5">
-                  <Plus className="w-3.5 h-3.5" /> Create Purchase Order
-                </button>
-              </div>
-              {supplyOrders.length === 0 ? (
-                <EmptyState icon={PackageCheck} title="No Purchase Orders Issued" body="All placeholder orders are purged. Issue a PO to stock this node." actionLabel="Create Purchase Order" onAction={() => setActiveModal('supply')} />
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {supplyOrders.map((po) => (
-                    <div key={po.id} className="p-5 rounded-2xl border border-slate-200 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold text-cyan-800">{po.po_number}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-50 text-cyan-700">{po.status}</span>
-                      </div>
-                      <div className="font-bold text-sm">{po.item_description}</div>
-                      <div className="text-xs text-slate-500">{po.vendor_name}</div>
-                      <div className="pt-2 border-t border-slate-100 flex justify-between text-xs">
-                        <span className="font-mono font-bold">{inr(po.total_amount)}</span>
-                        <span className="text-slate-400">Qty: {po.quantity}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            </div>
+            <SupplyOrdersCommandCenter
+              hospitalId={hospitalInfo.id}
+              hospitalName={hospitalInfo.name || 'Regal Hospital'}
+              onOrdersChanged={(orders, nextVendors) => {
+                setSupplyOrders(orders);
+                setVendorsList(nextVendors);
+              }}
+            />
           )}
 
+
           {activeTab === 'ipd' && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-slate-900">IPD &amp; Bed Census</h3>
-                  <p className="text-xs text-slate-500">Ward allocations registered for {hospitalInfo.name}.</p>
-                </div>
-                <button type="button" onClick={() => setActiveModal('bed')} className="px-3.5 py-2 rounded-xl bg-cyan-700 text-white text-xs font-bold flex items-center gap-1.5">
-                  <Plus className="w-3.5 h-3.5" /> Register Bed
-                </button>
-              </div>
-              {beds.length === 0 ? (
-                <EmptyState icon={BedDouble} title="No Beds Registered" body="Zero mock beds. Register the first ward allocation for this hospital node." actionLabel="Register Bed" onAction={() => setActiveModal('bed')} />
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {beds.map((b) => (
-                    <div key={b.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between">
-                      <div>
-                        <div className="text-xs font-bold">{b.ward_name} &bull; Bed {b.bed_number}</div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
-                          {/occup/i.test(b.status) ? `Patient: ${b.patient_name}` : 'Available for admission'}
-                        </div>
-                      </div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${/occup/i.test(b.status) ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
-                        {b.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <IpdBedCensus
+              hospitalId={hospitalInfo.id}
+              hospitalName={hospitalInfo.name}
+              patients={patientRegistry.map((patient) => ({
+                uhid: patient.uhid,
+                patient_name: patient.patient_name,
+              }))}
+              onBedsChanged={(next) =>
+                setBeds(
+                  next.map((bed) => ({
+                    id: bed.id,
+                    ward_name: bed.ward_name,
+                    bed_number: bed.bed_number,
+                    bed_type: bed.bed_type,
+                    daily_rate: bed.daily_rate,
+                    status: bed.status,
+                    patient_name: bed.patient_name || '-',
+                  })),
+                )
+              }
+            />
           )}
 
           {activeTab === 'staff' && (
             <DoctorsStaffCommandCenter
-              hospitalId={hospitalInfo.id || HOSPITAL_TENANT_ID}
+              hospitalId={hospitalInfo.id}
               hospitalName={hospitalInfo.name || 'Regal Hospital'}
-              canManage={canProvisionStaff}
+              canManage={false}
               onRosterChanged={setStaffMembers}
             />
           )}
@@ -2782,7 +3479,7 @@ export default function HospitalMasterDashboard() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-black text-slate-900">Emergency Desk Command</h3>
-                  <p className="text-xs text-slate-500">Trauma triage for {hospitalInfo.name} · Node {hospitalInfo.id || HOSPITAL_TENANT_ID}</p>
+                  <p className="text-xs text-slate-500">Trauma triage for {hospitalInfo.name}  ·  Node {hospitalInfo.id}</p>
                 </div>
                 <button
                   type="button"
@@ -2795,7 +3492,7 @@ export default function HospitalMasterDashboard() {
               </div>
               {activeEmergencies.length === 0 ? (
                 <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
-                  No active red alerts currently dispatched for {hospitalInfo.id || HOSPITAL_TENANT_ID}. Triage desk is on standby.
+                  No active red alerts currently dispatched for {hospitalInfo.id}. Triage desk is on standby.
                 </div>
               ) : (
                 <div className="grid gap-3">
@@ -2819,13 +3516,22 @@ export default function HospitalMasterDashboard() {
                           </div>
                           <div className="text-lg font-black text-slate-900 leading-tight">{alert.patient_info}</div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => void handleResolveEmergency(alert.id)}
-                          className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold uppercase"
-                        >
-                          Mark Resolved
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void handleAcknowledgeEmergency(alert.id)}
+                            className="px-3 py-2 rounded-xl bg-[#0F3E5D] hover:bg-[#1E567B] text-white text-[11px] font-bold uppercase"
+                          >
+                            Acknowledge &amp; Triage
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleResolveEmergency(alert.id)}
+                            className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold uppercase"
+                          >
+                            Mark Resolved
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -2887,16 +3593,39 @@ export default function HospitalMasterDashboard() {
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  Age (years)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={120}
+                  placeholder="Enter age"
+                  value={opdForm.age}
+                  onChange={(e) => setOpdForm((p) => ({ ...p, age: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
                   Clinical Department
                 </label>
                 <div className="relative">
                   <Stethoscope className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
                   <select
                     value={opdForm.department}
-                    onChange={(e) => setOpdForm((p) => ({ ...p, department: e.target.value }))}
+                    onChange={(e) => {
+                      const department = e.target.value;
+                      const nextDoctors = doctorsForDepartment(rosterDoctors, department);
+                      setOpdForm((p) => ({
+                        ...p,
+                        department,
+                        doctorId: nextDoctors[0]?.doctor_id || nextDoctors[0]?.id || '',
+                      }));
+                    }}
                     className="w-full pl-10 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition appearance-none cursor-pointer"
                   >
-                    {OPD_DEPARTMENTS.map((dept) => (
+                    {walkInDepartmentOptions.map((dept) => (
                       <option key={dept} value={dept}>
                         {dept}
                       </option>
@@ -2909,6 +3638,33 @@ export default function HospitalMasterDashboard() {
               </div>
 
               <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  Consulting doctor
+                </label>
+                <select
+                  required={walkInDoctors.length > 0}
+                  value={opdForm.doctorId}
+                  onChange={(e) => setOpdForm((p) => ({ ...p, doctorId: e.target.value }))}
+                  disabled={rosterDoctors.length === 0}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition disabled:opacity-60"
+                >
+                  {rosterDoctors.length === 0 ? (
+                    <option value="">Loading doctors…</option>
+                  ) : walkInDoctors.length === 0 ? (
+                    <option value="" disabled>
+                      No doctors assigned to {opdForm.department}
+                    </option>
+                  ) : (
+                    walkInDoctors.map((doctor) => (
+                      <option key={doctor.doctor_id} value={doctor.doctor_id}>
+                        {formatDoctorBookingOptionLabel(doctor)}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
                   <span>Contact Mobile</span>
                   <span className="text-slate-400 font-normal normal-case text-[10px]">SMS Updates</span>
@@ -2918,16 +3674,39 @@ export default function HospitalMasterDashboard() {
                     <Phone className="w-3.5 h-3.5 text-slate-400" />
                     <span>+91</span>
                   </div>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    placeholder="98450 12345"
+                  <PhoneNumberInput
+                    required
+                    placeholder="Enter 10-digit mobile number"
                     value={opdForm.phone}
-                    onChange={(e) => setOpdForm((p) => ({ ...p, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                    onChange={(phone) => setOpdForm((p) => ({ ...p, phone }))}
                     className="w-full pl-[4.75rem] pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                {(
+                  [
+                    ['bp', 'BP'],
+                    ['pulse', 'Pulse'],
+                    ['temp', 'Temp'],
+                    ['spo2', 'SpO2'],
+                    ['weight', 'Weight'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                      {label}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={label}
+                      value={opdForm[key]}
+                      onChange={(e) => setOpdForm((p) => ({ ...p, [key]: e.target.value }))}
+                      className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                ))}
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-[11px]">
@@ -2947,7 +3726,7 @@ export default function HospitalMasterDashboard() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmittingToken || !opdForm.patientName.trim()}
+                  disabled={isSubmittingToken || !opdForm.patientName.trim() || !parsePatientAge(opdForm.age) || !isTenDigitPhone(opdForm.phone)}
                   className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-600/20 active:scale-[0.99] transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 >
                   {isSubmittingToken ? (
@@ -3041,9 +3820,71 @@ export default function HospitalMasterDashboard() {
 
             {activeModal === 'bed' && (
               <form onSubmit={handleAddBed} className="space-y-3 text-xs">
-                <input required value={bedForm.ward} onChange={(e) => setBedForm((p) => ({ ...p, ward: e.target.value }))} placeholder="Ward name (ICU / General)" className="w-full px-3 py-2.5 border border-slate-200 rounded-xl" />
-                <input required value={bedForm.bedNumber} onChange={(e) => setBedForm((p) => ({ ...p, bedNumber: e.target.value }))} placeholder="Bed number" className="w-full px-3 py-2.5 border border-slate-200 rounded-xl" />
-                <input value={bedForm.patientName} onChange={(e) => setBedForm((p) => ({ ...p, patientName: e.target.value }))} placeholder="Occupying patient (optional)" className="w-full px-3 py-2.5 border border-slate-200 rounded-xl" />
+                <label className="block font-bold uppercase text-slate-600">
+                  Ward
+                  <select
+                    required
+                    value={bedForm.ward}
+                    onChange={(e) => {
+                      const ward = e.target.value;
+                      const bedType = inferBedTypeFromWard(ward);
+                      setBedForm((p) => ({ ...p, ward, bedType, dailyRate: defaultRateForBedType(bedType) }));
+                    }}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-medium normal-case"
+                  >
+                    {WARD_OPTIONS.map((ward) => (
+                      <option key={ward} value={ward}>{ward}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block font-bold uppercase text-slate-600">
+                  Bed number
+                  <input
+                    required
+                    value={bedForm.bedNumber}
+                    onChange={(e) => setBedForm((p) => ({ ...p, bedNumber: e.target.value }))}
+                    placeholder="GW-105, ICU-03"
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-medium normal-case"
+                  />
+                </label>
+                <label className="block font-bold uppercase text-slate-600">
+                  Bed type
+                  <select
+                    value={bedForm.bedType}
+                    onChange={(e) => {
+                      const bedType = e.target.value as BedType;
+                      setBedForm((p) => ({ ...p, bedType, dailyRate: defaultRateForBedType(bedType) }));
+                    }}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-medium normal-case"
+                  >
+                    {Object.entries(BED_TYPE_RATES).map(([type, rate]) => (
+                      <option key={type} value={type}>{type}  ·  {formatBedRate(rate)}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block font-bold uppercase text-slate-600">
+                  Status
+                  <select
+                    value={bedForm.status}
+                    onChange={(e) => setBedForm((p) => ({ ...p, status: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-medium normal-case"
+                  >
+                    {BED_STATUS_OPTIONS.map((status) => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
+                </label>
+                {bedForm.status === 'occupied' ? (
+                  <input
+                    value={bedForm.patientName}
+                    onChange={(e) => setBedForm((p) => ({ ...p, patientName: e.target.value }))}
+                    placeholder="Occupying patient"
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl"
+                  />
+                ) : null}
+                <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 font-mono font-bold">
+                  Default rate: {formatBedRate(bedForm.dailyRate)} / day
+                </div>
                 <button type="submit" className="w-full py-2.5 rounded-xl bg-cyan-700 text-white font-bold uppercase">Register Bed</button>
               </form>
             )}
@@ -3059,11 +3900,104 @@ export default function HospitalMasterDashboard() {
 
             {activeModal === 'supply' && (
               <form onSubmit={handleAddSupply} className="space-y-3 text-xs">
-                <input required value={supplyForm.vendor} onChange={(e) => setSupplyForm((p) => ({ ...p, vendor: e.target.value }))} placeholder="Vendor name" className="w-full px-3 py-2.5 border border-slate-200 rounded-xl" />
-                <input required value={supplyForm.item} onChange={(e) => setSupplyForm((p) => ({ ...p, item: e.target.value }))} placeholder="Item description" className="w-full px-3 py-2.5 border border-slate-200 rounded-xl" />
+                <label className="block font-bold uppercase text-slate-600">
+                  Registered supplier *
+                  <select
+                    required
+                    value={vendorsList.find((vendor) => vendor.company_name === supplyForm.vendor)?.id ?? ''}
+                    onChange={(e) => {
+                      const vendor = vendorsList.find((item) => item.id === e.target.value);
+                      setSupplyForm((p) => ({
+                        ...p,
+                        vendor: vendor?.company_name ?? '',
+                      }));
+                    }}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 font-medium normal-case"
+                  >
+                    <option value="">
+                      {vendorsList.filter(isEligibleHospitalVendor).length === 0
+                        ? 'No suppliers registered yet'
+                        : 'Select a registered supplier…'}
+                    </option>
+                    {vendorsList.filter(isEligibleHospitalVendor).map((vendor) => (
+                      <option key={vendor.id} value={vendor.id}>
+                        {formatVendorOptionLabel(vendor)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block font-bold uppercase text-slate-600">
+                  Category
+                  <select
+                    value={supplyForm.category}
+                    onChange={(e) => setSupplyForm((p) => ({ ...p, category: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-medium normal-case"
+                  >
+                    {PO_CATEGORIES.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block font-bold uppercase text-slate-600">
+                  Item name
+                  <input
+                    required
+                    value={supplyForm.item}
+                    onChange={(e) => setSupplyForm((p) => ({ ...p, item: e.target.value }))}
+                    placeholder="Item name"
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-medium normal-case"
+                  />
+                </label>
+                <label className="block font-bold uppercase text-slate-600">
+                  Detailed SKU description
+                  <textarea
+                    value={supplyForm.sku}
+                    onChange={(e) => setSupplyForm((p) => ({ ...p, sku: e.target.value }))}
+                    placeholder="Strength, pack size, manufacturer"
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-medium normal-case"
+                    rows={2}
+                  />
+                </label>
                 <div className="grid grid-cols-2 gap-3">
-                  <input type="number" min={1} value={supplyForm.quantity} onChange={(e) => setSupplyForm((p) => ({ ...p, quantity: Number(e.target.value) }))} className="px-3 py-2.5 border border-slate-200 rounded-xl font-mono" />
-                  <input type="number" min={0} value={supplyForm.amount} onChange={(e) => setSupplyForm((p) => ({ ...p, amount: Number(e.target.value) }))} placeholder="Amount INR" className="px-3 py-2.5 border border-slate-200 rounded-xl font-mono" />
+                  <label className="block font-bold uppercase text-slate-600">
+                    Quantity
+                    <input
+                      type="number"
+                      min={1}
+                      required
+                      value={supplyForm.quantity}
+                      onChange={(e) => setSupplyForm((p) => ({ ...p, quantity: Math.max(1, Number(e.target.value) || 1) }))}
+                      className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-mono font-medium normal-case"
+                    />
+                  </label>
+                  <label className="block font-bold uppercase text-slate-600">
+                    Unit price (₹)
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="0.00"
+                      required
+                      value={supplyForm.unitPrice}
+                      onChange={(e) => setSupplyForm((p) => ({ ...p, unitPrice: e.target.value }))}
+                      className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-mono font-medium normal-case"
+                    />
+                  </label>
+                </div>
+                <label className="block font-bold uppercase text-slate-600">
+                  Expected delivery window
+                  <select
+                    value={supplyForm.deliveryWindow}
+                    onChange={(e) => setSupplyForm((p) => ({ ...p, deliveryWindow: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-medium normal-case"
+                  >
+                    {DELIVERY_WINDOWS.map((slot) => (
+                      <option key={slot} value={slot}>{slot}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="rounded-xl bg-cyan-50 border border-cyan-200 px-3 py-2 text-cyan-900 font-black">
+                  Total: ₹{supplyPoTotal.toFixed(2)}
                 </div>
                 <button type="submit" className="w-full py-2.5 rounded-xl bg-cyan-700 text-white font-bold uppercase">Issue Purchase Order</button>
               </form>
@@ -3137,7 +4071,7 @@ export default function HospitalMasterDashboard() {
                 {isSubmittingEmergency ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Sounding…
+                    Sounding...
                   </>
                 ) : (
                   <>
@@ -3151,154 +4085,31 @@ export default function HospitalMasterDashboard() {
         </div>
       )}
 
-      {showAddInvoiceModal && (
-        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <form
-            onSubmit={(event) => void handleCreateInvoiceSubmit(event)}
-            className="w-full max-w-lg rounded-3xl bg-white shadow-2xl overflow-hidden"
-          >
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h3 className="text-base font-black text-slate-900">Direct Billing &amp; Pharmacy Invoice</h3>
-              <p className="text-[11px] text-slate-500">Route an itemized bill to the hospital checkout desk.</p>
-            </div>
-            <div className="p-5 space-y-3 text-xs max-h-[70vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block font-bold text-slate-700 uppercase">
-                  Patient full name
-                  <input
-                    required
-                    disabled={isSubmittingInvoice}
-                    value={invPatientName}
-                    onChange={(e) => setInvPatientName(e.target.value)}
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-medium normal-case"
-                  />
-                </label>
-                <label className="block font-bold text-slate-700 uppercase">
-                  UHID / Token
-                  <input
-                    disabled={isSubmittingInvoice}
-                    value={invUhid}
-                    onChange={(e) => setInvUhid(e.target.value)}
-                    placeholder="NX-WLK-001"
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-medium normal-case"
-                  />
-                </label>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block font-bold text-slate-700 uppercase">
-                  Attending doctor
-                  <input
-                    disabled={isSubmittingInvoice}
-                    value={invDoctorName}
-                    onChange={(e) => setInvDoctorName(e.target.value)}
-                    placeholder="Dr. Suriraju V"
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-medium normal-case"
-                  />
-                </label>
-                <label className="block font-bold text-slate-700 uppercase">
-                  Consultation fee
-                  <input
-                    type="number"
-                    min={0}
-                    disabled={isSubmittingInvoice}
-                    value={invConsultationFee}
-                    onChange={(e) => setInvConsultationFee(Number(e.target.value) || 0)}
-                    className="mt-1 w-full px-3 py-2.5 border border-slate-200 rounded-xl font-mono"
-                  />
-                </label>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-700 uppercase">Prescribed medicines</span>
-                  <button
-                    type="button"
-                    disabled={isSubmittingInvoice}
-                    onClick={() => setInvMedicines((prev) => [...prev, { name: '', qty: 1, price: 0 }])}
-                    className="text-[11px] font-bold text-cyan-800"
-                  >
-                    + Add Medicine
-                  </button>
-                </div>
-                {invMedicines.map((med, index) => (
-                  <div key={`inv-med-${index}`} className="grid grid-cols-12 gap-2">
-                    <input
-                      disabled={isSubmittingInvoice}
-                      value={med.name}
-                      onChange={(e) =>
-                        setInvMedicines((prev) =>
-                          prev.map((row, i) => (i === index ? { ...row, name: e.target.value } : row)),
-                        )
-                      }
-                      placeholder="Medicine name"
-                      className="col-span-6 px-3 py-2 border border-slate-200 rounded-xl"
-                    />
-                    <input
-                      type="number"
-                      min={1}
-                      disabled={isSubmittingInvoice}
-                      value={med.qty}
-                      onChange={(e) =>
-                        setInvMedicines((prev) =>
-                          prev.map((row, i) => (i === index ? { ...row, qty: Number(e.target.value) || 0 } : row)),
-                        )
-                      }
-                      className="col-span-2 px-2 py-2 border border-slate-200 rounded-xl font-mono"
-                    />
-                    <input
-                      type="number"
-                      min={0}
-                      disabled={isSubmittingInvoice}
-                      value={med.price}
-                      onChange={(e) =>
-                        setInvMedicines((prev) =>
-                          prev.map((row, i) => (i === index ? { ...row, price: Number(e.target.value) || 0 } : row)),
-                        )
-                      }
-                      className="col-span-3 px-2 py-2 border border-slate-200 rounded-xl font-mono"
-                    />
-                    <button
-                      type="button"
-                      disabled={isSubmittingInvoice || invMedicines.length === 1}
-                      onClick={() => setInvMedicines((prev) => prev.filter((_, i) => i !== index))}
-                      className="col-span-1 text-rose-500 disabled:opacity-30"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 flex justify-between text-xs font-black text-emerald-900">
-                <span>Grand Total Payable</span>
-                <span className="font-mono">{inr(invoiceGrandTotal)}</span>
-              </div>
-            </div>
-            <div className="flex justify-end items-center gap-3 px-5 py-4 border-t border-slate-100">
-              <button
-                type="button"
-                disabled={isSubmittingInvoice}
-                onClick={() => setShowAddInvoiceModal(false)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmittingInvoice}
-                className="px-5 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-2 disabled:opacity-60"
-              >
-                {isSubmittingInvoice ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Saving…
-                  </>
-                ) : (
-                  'Save & Route to Queue'
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <PharmacyBillingModal
+        open={directBillingOpen}
+        hospitalId={hospitalInfo.id}
+        seed={directBillingSeed}
+        queue={opdQueue}
+        invoices={invoices}
+        doctors={walkInDoctors}
+        busy={isProcessingPayment}
+        onClose={closeDirectBilling}
+        onSettled={() => {
+          setBillingCheckoutAlert(null);
+          void loadBillingInvoices();
+          void loadPlatformData(hospitalInfo.id);
+        }}
+      />
+
+      <OfficialReceiptModal
+        open={receiptPreviewOpen}
+        receipt={receiptPreview}
+        autoPrint={false}
+        onClose={() => {
+          setReceiptPreviewOpen(false);
+          setReceiptPreview(null);
+        }}
+      />
     </div>
   );
 }

@@ -3,7 +3,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { saveDoctorSession, type DoctorSession } from '@/lib/doctor/session';
+import {
+  resolveDoctorConsultationFeeFromSources,
+  saveDoctorSession,
+  type DoctorSession,
+} from '@/lib/doctor/session';
+import { resolveDoctorConsultationFee } from '@/lib/hospital/doctors';
 import {
   recordRealStaffLogin,
   resolveCredentialHospitalId,
@@ -32,6 +37,9 @@ interface HospitalDoctorRow {
   department?: string;
   specialization?: string;
   passcode?: string;
+  consultation_fee?: number | string | null;
+  fee?: number | string | null;
+  hospital_code?: string;
 }
 
 const ACCENT: Record<string, { from: string; to: string; glow: string }> = {
@@ -122,6 +130,27 @@ export default function DoctorLoginPortal() {
         return;
       }
 
+      let configuredFee = resolveDoctorConsultationFeeFromSources([data as HospitalDoctorRow], 0);
+      if (!configuredFee) {
+        const registry = await supabase
+          .from('doctors')
+          .select('consultation_fee, fee, full_name, doctor_name')
+          .or(
+            [
+              `doctor_code.eq.${data.doctor_id}`,
+              `registration_number.eq.${data.doctor_id}`,
+              data.email ? `email.eq.${data.email}` : '',
+            ]
+              .filter(Boolean)
+              .join(','),
+          )
+          .limit(3);
+        configuredFee = resolveDoctorConsultationFeeFromSources(
+          (registry.data ?? []) as HospitalDoctorRow[],
+          0,
+        );
+      }
+
       const session: DoctorSession = {
         doctorId: data.doctor_id,
         doctorName: data.doctor_name,
@@ -129,6 +158,8 @@ export default function DoctorLoginPortal() {
         specialization: data.specialization,
         email: data.email,
         hospitalCode: data.hospital_code,
+        consultationFee: configuredFee || resolveDoctorConsultationFee(data as Record<string, unknown>, 0) || undefined,
+        fee: configuredFee || undefined,
       };
 
       const hospitalId = resolveCredentialHospitalId(data.hospital_code);
@@ -142,7 +173,7 @@ export default function DoctorLoginPortal() {
           department: data.department ?? 'General Medicine',
           email: data.email ?? `${data.doctor_id.toLowerCase()}@regalhospital.com`,
           temporary_passcode: cleanPasscode,
-          portal_access: '/doctor',
+          portal_access: '/doctor/dashboard',
         });
       } catch (recordErr) {
         console.warn('Live credential vault sync skipped:', recordErr);

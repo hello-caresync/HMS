@@ -14,32 +14,49 @@ export type HospitalAdminRecord = {
   temporary_passcode: string;
   portal_access: string;
   phone?: string;
+  role: string;
+  raw: Record<string, unknown>;
 };
 
 export type HospitalAdminAuthResult =
   | { ok: true; admin: HospitalAdminRecord }
   | { ok: false; error: string };
 
-function readPasscode(row: Record<string, unknown>): string {
-  for (const key of ['passcode', 'temporary_passcode', 'password']) {
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+}
+
+function readStoredPasscode(row: Record<string, unknown>): string {
+  for (const key of ['passcode_key', 'passcode', 'temporary_passcode', 'password']) {
     const value = row[key];
     if (typeof value === 'string' && value.length > 0) return value;
   }
   return '';
 }
 
-function normalizeAdmin(row: Record<string, unknown>, email: string): HospitalAdminRecord {
-  return {
-    id: String(row.id ?? ''),
-    hospital_id: String(row.hospital_id ?? ''),
-    hospital_name: String(row.hospital_name ?? 'Regal Hospital Main'),
-    full_name: String(row.full_name ?? row.name ?? 'Hospital Administrator'),
-    email: String(row.email ?? email).toLowerCase(),
-    department: String(row.department ?? 'Hospital Administration'),
-    temporary_passcode: readPasscode(row),
-    portal_access: String(row.portal_access ?? '/dashboard/staff-credentials'),
-    phone: typeof row.phone === 'string' ? row.phone : undefined,
-  };
+function normalizeRole(role: unknown): string {
+  return String(role ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+}
+
+export function isHospitalAdminRole(role: unknown): boolean {
+  const normalized = normalizeRole(role);
+  return (
+    normalized === 'admin' ||
+    normalized === 'super_admin' ||
+    normalized === 'superadmin' ||
+    normalized === 'hospital_admin'
+  );
+}
+
+function hospitalNodesCompatible(staffHospitalId: string, selectedHospitalId?: string): boolean {
+  if (!selectedHospitalId) return true;
+  const staffNode = staffHospitalId.trim() || 'HOSP-01';
+  const selectedNode = selectedHospitalId.trim();
+  if (!selectedNode || selectedNode === 'HOSP-01' || staffNode === 'HOSP-01') return true;
+  return staffNode === selectedNode;
 }
 
 export async function authenticateHospitalAdmin(
@@ -61,62 +78,57 @@ export async function authenticateHospitalAdmin(
     return { ok: false, error: 'Authentication service unavailable.' };
   }
 
-  const { data } = await supabase
-    .from('hospital_staff_credentials')
-    .select('*')
-    .eq('email', cleanEmail)
-    .maybeSingle();
-
-  const roster = await supabase
+  const { data, error } = await supabase
     .from('hospital_staff')
     .select('*')
-    .eq('email', cleanEmail)
-    .eq('hospital_id', hospitalId || 'HOSP-01')
-    .eq('role', 'admin')
+    .ilike('email', cleanEmail)
+    .eq('is_active', true)
     .maybeSingle();
 
-  const credentialRow = data as Record<string, unknown> | null;
-  const rosterRow = roster.data as Record<string, unknown> | null;
-  const row = credentialRow ?? rosterRow;
-
-  if (!row) {
+  if (error || !data) {
     return {
       ok: false,
       error: 'Invalid administrator credentials or unauthorized hospital node.',
     };
   }
 
-  const staffType = String(row.staff_type ?? row.role ?? '');
-  if (staffType !== 'Admin' && staffType.toLowerCase() !== 'admin') {
+  const staff = asRecord(data);
+  const storedPasscode = readStoredPasscode(staff);
+  const isPasscodeValid =
+    storedPasscode === cleanPasscode ||
+    String(staff.passcode_key ?? '') === cleanPasscode ||
+    String(staff.passcode ?? '') === cleanPasscode;
+
+  if (!isPasscodeValid) {
+    return { ok: false, error: 'Invalid administrator credentials or passcode.' };
+  }
+
+  if (!isHospitalAdminRole(staff.role) && !isHospitalAdminRole(staff.staff_type)) {
+    return { ok: false, error: 'Access denied: Administrator role required.' };
+  }
+
+  const resolvedHospitalId = String(staff.hospital_id ?? hospitalId ?? 'HOSP-01').trim() || 'HOSP-01';
+  if (!hospitalNodesCompatible(resolvedHospitalId, hospitalId)) {
     return {
       ok: false,
-      error: 'This portal is restricted to hospital administrators.',
+      error: 'Invalid administrator credentials or unauthorized hospital node.',
     };
   }
 
-  const storedPasscode = readPasscode(row);
-  if (!storedPasscode || storedPasscode !== cleanPasscode) {
-    return {
-      ok: false,
-      error: 'Invalid administrator credentials or passcode.',
-    };
-  }
-
-  const admin = normalizeAdmin(
-    {
-      ...row,
-      hospital_id: String(row.hospital_id ?? hospitalId ?? 'HOSP-01'),
+  return {
+    ok: true,
+    admin: {
+      id: String(staff.id ?? ''),
+      hospital_id: resolvedHospitalId,
+      hospital_name: String(staff.hospital_name ?? 'Regal Hospital Main'),
+      full_name: String(staff.full_name ?? staff.name ?? 'Hospital Administrator'),
+      email: String(staff.email ?? cleanEmail).toLowerCase(),
+      department: String(staff.department ?? 'Hospital Administration'),
+      temporary_passcode: storedPasscode,
       portal_access: '/dashboard',
+      phone: typeof staff.phone === 'string' ? staff.phone : undefined,
+      role: normalizeRole(staff.role ?? staff.staff_type) || 'admin',
+      raw: staff,
     },
-    cleanEmail,
-  );
-
-  if (hospitalId && admin.hospital_id && admin.hospital_id !== hospitalId) {
-    return {
-      ok: false,
-      error: 'Invalid administrator credentials or unauthorized hospital node.',
-    };
-  }
-
-  return { ok: true, admin };
+  };
 }

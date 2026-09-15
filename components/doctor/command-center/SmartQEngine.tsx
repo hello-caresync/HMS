@@ -41,10 +41,11 @@ export function SmartQEngine() {
   const { data: ctx } = useDoctorContext(employeeId);
   const doctorUuid = ctx?.doctorUuid ?? '';
 
-  const { data: tokens = [], isLoading } = useDoctorQueue({
+  const { tokens = [], isLoading } = useDoctorQueue({
     employeeId,
     doctorName,
     doctorUuid,
+    department: ctx?.department,
   });
   const callNextMutation = useCallNextPatient(doctorUuid);
   const callMutation = useCallPatient(doctorUuid);
@@ -99,7 +100,7 @@ export function SmartQEngine() {
           </h2>
         </div>
         <div className="flex-1 space-y-2 overflow-y-auto p-4">
-          {isLoading ? (
+          {isLoading && tokens.length === 0 ? (
             <div className="flex h-40 items-center justify-center gap-2 text-sm font-semibold text-[#5A7A94]">
               <Loader2 className="h-5 w-5 animate-spin" /> Loading queue…
             </div>
@@ -120,22 +121,22 @@ export function SmartQEngine() {
                       {token.chief_complaint || 'General consultation'}
                     </p>
                   </div>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${statusStyle(token.status)}`}>
-                    {token.status.replace('_', ' ')}
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${statusStyle(token.status ?? 'ISSUED')}`}>
+                    {(token.status ?? 'ISSUED').replace('_', ' ')}
                   </span>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {token.status === 'ISSUED' && (
+                  {(token.status ?? 'ISSUED') === 'ISSUED' && (
                     <button type="button" onClick={() => void handleCall(token)} className={ccClasses.btnPrimary}>
                       Call Patient
                     </button>
                   )}
-                  {token.status === 'CALLED' && (
+                  {(token.status ?? 'ISSUED') === 'CALLED' && (
                     <button type="button" onClick={() => void handleStart(token)} className={ccClasses.btnAccent}>
                       <Play className="h-4 w-4" /> Start Encounter
                     </button>
                   )}
-                  {token.status === 'IN_CONSULTATION' && (
+                  {(token.status ?? 'ISSUED') === 'IN_CONSULTATION' && (
                     <button type="button" onClick={() => void handleComplete(token)} className={ccClasses.btnGhost}>
                       <CheckCircle2 className="h-4 w-4" /> Complete
                     </button>
@@ -166,7 +167,7 @@ export function SmartQEngine() {
             <button
               type="button"
               onClick={() => active && void handleStart(active)}
-              disabled={!active || active.status === 'IN_CONSULTATION'}
+              disabled={!active || (active.status ?? 'ISSUED') === 'IN_CONSULTATION'}
               className={ccClasses.btnAccent}
             >
               Start Encounter
@@ -186,7 +187,7 @@ export function SmartQEngine() {
               <div className="flex items-center gap-2">
                 <span className="rounded-xl bg-[#E8F1F8] px-3 py-1 text-sm font-black">#{active.token_number}</span>
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-[#2A9D8F]">
-                  <Activity className="h-3 w-3 animate-pulse" /> {active.status.replace('_', ' ')}
+                  <Activity className="h-3 w-3 animate-pulse" /> {(active.status ?? 'ISSUED').replace('_', ' ')}
                 </span>
               </div>
               <h3 className="text-2xl font-black text-[#173F5F]">{active.patient_name}</h3>

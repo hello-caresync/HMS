@@ -31,6 +31,7 @@ import { ccClasses } from '@/lib/doctor/command-center/theme';
 import { KpiCard } from './KpiCard';
 import { QueueDrawer } from './QueueDrawer';
 import EmergencyBypassTakeover from './EmergencyBypassTakeover';
+import { DoctorAvailabilityPanel } from '@/components/doctor/DoctorAvailabilityPanel';
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -258,7 +259,7 @@ export function CommandCenterDashboard(props: CommandCenterDashboardProps) {
                   Token #{active.token_number}
                 </span>
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-[#2A9D8F]">
-                  <Activity className="h-3 w-3 animate-pulse" /> {active.status.replace('_', ' ')}
+                  <Activity className="h-3 w-3 animate-pulse" /> {(active.status ?? 'ISSUED').replace('_', ' ')}
                 </span>
               </div>
               <h2 className="text-xl font-black text-[#173F5F]">{active.patient_name}</h2>
@@ -300,8 +301,8 @@ export function CommandCenterDashboard(props: CommandCenterDashboardProps) {
                     #{t.token_number} · {t.patient_name}
                   </p>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${statusBadge(t.status)}`}>
-                  {t.status}
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${statusBadge(t.status ?? 'ISSUED')}`}>
+                  {t.status ?? 'ISSUED'}
                 </span>
               </div>
             ))}
@@ -311,6 +312,8 @@ export function CommandCenterDashboard(props: CommandCenterDashboardProps) {
           </div>
         </div>
       </div>
+
+      <DoctorAvailabilityPanel doctorId={activeDoctorId} doctorName={doctorName} />
 
       <QueueDrawer tokens={tokens} />
     </div>

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import type { RegalDoctor } from '@/components/nexora-hospital/HospitalOperationsCenter';
 import { SEED_VENDORS } from '@/components/nexora-hospital/hospital-ops-seed';
 import { createClient } from '@/lib/supabase/client';
+import { isDemoMode } from '@/lib/shared/demo-mode';
 import { ECOSYSTEM_VENDOR_TARGET_ID } from '@/lib/ecosystem/ecosystem-channels';
 import {
   dispatchEcosystemNotification,
@@ -219,7 +220,9 @@ export default function EcosystemNotificationCenter({
     () => [
       { id: 'all', label: 'All Vendors' },
       { id: ECOSYSTEM_VENDOR_TARGET_ID, label: 'VENDOR-01 · Apex Pharma / MedSupply' },
-      ...SEED_VENDORS.map((vendor) => ({ id: vendor.id, label: vendor.name })),
+      ...(isDemoMode()
+        ? SEED_VENDORS.map((vendor) => ({ id: vendor.id, label: vendor.name }))
+        : []),
     ],
     [],
   );

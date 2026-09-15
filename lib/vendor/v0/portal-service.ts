@@ -4,14 +4,15 @@
  * No dummy seed fallbacks — empty arrays and zero counts when tables are empty.
  */
 
+import { PROCUREMENT_PO_TABLE } from '@/lib/hospital/procurement';
 import { supabase } from '@/lib/supabaseClient';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { LifecycleCounts } from '@/lib/vendor/lifecycle';
 import {
   ALL_HOSPITALS_CODE,
   DEFAULT_HOSPITAL_CODE,
+  hospitalNameForCode,
   matchesHospitalFilter,
-  resolveHospitalCode,
 } from '@/lib/vendor/hospitals';
 import {
   loadChannelMessages as loadUnifiedChannelMessages,
@@ -43,6 +44,8 @@ export type PurchaseOrder = {
   po_number: string;
   hospital_name: string;
   hospital_code: string;
+  facility_code?: string;
+  facility_name?: string;
   total_amount: number;
   status: PoStatus | string;
   created_at: string;
@@ -60,6 +63,8 @@ export type Shipment = {
   po_number?: string;
   hospital_name?: string;
   hospital_code?: string;
+  facility_code?: string;
+  facility_name?: string;
   item_details?: string;
   total_amount?: number;
 };
@@ -140,25 +145,84 @@ export type PortalFilterOptions = {
 
 export { ALL_HOSPITALS_CODE };
 
+type PoHospitalFields = {
+  facility_code?: string | null;
+  hospital_code?: string | null;
+  hospital_name?: string | null;
+  facility_name?: string | null;
+};
+
+/** Facility / network code for procurement rows that may omit legacy columns. */
+export function resolvePoFacilityCode(order: PoHospitalFields): string {
+  return (
+    (order.facility_code && String(order.facility_code).trim()) ||
+    (order.hospital_code && String(order.hospital_code).trim()) ||
+    DEFAULT_HOSPITAL_CODE
+  );
+}
+
+/** Display name for hospital / facility with safe procurement-table fallbacks. */
+export function resolvePoHospitalName(order: PoHospitalFields): string {
+  return (
+    (order.hospital_name && String(order.hospital_name).trim()) ||
+    (order.facility_name && String(order.facility_name).trim()) ||
+    hospitalNameForCode(resolvePoFacilityCode(order)) ||
+    'Regal Hospital'
+  );
+}
+
 function mapPurchaseOrderRow(row: Record<string, unknown>): PurchaseOrder {
+  const facilityCode = row.facility_code ? String(row.facility_code) : undefined;
+  const hospitalCode = resolvePoFacilityCode({
+    facility_code: facilityCode,
+    hospital_code: row.hospital_code
+      ? String(row.hospital_code)
+      : row.hospital_id
+        ? String(row.hospital_id)
+        : null,
+  });
+
   return {
     id: String(row.id ?? ''),
     po_number: String(row.po_number ?? row.id ?? 'PO'),
-    hospital_name: String(row.hospital_name ?? 'Regal Hospital'),
-    hospital_code: resolveHospitalCode(row),
+    hospital_name: resolvePoHospitalName({
+      hospital_name: row.hospital_name ? String(row.hospital_name) : null,
+      facility_name: row.facility_name ? String(row.facility_name) : null,
+      facility_code: facilityCode,
+      hospital_code: hospitalCode,
+    }),
+    hospital_code: hospitalCode,
+    facility_code: facilityCode,
+    facility_name: row.facility_name ? String(row.facility_name) : undefined,
     total_amount: Number(row.total_amount ?? row.total_cost ?? 0),
     status: String(row.status ?? 'ISSUED').toUpperCase(),
     created_at: String(row.created_at ?? nowIso()),
-    item_details: row.item_details ? String(row.item_details) : undefined,
+    item_details: row.item_details
+      ? String(row.item_details)
+      : row.item_description
+        ? String(row.item_description)
+        : undefined,
   };
 }
 
 function mapJoinedPurchaseOrder(po: Record<string, unknown> | null | undefined) {
   if (!po) return {};
+  const facilityCode = po.facility_code ? String(po.facility_code) : undefined;
+  const hospitalCode = resolvePoFacilityCode({
+    facility_code: facilityCode,
+    hospital_code: po.hospital_code ? String(po.hospital_code) : String(po.hospital_id ?? ''),
+  });
   return {
     po_number: po.po_number ? String(po.po_number) : undefined,
-    hospital_name: po.hospital_name ? String(po.hospital_name) : undefined,
-    hospital_code: resolveHospitalCode(po),
+    hospital_name: resolvePoHospitalName({
+      hospital_name: po.hospital_name ? String(po.hospital_name) : null,
+      facility_name: po.facility_name ? String(po.facility_name) : null,
+      facility_code: facilityCode,
+      hospital_code: hospitalCode,
+    }),
+    hospital_code: hospitalCode,
+    facility_code: facilityCode,
+    facility_name: po.facility_name ? String(po.facility_name) : undefined,
     item_details: po.item_details ? String(po.item_details) : undefined,
     total_amount: po.total_amount != null ? Number(po.total_amount) : undefined,
   };
@@ -202,6 +266,83 @@ function mapInvoiceRow(row: Record<string, unknown>): Invoice {
     po_number: joined.po_number,
     item_details: joined.item_details,
   };
+}
+
+const PO_SELECT =
+  'id, po_number, hospital_name, hospital_code, facility_code, hospital_id, total_amount, total_cost, status, created_at, item_details, item_description, vendor_id';
+
+const PROCUREMENT_PO_SELECT =
+  'id, po_number, hospital_id, total_amount, total_cost, status, created_at, item_details, item_description, vendor_id';
+
+const PENDING_PO_STATUSES = ['ISSUED', 'issued', 'pending_dispatch', 'pending', 'open', 'OPEN'];
+
+async function countPendingPurchaseOrders(hospitalCode: string): Promise<number> {
+  let procurementQuery = supabase
+    .from(PROCUREMENT_PO_TABLE)
+    .select('*', { count: 'exact', head: true })
+    .eq('vendor_id', VENDOR_ID)
+    .in('status', PENDING_PO_STATUSES);
+
+  if (hospitalCode !== ALL_HOSPITALS_CODE) {
+    procurementQuery = procurementQuery.in('hospital_id', [
+      hospitalCode,
+      DEFAULT_HOSPITAL_CODE,
+      'ROOT-HQ',
+      'HOSP-01',
+    ]);
+  }
+
+  const procurementRes = await procurementQuery;
+  if (!procurementRes.error) {
+    return procurementRes.count ?? 0;
+  }
+
+  let legacyQuery = supabase
+    .from('purchase_orders')
+    .select('*', { count: 'exact', head: true })
+    .eq('vendor_id', VENDOR_ID)
+    .eq('status', 'ISSUED');
+  legacyQuery = applyPurchaseOrderHospitalFilter(legacyQuery, hospitalCode);
+  const legacyRes = await legacyQuery;
+  if (legacyRes.error) throw new Error(legacyRes.error.message);
+  return legacyRes.count ?? 0;
+}
+
+async function queryPurchaseOrders(
+  table: string,
+  limit: number,
+  hospitalCode: string,
+): Promise<PurchaseOrder[]> {
+  const buildQuery = (select: string) => {
+    let query = supabase
+      .from(table)
+      .select(select)
+      .eq('vendor_id', VENDOR_ID)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (table === 'purchase_orders') {
+      query = applyPurchaseOrderHospitalFilter(query, hospitalCode);
+    } else if (hospitalCode !== ALL_HOSPITALS_CODE) {
+      query = query.in('hospital_id', [hospitalCode, DEFAULT_HOSPITAL_CODE, 'ROOT-HQ', 'HOSP-01']);
+    }
+
+    return query;
+  };
+
+  const select =
+    table === PROCUREMENT_PO_TABLE ? PROCUREMENT_PO_SELECT : PO_SELECT;
+
+  let { data, error } = await buildQuery(select);
+
+  if (error && table === PROCUREMENT_PO_TABLE && /column|does not exist/i.test(error.message)) {
+    console.warn('[portal-service] Retrying procurement PO fetch with select(*):', error.message);
+    ({ data, error } = await buildQuery('*'));
+  }
+
+  if (error) throw new Error(error.message);
+  const rows = ((data ?? []) as Record<string, unknown>[]).map(mapPurchaseOrderRow);
+  return filterByHospitalCode(rows, hospitalCode);
 }
 
 function filterByHospitalCode<T extends { hospital_code?: string }>(
@@ -282,12 +423,8 @@ export async function loadDashboardKpis(
   const empty: DashboardKpis = { pendingPos: 0, activeShipments: 0, invoicedTotal: 0 };
   try {
     if (hospitalCode === ALL_HOSPITALS_CODE) {
-      const [pendingRes, activeRes, invoicesRes] = await Promise.all([
-        supabase
-          .from('purchase_orders')
-          .select('*', { count: 'exact', head: true })
-          .eq('vendor_id', VENDOR_ID)
-          .eq('status', 'ISSUED'),
+      const [pendingPos, activeRes, invoicesRes] = await Promise.all([
+        countPendingPurchaseOrders(hospitalCode),
         supabase
           .from('shipments')
           .select('*', { count: 'exact', head: true })
@@ -296,7 +433,7 @@ export async function loadDashboardKpis(
         supabase.from('invoices').select('total_amount').eq('vendor_id', VENDOR_ID),
       ]);
 
-      const errors = [pendingRes.error, activeRes.error, invoicesRes.error].filter(Boolean);
+      const errors = [activeRes.error, invoicesRes.error].filter(Boolean);
       const invoicedTotal = (invoicesRes.data ?? []).reduce(
         (sum: number, row: { total_amount?: number }) => sum + Number(row.total_amount ?? 0),
         0,
@@ -305,7 +442,7 @@ export async function loadDashboardKpis(
       if (errors.length > 0) {
         return {
           kpis: {
-            pendingPos: pendingRes.count ?? 0,
+            pendingPos,
             activeShipments: activeRes.count ?? 0,
             invoicedTotal,
           },
@@ -315,7 +452,7 @@ export async function loadDashboardKpis(
 
       return {
         kpis: {
-          pendingPos: pendingRes.count ?? 0,
+          pendingPos,
           activeShipments: activeRes.count ?? 0,
           invoicedTotal,
         },
@@ -324,17 +461,8 @@ export async function loadDashboardKpis(
 
     const poIds = await loadPurchaseOrderIdsForHospital(hospitalCode);
 
-    const pendingQuery = applyPurchaseOrderHospitalFilter(
-      supabase
-        .from('purchase_orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('vendor_id', VENDOR_ID)
-        .eq('status', 'ISSUED'),
-      hospitalCode,
-    );
-
-    const [pendingRes, invoicesRes] = await Promise.all([
-      pendingQuery,
+    const [pendingPos, invoicesRes] = await Promise.all([
+      countPendingPurchaseOrders(hospitalCode),
       poIds.length > 0
         ? supabase
             .from('invoices')
@@ -356,7 +484,7 @@ export async function loadDashboardKpis(
       activeShipments = activeRes.count ?? 0;
     }
 
-    const errors = [pendingRes.error, invoicesRes.error].filter(Boolean);
+    const errors = [invoicesRes.error].filter(Boolean);
     const invoicedTotal = (invoicesRes.data ?? []).reduce(
       (sum: number, row: { total_amount?: number }) => sum + Number(row.total_amount ?? 0),
       0,
@@ -365,7 +493,7 @@ export async function loadDashboardKpis(
     if (errors.length > 0) {
       return {
         kpis: {
-          pendingPos: pendingRes.count ?? 0,
+          pendingPos,
           activeShipments,
           invoicedTotal,
         },
@@ -375,7 +503,7 @@ export async function loadDashboardKpis(
 
     return {
       kpis: {
-        pendingPos: pendingRes.count ?? 0,
+        pendingPos,
         activeShipments,
         invoicedTotal,
       },
@@ -456,23 +584,21 @@ export async function loadPurchaseOrders(
   hospitalCode = ALL_HOSPITALS_CODE,
 ): Promise<LoadResult<PurchaseOrder>> {
   try {
-    let query = supabase
-      .from('purchase_orders')
-      .select(
-        'id, po_number, hospital_name, hospital_code, facility_code, total_amount, status, created_at, item_details',
-      )
-      .eq('vendor_id', VENDOR_ID)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    query = applyPurchaseOrderHospitalFilter(query, hospitalCode);
-
-    const { data, error } = await query;
-    if (error) throw new Error(error.message);
-    const rows = ((data ?? []) as Record<string, unknown>[]).map(mapPurchaseOrderRow);
-    return { rows: filterByHospitalCode(rows, hospitalCode) };
-  } catch (error) {
-    return { rows: [], error: errorMessage(error, 'Could not reach purchase_orders') };
+    const procurementRows = await queryPurchaseOrders(PROCUREMENT_PO_TABLE, limit, hospitalCode);
+    return { rows: procurementRows };
+  } catch (procurementError) {
+    try {
+      const legacyRows = await queryPurchaseOrders('purchase_orders', limit, hospitalCode);
+      return { rows: legacyRows };
+    } catch (error) {
+      return {
+        rows: [],
+        error: errorMessage(
+          procurementError ?? error,
+          'Could not reach purchase orders',
+        ),
+      };
+    }
   }
 }
 
@@ -860,6 +986,7 @@ export function subscribeVendorPortal(
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'shipments' }, () => onChange())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, () => onChange())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendor_invoices' }, () => onChange())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'system_notifications' }, () =>
         onChange(),
       )

@@ -26,7 +26,7 @@ function buildSession(doctor: HospitalDoctorRow): DoctorSession {
     specialization: doctor.specialization ?? 'Consultant Specialist',
     email: doctor.email ?? undefined,
     hospitalCode: doctor.hospital_code ?? 'RH-BLR-01',
-    portalRoute: doctor.portal_route ?? '/doctor',
+    portalRoute: doctor.portal_route ?? '/doctor/dashboard',
     loggedInAt: new Date().toISOString(),
   };
 }
@@ -111,7 +111,7 @@ async function lookupDoctorFromStaffCredentials(
     department: String(row.department ?? 'Clinical'),
     specialization: String(row.department ?? 'Consultant Specialist'),
     passcode: stored,
-    portal_route: '/doctor/workspace',
+    portal_route: '/doctor/dashboard',
     hospital_code: String(row.hospital_id ?? 'RH-BLR-01'),
     is_active: String(row.status ?? 'Active') !== 'Restricted',
   };
