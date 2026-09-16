@@ -112,35 +112,35 @@ export default function DoctorsDirectoryPage() {
 
   return (
     <div className="space-y-8 font-sans text-[#0E2924]">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#D5E8E3] pb-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#e6ccb2] pb-4">
         <div>
           <h1 className="text-2xl font-black text-[#0E2924]">Clinician & Doctor Directory</h1>
-          <p className="text-xs font-bold text-[#227B6B]">
+          <p className="text-xs font-bold text-[#b08968]">
             Admin-verified consultants only — {doctors.length} specialist
             {doctors.length === 1 ? '' : 's'} available to book.
           </p>
         </div>
         <button
           onClick={() => void loadDoctors()}
-          className="flex items-center gap-2 rounded-2xl border border-[#D5E8E3] bg-white px-5 py-3 text-xs font-black text-[#113831]"
+          className="flex items-center gap-2 rounded-2xl border border-[#e6ccb2] bg-white px-5 py-3 text-xs font-black text-[#7f5539]"
         >
-          <RotateCw className="h-4 w-4 text-[#227B6B]" /> Refresh Directory
+          <RotateCw className="h-4 w-4 text-[#b08968]" /> Refresh Directory
         </button>
       </div>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-[#227B6B]" />
+        <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-[#b08968]" />
         <input
           type="text"
           placeholder="Search doctor or specialty..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-2xl border border-[#D5E8E3] bg-white py-3.5 pl-10 pr-4 text-xs font-bold text-[#0E2924] focus:outline-none"
+          className="w-full rounded-2xl border border-[#e6ccb2] bg-white py-3.5 pl-10 pr-4 text-xs font-bold text-[#0E2924] focus:outline-none"
         />
       </div>
 
       {!loading && doctors.length === 0 ? (
-        <div className="col-span-full rounded-3xl border border-dashed border-[#D5E8E3] bg-white py-12 text-center">
+        <div className="col-span-full rounded-3xl border border-dashed border-[#e6ccb2] bg-white py-12 text-center">
           <p className="text-sm font-black text-[#0E2924]">No doctors currently provisioned for this facility.</p>
           <p className="mt-2 text-xs font-bold text-slate-500">
             Ask your hospital admin to add verified clinicians in Supabase before booking.
@@ -151,7 +151,7 @@ export default function DoctorsDirectoryPage() {
           <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading directory...
         </div>
       ) : filteredDoctors.length === 0 ? (
-        <div className="rounded-3xl border border-[#D5E8E3] bg-white p-12 text-center text-xs font-bold text-[#227B6B]">
+        <div className="rounded-3xl border border-[#e6ccb2] bg-white p-12 text-center text-xs font-bold text-[#b08968]">
           No doctors match your search. Try a different name or specialty.
         </div>
       ) : (
@@ -159,30 +159,30 @@ export default function DoctorsDirectoryPage() {
           {filteredDoctors.map((doc) => (
             <div
               key={doc.id}
-              className="flex flex-col justify-between space-y-4 rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm"
+              className="flex flex-col justify-between space-y-4 rounded-3xl border border-[#e6ccb2] bg-white p-6 shadow-sm"
             >
               <div className="space-y-3">
-                <div className="border-b border-[#EAF5F2] pb-2">
-                  <span className="rounded-full bg-[#EAF5F2] px-3 py-1 text-[10px] font-black uppercase text-[#113831]">
+                <div className="border-b border-[#ede0d4] pb-2">
+                  <span className="rounded-full bg-[#ede0d4] px-3 py-1 text-[10px] font-black uppercase text-[#7f5539]">
                     {doc.department}
                   </span>
                 </div>
                 <h3 className="text-base font-black text-[#0E2924]">{doc.doctor_name}</h3>
-                <p className="flex items-center gap-1 text-xs font-bold text-[#227B6B]">
+                <p className="flex items-center gap-1 text-xs font-bold text-[#b08968]">
                   <Building2 className="h-3.5 w-3.5" /> {doc.hospital_name}
                 </p>
                 <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">
-                  <Award className="h-3.5 w-3.5 text-[#227B6B]" /> {doc.experience}
+                  <Award className="h-3.5 w-3.5 text-[#b08968]" /> {doc.experience}
                 </p>
               </div>
-              <div className="flex items-center justify-between border-t border-[#EAF5F2] pt-4 text-xs font-bold">
+              <div className="flex items-center justify-between border-t border-[#ede0d4] pt-4 text-xs font-bold">
                 <div>
-                  <span className="block text-[10px] uppercase text-[#227B6B]">Consultation Fee</span>
+                  <span className="block text-[10px] uppercase text-[#b08968]">Consultation Fee</span>
                   <span className="text-base font-black">{doc.fee}</span>
                 </div>
                 <button
                   onClick={() => handleBookSlot(doc)}
-                  className="flex items-center gap-2 rounded-2xl bg-[#113831] px-5 py-3 text-xs font-black text-white transition hover:bg-[#227B6B]"
+                  className="flex items-center gap-2 rounded-2xl bg-[#7f5539] px-5 py-3 text-xs font-black text-white transition hover:bg-[#b08968]"
                 >
                   <Calendar className="h-4 w-4 text-[#A6E2D8]" /> Book Slot
                 </button>

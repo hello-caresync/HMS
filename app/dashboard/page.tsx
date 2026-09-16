@@ -59,6 +59,19 @@ import {
   type InvoiceMedicineLine,
   type PrescribedItem,
 } from '@/lib/billing/post-consultation-invoice';
+import { createWalkInBillingRecord } from '@/lib/db/billing';
+import {
+  completeConsultationRecord,
+  createConsultationFromAppointment,
+} from '@/lib/db/consultations';
+import { handoffConsultationToHospitalBilling } from '@/lib/billing/consultation-billing-handoff';
+import { DynamicSlotPicker } from '@/components/patient/DynamicSlotPicker';
+import {
+  assertSlotAvailableForBooking,
+  loadDynamicDoctorSchedule,
+  resolveAutoSelectedSlot,
+} from '@/lib/scheduling/doctor-slot-service';
+import type { DynamicSlot } from '@/lib/scheduling/dynamic-slots';
 import {
   PharmacyBillingModal,
   type DirectBillingSeed,
@@ -66,7 +79,6 @@ import {
 import { DoctorsStaffCommandCenter } from '@/components/hospital/DoctorsStaffCommandCenter';
 import { IpdBedCensus } from '@/components/hospital/IpdBedCensus';
 import { SupplyOrdersCommandCenter } from '@/components/hospital/SupplyOrdersCommandCenter';
-import { DiagnosticsFulfillmentDesk } from '@/components/hospital/DiagnosticsFulfillmentDesk';
 import { RegalHospitalLogoMark } from '@/components/brand/RegalHospitalLogo';
 import { DASHBOARD_TAB_STORAGE_KEY } from '@/components/hospital/DashboardTabRedirect';
 import { mapHospitalStaffMember, toDashboardStaffRow } from '@/lib/hospital/staff-directory';
@@ -208,6 +220,7 @@ type QueueRow = {
   department: string;
   phone: string;
   doctor_name: string;
+  doctor_id: string;
   status: string;
   created_at: string;
   appointment_date: string;
@@ -556,6 +569,7 @@ function mapQueueRow(row: Record<string, unknown>, sourceTable: string): QueueRo
     department: String(row.department ?? 'General Medicine'),
     phone: String(row.phone ?? row.patient_phone ?? ''),
     doctor_name: String(row.doctor_name ?? 'Unassigned'),
+    doctor_id: String(row.doctor_id ?? row.doctor_code ?? row.doctor_employee_id ?? ''),
     status,
     created_at: String(row.created_at ?? ''),
     appointment_date: String(row.appointment_date ?? row.created_at ?? ''),
@@ -1169,23 +1183,16 @@ export default function HospitalMasterDashboard() {
     doctorId: string;
     phone: string;
     age: string;
-    bp: string;
-    pulse: string;
-    temp: string;
-    spo2: string;
-    weight: string;
   }>({
     patientName: '',
     department: DEFAULT_HOSPITAL_DEPARTMENT,
     doctorId: '',
     phone: '',
     age: '',
-    bp: '',
-    pulse: '',
-    temp: '',
-    spo2: '',
-    weight: '',
   });
+  const [opdAppointmentTime, setOpdAppointmentTime] = useState('');
+  const [opdDynamicSlots, setOpdDynamicSlots] = useState<DynamicSlot[]>([]);
+  const [loadingOpdSlots, setLoadingOpdSlots] = useState(false);
   const [medForm, setMedForm] = useState({ name: '', category: 'Medicine', stock: 100 });
   const [bedForm, setBedForm] = useState<{
     ward: string;
@@ -1804,6 +1811,31 @@ export default function HospitalMasterDashboard() {
   }, [activeModal, todayOpdQueue]);
 
   useEffect(() => {
+    if (activeModal !== 'opd' || !supabase || !opdForm.doctorId) {
+      setOpdDynamicSlots([]);
+      setOpdAppointmentTime('');
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingOpdSlots(true);
+    const walkInDate = todayIsoDate();
+    void loadDynamicDoctorSchedule(supabase, opdForm.doctorId, walkInDate, 'Walk-in consultation').then(
+      ({ slots }) => {
+        if (cancelled) return;
+        setOpdDynamicSlots(slots);
+        const auto = resolveAutoSelectedSlot(slots, opdAppointmentTime);
+        setOpdAppointmentTime(auto?.time ?? '');
+        setLoadingOpdSlots(false);
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeModal, opdForm.doctorId]);
+
+  useEffect(() => {
     if (!onlineBookingAlert) return;
     const timer = window.setTimeout(() => setOnlineBookingAlert(null), 12000);
     return () => window.clearTimeout(timer);
@@ -1845,23 +1877,24 @@ export default function HospitalMasterDashboard() {
         toast.error('Select a consulting doctor for this department');
         return;
       }
+      if (!opdAppointmentTime) {
+        toast.error('Select an available consultation time slot');
+        return;
+      }
 
-      const vitals = {
-        bp: opdForm.bp.trim(),
-        pulse: opdForm.pulse.trim(),
-        temp: opdForm.temp.trim(),
-        spo2: opdForm.spo2.trim(),
-        weight: opdForm.weight.trim(),
-      };
-      const vitalsSummary = [
-        vitals.bp ? `BP ${vitals.bp}` : '',
-        vitals.pulse ? `HR ${vitals.pulse}` : '',
-        vitals.temp ? `Temp ${vitals.temp}` : '',
-        vitals.spo2 ? `SpO2 ${vitals.spo2}` : '',
-        vitals.weight ? `Wt ${vitals.weight}` : '',
-      ]
-        .filter(Boolean)
-        .join(' · ');
+      const walkInDate = todayIsoDate();
+      const bookingDoctorKey =
+        assignedDoctor?.doctor_id || assignedDoctor?.id || opdForm.doctorId || '';
+      try {
+        await assertSlotAvailableForBooking(supabase, {
+          doctorId: bookingDoctorKey,
+          appointmentDate: walkInDate,
+          slotTime: opdAppointmentTime,
+        });
+      } catch (slotErr: unknown) {
+        toast.error(slotErr instanceof Error ? slotErr.message : 'Selected slot is no longer available');
+        return;
+      }
 
       const assignedDoctorId = assignedDoctor?.id || null;
 
@@ -1881,19 +1914,19 @@ export default function HospitalMasterDashboard() {
         patient_phone: contactMobile,
         status: 'waiting',
         queue_status: 'waiting',
+        billing_status: 'pending_checkout',
         appointment_type: 'walk_in',
         source: 'WALK_IN',
         booking_source: 'WALK-IN',
         token_number: tokenString,
-        appointment_date: todayIsoDate(),
-        slot_time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
-        appointment_time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        appointment_date: walkInDate,
+        slot_time: opdAppointmentTime,
+        appointment_time: opdAppointmentTime,
+        time_slot: opdAppointmentTime,
         age: parsedAge,
         patient_age: parsedAge,
         chief_complaint: 'Walk-in consultation',
         reason_for_visit: 'Walk-in consultation',
-        vitals,
-        vitals_summary: vitalsSummary || null,
       };
       delete insertPayload.id;
 
@@ -1929,7 +1962,67 @@ export default function HospitalMasterDashboard() {
         return;
       }
 
-      toast.success(`Token ${tokenString} created for ${patientFullName}`);
+      const appointmentRow = data[0] as Record<string, unknown>;
+      const appointmentId = String(appointmentRow.id ?? appointmentRow.appointment_id ?? '');
+      const consultationFee =
+        Number(assignedDoctor?.consultation_fee ?? insertPayload.consultation_fee ?? 500) || 500;
+
+      const billingResult = await createWalkInBillingRecord(supabase, {
+        appointmentId,
+        hospitalId: activeHospitalId,
+        patientUhid: tokenString,
+        patientName: patientFullName,
+        doctorId: assignedDoctorId,
+        doctorName: assignedDoctor?.full_name || null,
+        department: clinicalDepartment,
+        consultationFee,
+        tokenNumber: tokenString,
+      });
+
+      if (!billingResult.ok) {
+        console.warn('Walk-in token created but billing queue write failed:', billingResult.error);
+        toast.warning(
+          `Token ${tokenString} issued, but billing desk sync failed. Refresh or re-open Billing tab.`,
+        );
+      }
+
+      try {
+        await createConsultationFromAppointment(supabase, {
+          hospitalId: activeHospitalId,
+          appointmentId,
+          uhid: tokenString,
+          patientName: patientFullName,
+          doctorId: String(bookingDoctorKey || assignedDoctorId || 'duty-doctor'),
+          doctorName: assignedDoctor?.full_name || 'Consulting Physician',
+          department: clinicalDepartment,
+          symptoms: 'Walk-in consultation',
+          status: 'QUEUED',
+          consultationDate: walkInDate,
+        });
+      } catch (consultErr) {
+        console.warn('Walk-in consultation ledger write skipped:', consultErr);
+      }
+
+      try {
+        await supabase.from('hospital_opd_queue').insert({
+          hospital_id: activeHospitalId,
+          token_number: tokenString,
+          uhid: tokenString,
+          patient_name: patientFullName,
+          phone: contactMobile,
+          department: clinicalDepartment,
+          doctor_id: bookingDoctorKey,
+          doctor_name: assignedDoctor?.full_name || null,
+          status: 'WAITING',
+          source: 'WALK_IN',
+          appointment_date: walkInDate,
+          slot_time: opdAppointmentTime,
+        });
+      } catch {
+        /* dashboard still reads appointments */
+      }
+
+      toast.success(`Token ${tokenString} created for ${patientFullName} · ${opdAppointmentTime}`);
 
       setOpdForm({
         patientName: '',
@@ -1937,12 +2030,9 @@ export default function HospitalMasterDashboard() {
         doctorId: '',
         phone: '',
         age: '',
-        bp: '',
-        pulse: '',
-        temp: '',
-        spo2: '',
-        weight: '',
       });
+      setOpdAppointmentTime('');
+      setOpdDynamicSlots([]);
       setActiveModal(null);
 
       await loadPlatformData(activeHospitalId);
@@ -2037,6 +2127,55 @@ export default function HospitalMasterDashboard() {
         toast.error(lastError);
         return;
       }
+
+      if (nextStatus === 'Completed' && supabase) {
+        const appointmentId = isUuidValue(item.id) ? item.id : '';
+        try {
+          await completeConsultationRecord(supabase, {
+            hospitalId: hospitalInfo.id,
+            appointmentId,
+            uhid: item.uhid || item.token_number || item.token,
+            patientName: item.patient_name,
+            doctorId: item.doctor_id || item.doctor_name,
+            doctorName: item.doctor_name,
+            department: item.department,
+            symptoms: item.slot_time ? `Walk-in · ${item.slot_time}` : 'OPD consultation',
+            status: 'COMPLETED',
+            consultationDate: String(item.appointment_date ?? todayIsoDate()).slice(0, 10),
+          });
+        } catch (consultErr) {
+          console.warn('Consultation history update skipped:', consultErr);
+        }
+
+        try {
+          await handoffConsultationToHospitalBilling(
+            supabase,
+            {
+              id: appointmentId || item.token,
+              appointment_id: appointmentId || null,
+              patient_id: item.uhid || item.token,
+              patient_name: item.patient_name,
+              uhid: item.uhid,
+              token_number: item.token_number || item.token,
+              hospital_id: hospitalInfo.id,
+              department: item.department,
+              appointment_type: item.channel === 'walk-in' ? 'walk_in' : 'scheduled',
+              source: item.source,
+              booking_source: item.channel === 'walk-in' ? 'WALK-IN' : 'APP',
+              _source_table: item.source_table,
+            },
+            {
+              doctorId: item.doctor_id,
+              doctorName: item.doctor_name,
+              department: item.department,
+              consultationFee: item.consultation_fee,
+            },
+          );
+        } catch (billingErr) {
+          console.warn('Billing handoff on consult complete skipped:', billingErr);
+        }
+      }
+
       toast.success(nextStatus === 'In Consultation' ? `Called ${item.token}` : `${item.token} marked complete`);
       void loadPlatformData(hospitalInfo.id);
     } finally {
@@ -2952,7 +3091,6 @@ export default function HospitalMasterDashboard() {
                       ))
                     )}
                   </div>
-                  <DiagnosticsFulfillmentDesk />
                 </div>
               </div>
             </div>
@@ -3544,7 +3682,7 @@ export default function HospitalMasterDashboard() {
 
       {activeModal === 'opd' && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600">
@@ -3684,34 +3822,29 @@ export default function HospitalMasterDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                {(
-                  [
-                    ['bp', 'BP'],
-                    ['pulse', 'Pulse'],
-                    ['temp', 'Temp'],
-                    ['spo2', 'SpO2'],
-                    ['weight', 'Weight'],
-                  ] as const
-                ).map(([key, label]) => (
-                  <div key={key} className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
-                      {label}
-                    </label>
-                    <input
-                      type="text"
-                      placeholder={label}
-                      value={opdForm[key]}
-                      onChange={(e) => setOpdForm((p) => ({ ...p, [key]: e.target.value }))}
-                      className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-emerald-500"
-                    />
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  Consultation Time Slot
+                </label>
+                {!opdForm.doctorId ? (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-500">
+                    Select a doctor to view live availability for today
                   </div>
-                ))}
+                ) : (
+                  <DynamicSlotPicker
+                    slots={opdDynamicSlots}
+                    selectedTime={opdAppointmentTime}
+                    loading={loadingOpdSlots}
+                    clinicalReason="Walk-in consultation"
+                    variant="grid"
+                    onSelect={(slot) => setOpdAppointmentTime(slot.time)}
+                  />
+                )}
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500 font-medium">Auto-Allocated Queue Slot:</span>
-                <span className="font-mono font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <span className="text-slate-500 font-medium">Queue Token:</span>
+                <span className="font-mono font-black text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
                   {opdTokenPreview}
                 </span>
               </div>
@@ -3726,8 +3859,15 @@ export default function HospitalMasterDashboard() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmittingToken || !opdForm.patientName.trim() || !parsePatientAge(opdForm.age) || !isTenDigitPhone(opdForm.phone)}
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-600/20 active:scale-[0.99] transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                  disabled={
+                    isSubmittingToken ||
+                    !opdForm.patientName.trim() ||
+                    !parsePatientAge(opdForm.age) ||
+                    !isTenDigitPhone(opdForm.phone) ||
+                    !opdForm.doctorId ||
+                    !opdAppointmentTime
+                  }
+                  className="w-full py-2.5 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white font-black text-xs uppercase tracking-wider shadow-md active:scale-[0.99] transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-cyan-200"
                 >
                   {isSubmittingToken ? (
                     <>

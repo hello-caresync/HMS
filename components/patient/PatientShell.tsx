@@ -34,11 +34,11 @@ export function PatientShell({ children }: PatientShellProps) {
       <div className="flex min-h-screen min-w-0 flex-col md:ml-64">
         <header className={`sticky top-0 z-40 flex items-center justify-between px-4 py-3 md:px-8 ${patientClasses.topBar}`}>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-white md:text-base">{activeItem?.label ?? 'Nexora Patient'}</p>
-            <p className="hidden truncate text-xs text-patient-ivory-soft/90 md:block">{activeItem?.description ?? 'Clinical digital health companion'}</p>
+            <p className="truncate text-sm font-bold text-patient-charcoal md:text-base">{activeItem?.label ?? 'Nexora Patient'}</p>
+            <p className="hidden truncate text-xs text-patient-muted md:block">{activeItem?.description ?? 'Clinical digital health companion'}</p>
           </div>
           <div className="flex items-center gap-2 md:hidden">
-            <div className="rounded-lg bg-white/10 p-2 text-white">
+            <div className="rounded-lg bg-[#ede0d4] p-2 text-[#7f5539]">
               <BrandIcon className="h-4 w-4" aria-hidden />
             </div>
           </div>

@@ -1,7 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { fetchDoctorConsultationHistory } from '@/lib/db/consultations';
 import { buildDoctorQueueOrFilter, isQueueDoneStatus } from '@/lib/doctor/command-center/supabase-service';
 import { appointmentBelongsToDoctor, type DoctorSession } from '@/lib/doctor/session';
+import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 
 export type ConsultationPrescriptionLine = {
   name: string;
@@ -170,12 +172,44 @@ export async function fetchDoctorConsultationFeed(
     }
   }
 
-  return todayDoneRows
+  const appointmentFeed = todayDoneRows
     .map((row) => {
       const aptId = String(row.id ?? row.appointment_id ?? '');
       return mapFeedItem(row, clinicalByAppointment.get(aptId));
-    })
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+    });
+
+  const doctorKey = String(
+    session.doctorId || session.doctorUuid || session.employeeId || '',
+  ).trim();
+  const ledgerRows = doctorKey
+    ? await fetchDoctorConsultationHistory(supabase, doctorKey, REGAL_HOSPITAL_CODE, 80)
+    : [];
+
+  const ledgerFeed: DoctorConsultationFeedItem[] = ledgerRows.map((row) => ({
+    id: row.id,
+    appointment_id: row.appointment_id ?? undefined,
+    patient_name: row.patient_name,
+    token_number: row.uhid,
+    status: row.status,
+    updated_at: row.updated_at,
+    created_at: row.created_at,
+    diagnosis: row.diagnosis ?? undefined,
+    chief_complaint: row.symptoms ?? undefined,
+    clinical_notes: undefined,
+    doctor_instructions: undefined,
+    vitals_summary: formatVitals(row.vitals),
+    prescriptions: parsePrescriptions(row.medicines),
+  }));
+
+  const merged = new Map<string, DoctorConsultationFeedItem>();
+  for (const item of [...appointmentFeed, ...ledgerFeed]) {
+    const key = item.appointment_id || item.id;
+    if (!merged.has(key)) merged.set(key, item);
+  }
+
+  return [...merged.values()].sort(
+    (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+  );
 }
 
 export function buildOptimisticFeedItem(input: {

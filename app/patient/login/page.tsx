@@ -21,6 +21,7 @@ import { persistPatientAuthSession } from '@/lib/auth/patientAuth';
 import { loadHospitalOptionsForLogin } from '@/lib/auth/staff-credential-auth';
 import { RegalHospitalLogo } from '@/components/brand/RegalHospitalLogo';
 import { isDemoMode } from '@/lib/shared/demo-mode';
+import { patientClasses } from '@/lib/patient/theme';
 
 type HospitalOption = {
   id: string;
@@ -302,35 +303,31 @@ function PatientAuthForm() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 text-slate-100 flex flex-col justify-between p-4 sm:p-6 font-sans relative overflow-hidden select-none">
-      <div className="absolute inset-0 bg-[radial-gradient(#153238_1.2px,transparent_1.2px)] [background-size:24px_24px] opacity-70 pointer-events-none" />
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="max-w-md mx-auto w-full flex items-center justify-between z-10 pt-2">
+    <div className="relative flex min-h-screen w-full flex-col justify-between overflow-hidden p-4 font-sans select-none sm:p-6">
+      <div className="z-10 mx-auto flex w-full max-w-md items-center justify-between pt-2">
         <button
           type="button"
           onClick={() => router.push('/')}
-          className="text-xs font-semibold text-emerald-300/80 hover:text-emerald-200 transition-colors"
+          className="text-xs font-semibold text-[#9c6644] transition-colors hover:text-[#7f5539]"
         >
           &larr; Workspace Directory
         </button>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-800 text-[10px] font-mono font-bold text-emerald-300">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-[#e6ccb2] bg-[#ede0d4]/80 px-3 py-1 text-[10px] font-mono font-bold text-[#7f5539]">
+          <ShieldCheck className="h-3.5 w-3.5 text-[#b08968]" />
           <span>PATIENT ENCOUNTER CLOUD</span>
         </div>
       </div>
 
-      <div className="max-w-md w-full mx-auto my-auto p-8 rounded-3xl bg-white backdrop-blur-xl text-slate-950 shadow-2xl border border-slate-200 relative z-10 space-y-5">
+      <div className="relative z-10 mx-auto my-auto w-full max-w-md space-y-5 rounded-3xl border border-[#e6ccb2] bg-white/95 p-8 text-[#43281c] shadow-2xl backdrop-blur-xl">
         <div className="text-center space-y-1.5">
           <div className="mb-1 flex justify-center">
             <RegalHospitalLogo heightClass="h-9" showNodeBadge />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-950">Patient Portal</h1>
-          <p className="text-xs font-medium text-slate-600">Secure access to appointments, queue tracking, and records</p>
+          <h1 className="text-2xl font-black tracking-tight text-[#43281c]">Patient Portal</h1>
+          <p className="text-xs font-medium text-[#9c6644]">Secure access to appointments, queue tracking, and records</p>
         </div>
 
-        <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 border border-slate-200 text-xs font-bold">
+        <div className="grid grid-cols-2 rounded-2xl border border-[#e6ccb2] bg-[#faf7f2] p-1 text-xs font-bold">
           <button
             type="button"
             onClick={() => {
@@ -338,7 +335,7 @@ function PatientAuthForm() {
               setErrorMessage(null);
             }}
             className={`py-2 rounded-xl transition-all cursor-pointer ${
-              authMode === 'signin' ? 'bg-white text-emerald-900 shadow-xs font-black' : 'text-slate-600 hover:text-slate-950'
+              authMode === 'signin' ? 'bg-white font-black text-[#43281c] shadow-xs' : 'text-[#9c6644] hover:text-[#43281c]'
             }`}
           >
             Sign In
@@ -350,7 +347,7 @@ function PatientAuthForm() {
               setErrorMessage(null);
             }}
             className={`py-2 rounded-xl transition-all cursor-pointer ${
-              authMode === 'register' ? 'bg-white text-emerald-900 shadow-xs font-black' : 'text-slate-600 hover:text-slate-950'
+              authMode === 'register' ? 'bg-white font-black text-[#43281c] shadow-xs' : 'text-[#9c6644] hover:text-[#43281c]'
             }`}
           >
             Register New
@@ -366,14 +363,14 @@ function PatientAuthForm() {
         <form onSubmit={handleAuthSubmit} className="space-y-3.5">
           <div className="space-y-1">
             <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1">
-              <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+              <Building2 className="w-3.5 h-3.5 text-[#b08968]" />
               Hospital / Healthcare Clinic
             </label>
             <div className="relative">
               <select
                 value={selectedHospitalId}
                 onChange={(e) => setSelectedHospitalId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition appearance-none cursor-pointer"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition appearance-none cursor-pointer"
               >
                 {hospitals.length === 0 ? (
                   <option value="HOSP-01">Regal Hospital (Bengaluru) - HOSP-01</option>
@@ -393,7 +390,7 @@ function PatientAuthForm() {
             <>
               <div className="space-y-1">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1">
-                  <User className="w-3.5 h-3.5 text-emerald-600" />
+                  <User className="w-3.5 h-3.5 text-[#b08968]" />
                   Patient Full Name
                 </label>
                 <input
@@ -402,7 +399,7 @@ function PatientAuthForm() {
                   placeholder="e.g. Ramesh Gowda"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -415,7 +412,7 @@ function PatientAuthForm() {
                     placeholder="32"
                     value={age}
                     onChange={(e) => setAge(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition"
                   />
                 </div>
                 <div className="space-y-1">
@@ -423,7 +420,7 @@ function PatientAuthForm() {
                   <select
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 focus:border-[#b08968] focus:outline-none"
                   >
                     <option value="Female">Female</option>
                     <option value="Male">Male</option>
@@ -436,7 +433,7 @@ function PatientAuthForm() {
 
           <div className="space-y-1">
             <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1">
-              <Mail className="w-3.5 h-3.5 text-emerald-600" />
+              <Mail className="w-3.5 h-3.5 text-[#b08968]" />
               Email Address {authMode === 'signin' ? '' : '(Optional)'}
             </label>
             <input
@@ -445,13 +442,13 @@ function PatientAuthForm() {
               placeholder="patient@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition"
             />
           </div>
 
           <div className="space-y-1">
             <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1">
-              <Phone className="w-3.5 h-3.5 text-emerald-600" />
+              <Phone className="w-3.5 h-3.5 text-[#b08968]" />
               Mobile Phone {authMode === 'signin' ? '(Optional)' : '* Required'}
             </label>
             <div className="relative flex items-center">
@@ -463,14 +460,14 @@ function PatientAuthForm() {
                 placeholder="98450 12345"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-3.5 py-2.5 text-xs font-mono font-bold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-3.5 py-2.5 text-xs font-mono font-bold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition"
               />
             </div>
           </div>
 
           <div className="space-y-1">
             <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1">
-              <Lock className="w-3.5 h-3.5 text-emerald-600" />
+              <Lock className="w-3.5 h-3.5 text-[#b08968]" />
               Password Key
             </label>
             <div className="relative">
@@ -480,7 +477,7 @@ function PatientAuthForm() {
                 placeholder="Enter access password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 pr-10 py-2.5 text-xs font-bold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 pr-10 py-2.5 text-xs font-bold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition"
               />
               <button
                 type="button"
@@ -495,7 +492,7 @@ function PatientAuthForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-emerald-700/20 active:scale-[0.99] transition cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+            className={`mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#b08968] to-[#9c6644] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#7f5539]/20 transition active:scale-[0.99] hover:from-[#ddb892] hover:to-[#b08968] disabled:opacity-50 ${patientClasses.btnPrimary}`}
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
             <span>
@@ -513,7 +510,7 @@ function PatientAuthForm() {
         </div>
       </div>
 
-      <footer className="max-w-md mx-auto w-full text-center text-[11px] text-emerald-300/70 py-2 z-10 font-mono">
+      <footer className="z-10 mx-auto w-full max-w-md py-2 text-center font-mono text-[11px] text-[#9c6644]">
         Regal Healthcare Network &bull; Patient Node {selectedHospitalId}
       </footer>
     </div>
@@ -524,8 +521,8 @@ export default function PatientAuthPortal() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+        <div className="flex min-h-screen w-full items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-[#b08968]" />
         </div>
       }
     >

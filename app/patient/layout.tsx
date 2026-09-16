@@ -7,11 +7,13 @@ import { Loader2 } from 'lucide-react';
 
 import { EcosystemNotificationBell } from '@/components/ecosystem/EcosystemNotificationBell';
 import { RegalHospitalLogo } from '@/components/brand/RegalHospitalLogo';
+import { PatientAmbientCanvas } from '@/components/patient/PatientAmbientCanvas';
 import { PatientSidebar } from '@/components/patient/Sidebar';
 import { PatientClinicalRealtimeBridge } from '@/components/patient/PatientClinicalRealtimeBridge';
 import { ensurePatientIdPersisted, resolveActivePatientId } from '@/lib/clinical/bridge';
 import { logoutPatientSession, readPatientAuthSession } from '@/lib/auth/patientAuth';
 import { PatientAuthProvider } from '@/lib/patient/auth/PatientAuthProvider';
+import { patientClasses } from '@/lib/patient/theme';
 
 function isAuthRoute(pathname: string | null) {
   return Boolean(pathname?.includes('/auth/login') || pathname?.endsWith('/login'));
@@ -54,7 +56,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
   if (isAuthRoute(pathname)) {
     return (
       <PatientAuthProvider>
-        <div className="min-h-screen w-full overscroll-none bg-slate-50">{children}</div>
+        <PatientAmbientCanvas>{children}</PatientAmbientCanvas>
         <Toaster position="top-right" closeButton />
       </PatientAuthProvider>
     );
@@ -63,56 +65,61 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
   if (!hydrated) {
     return (
       <PatientAuthProvider>
-        <div className="flex min-h-screen w-full items-center justify-center overscroll-none bg-[#F4F8F7]">
-          <div className="flex items-center gap-3 rounded-2xl bg-[#113831] px-6 py-4 text-white shadow-xl">
-            <Loader2 className="h-5 w-5 animate-spin text-[#EAF5F2]" />
-            <span className="text-xs font-black">Connecting to Patient Workspace…</span>
+        <PatientAmbientCanvas className="flex items-center justify-center">
+          <div className="flex items-center gap-2.5 rounded-xl bg-[#8C5A3C] px-5 py-3 text-white shadow-md">
+            <Loader2 className="h-4 w-4 animate-spin text-[#F5EFE6]" />
+            <span className="text-xs font-bold">Connecting to Patient Workspace…</span>
           </div>
-        </div>
+        </PatientAmbientCanvas>
       </PatientAuthProvider>
     );
   }
 
   return (
     <PatientAuthProvider>
-      <div className="flex min-h-screen w-full overscroll-none bg-[#F4F8F7] font-sans text-[#0E2924]">
-      <PatientSidebar patientName={patientName} onLogout={handleLogout} />
+      <PatientAmbientCanvas className="flex h-screen max-h-screen w-full overflow-hidden font-sans">
+        <PatientSidebar patientName={patientName} onLogout={handleLogout} />
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain md:ml-64">
-        <header className="bg-white border-b border-gray-100 py-3 px-6 shadow-xs sticky top-0 z-40">
-          <div className="flex items-center justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <RegalHospitalLogo heightClass="h-7" showNodeBadge />
-              <span className="hidden rounded-full border border-blue-100 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 sm:inline-block">
-                SmartQ Patient Portal
-              </span>
-              <span className="truncate text-[11px] font-bold text-slate-500 hidden lg:inline">
-                {patientName}
-              </span>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-xs text-gray-500 hidden md:inline font-mono">
-                Helpline: <strong className="text-gray-700">+91 98450 12345</strong>
-              </span>
-              <EcosystemNotificationBell
-                app="patient"
-                recipientId={patientId}
-                className="bg-[#EAF5F2] text-[#113831] hover:bg-[#DAF0EB]"
-              />
-              <div className="text-xs font-medium px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="hidden sm:inline">OPD Live Desk Active</span>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <header
+            className={`sticky top-0 z-40 flex h-14 shrink-0 items-center px-4 shadow-xs sm:px-5 ${patientClasses.topBar}`}
+          >
+            <div className="flex w-full min-w-0 items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <RegalHospitalLogo heightClass="h-6" showNodeBadge />
+                <span className="hidden truncate text-[11px] font-semibold text-stone-500 sm:inline">
+                  HOSP-01 · Bengaluru
+                </span>
+                <span className="hidden rounded-full border border-[#EADBCE] bg-[#F3ECE4] px-2 py-0.5 text-[10px] font-bold text-[#5C3826] lg:inline">
+                  {patientName}
+                </span>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="hidden text-[11px] font-mono text-stone-500 md:inline">
+                  +91 98450 12345
+                </span>
+                <EcosystemNotificationBell
+                  app="patient"
+                  recipientId={patientId}
+                  className="bg-[#F3ECE4] text-[#8C5A3C] hover:bg-[#EADBCE]"
+                />
+                <span className={patientClasses.badgeSuccess}>
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                  OPD Live
+                </span>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        <main className="flex-1 p-6 md:p-8">{children}</main>
-      </div>
+          <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div className="p-4 pb-8 md:p-5 md:pb-8">{children}</div>
+          </main>
+        </div>
 
-      <PatientClinicalRealtimeBridge />
-      <Toaster position="top-right" closeButton richColors />
-    </div>
+        <PatientClinicalRealtimeBridge />
+        <Toaster position="top-right" closeButton richColors />
+      </PatientAmbientCanvas>
     </PatientAuthProvider>
   );
 }

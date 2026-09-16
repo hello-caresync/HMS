@@ -2,6 +2,22 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
+import {
+  buildSuperAdminSessionPayload,
+  createSuperAdminSessionToken,
+  normalizeSuperAdminEmail,
+  normalizeSuperAdminPasscode,
+  verifySuperAdminCredentials,
+} from '@/lib/auth/superAdminAuth';
+
+const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 60 * 60 * 24,
+};
+
 function getAllowedAdminEmails(): string[] {
   const raw = process.env.NEXORA_ADMIN_EMAILS ?? process.env.ADMIN_DEV_EMAIL ?? '';
   return raw
@@ -11,12 +27,45 @@ function getAllowedAdminEmails(): string[] {
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as { email?: string; password?: string };
-  const email = body.email?.trim().toLowerCase() ?? '';
-  const password = body.password ?? '';
+  const body = (await req.json()) as {
+    email?: string;
+    password?: string;
+    passcode?: string;
+  };
 
-  if (!email || !password) {
-    return NextResponse.json({ success: false, error: 'Email and password required' }, { status: 400 });
+  const email = normalizeSuperAdminEmail(body.email);
+  const passcode = normalizeSuperAdminPasscode(body.passcode ?? body.password);
+
+  if (!email || !passcode) {
+    return NextResponse.json(
+      { success: false, error: 'Email and passcode required' },
+      { status: 400 },
+    );
+  }
+
+  if (verifySuperAdminCredentials(email, passcode)) {
+    const token = createSuperAdminSessionToken();
+    const session = buildSuperAdminSessionPayload(email, token);
+
+    const response = NextResponse.json({
+      success: true,
+      role: 'super_admin',
+      facility_node: session.facility_node,
+      token,
+      user: {
+        email: session.email,
+        role: 'super_admin',
+      },
+    });
+
+    response.cookies.set('nexora_role', 'super_admin', {
+      ...SESSION_COOKIE_OPTIONS,
+      httpOnly: false,
+    });
+    response.cookies.set('nexora_superadmin_session', token, SESSION_COOKIE_OPTIONS);
+    response.cookies.set('auth-token', token, SESSION_COOKIE_OPTIONS);
+
+    return response;
   }
 
   const allowedEmails = getAllowedAdminEmails();
@@ -24,17 +73,21 @@ export async function POST(req: Request) {
 
   if (allowedEmails.length === 0 || !configuredPassword) {
     return NextResponse.json(
-      { success: false, error: 'Admin login is not configured on the server.' },
-      { status: 503 },
+      { success: false, error: 'Invalid email or passcode.' },
+      { status: 401 },
     );
   }
 
-  if (!allowedEmails.includes(email) || password !== configuredPassword) {
-    return NextResponse.json({ success: false, error: 'Invalid email or password.' }, { status: 401 });
+  if (!allowedEmails.includes(email) || passcode !== configuredPassword) {
+    return NextResponse.json(
+      { success: false, error: 'Invalid email or passcode.' },
+      { status: 401 },
+    );
   }
 
   return NextResponse.json({
     success: true,
+    role: 'administrator',
     user: {
       email,
       role: 'administrator' as const,

@@ -7,8 +7,7 @@ import { VendorFeedbackBanner, useVendorFeedback } from '@/components/vendor/ui/
 import { VendorModuleHeader } from '@/components/vendor/ui/VendorModuleHeader';
 import { VendorModal, vendorFieldClass, vendorLabelClass } from '@/components/vendor/ui/VendorModal';
 import { vendorClasses } from '@/lib/vendor/theme';
-import { matchesShipmentLifecycle } from '@/lib/vendor/lifecycle';
-import { useActiveHospitalCode, useVendorAppStore } from '@/lib/vendor/store/vendor-app-store';
+import { useActiveHospitalCode } from '@/lib/vendor/store/vendor-app-store';
 import {
   DISPATCHABLE_PO_STATUSES,
   dispatchShipment,
@@ -47,7 +46,6 @@ const emptyForm: DispatchForm = { po_id: '', carrier_name: '', tracking_number: 
 function DeliveriesWorkspace() {
   const { feedback, showSuccess, showError } = useVendorFeedback();
   const hospitalCode = useActiveHospitalCode();
-  const lifecycleStage = useVendorAppStore((s) => s.workflowStage);
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,18 +98,7 @@ function DeliveriesWorkspace() {
     [orders],
   );
 
-  const orderStatusById = useMemo(
-    () => Object.fromEntries(orders.map((order) => [order.id, order.status])),
-    [orders],
-  );
-
-  const visibleShipments = useMemo(
-    () =>
-      shipments.filter((shipment) =>
-        matchesShipmentLifecycle(lifecycleStage, shipment.status, orderStatusById[shipment.po_id]),
-      ),
-    [lifecycleStage, orderStatusById, shipments],
-  );
+  const visibleShipments = shipments;
 
   const orderLabel = useCallback(
     (poId: string) => {
@@ -220,7 +207,7 @@ function DeliveriesWorkspace() {
         <p className="text-sm font-medium text-vendor-muted">Loading shipments…</p>
       ) : visibleShipments.length === 0 ? (
         <p className="rounded-xl border border-dashed border-vendor-accent/40 px-4 py-10 text-center text-sm font-medium text-vendor-muted">
-          No shipments match the selected lifecycle stage.
+          No active consignments yet. Accepted or dispatched purchase orders will appear here.
         </p>
       ) : (
         <div className="w-full overflow-hidden rounded-xl border border-[#dcc2f9]/70 bg-white shadow-sm">

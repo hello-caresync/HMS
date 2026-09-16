@@ -43,6 +43,10 @@ import {
 } from '@/lib/patient/portal-session';
 import { getActivePatientId, persistActivePatientNode } from '@/lib/patient/active-patient-node';
 import {
+  beneficiaryOptionsToSelectOptions,
+  loadBeneficiaryOptionsForActivePatient,
+} from '@/lib/patient/family-members';
+import {
   Stethoscope,
   Calendar,
   Clock,
@@ -81,13 +85,6 @@ function toDirectoryItem(doc: DoctorStaffRecord): DoctorDirectoryItem {
 const REGAL_HOSPITAL = 'Regal Hospital';
 const PATIENT_BOOKING_SOURCE = 'patient_app';
 const PATIENT_BOOKING_STATUS = 'WAITING';
-
-function isValidUUID(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim())
-  );
-}
 
 function resolveBookingPatientId(): string {
   return getActivePatientId();
@@ -486,81 +483,13 @@ export default function BookAppointmentPage() {
     }
 
     const activePatientId = sessionIdentity.patient_id || getActivePatientId();
-    let primaryName = sessionIdentity.patient_name;
-    let familyMembersList: FamilyMemberOption[] = [];
-
-    if (typeof window !== 'undefined') {
-      const savedProfile = localStorage.getItem('curasync_patient_profile');
-
-      if (savedProfile) {
-        try {
-          const parsed = JSON.parse(savedProfile) as {
-            patient_id?: string;
-            id?: string;
-            full_name?: string;
-            family_members?: FamilyMemberOption[];
-          };
-          const profilePatientId = String(parsed.patient_id ?? parsed.id ?? '').trim();
-          const profileMatchesSession =
-            !profilePatientId ||
-            profilePatientId === activePatientId ||
-            profilePatientId === sessionIdentity.patient_id;
-
-          if (profileMatchesSession) {
-            if (Array.isArray(parsed.family_members)) {
-              familyMembersList = parsed.family_members;
-            }
-          }
-        } catch {
-          /* ignore stale cached profile */
-        }
-      }
-    }
-
-    if (isValidUUID(activePatientId)) {
-      try {
-        const profileQueries = await Promise.all([
-          supabase
-            .from('patient_profiles')
-            .select('id, patient_id, full_name, family_members')
-            .eq('id', activePatientId)
-            .maybeSingle(),
-          supabase
-            .from('patient_profiles')
-            .select('id, patient_id, full_name, family_members')
-            .eq('patient_id', activePatientId)
-            .maybeSingle(),
-        ]);
-
-        const profileRecord =
-          profileQueries.find((result) => !result.error && result.data)?.data ?? null;
-
-        if (profileRecord) {
-          const profilePatientId = String(profileRecord.patient_id ?? profileRecord.id ?? '').trim();
-          const profileMatchesSession =
-            !profilePatientId ||
-            profilePatientId === activePatientId ||
-            profilePatientId === sessionIdentity.patient_id;
-
-          if (profileMatchesSession && Array.isArray(profileRecord.family_members)) {
-            familyMembersList = profileRecord.family_members as FamilyMemberOption[];
-          }
-        }
-      } catch {
-        console.warn('Profile sync unavailable');
-      }
-    }
+    const primaryName = sessionIdentity.patient_name;
 
     persistActivePatientNode(activePatientId, primaryName);
 
-    const options: FamilyMemberOption[] = [
-      { id: 'self', name: `${primaryName} (Self)`, relation: 'Self' },
-      ...familyMembersList.map((member) => ({
-        id: member.id || member.name,
-        name: `${member.name} (${member.relation})`,
-        relation: member.relation,
-      })),
-    ];
+    const options: FamilyMemberOption[] = beneficiaryOptionsToSelectOptions(
+      loadBeneficiaryOptionsForActivePatient(),
+    );
 
     setPatientId(activePatientId);
     setPatientOptions(options);
@@ -811,28 +740,28 @@ export default function BookAppointmentPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-8 font-sans text-[#0E2924]">
       {/* HEADER SECTION */}
-      <div className="border-b border-[#D5E8E3] pb-4">
+      <div className="border-b border-[#e6ccb2] pb-4">
         <h1 className="text-2xl font-black text-[#0E2924]">Confirm Consultation Booking</h1>
-        <p className="text-xs font-bold text-[#227B6B]">
-          Facility: <span className="text-[#113831] font-black">{REGAL_HOSPITAL}</span> • OPD Consultation
+        <p className="text-xs font-bold text-[#b08968]">
+          Facility: <span className="text-[#7f5539] font-black">{REGAL_HOSPITAL}</span> • OPD Consultation
         </p>
       </div>
 
       {/* SUCCESS BANNER */}
       {success && bookedSummary && (
-        <div className="rounded-2xl border border-[#227B6B]/30 bg-gradient-to-r from-[#EAF5F2] to-white p-5 shadow-md">
+        <div className="rounded-2xl border border-[#b08968]/30 bg-gradient-to-r from-[#ede0d4] to-white p-5 shadow-md">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#113831] text-white">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#7f5539] text-white">
               <CheckCircle2 className="h-6 w-6 text-[#A6E2D8]" />
             </div>
             <div className="min-w-0 space-y-2">
               <p className="text-sm font-black text-[#0E2924]">
                 SmartQ Token Confirmed — {REGAL_HOSPITAL}
               </p>
-              <div className="grid gap-1.5 text-xs font-semibold text-[#113831] sm:grid-cols-2">
+              <div className="grid gap-1.5 text-xs font-semibold text-[#7f5539] sm:grid-cols-2">
                 <p>
                   Token:{' '}
-                  <span className="font-black text-[#227B6B]">
+                  <span className="font-black text-[#b08968]">
                     {formatBookingTokenLabel(bookedSummary.token)}
                   </span>
                 </p>
@@ -847,7 +776,7 @@ export default function BookAppointmentPage() {
                   Slot: <span className="font-black">{bookedSummary.slot}</span>
                 </p>
               </div>
-              <p className="text-[11px] font-bold text-[#227B6B]">
+              <p className="text-[11px] font-bold text-[#b08968]">
                 Your consultation is confirmed. Redirecting to appointments...
               </p>
             </div>
@@ -866,17 +795,17 @@ export default function BookAppointmentPage() {
       {/* BOOKING FORM */}
       <form
         onSubmit={handleBookAppointment}
-        className="rounded-3xl border border-[#D5E8E3] bg-white p-8 shadow-sm space-y-6"
+        className="rounded-3xl border border-[#e6ccb2] bg-white p-8 shadow-sm space-y-6"
       >
         {/* PATIENT / DEPENDENT SELECTOR */}
         <div>
-          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
-            <Users className="h-3.5 w-3.5 text-[#227B6B]" /> PATIENT FOR CONSULTATION *
+          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#b08968] mb-1.5">
+            <Users className="h-3.5 w-3.5 text-[#b08968]" /> PATIENT FOR CONSULTATION *
           </label>
           <select
             value={selectedPatientName}
             onChange={(e) => setSelectedPatientName(e.target.value)}
-            className="w-full rounded-2xl border border-[#D5E8E3] bg-[#EAF5F2]/40 p-4 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none shadow-sm cursor-pointer"
+            className="w-full rounded-2xl border border-[#e6ccb2] bg-[#ede0d4]/40 p-4 text-xs font-bold text-[#0E2924] focus:border-[#7f5539] focus:outline-none shadow-sm cursor-pointer"
             required
           >
             {patientOptions.length === 0 ? (
@@ -892,7 +821,7 @@ export default function BookAppointmentPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block text-[10px] font-black uppercase text-[#227B6B]">
+          <label className="block text-[10px] font-black uppercase text-[#b08968]">
             Age (years) *
             <input
               required
@@ -902,15 +831,15 @@ export default function BookAppointmentPage() {
               value={age}
               onChange={(e) => setAge(e.target.value)}
               placeholder="Enter age"
-              className="mt-1.5 w-full rounded-2xl border border-[#D5E8E3] bg-white p-4 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
+              className="mt-1.5 w-full rounded-2xl border border-[#e6ccb2] bg-white p-4 text-xs font-bold text-[#0E2924] focus:border-[#7f5539] focus:outline-none"
             />
           </label>
-          <label className="block text-[10px] font-black uppercase text-[#227B6B]">
+          <label className="block text-[10px] font-black uppercase text-[#b08968]">
             Gender
             <select
               value={gender}
               onChange={(e) => setGender(e.target.value)}
-              className="mt-1.5 w-full rounded-2xl border border-[#D5E8E3] bg-white p-4 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
+              className="mt-1.5 w-full rounded-2xl border border-[#e6ccb2] bg-white p-4 text-xs font-bold text-[#0E2924] focus:border-[#7f5539] focus:outline-none"
             >
               <option value="">Select gender</option>
               <option value="Female">Female</option>
@@ -921,15 +850,15 @@ export default function BookAppointmentPage() {
         </div>
 
         <div>
-          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
-            <Stethoscope className="h-3.5 w-3.5 text-[#227B6B]" /> CLINICAL DEPARTMENT *
+          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#b08968] mb-1.5">
+            <Stethoscope className="h-3.5 w-3.5 text-[#b08968]" /> CLINICAL DEPARTMENT *
           </label>
           <select
             required
             value={selectedDept}
             onChange={handleDepartmentChange}
             disabled={isSubmitting}
-            className="w-full rounded-2xl border border-[#D5E8E3] bg-white p-4 text-xs font-black text-[#113831] focus:border-[#113831] focus:outline-none shadow-sm cursor-pointer disabled:opacity-60"
+            className="w-full rounded-2xl border border-[#e6ccb2] bg-white p-4 text-xs font-black text-[#7f5539] focus:border-[#7f5539] focus:outline-none shadow-sm cursor-pointer disabled:opacity-60"
           >
             {departmentOptions.map((dept) => (
               <option key={dept} value={dept}>
@@ -940,14 +869,14 @@ export default function BookAppointmentPage() {
         </div>
 
         <div>
-          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
-            <User className="h-3.5 w-3.5 text-[#227B6B]" /> SELECT CLINICIAN *
+          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#b08968] mb-1.5">
+            <User className="h-3.5 w-3.5 text-[#b08968]" /> SELECT CLINICIAN *
           </label>
           <select
             value={selectedDoctor?.doctor_id || selectedDoctorCode}
             onChange={handleDoctorSelectionChange}
             disabled={isLoadingDoctors || isSubmitting || doctorList.length === 0}
-            className="w-full rounded-2xl border border-[#D5E8E3] bg-white p-4 text-xs font-black text-[#113831] focus:border-[#113831] focus:outline-none shadow-sm cursor-pointer disabled:opacity-60"
+            className="w-full rounded-2xl border border-[#e6ccb2] bg-white p-4 text-xs font-black text-[#7f5539] focus:border-[#7f5539] focus:outline-none shadow-sm cursor-pointer disabled:opacity-60"
           >
             {isLoadingDoctors ? (
               <option value="">Loading specialists…</option>
@@ -974,62 +903,62 @@ export default function BookAppointmentPage() {
         {/* DEPARTMENT & FEE SUMMARY */}
         <div className="grid gap-6 md:grid-cols-2">
           <div>
-            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
+            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#b08968] mb-1.5">
               ASSIGNED DEPARTMENT
             </label>
             <input
               type="text"
               readOnly
               value={selectedDept}
-              className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-4 text-xs font-black text-[#113831]"
+              className="w-full rounded-2xl border border-[#e6ccb2] bg-[#F4F8F7] p-4 text-xs font-black text-[#7f5539]"
             />
           </div>
 
           <div>
-            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
+            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#b08968] mb-1.5">
               CONSULTATION FEE
             </label>
             <input
               type="text"
               readOnly
               value={consultationFee}
-              className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-4 text-xs font-black text-[#113831]"
+              className="w-full rounded-2xl border border-[#e6ccb2] bg-[#F4F8F7] p-4 text-xs font-black text-[#7f5539]"
             />
           </div>
         </div>
 
         {/* REASON FOR VISIT (OPTIONAL) */}
         <div>
-          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
-            <FileText className="h-3.5 w-3.5 text-[#227B6B]" /> REASON FOR VISIT / SYMPTOMS (OPTIONAL)
+          <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#b08968] mb-1.5">
+            <FileText className="h-3.5 w-3.5 text-[#b08968]" /> REASON FOR VISIT / SYMPTOMS (OPTIONAL)
           </label>
           <textarea
             rows={3}
             placeholder="Describe symptoms or clinical concern (e.g., Fever, Routine checkup, Knee pain, Chronic cough)..."
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-4 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
+            className="w-full rounded-2xl border border-[#e6ccb2] bg-[#F4F8F7] p-4 text-xs font-bold text-[#0E2924] focus:border-[#7f5539] focus:outline-none"
           />
         </div>
 
         {/* DATE & TIME SLOTS */}
         <div className="grid gap-6 md:grid-cols-2">
           <div>
-            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
-              <Calendar className="h-3.5 w-3.5 text-[#227B6B]" /> APPOINTMENT DATE *
+            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#b08968] mb-1.5">
+              <Calendar className="h-3.5 w-3.5 text-[#b08968]" /> APPOINTMENT DATE *
             </label>
             <input
               type="date"
               required
               value={appointmentDate}
               onChange={(e) => setAppointmentDate(e.target.value)}
-              className="w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-4 text-xs font-bold text-[#0E2924] focus:border-[#113831] focus:outline-none"
+              className="w-full rounded-2xl border border-[#e6ccb2] bg-[#F4F8F7] p-4 text-xs font-bold text-[#0E2924] focus:border-[#7f5539] focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#227B6B] mb-1.5">
-              <Clock className="h-3.5 w-3.5 text-[#227B6B]" /> TIME SLOT *
+            <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#b08968] mb-1.5">
+              <Clock className="h-3.5 w-3.5 text-[#b08968]" /> TIME SLOT *
             </label>
             <DynamicSlotPicker
               variant="grid"
@@ -1048,8 +977,8 @@ export default function BookAppointmentPage() {
         </div>
 
         {/* FACILITY LOCATION */}
-        <div className="flex items-center gap-2 text-xs font-bold text-[#227B6B] bg-[#EAF5F2]/40 p-3.5 rounded-2xl border border-[#D5E8E3]">
-          <Building2 className="h-4 w-4 shrink-0 text-[#113831]" />
+        <div className="flex items-center gap-2 text-xs font-bold text-[#b08968] bg-[#ede0d4]/40 p-3.5 rounded-2xl border border-[#e6ccb2]">
+          <Building2 className="h-4 w-4 shrink-0 text-[#7f5539]" />
           <span>Consultation Location: <strong>{REGAL_HOSPITAL} OPD Block</strong></span>
         </div>
 
@@ -1065,7 +994,7 @@ export default function BookAppointmentPage() {
             !slotTime ||
             !dynamicSlots.some((slot) => slot.isSelectable)
           }
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#113831] py-4 text-xs font-black text-white shadow-lg hover:bg-[#227B6B] transition disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#7f5539] py-4 text-xs font-black text-white shadow-lg hover:bg-[#b08968] transition disabled:opacity-50"
         >
           {isSubmitting ? (
             <>

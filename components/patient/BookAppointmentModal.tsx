@@ -16,6 +16,14 @@ import {
 } from '@/lib/hospital/hospital-staff-roster';
 import { resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
 import { getActivePatientId } from '@/lib/patient/active-patient-node';
+import {
+  familyMembersStorageKey,
+  formatBeneficiaryLabel,
+  loadBeneficiaryOptionsForActivePatient,
+  SELF_BENEFICIARY_ID,
+  type BeneficiaryOption,
+} from '@/lib/patient/family-members';
+import { patientProfileStorageKey } from '@/lib/patient/profileStore';
 import { DynamicSlotPicker } from '@/components/patient/DynamicSlotPicker';
 import { bookAppointmentWithDoctor } from '@/lib/patient/book-appointment';
 import {
@@ -80,6 +88,8 @@ export function BookAppointmentModal({
   const [symptoms, setSymptoms] = useState<string>('');
   const [dynamicSlots, setDynamicSlots] = useState<DynamicSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [beneficiaryOptions, setBeneficiaryOptions] = useState<BeneficiaryOption[]>([]);
+  const [selectedBeneficiaryId, setSelectedBeneficiaryId] = useState<string>(SELF_BENEFICIARY_ID);
 
   const fetchDoctors = useCallback(async () => {
     if (!isOpen) return;
@@ -116,11 +126,45 @@ export function BookAppointmentModal({
     }
   }, [hospitalId, isOpen, selectedDept]);
 
+  const refreshBeneficiaryOptions = useCallback(() => {
+    const options = loadBeneficiaryOptionsForActivePatient();
+    setBeneficiaryOptions(options);
+    setSelectedBeneficiaryId((current) =>
+      options.some((option) => option.id === current)
+        ? current
+        : (options[0]?.id ?? SELF_BENEFICIARY_ID),
+    );
+  }, []);
+
   useEffect(() => {
-    if (isOpen) {
-      void fetchDoctors();
-    }
-  }, [isOpen, fetchDoctors]);
+    if (!isOpen) return;
+    void fetchDoctors();
+    refreshBeneficiaryOptions();
+  }, [isOpen, fetchDoctors, refreshBeneficiaryOptions]);
+
+  useEffect(() => {
+    if (!isOpen || typeof window === 'undefined') return;
+
+    const identity = resolveActivePatientFormIdentity();
+    if (!identity?.patient_id) return;
+
+    const familyKey = familyMembersStorageKey(identity.patient_id);
+    const profileKey = patientProfileStorageKey(identity.patient_id);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === familyKey || event.key === profileKey) refreshBeneficiaryOptions();
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [isOpen, refreshBeneficiaryOptions]);
+
+  const selectedBeneficiary = useMemo(
+    () =>
+      beneficiaryOptions.find((option) => option.id === selectedBeneficiaryId) ??
+      beneficiaryOptions[0] ??
+      null,
+    [beneficiaryOptions, selectedBeneficiaryId],
+  );
 
   useEffect(() => {
     if (!isOpen || !resolvedHospitalId) return;
@@ -221,9 +265,17 @@ export function BookAppointmentModal({
           row.full_name === activeDoctor.name,
       );
 
+      const bookingPatientName =
+        selectedBeneficiary?.name ||
+        sessionIdentity?.patient_name ||
+        session?.patient_name ||
+        'Verified Patient';
+
       const result = await bookAppointmentWithDoctor({
         patientId: bookingPatientId,
-        patientName: sessionIdentity?.patient_name || session?.patient_name,
+        patientName: bookingPatientName,
+        beneficiary_id: selectedBeneficiary?.id,
+        beneficiary_relation: selectedBeneficiary?.relation,
         doctor_uuid: rosterDoctor?.id,
         doctor_id: rosterDoctor?.doctor_id || activeDoctor.id,
         doctor_record_id: rosterDoctor?.id || activeDoctor.id,
@@ -259,18 +311,23 @@ export function BookAppointmentModal({
 
   if (!isOpen) return null;
 
+  const fieldLabelClass =
+    'mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#7C5C48]';
+  const fieldControlClass =
+    'w-full rounded-xl border border-[#EADBCE] bg-white px-3.5 py-2.5 text-xs font-medium text-[#2B1810] transition-all focus:border-[#8C5A3C] focus:outline-none focus:ring-2 focus:ring-[#8C5A3C]/20';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2B1810]/40 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg space-y-4 rounded-2xl border border-[#EADBCE] bg-white p-6 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-[#F3ECE4] pb-3">
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Book Outpatient Consultation</h3>
-            <p className="text-xs text-slate-500">Live scheduling with verified hospital physicians</p>
+            <h3 className="text-lg font-bold text-[#2B1810]">Book Outpatient Consultation</h3>
+            <p className="text-xs text-[#7C5C48]">Live scheduling with verified hospital physicians</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 font-semibold text-lg p-1"
+            className="rounded-lg p-1.5 text-stone-400 transition hover:bg-[#FAF6F0] hover:text-[#2B1810]"
             aria-label="Close"
           >
             ✕
@@ -279,16 +336,30 @@ export function BookAppointmentModal({
 
         <form onSubmit={handleConfirmBooking} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-              Department
-            </label>
+            <label className={fieldLabelClass}>Booking For</label>
+            <select
+              value={selectedBeneficiaryId}
+              onChange={(event) => setSelectedBeneficiaryId(event.target.value)}
+              className={fieldControlClass}
+              required
+            >
+              {beneficiaryOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {formatBeneficiaryLabel(option)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className={fieldLabelClass}>Department</label>
             <select
               value={selectedDept}
               onChange={(event) => {
                 setSelectedDept(event.target.value);
                 setSelectedDoctorId('');
               }}
-              className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-medium text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className={fieldControlClass}
             >
               <option value="ALL">All Clinical Departments</option>
               {departmentOptions.map((dept) => (
@@ -300,22 +371,20 @@ export function BookAppointmentModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-              Consulting Physician
-            </label>
+            <label className={fieldLabelClass}>Consulting Physician</label>
             {loadingDoctors ? (
-              <div className="p-3 text-xs text-slate-400 border border-slate-200 rounded-xl animate-pulse bg-slate-50">
+              <div className="animate-pulse rounded-xl border border-[#EADBCE] bg-[#FAF6F0] p-3 text-xs text-[#7C5C48]">
                 Fetching available physicians...
               </div>
             ) : doctors.length === 0 ? (
-              <div className="p-3 text-xs text-amber-800 bg-amber-50 rounded-xl border border-amber-200 font-medium">
+              <div className="rounded-xl border border-[#E6CCB2] bg-[#FAF6F0] p-3 text-xs font-medium text-[#7C5C48]">
                 No active doctors currently registered under this department.
               </div>
             ) : (
               <select
                 value={selectedDoctorId}
                 onChange={(event) => setSelectedDoctorId(event.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-semibold text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                className={fieldControlClass}
               >
                 <option value="">Select consulting doctor</option>
                 {doctors.map((doctor) => {
@@ -337,18 +406,18 @@ export function BookAppointmentModal({
           </div>
 
           {activeDoctor && (
-            <div className="flex items-center justify-between p-3.5 rounded-xl bg-teal-50/70 border border-teal-200/70">
+            <div className="flex items-center justify-between rounded-xl border border-[#E6CCB2] bg-[#FAF6F0] p-4">
               <div>
-                <p className="text-xs font-bold text-teal-900">{activeDoctor.name}</p>
-                <p className="text-[11px] text-teal-700">
+                <h4 className="text-xs font-bold text-[#2B1810]">{activeDoctor.name}</h4>
+                <p className="mt-0.5 text-[11px] font-medium text-[#7C5C48]">
                   {activeDoctor.qualification || 'MBBS, MD'} • {activeDoctor.department}
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-[10px] uppercase font-bold text-teal-700 tracking-wider block">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-[#8C5A3C]">
                   Consultation Fee
                 </span>
-                <span className="text-sm font-extrabold text-teal-900">
+                <span className="text-base font-extrabold text-[#2B1810]">
                   {formatConsultationFee(activeDoctor.consultation_fee)}
                 </span>
               </div>
@@ -357,24 +426,20 @@ export function BookAppointmentModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-                Preferred Date
-              </label>
+              <label className={fieldLabelClass}>Preferred Date</label>
               <input
                 type="date"
                 required
                 value={appointmentDate}
                 min={new Date().toISOString().split('T')[0]}
                 onChange={(event) => setAppointmentDate(event.target.value)}
-                className="w-full rounded-xl border border-slate-200 p-2.5 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                className={fieldControlClass}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-                Preferred Slot
-              </label>
+              <label className={fieldLabelClass}>Preferred Slot</label>
               {!selectedDoctorId ? (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-500">
+                <div className="rounded-xl border border-[#EADBCE] bg-[#FAF6F0] p-2.5 text-xs text-[#7C5C48]">
                   Select a doctor to view live slots
                 </div>
               ) : (
@@ -390,23 +455,21 @@ export function BookAppointmentModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-              Reason for Visit / Symptoms
-            </label>
+            <label className={fieldLabelClass}>Reason for Visit / Symptoms</label>
             <input
               type="text"
               placeholder="e.g., Chest discomfort, routine follow-up, knee fracture review"
               value={symptoms}
               onChange={(event) => setSymptoms(event.target.value)}
-              className="w-full rounded-xl border border-slate-200 p-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className={`${fieldControlClass} placeholder:text-[#7C5C48]/60`}
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <div className="flex justify-end gap-2 border-t border-[#F3ECE4] pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition"
+              className="rounded-xl px-4 py-2 text-xs font-medium text-[#7C5C48] transition hover:bg-[#FAF6F0]"
             >
               Cancel
             </button>
@@ -421,7 +484,7 @@ export function BookAppointmentModal({
                 !appointmentTime ||
                 !hasSelectableSlot
               }
-              className="px-5 py-2 text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 rounded-xl shadow-md transition"
+              className="rounded-xl bg-[#8C5A3C] px-5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#6F4E37] disabled:opacity-50"
             >
               {submitting ? 'Confirming...' : 'Confirm Appointment'}
             </button>

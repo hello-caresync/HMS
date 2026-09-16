@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Building2, CalendarClock, Pill, Printer, Stethoscope } from 'lucide-react';
+import { Pill, Printer } from 'lucide-react';
 
+import { PrescriptionCareRail } from '@/components/patient/PrescriptionCareRail';
+import { PrescriptionSheet } from '@/components/patient/PrescriptionSheet';
 import {
   readStoredPatientIdentity,
   type StoredPatientIdentity,
@@ -25,19 +27,6 @@ function prependPrescription(
   return [incoming, ...current];
 }
 
-function formatIssuedAt(iso?: string): string {
-  if (!iso) return '—';
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 export default function PatientPrescriptionsPage() {
   const [prescriptions, setPrescriptions] = useState<NormalizedPrescription[]>(() => {
     const cached = readLocalJson<NormalizedPrescription[]>(CACHE_KEYS.patientPrescriptions);
@@ -47,20 +36,23 @@ export default function PatientPrescriptionsPage() {
     const cached = readLocalJson<NormalizedPrescription[]>(CACHE_KEYS.patientPrescriptions);
     return !(Array.isArray(cached) && cached.length > 0);
   });
-  const [currentPatientId, setCurrentPatientId] = useState(() => readStoredPatientIdentity().activePatientId);
+  const [selectedRxId, setSelectedRxId] = useState<string>('');
   const [patientName, setPatientName] = useState(() => readStoredPatientIdentity().patientName);
   const identityRef = useRef<StoredPatientIdentity>(readStoredPatientIdentity());
 
   const fetchPrescriptions = useCallback(async () => {
     const identity = readStoredPatientIdentity();
     identityRef.current = identity;
-    setCurrentPatientId(identity.activePatientId);
     setPatientName(identity.patientName);
 
     try {
       const rows = await queryPrescriptionsForPatient(identity);
       setPrescriptions(rows);
       writeLocalJson(CACHE_KEYS.patientPrescriptions, rows);
+      setSelectedRxId((prev) => {
+        if (prev && rows.some((row) => row.id === prev)) return prev;
+        return rows[0]?.id ?? '';
+      });
     } catch (err: unknown) {
       console.error('[Patient Prescriptions] unable to load live prescriptions:', err);
     } finally {
@@ -86,6 +78,7 @@ export default function PatientPrescriptionsPage() {
               const incoming = normalizePrescriptionRow(payload.new);
               if (!prescriptionMatchesPatient(incoming, identityRef.current)) return;
               setPrescriptions((prev) => prependPrescription(prev, incoming));
+              setSelectedRxId((prev) => prev || incoming.id);
               return;
             }
             void fetchPrescriptions();
@@ -101,123 +94,77 @@ export default function PatientPrescriptionsPage() {
     };
   }, [fetchPrescriptions]);
 
+  const activeRx = prescriptions.find((rx) => rx.id === selectedRxId) ?? prescriptions[0] ?? null;
+
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-6 print:max-w-none print:p-0">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4 print:hidden">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">My Digital Prescriptions</h1>
-            <p className="text-xs text-slate-500">
-              Node: {currentPatientId || '—'}
-              {patientName ? ` • ${patientName}` : ''}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
-            >
-              <Printer className="h-3.5 w-3.5" />
-              Print
-            </button>
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-              Live Sync
-            </span>
-          </div>
+    <div className="mx-auto max-w-7xl px-4 py-6 md:px-8 print:max-w-none print:p-0">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#EADBCE] pb-4 print:hidden">
+        <div>
+          <h1 className="text-xl font-bold text-[#2B1810]">My Digital Prescriptions</h1>
+          <p className="mt-0.5 text-xs text-[#7C5C48]">
+            Facility:{' '}
+            <span className="font-semibold text-[#8C5A3C]">HOSP-01 (Bengaluru)</span>
+            {' · '}
+            Verified Patient:{' '}
+            <span className="font-semibold">{patientName || 'Patient'}</span>
+          </p>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#EADBCE] bg-white px-3 py-2 text-xs font-semibold text-[#7F5539] hover:bg-[#FAF6F0]"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            Print
+          </button>
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+            Live Sync
+          </span>
+        </div>
+      </div>
 
-        {loading ? (
-          <div className="py-12 text-center text-xs text-slate-400">Loading prescriptions...</div>
-        ) : prescriptions.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white py-16 text-center text-sm text-slate-500 shadow-xs">
-            <Pill className="mx-auto mb-3 h-8 w-8 text-slate-300" />
-            <p className="font-semibold text-slate-700">No prescriptions found yet</p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-slate-400">
-              When your doctor completes a consultation, your prescription will appear here instantly
-              for patient node {currentPatientId || '—'}.
+      {loading ? (
+        <div className="py-12 text-center text-xs text-[#7C5C48]">Loading prescriptions...</div>
+      ) : prescriptions.length === 0 ? (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="rounded-xl border border-[#EADBCE] bg-white py-12 text-center shadow-xs">
+            <Pill className="mx-auto mb-3 h-8 w-8 text-[#EADBCE]" />
+            <p className="text-sm font-semibold text-[#2B1810]">No prescriptions found yet</p>
+            <p className="mx-auto mt-1 max-w-sm text-xs text-[#7C5C48]">
+              When your doctor completes a consultation, your prescription will appear here instantly.
             </p>
           </div>
-        ) : (
-          <div className="grid gap-4">
-            {prescriptions.map((rx) => {
-              const medicineList = rx.medicines.length > 0 ? rx.medicines : rx.medications;
-
-              return (
-                <article
-                  key={rx.id}
-                  className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs print:break-inside-avoid"
-                >
-                  <header className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-teal-100 bg-teal-50">
-                        <Stethoscope className="h-5 w-5 text-teal-700" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-900">
-                          {rx.doctor_name || 'Treating doctor'}
-                        </h3>
-                        <p className="text-[11px] font-medium text-slate-500">
-                          {rx.department || 'Clinical'}
-                          {rx.doctor_id ? ` • ${rx.doctor_id}` : ''}
-                        </p>
-                        <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600">
-                          <Building2 className="h-3 w-3" />
-                          {rx.hospital_name || 'Regal Hospital • Main Branch'}
-                        </p>
-                      </div>
-                    </div>
-                    <time className="shrink-0 text-[11px] font-medium text-slate-400">
-                      {formatIssuedAt(rx.issued_at || rx.created_at)}
-                    </time>
-                  </header>
-
-                  <section className="space-y-2">
-                    <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                      <Pill className="h-3.5 w-3.5 text-teal-600" />
-                      Medicine list
-                    </h4>
-                    {medicineList.length === 0 ? (
-                      <p className="py-2 text-xs italic text-slate-400">No medicines listed</p>
-                    ) : (
-                      <div className="overflow-hidden rounded-xl border border-slate-200">
-                        <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                            <tr>
-                              <th className="px-3 py-2">Medicine</th>
-                              <th className="px-3 py-2">Dose</th>
-                              <th className="px-3 py-2">Frequency</th>
-                              <th className="px-3 py-2">Duration</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {medicineList.map((med, idx) => (
-                              <tr key={`${rx.id}-med-${idx}`} className="border-t border-slate-100">
-                                <td className="px-3 py-2 font-bold text-slate-900">{med.name}</td>
-                                <td className="px-3 py-2 text-slate-600">{med.dosage || '—'}</td>
-                                <td className="px-3 py-2 text-slate-600">{med.frequency || '—'}</td>
-                                <td className="px-3 py-2 text-slate-600">{med.duration || '—'}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </section>
-
-                  {rx.follow_up_date && (
-                    <p className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-                      <CalendarClock className="h-3 w-3" />
-                      Follow-up: {rx.follow_up_date}
-                    </p>
-                  )}
-                </article>
-              );
-            })}
+          <PrescriptionCareRail prescriptions={[]} activeRx={null} />
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="space-y-3">
+            {prescriptions.length > 1 ? (
+              <div className="flex flex-wrap gap-2 print:hidden">
+                {prescriptions.map((rx) => (
+                  <button
+                    key={rx.id}
+                    type="button"
+                    onClick={() => setSelectedRxId(rx.id)}
+                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+                      rx.id === activeRx?.id
+                        ? 'border-[#8C5A3C] bg-[#8C5A3C] text-white'
+                        : 'border-[#EADBCE] bg-white text-[#7C5C48] hover:border-[#8C5A3C]'
+                    }`}
+                  >
+                    {rx.doctor_name || 'Prescription'} ·{' '}
+                    {(rx.issued_at || rx.created_at || '').slice(0, 10)}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {activeRx ? <PrescriptionSheet rx={activeRx} /> : null}
           </div>
-        )}
-      </div>
+          <PrescriptionCareRail prescriptions={prescriptions} activeRx={activeRx} />
+        </div>
+      )}
     </div>
   );
 }

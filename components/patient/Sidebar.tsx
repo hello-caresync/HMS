@@ -13,13 +13,14 @@ import {
 
 import { RegalHospitalLogoMark } from '@/components/brand/RegalHospitalLogo';
 import { logoutPatientSession } from '@/lib/auth/patientAuth';
+import { patientClasses } from '@/lib/patient/theme';
 
 const PATIENT_NAV = [
   { label: 'Dashboard', href: '/patient/dashboard', icon: LayoutDashboard },
-  { label: 'My Appointments', href: '/patient/appointments', icon: Calendar },
-  { label: 'Doctor Directory', href: '/patient/doctors', icon: Users },
+  { label: 'Appointments', href: '/patient/appointments', icon: Calendar },
+  { label: 'Doctors', href: '/patient/doctors', icon: Users },
   { label: 'Prescriptions', href: '/patient/prescriptions', icon: FileText },
-  { label: 'Profile & Vitals', href: '/patient/profile', icon: User },
+  { label: 'Profile', href: '/patient/profile', icon: User },
 ] as const;
 
 function isNavActive(pathname: string | null, href: string) {
@@ -38,7 +39,7 @@ type PatientSidebarProps = {
   onLogout?: () => void;
 };
 
-/** Patient left navigation — deep forest emerald clinical theme. */
+/** Warm toffee / cafe mocha sidebar with crisp white active states. */
 export function PatientSidebar({ patientName = 'Patient', onLogout }: PatientSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -56,36 +57,41 @@ export function PatientSidebar({ patientName = 'Patient', onLogout }: PatientSid
 
   return (
     <aside
-      className="fixed top-0 left-0 z-50 hidden h-screen w-64 flex-col overflow-hidden border-r border-[#153A32] bg-[#081C17] shadow-xl md:flex"
+      className={`hidden h-full w-64 shrink-0 flex-col justify-between overflow-y-auto p-4 shadow-sm md:flex ${patientClasses.navShell}`}
       aria-label="Patient portal navigation"
     >
-      <div className="shrink-0 border-b border-[#153A32] px-5 pb-5 pt-6">
-        <div className="flex items-center gap-3">
-          <RegalHospitalLogoMark heightClass="h-8" className="h-11 w-11 rounded-xl border border-[#227B6B]/40 bg-white p-1" />
-          <div>
-            <h2 className="text-base font-black tracking-tight text-white">Regal Hospital</h2>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-teal-400">Patient Portal</p>
+      <div className="shrink-0 border-b border-[#5B3E2B] pb-4 pt-1">
+        <div className="flex items-center gap-2.5">
+          <RegalHospitalLogoMark
+            heightClass="h-7"
+            className="h-8 w-8 rounded-lg border border-[#8C6246]/60 bg-[#5E422E] p-0.5"
+          />
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-bold text-white">Regal Hospital</h2>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#EADBCE]">
+              Patient Portal
+            </p>
           </div>
         </div>
       </div>
 
-      <nav className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
-        <ul className="space-y-1">
+      <nav className="custom-scrollbar min-h-0 flex-1 overflow-y-auto py-3">
+        <ul className="space-y-0.5">
           {PATIENT_NAV.map(({ label, href, icon: Icon }) => {
             const active = isNavActive(pathname, href);
             return (
               <li key={href}>
                 <Link
                   href={href}
-                  className={`group flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200 ${
-                    active
-                      ? 'border border-[#227B6B]/50 bg-[#113831] font-black text-white shadow-md shadow-black/20'
-                      : 'text-slate-300 hover:bg-[#0E2822] hover:text-white'
+                  className={`group flex min-w-0 items-center rounded-lg px-3 py-2 text-xs font-medium transition-all ${
+                    active ? patientClasses.navActive : patientClasses.navIdle
                   }`}
                   aria-current={active ? 'page' : undefined}
                 >
                   <Icon
-                    className={`h-4 w-4 shrink-0 ${active ? 'text-[#38D9BA]' : 'text-slate-400 group-hover:text-slate-200'}`}
+                    className={`mr-2.5 h-4 w-4 shrink-0 ${
+                      active ? 'text-white' : 'text-[#EADBCE] group-hover:text-white'
+                    }`}
                     aria-hidden
                   />
                   <span className="min-w-0 flex-1 leading-snug">{label}</span>
@@ -96,22 +102,22 @@ export function PatientSidebar({ patientName = 'Patient', onLogout }: PatientSid
         </ul>
       </nav>
 
-      <div className="shrink-0 border-t border-[#153A32] p-4">
-        <div className="flex items-center gap-3 rounded-2xl border border-[#1B4B40] bg-[#0F2C24] px-3 py-2.5">
+      <div className="shrink-0 border-t border-[#5B3E2B] pt-3">
+        <div className="flex items-center gap-2.5 rounded-xl border border-[#8C6246]/60 bg-[#5E422E] px-2.5 py-2">
           <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#227B6B]/40 bg-[#113831] text-sm font-black text-[#38D9BA]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#4E3625] text-xs font-bold text-white ring-1 ring-[#8C6246]"
             aria-hidden
           >
             {avatarInitial}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-black text-white">{patientName}</p>
-            <p className="truncate text-[10px] font-semibold text-slate-400">Verified session</p>
+            <p className="truncate text-xs font-semibold text-white">{patientName}</p>
+            <p className="truncate text-[10px] text-[#DDC7B4]">Verified member</p>
           </div>
           <button
             type="button"
             onClick={handleLogout}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-teal-400 transition hover:bg-[#113831] hover:text-[#38D9BA]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#EADBCE] transition hover:bg-[#4E3625] hover:text-white"
             aria-label="Logout session"
           >
             <LogOut className="h-4 w-4" />

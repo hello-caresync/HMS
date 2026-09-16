@@ -6,7 +6,6 @@ import { ChevronLeft, PanelLeftClose, PanelLeftOpen, Wifi } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { HospitalSelector } from '@/components/vendor/HospitalSelector';
-import { VendorWorkflowBar } from '@/components/vendor/VendorWorkflowBar';
 import {
   getVendorSession,
   resolveVendorCompanyDisplayName,
@@ -137,10 +136,6 @@ export function VendorShell({ children }: VendorShellProps) {
             </Link>
           </div>
         </header>
-
-        <div className="border-b border-[#dcc2f9]/70 bg-vendor-card/90 px-4 py-2">
-          <VendorWorkflowBar />
-        </div>
 
         <main className="flex-1 p-4 md:p-8">{children}</main>
       </div>

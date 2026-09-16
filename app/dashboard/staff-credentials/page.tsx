@@ -215,7 +215,7 @@ export default function IdentityAccessGovernanceVault() {
           id: credential.id,
           credentialId: credential.id,
           staffRecordId: staff?.id,
-          code: credential.employee_id || staff?.staff_id_code || credential.id.slice(0, 8).toUpperCase(),
+          code: String(row.badge_id ?? credential.employee_id ?? staff?.staff_id_code ?? ''),
           name: credential.full_name,
           contactPerson: '',
           email: credential.email,

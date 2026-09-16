@@ -8,8 +8,11 @@ import {
   bookAppointmentWithDoctor,
   type BookAppointmentPayload,
 } from '@/lib/patient/book-appointment';
-import { readPatientPortalSession } from '@/lib/patient/portal-session';
-import { supabase } from '@/lib/supabaseClient';
+import { loadBeneficiaryOptionsForActivePatient } from '@/lib/patient/family-members';
+import {
+  readPatientPortalSession,
+  resolveActivePatientFormIdentity,
+} from '@/lib/patient/portal-session';
 import { toast } from 'sonner';
 import {
   AlertCircle,
@@ -33,7 +36,7 @@ interface FamilyMember {
 const PATIENT_ID = DEFAULT_PATIENT_ID;
 
 const inputClass =
-  'w-full rounded-2xl border border-[#D5E8E3] bg-[#F4F8F7] p-3.5 text-xs font-bold text-[#0E2924] outline-none focus:border-[#227B6B] focus:ring-2 focus:ring-[#EAF5F2]';
+  'w-full rounded-2xl border border-[#e6ccb2] bg-[#faf7f2] p-3.5 text-xs font-bold text-[#43281c] outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4]';
 
 function BookAppointmentContent() {
   const router = useRouter();
@@ -67,17 +70,21 @@ function BookAppointmentContent() {
         setLoadingData(true);
         setErrorMsg('');
 
-        const loadedName = localStorage.getItem('patient_full_name');
-        let loadedFamily: FamilyMember[] = [];
-        try {
-          loadedFamily = JSON.parse(localStorage.getItem('curasync_family_members') || '[]');
-        } catch {
-          loadedFamily = [];
-        }
+        const identity = resolveActivePatientFormIdentity();
+        const beneficiaryOptions = loadBeneficiaryOptionsForActivePatient();
+        const selfOption = beneficiaryOptions.find((option) => option.relation === 'Self');
 
-        setPrimaryPatientName(loadedName);
-        setSelectedPatient(loadedName || '');
-        setFamilyMembers(loadedFamily);
+        setPrimaryPatientName(selfOption?.name ?? identity?.patient_name ?? null);
+        setSelectedPatient(selfOption?.name ?? identity?.patient_name ?? '');
+        setFamilyMembers(
+          beneficiaryOptions
+            .filter((option) => option.relation !== 'Self')
+            .map((option) => ({
+              id: option.id,
+              full_name: option.name,
+              relation: option.relation,
+            })),
+        );
 
         if (!selectedDoctorId) {
           setErrorMsg('No clinician selected. Please choose a doctor from the directory.');
@@ -97,22 +104,6 @@ function BookAppointmentContent() {
           setAvailableSlots(doctor.slots);
           setSelectedSlot(doctor.slots[0] ?? '');
 
-          const { data: profile } = await supabase
-            .from('patient_profiles')
-            .select('full_name')
-            .eq('id', PATIENT_ID)
-            .maybeSingle();
-          if (profile?.full_name) {
-            setPrimaryPatientName(profile.full_name);
-            setSelectedPatient(profile.full_name);
-            localStorage.setItem('patient_full_name', profile.full_name);
-          }
-
-          const { data: family } = await supabase
-            .from('family_members')
-            .select('id, full_name, relation')
-            .eq('patient_id', PATIENT_ID);
-          if (family?.length) setFamilyMembers(family);
         } catch (err) {
           console.warn('Notice loading booking context:', err);
           setErrorMsg('Failed to load clinician details.');
@@ -175,20 +166,20 @@ function BookAppointmentContent() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 font-sans text-[#0E2924]">
-      <div className="flex items-center justify-between border-b border-[#D5E8E3] pb-4">
+    <div className="mx-auto max-w-3xl space-y-8 font-sans text-[#43281c]">
+      <div className="flex items-center justify-between border-b border-[#e6ccb2] pb-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#0E2924] shadow-sm transition hover:bg-[#EAF5F2]"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#43281c] shadow-sm transition hover:bg-[#ede0d4]"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-black text-[#0E2924]">Book OPD Consultation</h1>
+            <h1 className="text-2xl font-black text-[#43281c]">Book OPD Consultation</h1>
             <p className="text-xs font-bold text-[#4B736B]">
-              Facility: <span className="font-black text-[#113831]">{hospitalName}</span>
+              Facility: <span className="font-black text-[#7f5539]">{hospitalName}</span>
             </p>
           </div>
         </div>
@@ -202,44 +193,44 @@ function BookAppointmentContent() {
       )}
 
       {loadingData ? (
-        <div className="flex items-center gap-2 rounded-3xl border border-[#D5E8E3] bg-white p-8 text-xs font-bold text-[#4B736B]">
-          <Loader2 className="h-4 w-4 animate-spin text-[#227B6B]" /> Loading clinician…
+        <div className="flex items-center gap-2 rounded-3xl border border-[#e6ccb2] bg-white p-8 text-xs font-bold text-[#4B736B]">
+          <Loader2 className="h-4 w-4 animate-spin text-[#b08968]" /> Loading clinician…
         </div>
       ) : selectedDoctor ? (
         <form
           onSubmit={(event) => void handleBookAppointment(event)}
-          className="space-y-6 rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm sm:p-8"
+          className="space-y-6 rounded-3xl border border-[#e6ccb2] bg-white p-6 shadow-sm sm:p-8"
         >
-          <div className="rounded-2xl border border-[#D5E8E3] bg-[#EAF5F2] p-4">
+          <div className="rounded-2xl border border-[#e6ccb2] bg-[#ede0d4] p-4">
             <p className="text-[10px] font-black uppercase tracking-wider text-[#4B736B]">
               Selected Clinician
             </p>
-            <p className="mt-1 text-sm font-black text-[#113831]">{selectedDoctor.name}</p>
+            <p className="mt-1 text-sm font-black text-[#7f5539]">{selectedDoctor.name}</p>
             <p className="text-xs font-bold text-[#4B736B]">
               {selectedDoctor.department} • {selectedDoctor.specialization} •{' '}
               {selectedDoctor.employeeId}
             </p>
-            <p className="mt-2 truncate font-mono text-[10px] font-semibold text-[#227B6B]">
+            <p className="mt-2 truncate font-mono text-[10px] font-semibold text-[#b08968]">
               doctor_id: {selectedDoctor.doctor_id}
             </p>
           </div>
 
           <div className="space-y-3">
-            <label className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#0E2924]">
-              <User className="h-4 w-4 text-[#227B6B]" /> Select Registered Patient Profile *
+            <label className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#43281c]">
+              <User className="h-4 w-4 text-[#b08968]" /> Select Registered Patient Profile *
             </label>
 
             {!primaryPatientName && familyMembers.length === 0 ? (
-              <div className="space-y-3 rounded-2xl border border-[#D5E8E3] bg-[#EAF5F2] p-5 text-center">
-                <p className="text-xs font-bold text-[#0E2924]">
+              <div className="space-y-3 rounded-2xl border border-[#e6ccb2] bg-[#ede0d4] p-5 text-center">
+                <p className="text-xs font-bold text-[#43281c]">
                   No profile details found. Please set up your profile first.
                 </p>
                 <button
                   type="button"
                   onClick={() => router.push('/patient/profile')}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#113831] px-4 py-2.5 text-xs font-black text-white"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#7f5539] px-4 py-2.5 text-xs font-black text-white"
                 >
-                  <UserPlus className="h-4 w-4 text-[#EAF5F2]" /> Set Up Profile
+                  <UserPlus className="h-4 w-4 text-[#ede0d4]" /> Set Up Profile
                 </button>
               </div>
             ) : (
@@ -250,14 +241,14 @@ function BookAppointmentContent() {
                     onClick={() => setSelectedPatient(primaryPatientName)}
                     className={`rounded-2xl border p-4 text-left transition ${
                       selectedPatient === primaryPatientName
-                        ? 'border-[#113831] bg-[#113831] text-white'
-                        : 'border-[#D5E8E3] bg-[#F4F8F7] text-[#0E2924] hover:border-[#227B6B]'
+                        ? 'border-[#7f5539] bg-[#7f5539] text-white'
+                        : 'border-[#e6ccb2] bg-[#faf7f2] text-[#43281c] hover:border-[#b08968]'
                     }`}
                   >
                     <p className="text-sm font-black">{primaryPatientName}</p>
                     <p
                       className={`text-[10px] font-bold ${
-                        selectedPatient === primaryPatientName ? 'text-[#EAF5F2]' : 'text-[#4B736B]'
+                        selectedPatient === primaryPatientName ? 'text-[#ede0d4]' : 'text-[#4B736B]'
                       }`}
                     >
                       Primary Account Holder
@@ -271,14 +262,14 @@ function BookAppointmentContent() {
                     onClick={() => setSelectedPatient(member.full_name)}
                     className={`rounded-2xl border p-4 text-left transition ${
                       selectedPatient === member.full_name
-                        ? 'border-[#113831] bg-[#113831] text-white'
-                        : 'border-[#D5E8E3] bg-[#F4F8F7] text-[#0E2924] hover:border-[#227B6B]'
+                        ? 'border-[#7f5539] bg-[#7f5539] text-white'
+                        : 'border-[#e6ccb2] bg-[#faf7f2] text-[#43281c] hover:border-[#b08968]'
                     }`}
                   >
                     <p className="text-sm font-black">{member.full_name}</p>
                     <p
                       className={`text-[10px] font-bold ${
-                        selectedPatient === member.full_name ? 'text-[#EAF5F2]' : 'text-[#4B736B]'
+                        selectedPatient === member.full_name ? 'text-[#ede0d4]' : 'text-[#4B736B]'
                       }`}
                     >
                       Family ({member.relation})
@@ -290,7 +281,7 @@ function BookAppointmentContent() {
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-black uppercase tracking-wider text-[#0E2924]">
+            <label className="mb-2 block text-xs font-black uppercase tracking-wider text-[#43281c]">
               Reason for Visit
             </label>
             <input
@@ -304,8 +295,8 @@ function BookAppointmentContent() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#0E2924]">
-                <CalendarIcon className="h-4 w-4 text-[#227B6B]" /> Appointment Date *
+              <label className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#43281c]">
+                <CalendarIcon className="h-4 w-4 text-[#b08968]" /> Appointment Date *
               </label>
               <input
                 type="date"
@@ -317,8 +308,8 @@ function BookAppointmentContent() {
               />
             </div>
             <div>
-              <label className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#0E2924]">
-                <Clock className="h-4 w-4 text-[#227B6B]" /> Available Time Slots *
+              <label className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#43281c]">
+                <Clock className="h-4 w-4 text-[#b08968]" /> Available Time Slots *
               </label>
               <select
                 value={selectedSlot}
@@ -335,16 +326,16 @@ function BookAppointmentContent() {
           </div>
 
           {selectedPatient && (
-            <div className="space-y-1 rounded-2xl border border-[#D5E8E3] bg-[#EAF5F2] p-4 text-xs font-bold">
+            <div className="space-y-1 rounded-2xl border border-[#e6ccb2] bg-[#ede0d4] p-4 text-xs font-bold">
               <p className="text-[10px] font-black uppercase text-[#4B736B]">Booking Summary</p>
-              <p className="text-[#0E2924]">
+              <p className="text-[#43281c]">
                 Consultation for{' '}
-                <span className="font-black text-[#113831]">{selectedPatient}</span> with{' '}
-                <span className="font-black text-[#113831]">{selectedDoctor.name}</span> on{' '}
-                <span className="font-black text-[#113831]">{appointmentDate}</span> at{' '}
+                <span className="font-black text-[#7f5539]">{selectedPatient}</span> with{' '}
+                <span className="font-black text-[#7f5539]">{selectedDoctor.name}</span> on{' '}
+                <span className="font-black text-[#7f5539]">{appointmentDate}</span> at{' '}
                 {selectedSlot}.
               </p>
-              <p className="flex items-center gap-1 pt-1 text-[11px] font-black text-[#227B6B]">
+              <p className="flex items-center gap-1 pt-1 text-[11px] font-black text-[#b08968]">
                 <IndianRupee className="h-3.5 w-3.5" /> Fee: ₹{selectedDoctor.fee}
               </p>
             </div>
@@ -353,7 +344,7 @@ function BookAppointmentContent() {
           <button
             type="submit"
             disabled={isSubmitting || !selectedPatient || !selectedDoctor.doctor_id}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#113831] py-4 text-xs font-black text-white shadow-lg transition hover:bg-[#0E2924] disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#7f5539] py-4 text-xs font-black text-white shadow-lg transition hover:bg-[#43281c] disabled:opacity-50"
           >
             {isSubmitting ? (
               <>
@@ -361,20 +352,20 @@ function BookAppointmentContent() {
               </>
             ) : (
               <>
-                <CheckCircle2 className="h-4 w-4 text-[#EAF5F2]" /> Confirm & Generate SmartQ Token
+                <CheckCircle2 className="h-4 w-4 text-[#ede0d4]" /> Confirm & Generate SmartQ Token
               </>
             )}
           </button>
         </form>
       ) : (
-        <div className="rounded-3xl border border-[#D5E8E3] bg-[#EAF5F2] p-8 text-center">
-          <Stethoscope className="mx-auto mb-3 h-8 w-8 text-[#227B6B]" />
+        <div className="rounded-3xl border border-[#e6ccb2] bg-[#ede0d4] p-8 text-center">
+          <Stethoscope className="mx-auto mb-3 h-8 w-8 text-[#b08968]" />
           <p className="text-xs font-bold text-[#4B736B]">
             Choose a doctor from the{' '}
             <button
               type="button"
               onClick={() => router.push('/patient/doctors')}
-              className="font-black text-[#113831] underline"
+              className="font-black text-[#7f5539] underline"
             >
               Doctor Directory
             </button>
@@ -391,7 +382,7 @@ export default function PatientBookPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center p-12 text-xs font-bold text-[#4B736B]">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#227B6B]" />
+          <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#b08968]" />
           Loading booking form…
         </div>
       }

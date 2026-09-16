@@ -1,3 +1,5 @@
+import { mintHospitalScopedUhid, upsertPatientProfileRecord } from '@/lib/db/patients';
+import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import {
   hubCreatePurchaseOrder,
@@ -192,7 +194,12 @@ export async function fetchHospitalData(): Promise<void> {
   const store = useHospitalStore.getState();
   const [patients, appointments, opd, admissions, invoices, inventory, vendors, pos, notifications] =
     await Promise.all([
-      supabase.from('patients').select('*').order('created_at', { ascending: false }).limit(100),
+      supabase
+        .from('patients')
+        .select('*')
+        .eq('hospital_id', REGAL_HOSPITAL_CODE)
+        .order('created_at', { ascending: false })
+        .limit(200),
       supabase.from('appointments').select('*').order('updated_at', { ascending: false }).limit(100),
       supabase.from('opd_visits').select('*').order('created_at', { ascending: false }).limit(100),
       supabase.from('admissions').select('*').order('created_at', { ascending: false }).limit(100),
@@ -268,30 +275,50 @@ export async function registerPatient(input: Omit<HospitalPatient, 'id' | 'creat
   if (supabaseReady()) {
     const supabase = getSupabaseBrowserClient();
     if (supabase) {
-      const { data, error } = await supabase
-        .from('patients')
-        .insert({
-          uhid: patient.uhid,
-          full_name: fullName,
-          first_name: patient.firstName,
-          last_name: patient.lastName,
-          phone: patient.phone,
-          age: patient.age,
-          patient_age: patient.patient_age ?? patient.age,
-          gender: patient.gender,
-          blood_group: patient.bloodGroup,
-          medical_history: patient.medicalHistory,
-          department: patient.department,
-          status: patient.status,
-          emergency_contact: patient.emergencyContact,
-          insurance_provider: patient.insuranceProvider,
-        })
-        .select('*')
-        .single();
-      if (!error && data) {
-        const mapped = mapPatientRow(data as Record<string, unknown>);
+      const uhid =
+        patient.uhid?.trim() ||
+        (await mintHospitalScopedUhid(supabase, REGAL_HOSPITAL_CODE));
+      patient.uhid = uhid;
+
+      try {
+        const savedRow = await upsertPatientProfileRecord(
+          supabase,
+          {
+            patient_id: patient.id,
+            full_name: fullName,
+            phone: patient.phone,
+            email: '',
+            age: String(patient.patient_age ?? patient.age ?? ''),
+            gender: patient.gender,
+            blood_group: patient.bloodGroup,
+            emergency_contact_name: patient.emergencyContact ?? '',
+            emergency_contact_phone: '',
+            emergency_contact_relation: '',
+            address: '',
+            city: '',
+            state: '',
+            postal_code: '',
+            allergies: patient.medicalHistory ?? '',
+            chronic_conditions: '',
+            current_medications: '',
+            height_cm: '',
+            weight_kg: '',
+            bmi: '',
+            blood_pressure: '',
+            heart_rate_bpm: '',
+            spo2_percentage: '',
+            temperature_f: '',
+            hospital_id: REGAL_HOSPITAL_CODE,
+            familyMembers: [],
+          },
+          uhid,
+          REGAL_HOSPITAL_CODE,
+        );
+        const mapped = mapPatientRow(savedRow as unknown as Record<string, unknown>);
         useHospitalStore.getState().upsertPatient(mapped);
         patient.id = mapped.id;
+      } catch (err) {
+        console.warn('registerPatient supabase upsert:', err);
       }
     }
   }

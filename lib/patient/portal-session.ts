@@ -54,6 +54,22 @@ export function mintPatientUhid(): string {
   return `NX-PAT-${Math.floor(1000 + Math.random() * 9000)}`;
 }
 
+/** Regal Hospital patients-table UHID format (NOT NULL column). */
+export function mintRegalHospitalUhid(): string {
+  const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+  return `UHID-RH-${new Date().getFullYear()}-${randomSuffix}`;
+}
+
+export function resolvePatientUhid(
+  candidates: Array<string | null | undefined>,
+): string {
+  for (const candidate of candidates) {
+    const value = String(candidate ?? '').trim();
+    if (value) return value;
+  }
+  return mintRegalHospitalUhid();
+}
+
 export function readPatientPortalSession(): PatientPortalSession | null {
   if (typeof window === 'undefined') return null;
 

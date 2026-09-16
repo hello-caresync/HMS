@@ -9,8 +9,7 @@ import { VendorModal, vendorFieldClass, vendorLabelClass } from '@/components/ve
 import { PROCUREMENT_PO_TABLE } from '@/lib/hospital/procurement';
 import { supabase } from '@/lib/supabaseClient';
 import { vendorClasses } from '@/lib/vendor/theme';
-import { matchesInvoiceLifecycle } from '@/lib/vendor/lifecycle';
-import { useActiveHospitalCode, useVendorAppStore } from '@/lib/vendor/store/vendor-app-store';
+import { useActiveHospitalCode } from '@/lib/vendor/store/vendor-app-store';
 import {
   GST_RATE,
   INVOICEABLE_PO_STATUSES,
@@ -39,7 +38,6 @@ function generateInvoiceNumber(): string {
 function BillingWorkspace() {
   const { feedback, showSuccess, showError } = useVendorFeedback();
   const hospitalCode = useActiveHospitalCode();
-  const lifecycleStage = useVendorAppStore((s) => s.workflowStage);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,10 +108,7 @@ function BillingWorkspace() {
     [invoices],
   );
 
-  const visibleInvoices = useMemo(
-    () => invoices.filter((invoice) => matchesInvoiceLifecycle(lifecycleStage, invoice.status)),
-    [invoices, lifecycleStage],
-  );
+  const visibleInvoices = invoices;
 
   const orderLabel = useCallback(
     (poId: string | null) => {

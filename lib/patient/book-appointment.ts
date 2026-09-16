@@ -4,6 +4,7 @@ import { insertAppointmentRowResilient } from '@/lib/hospital/appointments';
 import { sanitizePhoneDigits, validatePhoneField } from '@/lib/hospital/indian-patient';
 import { resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
 import { REGAL_FACILITY_CODE, REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
+import { createConsultationFromAppointment } from '@/lib/db/consultations';
 import { readPatientPortalSession, mintPatientUhid } from '@/lib/patient/portal-session';
 import { assertSlotAvailableForBooking } from '@/lib/scheduling/doctor-slot-service';
 import {
@@ -220,6 +221,36 @@ export async function bookAppointmentWithDoctor(
   }
 
   const appointmentId = String(apptData.appointment_id ?? apptData.id ?? '');
+
+  let linkedPatientUuid: string | null =
+    patientId && /^[0-9a-f-]{36}$/i.test(String(patientId)) ? String(patientId) : null;
+  if (!linkedPatientUuid) {
+    const { data: patientRow } = await supabase
+      .from('patients')
+      .select('id')
+      .eq('hospital_id', hospitalNodeTag)
+      .eq('phone', phone)
+      .maybeSingle();
+    linkedPatientUuid = patientRow?.id ? String(patientRow.id) : null;
+  }
+
+  try {
+    await createConsultationFromAppointment(supabase, {
+      hospitalId: hospitalNodeTag,
+      patientId: linkedPatientUuid,
+      appointmentId,
+      uhid,
+      patientName,
+      doctorId: String(doctorCode || doctorUuid),
+      doctorName,
+      department,
+      symptoms: reasonForVisit,
+      status: 'QUEUED',
+      consultationDate: appointmentDate,
+    });
+  } catch {
+    /* non-blocking ledger write */
+  }
 
   try {
     await supabase.from('hospital_opd_queue').insert({

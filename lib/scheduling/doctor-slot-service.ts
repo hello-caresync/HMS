@@ -19,8 +19,20 @@ const CANCELLED_STATUSES = new Set([
 ]);
 
 function doctorScopeFilter(doctorId: string): string {
-  const code = String(doctorId).trim().toUpperCase();
-  return [`doctor_id.eq.${code}`, `doctor_code.eq.${code}`, `doctor_employee_id.eq.${code}`].join(',');
+  const raw = String(doctorId).trim();
+  if (!raw) return 'doctor_id.eq.__invalid__';
+  const upper = raw.toUpperCase();
+  const clauses = new Set([
+    `doctor_id.eq.${raw}`,
+    `doctor_code.eq.${raw}`,
+    `doctor_employee_id.eq.${raw}`,
+  ]);
+  if (upper !== raw) {
+    clauses.add(`doctor_id.eq.${upper}`);
+    clauses.add(`doctor_code.eq.${upper}`);
+    clauses.add(`doctor_employee_id.eq.${upper}`);
+  }
+  return Array.from(clauses).join(',');
 }
 
 /** Loads active appointment times already reserved for this doctor on the given date. */

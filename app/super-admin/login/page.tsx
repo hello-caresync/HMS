@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
   Crown,
@@ -13,31 +13,26 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
 import { purgeLocalAdminSessions } from '@/lib/auth/active-session';
+import {
+  buildSuperAdminSessionPayload,
+  persistSuperAdminClientSession,
+} from '@/lib/auth/superAdminAuth';
 import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
-import { createClient } from '@/lib/supabase/client';
 
-const ALLOWED_SUPER_ADMINS = [
-  'aishwaryaananya43@gmail.com',
-  'superadmin@regalhospital.com',
-];
+type AdminLoginResponse = {
+  success?: boolean;
+  role?: string;
+  facility_node?: string;
+  token?: string;
+  error?: string;
+};
 
-function isAllowlistedSuperAdmin(email: string): boolean {
-  return ALLOWED_SUPER_ADMINS.includes(email.trim().toLowerCase());
-}
-
-function isAuthorizedGatewayRole(role: unknown): boolean {
-  const normalized = String(role ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, '_');
-  return normalized === 'super_admin' || normalized === 'admin' || normalized === 'superadmin';
-}
-
-export default function SuperAdminLoginPage() {
+function SuperAdminLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [passcode, setPasscode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -53,7 +48,7 @@ export default function SuperAdminLoginPage() {
     setErrorMessage(null);
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPasscode = passcode.trim() || password.trim();
+    const cleanPasscode = passcode.trim();
 
     if (!cleanEmail || !cleanPasscode) {
       setErrorMessage('Invalid email or passcode.');
@@ -61,49 +56,44 @@ export default function SuperAdminLoginPage() {
       return;
     }
 
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('hospital_staff')
-      .select('*')
-      .ilike('email', cleanEmail)
-      .eq('passcode_key', cleanPasscode)
-      .eq('is_active', true)
-      .maybeSingle();
+    try {
+      const response = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: cleanEmail,
+          passcode: cleanPasscode,
+        }),
+      });
 
-    if (error || !data) {
+      const payload = (await response.json()) as AdminLoginResponse;
+
+      if (!response.ok || !payload.success || payload.role !== 'super_admin') {
+        setErrorMessage(payload.error ?? 'Invalid email or passcode.');
+        setLoading(false);
+        return;
+      }
+
+      const redirectTarget = searchParams.get('redirect')?.startsWith('/')
+        ? searchParams.get('redirect')!
+        : '/super-admin/dashboard';
+
+      const session = buildSuperAdminSessionPayload(
+        cleanEmail,
+        payload.token ?? `sa_${Date.now()}`,
+        redirectTarget,
+      );
+
+      persistSuperAdminClientSession(session);
+      setNexoraRoleCookie('super_admin');
+
+      toast.success('Root Master Authentication Verified');
+      router.push(redirectTarget);
+    } catch {
       setErrorMessage('Invalid email or passcode.');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    if (
-      !isAllowlistedSuperAdmin(cleanEmail) &&
-      !isAuthorizedGatewayRole(data.role) &&
-      !isAuthorizedGatewayRole(data.staff_type)
-    ) {
-      setErrorMessage('This account is not authorized for Super Admin access.');
-      setLoading(false);
-      return;
-    }
-
-    const sessionPayload = {
-      ...data,
-      email: cleanEmail,
-      role: 'super_admin',
-      accessLevel: 'level_0_root',
-      authenticatedAt: new Date().toISOString(),
-      portal_access: '/super-vault-access',
-    };
-
-    localStorage.setItem('super_admin_session', JSON.stringify(data));
-    localStorage.setItem('nexora_superadmin_session', JSON.stringify(sessionPayload));
-    localStorage.setItem('curasync_superadmin_session', JSON.stringify(sessionPayload));
-    setNexoraRoleCookie('super_admin');
-    document.cookie = `nexora_superadmin_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=86400; SameSite=Lax`;
-
-    toast.success('Root Master Authentication Verified');
-    router.push('/super-vault-access');
-    setLoading(false);
   };
 
   return (
@@ -145,14 +135,14 @@ export default function SuperAdminLoginPage() {
           </div>
         </div>
 
-        {errorMessage && (
+        {errorMessage ? (
           <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-semibold text-rose-700">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-600" />
             <span>{errorMessage}</span>
           </div>
-        )}
+        ) : null}
 
-        <form onSubmit={handleSuperAdminLogin} className="space-y-4">
+        <form onSubmit={(event) => void handleSuperAdminLogin(event)} className="space-y-4">
           <div className="space-y-1.5">
             <label className="block text-[11px] font-bold tracking-wider text-slate-700 uppercase">
               Platform Master Email
@@ -165,7 +155,7 @@ export default function SuperAdminLoginPage() {
                 autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter platform email"
+                placeholder="superadmin@regalhospital.com"
                 className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pr-4 pl-10 text-sm font-medium text-slate-900 shadow-xs placeholder:text-slate-400 transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-100 focus:outline-none"
               />
             </div>
@@ -181,11 +171,8 @@ export default function SuperAdminLoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 required
                 autoComplete="current-password"
-                value={passcode || password}
-                onChange={(e) => {
-                  setPasscode(e.target.value);
-                  setPassword(e.target.value);
-                }}
+                value={passcode}
+                onChange={(e) => setPasscode(e.target.value)}
                 placeholder="Enter root passcode"
                 className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pr-10 pl-10 font-mono text-sm font-bold text-slate-900 shadow-xs placeholder:text-slate-400 transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-100 focus:outline-none"
               />
@@ -219,5 +206,19 @@ export default function SuperAdminLoginPage() {
         Regal Healthcare Platform &bull; Node 2026-v2.4
       </footer>
     </div>
+  );
+}
+
+export default function SuperAdminLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#1e2433] text-sm font-semibold text-slate-300">
+          Loading Super Admin Gateway...
+        </div>
+      }
+    >
+      <SuperAdminLoginForm />
+    </Suspense>
   );
 }

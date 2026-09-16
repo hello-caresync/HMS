@@ -11,19 +11,19 @@
   --hub-background: #fdf4f2;
   --hub-border: #f5d5cf;
 
-  /* Nexora Patient — deep forest / emerald clinical system */
-  --patient-plum: #113831;
-  --patient-canvas: #f4f8f7;
-  --patient-card: #eaf5f2;
-  --patient-lavender: #4b736b;
-  --patient-primary: #113831;
-  --patient-text: #0e2924;
-  --patient-charcoal: #0e2924;
-  --patient-nav-ivory: #eaf5f2;
-  --patient-success: #227b6b;
-  --patient-warning: #227b6b;
-  --patient-emergency: #e63950;
-  --patient-ice: #d5e8e3;
+  /* Nexora Patient — warm sand / light brown clinical system */
+  --patient-plum: #7f5539;
+  --patient-canvas: #faf7f2;
+  --patient-card: #faf7f2;
+  --patient-lavender: #9c6644;
+  --patient-primary: #b08968;
+  --patient-text: #43281c;
+  --patient-charcoal: #43281c;
+  --patient-nav-ivory: #faf7f2;
+  --patient-success: #7f5539;
+  --patient-warning: #b08968;
+  --patient-emergency: #c1121f;
+  --patient-ice: #e6ccb2;
 
   /* Luxury Gold — primary interactive brand */
   --primary: #d97706;
@@ -79,24 +79,24 @@
   --color-vendor-warning: #d8a657;
   --color-vendor-danger: #e76f51;
 
-  --color-patient-plum: #113831;
-  --color-patient-canvas: #f4f8f7;
-  --color-patient-card: #eaf5f2;
-  --color-patient-lavender: #4b736b;
-  --color-patient-primary: #113831;
-  --color-patient-text: #0e2924;
-  --color-patient-charcoal: #0e2924;
+  --color-patient-plum: #7f5539;
+  --color-patient-canvas: #faf7f2;
+  --color-patient-card: #faf7f2;
+  --color-patient-lavender: #9c6644;
+  --color-patient-primary: #b08968;
+  --color-patient-text: #43281c;
+  --color-patient-charcoal: #43281c;
   --color-patient-ivory: #ffffff;
-  --color-patient-ivory-soft: #eaf5f2;
-  --color-patient-success: #227b6b;
-  --color-patient-warning: #227b6b;
-  --color-patient-error: #e63950;
-  --color-patient-emergency: #e63950;
-  --color-patient-light: #eaf5f2;
-  --color-patient-border: #d5e8e3;
-  --color-patient-heading: #0e2924;
-  --color-patient-muted: #4b736b;
-  --color-patient-ice: #d5e8e3;
+  --color-patient-ivory-soft: #f5ede3;
+  --color-patient-success: #7f5539;
+  --color-patient-warning: #b08968;
+  --color-patient-error: #c1121f;
+  --color-patient-emergency: #c1121f;
+  --color-patient-light: #ede0d4;
+  --color-patient-border: #e6ccb2;
+  --color-patient-heading: #43281c;
+  --color-patient-muted: #9c6644;
+  --color-patient-ice: #e6ccb2;
 
   --color-brand: #7a9a8b;
   --color-brand-hover: #6b8a7c;

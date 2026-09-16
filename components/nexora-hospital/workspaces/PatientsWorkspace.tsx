@@ -1,14 +1,16 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { EntityEmptyState } from '@/components/nexora-hospital/ui/EntityEmptyState';
 import { Badge, Modal, ui } from '@/components/nexora-hospital/ui/primitives';
+import { fetchPatientConsultationHistory, type ConsultationRecord } from '@/lib/db/consultations';
 import { isValidIndianMobile, parsePatientAge } from '@/lib/hospital/indian-patient';
 import { registerPatient } from '@/lib/nexora-hospital/services/hospital-db';
 import { useHospitalStore } from '@/lib/nexora-hospital/store';
 import type { HospitalPatient } from '@/lib/nexora-hospital/types';
+import { supabase } from '@/lib/supabaseClient';
 
 export function PatientsWorkspace() {
   const patients = useHospitalStore((s) => s.patients);
@@ -17,6 +19,8 @@ export function PatientsWorkspace() {
   const [selected, setSelected] = useState<HospitalPatient | null>(null);
   const [showRegister, setShowRegister] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [opdHistory, setOpdHistory] = useState<ConsultationRecord[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -35,6 +39,27 @@ export function PatientsWorkspace() {
     () => ['all', ...new Set(patients.map((p) => p.department))],
     [patients],
   );
+
+  useEffect(() => {
+    if (!selected?.uhid) {
+      setOpdHistory([]);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingHistory(true);
+    void fetchPatientConsultationHistory(supabase, {
+      uhid: selected.uhid,
+      patientId: selected.id,
+    }).then((rows) => {
+      if (!cancelled) setOpdHistory(rows);
+      if (!cancelled) setLoadingHistory(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
 
   const filtered = patients.filter((p) => {
     const q = search.toLowerCase();
@@ -123,6 +148,40 @@ export function PatientsWorkspace() {
                 <div><dt className="text-sm font-bold text-slate-500">Insurance</dt><dd>{selected.insuranceProvider ?? '—'}</dd></div>
                 <div><dt className="text-sm font-bold text-slate-500">Medical History</dt><dd>{selected.medicalHistory || 'None recorded'}</dd></div>
               </dl>
+
+              <div className="mt-6">
+                <h3 className="text-sm font-bold text-slate-700">OPD Consultation History</h3>
+                {loadingHistory ? (
+                  <p className="mt-2 text-xs text-slate-500">Loading visit history…</p>
+                ) : opdHistory.length === 0 ? (
+                  <p className="mt-2 text-xs text-slate-500">No consultations recorded yet.</p>
+                ) : (
+                  <ul className="mt-2 max-h-48 space-y-2 overflow-y-auto">
+                    {opdHistory.map((visit) => (
+                      <li
+                        key={visit.id}
+                        className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                      >
+                        <p className="font-semibold text-slate-800">
+                          {visit.consultation_date} · {visit.doctor_name}
+                        </p>
+                        <p className="text-slate-600">{visit.department}</p>
+                        {visit.diagnosis ? (
+                          <p className="mt-1 text-slate-700">
+                            <span className="font-semibold">Dx:</span> {visit.diagnosis}
+                          </p>
+                        ) : null}
+                        {visit.symptoms ? (
+                          <p className="text-slate-600">
+                            <span className="font-semibold">Symptoms:</span> {visit.symptoms}
+                          </p>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
               <div className="mt-6 flex gap-2">
                 <button type="button" className={ui.btnSecondary} onClick={() => toast.info('EMR opened')}>Open EMR</button>
                 <button type="button" className={ui.btnPrimary} onClick={() => toast.info('Appointments view')}>View Appointments</button>
@@ -134,7 +193,7 @@ export function PatientsWorkspace() {
 
       <Modal open={showRegister} title="Register New Patient" onClose={() => setShowRegister(false)}>
         <div className="grid gap-3 sm:grid-cols-2">
-          {(['firstName', 'lastName', 'uhid', 'phone', 'medicalHistory', 'emergencyContact', 'insuranceProvider'] as const).map((field) => (
+          {(['firstName', 'lastName', 'phone', 'medicalHistory', 'emergencyContact', 'insuranceProvider'] as const).map((field) => (
             <input
               key={field}
               className={ui.input}
@@ -160,7 +219,7 @@ export function PatientsWorkspace() {
           />
           <button
             type="button"
-            disabled={busy || !form.firstName || !form.uhid}
+            disabled={busy || !form.firstName}
             className={`${ui.btnPrimary} sm:col-span-2`}
             onClick={() => {
               void (async () => {
@@ -176,6 +235,7 @@ export function PatientsWorkspace() {
                 setBusy(true);
                 await registerPatient({
                   ...form,
+                  uhid: '',
                   age: parsedAge,
                   patient_age: parsedAge,
                   status: 'Active',

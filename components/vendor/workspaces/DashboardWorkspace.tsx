@@ -11,8 +11,7 @@ import { PROCUREMENT_PO_TABLE } from '@/lib/hospital/procurement';
 import { supabase } from '@/lib/supabaseClient';
 import { VENDOR_PORTAL_ROUTES } from '@/lib/vendor/navigation';
 import { vendorClasses } from '@/lib/vendor/theme';
-import { matchesPurchaseOrderLifecycle } from '@/lib/vendor/lifecycle';
-import { useActiveHospitalCode, useVendorAppStore } from '@/lib/vendor/store/vendor-app-store';
+import { useActiveHospitalCode } from '@/lib/vendor/store/vendor-app-store';
 import {
   VENDOR_ID,
   formatDate,
@@ -30,7 +29,6 @@ import {
 function DashboardWorkspace() {
   const { feedback, showSuccess, showError } = useVendorFeedback();
   const hospitalCode = useActiveHospitalCode();
-  const lifecycleStage = useVendorAppStore((s) => s.workflowStage);
   const [kpis, setKpis] = useState<DashboardKpis>({
     pendingPos: 0,
     activeShipments: 0,
@@ -187,9 +185,7 @@ function DashboardWorkspace() {
   const handleAccept = (order: PurchaseOrder) => persistOrderDecision(order, 'ACCEPTED');
   const handleReject = (order: PurchaseOrder) => persistOrderDecision(order, 'REJECTED');
 
-  const visibleOrders = recentOrders.filter((order) =>
-    matchesPurchaseOrderLifecycle(lifecycleStage, order.status),
-  );
+  const visibleOrders = recentOrders;
 
   return (
     <div className="space-y-6">

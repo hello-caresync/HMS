@@ -241,6 +241,32 @@ WHERE hospital_id IS NULL
    OR hospital_code IS NULL
    OR TRIM(hospital_code::text) = '';
 
+-- 11) Remove legacy seed tenant rows from Super Admin directory (safe to re-run)
+DELETE FROM public.hospitals
+WHERE id IN (
+  '11111111-1111-1111-1111-111111111111',
+  'a0000000-0000-0000-0000-000000000001',
+  'a1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+)
+OR hospital_id IN (
+  '11111111-1111-1111-1111-111111111111',
+  'a0000000-0000-0000-0000-000000000001',
+  'a1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+);
+
+DELETE FROM public.hospital_tenants
+WHERE hospital_id IN (
+  '11111111-1111-1111-1111-111111111111',
+  'a0000000-0000-0000-0000-000000000001',
+  'a1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+)
+OR id IN (
+  '11111111-1111-1111-1111-111111111111',
+  'a0000000-0000-0000-0000-000000000001',
+  'a1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+);
+
 -- Quick verify (optional — run separately if editor blocks multi-statement output)
 -- SELECT doctor_code, full_name, email, department, consultation_fee, fee, is_active, status FROM public.doctors WHERE department ILIKE '%General Medicine%';
 -- SELECT token_number, patient_name, doctor_id, doctor_code, doctor_name, status, appointment_date FROM public.appointments WHERE doctor_name ILIKE '%Suriraju%' ORDER BY created_at DESC LIMIT 10;
+-- SELECT id, name, hospital_id FROM public.hospitals ORDER BY created_at DESC NULLS LAST;

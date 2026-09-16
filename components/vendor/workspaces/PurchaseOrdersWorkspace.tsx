@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { VendorModuleHeader } from '@/components/vendor/ui/VendorModuleHeader';
@@ -41,9 +41,6 @@ type VendorPortalOrder = PurchaseOrderRow & {
 };
 
 const FILTER_TABS: FilterTab[] = ['ALL', 'ISSUED', 'ACCEPTED', 'DISPATCHED', 'DELIVERED'];
-
-const CHECKBOX_CLASS =
-  'h-4 w-4 cursor-pointer rounded border-slate-300 text-vendor-primary focus:ring-2 focus:ring-vendor-primary focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50';
 
 const HOSPITAL_NAME_MAP: Record<string, string> = {
   'a0000000-0000-0000-0000-000000000001': REGAL_HOSPITAL_NAME,
@@ -200,11 +197,9 @@ function statusBadgeLabel(status?: string | null): string {
 function PurchaseOrdersWorkspace() {
   const hospitalCode = useActiveHospitalCode();
   const [orders, setOrders] = useState<VendorPortalOrder[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [bulkBusy, setBulkBusy] = useState(false);
 
   const [vendorId, setVendorId] = useState('');
   const [vendorEmail, setVendorEmail] = useState('');
@@ -316,27 +311,6 @@ function PurchaseOrdersWorkspace() {
     [activeTab, hospitalScopedOrders],
   );
 
-  const selectableIds = useMemo(
-    () =>
-      filteredOrders
-        .filter((order) => isVendorActionablePurchaseOrder(order.status))
-        .map((order) => order.id),
-    [filteredOrders],
-  );
-
-  const selectedVisible = selectedIds.filter((id) => selectableIds.includes(id));
-  const allSelected = selectableIds.length > 0 && selectedVisible.length === selectableIds.length;
-
-  const toggleSelectAll = () => {
-    setSelectedIds(allSelected ? [] : selectableIds);
-  };
-
-  const toggleSelectOne = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-    );
-  };
-
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     if (!supabase) return;
 
@@ -398,38 +372,6 @@ function PurchaseOrdersWorkspace() {
     }
   };
 
-  const handleBulkAccept = async () => {
-    if (!supabase || selectedVisible.length === 0) {
-      toast.info('Please select at least one order to accept');
-      return;
-    }
-
-    setBulkBusy(true);
-    const ids = [...selectedVisible];
-    setOrders((prev) =>
-      prev.map((order) => (ids.includes(order.id) ? { ...order, status: 'ACCEPTED' } : order)),
-    );
-
-    try {
-      const { error } = await supabase
-        .from(PROCUREMENT_PO_TABLE)
-        .update({ status: 'ACCEPTED' })
-        .in('id', ids);
-
-      if (error) {
-        throw error;
-      }
-
-      toast.success(`${ids.length} purchase order${ids.length === 1 ? '' : 's'} accepted`);
-      setSelectedIds([]);
-    } catch (err: unknown) {
-      toast.error(extractSupabaseErrorMessage(err, 'Bulk accept failed'));
-      await fetchOrdersRef.current({ silent: true });
-    } finally {
-      setBulkBusy(false);
-    }
-  };
-
   const tabCount = (tab: FilterTab) =>
     tab === 'ALL'
       ? hospitalScopedOrders.length
@@ -441,27 +383,15 @@ function PurchaseOrdersWorkspace() {
         title="Purchase Orders"
         description="Incoming POs from every partner hospital, synced live from Supabase."
         actions={
-          <>
-            <button
-              type="button"
-              disabled={bulkBusy || selectedVisible.length === 0}
-              onClick={() => void handleBulkAccept()}
-              className={vendorClasses.btnPrimary}
-            >
-              <Check className="h-4 w-4" aria-hidden />
-              Bulk accept selected
-              {selectedVisible.length > 0 ? ` (${selectedVisible.length})` : ''}
-            </button>
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => void fetchOrders({ silent: false })}
-              className={vendorClasses.btnGhost}
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden />
-              Refresh
-            </button>
-          </>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => void fetchOrders({ silent: false })}
+            className={vendorClasses.btnGhost}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden />
+            Refresh
+          </button>
         }
       />
 
@@ -470,10 +400,7 @@ function PurchaseOrdersWorkspace() {
           <button
             key={tab}
             type="button"
-            onClick={() => {
-              setActiveTab(tab);
-              setSelectedIds([]);
-            }}
+            onClick={() => setActiveTab(tab)}
             className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold tracking-wide transition ${
               activeTab === tab
                 ? 'border border-[#ceaef2] bg-[#faf7fe] text-vendor-charcoal'
@@ -487,17 +414,7 @@ function PurchaseOrdersWorkspace() {
 
       <div className="w-full overflow-hidden rounded-xl border border-[#dcc2f9]/70 bg-white shadow-sm">
         <div className="grid grid-cols-12 items-center gap-4 border-b border-[#dcc2f9]/50 bg-[#faf7fe] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
-          <div className="col-span-1 flex items-center">
-            <input
-              type="checkbox"
-              checked={allSelected}
-              onChange={toggleSelectAll}
-              disabled={loading || selectableIds.length === 0}
-              aria-label="Select all issued orders"
-              className={CHECKBOX_CLASS}
-            />
-          </div>
-          <div className="col-span-2">PO Number</div>
+          <div className="col-span-3">PO Number</div>
           <div className="col-span-2">Hospital</div>
           <div className="col-span-3">Items</div>
           <div className="col-span-1">Date</div>
@@ -516,27 +433,14 @@ function PurchaseOrdersWorkspace() {
             {filteredOrders.map((order, index) => {
               const pending = isVendorActionablePurchaseOrder(order.status);
               const orderTab = purchaseOrderFilterTab(order.status);
-              const isSelected = selectedIds.includes(order.id);
               const total = resolvePurchaseOrderTotal(order as unknown as Record<string, unknown>);
 
               return (
                 <div
                   key={order.id || `${order.po_number}-${index}`}
-                  className={`grid grid-cols-12 items-center gap-4 px-6 py-4 text-sm transition-colors hover:bg-[#faf7fe] ${
-                    isSelected ? 'bg-[#faf7fe]/80' : ''
-                  }`}
+                  className="grid grid-cols-12 items-center gap-4 px-6 py-4 text-sm transition-colors hover:bg-[#faf7fe]"
                 >
-                  <div className="col-span-1 flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleSelectOne(order.id)}
-                      disabled={!pending}
-                      aria-label={`Select ${order.po_number}`}
-                      className={CHECKBOX_CLASS}
-                    />
-                  </div>
-                  <div className="col-span-2 font-semibold text-slate-800">
+                  <div className="col-span-3 font-semibold text-slate-800">
                     {order.po_number || 'PO-PENDING'}
                   </div>
                   <div className="col-span-2">
@@ -571,7 +475,7 @@ function PurchaseOrdersWorkspace() {
                       <>
                         <button
                           type="button"
-                          disabled={updatingId === order.id || bulkBusy}
+                          disabled={updatingId === order.id}
                           onClick={() => void handleAcceptReject(order.id, 'accept')}
                           className="rounded-md bg-vendor-primary px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-vendor-secondary disabled:opacity-50"
                         >
@@ -579,7 +483,7 @@ function PurchaseOrdersWorkspace() {
                         </button>
                         <button
                           type="button"
-                          disabled={updatingId === order.id || bulkBusy}
+                          disabled={updatingId === order.id}
                           onClick={() => void handleAcceptReject(order.id, 'reject')}
                           className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
                         >
@@ -589,7 +493,7 @@ function PurchaseOrdersWorkspace() {
                     ) : orderTab === 'ACCEPTED' ? (
                       <button
                         type="button"
-                        disabled={updatingId === order.id || bulkBusy}
+                        disabled={updatingId === order.id}
                         onClick={() => void handleUpdateStatus(order.id, 'DISPATCHED')}
                         className="rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
                       >

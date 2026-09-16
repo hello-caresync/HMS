@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { BookAppointmentModal } from '@/components/patient/BookAppointmentModal';
@@ -18,16 +19,124 @@ import {
 import {
   Calendar,
   Clock,
-  User,
-  Stethoscope,
-  Building2,
-  Ticket,
-  Plus,
-  RotateCw,
+  Download,
   FileText,
   Loader2,
+  Plus,
+  RotateCw,
+  Stethoscope,
+  Ticket,
   Activity,
 } from 'lucide-react';
+
+const cardClass = 'rounded-xl border border-[#EADBCE] bg-white p-5 shadow-xs';
+
+function tokenProgress(status?: string): number {
+  const value = (status || 'WAITING').toUpperCase();
+  if (value.includes('COMPLET') || value.includes('DONE')) return 100;
+  if (value.includes('CONSULT') || value.includes('IN')) return 75;
+  if (value.includes('READY') || value.includes('CALLED')) return 55;
+  return 30;
+}
+
+function AppointmentCard({
+  appt,
+  variant,
+}: {
+  appt: MyAppointmentRecord;
+  variant: 'upcoming' | 'past';
+}) {
+  const progress = tokenProgress(appt.queue_status);
+  const tokenLabel =
+    typeof appt.token_number === 'string' && appt.token_number.startsWith('T-')
+      ? appt.token_number
+      : `#${appt.token_number || '—'}`;
+
+  return (
+    <article className={`${cardClass} space-y-3`}>
+      <div className="flex items-center justify-between gap-2 border-b border-[#F3ECE4] pb-3">
+        <span className="flex items-center gap-1.5 text-xs font-bold text-[#7C5C48]">
+          <Ticket className="h-3.5 w-3.5 text-[#8C5A3C]" />
+          Token {tokenLabel}
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full border border-[#EADBCE] bg-[#FAF6F0] px-2 py-0.5 text-[10px] font-bold uppercase text-[#6F4E37]">
+          <Activity className="h-3 w-3" />
+          {appt.queue_status || 'WAITING'}
+        </span>
+      </div>
+
+      {variant === 'upcoming' ? (
+        <div>
+          <div className="mb-1 flex justify-between text-[10px] font-semibold text-[#7C5C48]">
+            <span>Queue progress</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-[#FAF6F0]">
+            <div
+              className="h-full rounded-full bg-[#8C5A3C] transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="mt-1 text-[10px] text-[#7C5C48]">Consultation Room · OPD Block A</p>
+        </div>
+      ) : null}
+
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8C5A3C] text-xs font-bold text-white">
+          {appt.doctor_name ? appt.doctor_name.replace(/^Dr\.?\s*/i, '').charAt(0) : 'D'}
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-sm font-bold text-[#2B1810]">{appt.doctor_name}</h3>
+          <p className="flex items-center gap-1 text-xs font-medium text-[#8C5A3C]">
+            <Stethoscope className="h-3 w-3" />
+            {appt.department} OPD
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-3 text-xs font-medium text-[#7C5C48]">
+        <span className="inline-flex items-center gap-1">
+          <Calendar className="h-3.5 w-3.5 text-[#8C5A3C]" />
+          {appt.appointment_date}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Clock className="h-3.5 w-3.5 text-[#8C5A3C]" />
+          {appt.slot_time}
+        </span>
+        {appt.fee ? (
+          <span className="rounded-md bg-[#FAF6F0] px-2 py-0.5 text-[11px] font-bold text-[#2B1810]">
+            {appt.fee}
+          </span>
+        ) : null}
+      </div>
+
+      {appt.reason ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+          <span className="font-bold">Reason:</span> {appt.reason}
+        </p>
+      ) : null}
+
+      {variant === 'past' ? (
+        <div className="flex flex-wrap gap-2 border-t border-[#F3ECE4] pt-3">
+          <Link
+            href="/patient/prescriptions"
+            className="inline-flex items-center gap-1 rounded-lg border border-[#EADBCE] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#7F5539] hover:bg-[#FAF6F0]"
+          >
+            <FileText className="h-3 w-3" />
+            View Rx
+          </Link>
+          <Link
+            href="/patient/billing"
+            className="inline-flex items-center gap-1 rounded-lg border border-[#EADBCE] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#7F5539] hover:bg-[#FAF6F0]"
+          >
+            <Download className="h-3 w-3" />
+            Download Receipt
+          </Link>
+        </div>
+      ) : null}
+    </article>
+  );
+}
 
 export default function MyAppointmentsPage() {
   const router = useRouter();
@@ -126,11 +235,22 @@ export default function MyAppointmentsPage() {
     };
   }, [fetchAppointments, sessionChecked]);
 
+  const today = new Date().toISOString().split('T')[0];
+  const { upcoming, past } = useMemo(() => {
+    const up: MyAppointmentRecord[] = [];
+    const hist: MyAppointmentRecord[] = [];
+    for (const appt of appointments) {
+      if (appt.appointment_date >= today) up.push(appt);
+      else hist.push(appt);
+    }
+    return { upcoming: up, past: hist };
+  }, [appointments, today]);
+
   if (!sessionChecked) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-3xl bg-white border border-[#D5E8E3]">
-        <div className="flex items-center gap-2 text-xs font-black text-[#113831]">
-          <Loader2 className="h-5 w-5 animate-spin text-[#227B6B]" />
+      <div className="mx-auto flex h-64 max-w-7xl items-center justify-center rounded-xl border border-[#EADBCE] bg-white">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#7C5C48]">
+          <Loader2 className="h-5 w-5 animate-spin text-[#8C5A3C]" />
           Verifying your secure session...
         </div>
       </div>
@@ -140,136 +260,99 @@ export default function MyAppointmentsPage() {
   const portalSession = readPatientPortalSession();
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 font-sans text-[#0E2924]">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#D5E8E3] pb-4">
+    <div className="mx-auto max-w-7xl space-y-4 px-4 py-6 font-sans text-[#2B1810] md:px-8">
+      <div className="flex flex-col gap-3 border-b border-[#EADBCE] pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#0E2924]">My OPD Consultations</h1>
-          <p className="text-xs font-bold text-[#227B6B]">
-            Showing {appointments.length} private consultation
-            {appointments.length === 1 ? '' : 's'} for your verified account only.
+          <h1 className="text-xl font-bold text-[#2B1810]">My OPD Consultations</h1>
+          <p className="mt-0.5 text-xs text-[#7C5C48]">
+            Facility:{' '}
+            <span className="font-semibold text-[#8C5A3C]">HOSP-01 (Bengaluru)</span>
+            {' · '}
+            {appointments.length} private consultation{appointments.length === 1 ? '' : 's'} on record
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => void fetchAppointments()}
-            className="flex items-center gap-2 rounded-2xl border border-[#D5E8E3] bg-white px-4 py-3 text-xs font-black text-[#113831] hover:bg-[#EAF5F2] transition shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#EADBCE] bg-white px-3 py-2 text-xs font-semibold text-[#7F5539] hover:bg-[#FAF6F0]"
           >
-            <RotateCw className="h-4 w-4 text-[#227B6B]" /> Refresh
+            <RotateCw className="h-3.5 w-3.5" />
+            Refresh
           </button>
-
           <button
+            type="button"
             onClick={() => setIsBookingModalOpen(true)}
-            className="flex items-center gap-2 rounded-2xl bg-[#113831] px-5 py-3 text-xs font-black text-white hover:bg-[#227B6B] transition shadow-md"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#8C5A3C] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#6F4E37]"
           >
-            <Plus className="h-4 w-4 text-[#A6E2D8]" /> Book New OPD
+            <Plus className="h-3.5 w-3.5" />
+            Book New OPD
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex h-64 items-center justify-center rounded-3xl bg-white border border-[#D5E8E3]">
-          <div className="flex items-center gap-2 text-xs font-black text-[#113831]">
-            <Loader2 className="h-5 w-5 animate-spin text-[#227B6B]" />
+        <div className="flex h-48 items-center justify-center rounded-xl border border-[#EADBCE] bg-white">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#7C5C48]">
+            <Loader2 className="h-5 w-5 animate-spin text-[#8C5A3C]" />
             Loading your private consultations...
           </div>
         </div>
       ) : appointments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-[#D5E8E3] bg-white p-12 text-center space-y-4 shadow-sm">
-          <Calendar className="h-12 w-12 text-[#227B6B]/40" />
-          <h3 className="text-base font-black text-[#0E2924]">No Booked Consultations Found</h3>
-          <p className="text-xs font-bold text-slate-500 max-w-sm">
-            You haven&apos;t scheduled any OPD appointments yet. Pick a clinician from the directory to generate a live SmartQ token.
+        <div className={`${cardClass} flex flex-col items-center py-10 text-center`}>
+          <Calendar className="mb-3 h-10 w-10 text-[#EADBCE]" />
+          <h3 className="text-sm font-bold text-[#2B1810]">No Booked Consultations Found</h3>
+          <p className="mt-1 max-w-sm text-xs text-[#7C5C48]">
+            Pick a clinician from the directory to generate a live SmartQ token.
           </p>
           <button
+            type="button"
             onClick={() => setIsBookingModalOpen(true)}
-            className="flex items-center gap-2 rounded-2xl bg-[#113831] px-6 py-3.5 text-xs font-black text-white shadow-md hover:bg-[#227B6B] transition"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#8C5A3C] px-4 py-2 text-xs font-bold text-white hover:bg-[#6F4E37]"
           >
             Book Consultation
           </button>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
-          {appointments.map((appt) => (
-            <div
-              key={resolveAppointmentRecordKey(appt)}
-              className="rounded-3xl border border-[#D5E8E3] bg-white p-6 shadow-sm space-y-5 hover:border-[#113831] transition flex flex-col justify-between"
-            >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-[#EAF5F2] pb-3">
-                  <div className="flex items-center gap-2 text-[#113831]">
-                    <Ticket className="h-4 w-4 text-[#227B6B]" />
-                    <span className="text-xs font-black">
-                      SmartQ Token:{' '}
-                      <span className="text-sm font-black text-[#227B6B]">
-                        {typeof appt.token_number === 'string' && appt.token_number.startsWith('T-')
-                          ? appt.token_number
-                          : `#${appt.token_number || '—'}`}
-                      </span>
-                    </span>
-                  </div>
-
-                  <span className="flex items-center gap-1 rounded-full bg-[#EAF5F2] px-3 py-1 text-[10px] font-black text-[#113831] border border-[#227B6B]/20 uppercase">
-                    <Activity className="h-3 w-3 text-[#227B6B]" /> {appt.queue_status || 'WAITING'}
-                  </span>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#113831] text-white font-black text-sm shrink-0 shadow-sm">
-                    {appt.doctor_name ? appt.doctor_name.replace('Dr. ', '').charAt(0) : 'D'}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-[#0E2924]">{appt.doctor_name}</h3>
-                    <p className="text-xs font-bold text-[#227B6B] flex items-center gap-1">
-                      <Stethoscope className="h-3.5 w-3.5" /> {appt.department} OPD
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs font-semibold bg-[#F4F8F7] p-3.5 rounded-2xl border border-[#D5E8E3]">
-                  <div>
-                    <span className="text-[10px] uppercase text-[#227B6B] font-black block">PATIENT NAME</span>
-                    <span className="font-bold text-[#0E2924] flex items-center gap-1 truncate">
-                      <User className="h-3 w-3 text-[#227B6B] shrink-0" /> {appt.patient_name}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase text-[#227B6B] font-black block">FACILITY</span>
-                    <span className="font-bold text-[#0E2924] flex items-center gap-1 truncate">
-                      <Building2 className="h-3 w-3 text-[#227B6B] shrink-0" />{' '}
-                      {appt.hospital_name || 'Regal Hospital'}
-                    </span>
-                  </div>
-                </div>
-
-                {appt.reason ? (
-                  <div className="text-xs bg-amber-50/70 p-3 rounded-2xl border border-amber-200/70">
-                    <span className="text-[10px] uppercase text-amber-800 font-black flex items-center gap-1 mb-0.5">
-                      <FileText className="h-3 w-3" /> Reason for Visit
-                    </span>
-                    <p className="font-bold text-amber-950">{appt.reason}</p>
-                  </div>
-                ) : null}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <section className="space-y-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-stone-600">
+              Upcoming Confirmed OPD
+            </h2>
+            {upcoming.length === 0 ? (
+              <div className={`${cardClass} text-xs text-[#7C5C48]`}>
+                No upcoming visits scheduled. Book an OPD slot to receive your live queue token.
               </div>
+            ) : (
+              upcoming.map((appt) => (
+                <AppointmentCard
+                  key={resolveAppointmentRecordKey(appt)}
+                  appt={appt}
+                  variant="upcoming"
+                />
+              ))
+            )}
+          </section>
 
-              <div className="flex items-center justify-between border-t border-[#EAF5F2] pt-4 text-xs font-bold">
-                <div className="flex items-center gap-3 text-[#0E2924]">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5 text-[#227B6B]" /> {appt.appointment_date}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5 text-[#227B6B]" /> {appt.slot_time}
-                  </span>
-                </div>
-
-                {appt.fee ? (
-                  <span className="rounded-xl bg-[#113831] px-3 py-1.5 text-xs font-black text-white shadow-sm">
-                    {appt.fee}
-                  </span>
-                ) : null}
+          <section className="space-y-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-stone-600">
+              Historical Visits
+            </h2>
+            {past.length === 0 ? (
+              <div className={`${cardClass} text-xs text-[#7C5C48]`}>
+                Past consultations will appear here after your visit date passes.
               </div>
-            </div>
-          ))}
+            ) : (
+              past.map((appt) => (
+                <AppointmentCard
+                  key={resolveAppointmentRecordKey(appt)}
+                  appt={appt}
+                  variant="past"
+                />
+              ))
+            )}
+          </section>
         </div>
       )}
 

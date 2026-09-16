@@ -2,13 +2,13 @@
 
 export const portalSurfaces = {
   patient: {
-    page: 'bg-[#F4F8F7]',
-    card: 'bg-[#FAFCFB] border-[#D5E8E3]',
-    empty: 'bg-[#F4FAF8] border-[#D5E8E3]',
-    accent: '#113831',
-    accentSoft: '#227B6B',
-    btnPrimary: 'bg-[#113831] text-white hover:bg-[#227B6B]',
-    btnSecondary: 'border border-[#D5E8E3] bg-[#FAFCFB] text-[#113831] hover:bg-[#EAF5F2]',
+    page: 'bg-[#FAF6F0]',
+    card: 'bg-white border-[#EBDCCB]',
+    empty: 'bg-[#FDFBF7] border-[#EADBCE]',
+    accent: '#8C5A3C',
+    accentSoft: '#DDB892',
+    btnPrimary: 'bg-[#8C5A3C] text-white hover:bg-[#6F4228]',
+    btnSecondary: 'border border-[#EADBCE] bg-[#FDFBF7] text-[#5C3826] hover:bg-[#F3ECE4]',
   },
   doctor: {
     page: 'bg-[#F4F9F8]',
