@@ -91,10 +91,10 @@ const PORTAL_ROLES: PortalCard[] = [
       'Access hospital requisitions, batch shipment orders, and invoice clearance logs.',
     badge: 'PARTNERS',
     href: '/vendor/login',
-    badgeColor: 'bg-orange-100/70 text-orange-800 border-orange-300/60',
-    accentHover: 'hover:border-orange-400 hover:shadow-orange-500/10',
-    iconBg: 'bg-orange-100',
-    iconColor: 'text-orange-700',
+    badgeColor: 'bg-[#dcc2f9]/70 text-[#3b1466] border-[#ceaef2]/60',
+    accentHover: 'hover:border-[#a36fdb] hover:shadow-[#6a38a0]/10',
+    iconBg: 'bg-[#dcc2f9]/80',
+    iconColor: 'text-[#6a38a0]',
     icon: Truck,
   },
 ];
@@ -147,7 +147,7 @@ function PortalCardLink({
 
 export default function WorkspacePortalSelector() {
   return (
-    <main className="relative flex h-screen max-h-screen w-screen flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-50 via-teal-50/30 to-emerald-50/40 p-4 font-sans select-none sm:p-6 lg:px-12">
+    <main className="relative flex h-screen max-h-screen w-full flex-col justify-between overflow-hidden overscroll-none bg-gradient-to-br from-slate-50 via-teal-50/30 to-emerald-50/40 p-4 font-sans select-none sm:p-6 lg:px-12">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-teal-200/40 blur-[100px]" />
         <div className="absolute top-1/4 -right-24 h-96 w-96 rounded-full bg-emerald-200/40 blur-[110px]" />

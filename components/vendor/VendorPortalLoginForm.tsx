@@ -79,14 +79,14 @@ export function VendorPortalLoginForm({
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-orange-50 p-6 font-sans">
-      <div className="w-full max-w-md rounded-3xl border border-orange-200 bg-white p-8 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center p-6 font-sans">
+      <div className="w-full max-w-md rounded-3xl border border-[#dcc2f9]/70 bg-white p-8 shadow-xl">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 text-orange-700">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dcc2f9]/60 text-[#6a38a0]">
             <Truck className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-black text-slate-900">Vendor Portal</h1>
-          <p className="mt-1 text-xs text-slate-500">Hospital supply chain partner access</p>
+          <h1 className="text-2xl font-black text-[#2e1053]">Vendor Portal</h1>
+          <p className="mt-1 text-xs text-[#684594]">Hospital supply chain partner access</p>
         </div>
 
         {error ? (
@@ -110,7 +110,7 @@ export function VendorPortalLoginForm({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="vendor@supplier.com"
-                className="w-full rounded-xl border border-slate-200 py-3 pr-3 pl-10 text-sm outline-none focus:border-orange-400"
+                className="w-full rounded-xl border border-[#dcc2f9]/70 py-3 pr-3 pl-10 text-sm outline-none focus:border-[#6a38a0] focus:ring-2 focus:ring-[#6a38a0]/20"
               />
             </div>
           </div>
@@ -127,7 +127,7 @@ export function VendorPortalLoginForm({
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
                 placeholder="Enter your portal PIN"
-                className="w-full rounded-xl border border-slate-200 py-3 pr-10 pl-10 text-sm outline-none focus:border-orange-400"
+                className="w-full rounded-xl border border-[#dcc2f9]/70 py-3 pr-10 pl-10 text-sm outline-none focus:border-[#6a38a0] focus:ring-2 focus:ring-[#6a38a0]/20"
               />
               <button
                 type="button"
@@ -142,7 +142,7 @@ export function VendorPortalLoginForm({
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 py-3 text-sm font-bold text-white hover:bg-orange-500 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#6a38a0] py-3 text-sm font-bold text-white hover:bg-[#a36fdb] disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Enter Vendor Workspace

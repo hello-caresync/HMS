@@ -220,12 +220,12 @@ export function ShipmentsDeliveriesWorkspace() {
           </div>
           <div className="mt-1 text-2xl font-black text-indigo-900">{inTransitCount}</div>
         </div>
-        <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3">
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+        <div className="rounded-2xl border border-[#dcc2f9]/50 bg-[#faf7fe]/80 px-4 py-3">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-vendor-muted">
             <Plus className="h-3.5 w-3.5" />
             Ready to Dispatch
           </div>
-          <div className="mt-1 text-2xl font-black text-amber-900">{readyCount}</div>
+          <div className="mt-1 text-2xl font-black text-vendor-charcoal">{readyCount}</div>
         </div>
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3">
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
@@ -236,8 +236,8 @@ export function ShipmentsDeliveriesWorkspace() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-amber-200/70 bg-white shadow-sm">
-        <div className="grid grid-cols-12 items-center gap-4 border-b border-amber-100 bg-[#FFF9ED] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
+      <div className="overflow-hidden rounded-xl border border-[#dcc2f9]/70 bg-white shadow-sm">
+        <div className="grid grid-cols-12 items-center gap-4 border-b border-[#dcc2f9]/50 bg-[#faf7fe] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
           <div className="col-span-2">Consignment / PO</div>
           <div className="col-span-2">Destination Hospital</div>
           <div className="col-span-3">Consignment Items</div>
@@ -249,7 +249,7 @@ export function ShipmentsDeliveriesWorkspace() {
 
         {loading ? (
           <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500">
-            <RefreshCw className="h-5 w-5 animate-spin text-amber-500" aria-hidden />
+            <RefreshCw className="h-5 w-5 animate-spin text-vendor-primary" aria-hidden />
             Loading shipments & deliveries…
           </div>
         ) : orders.length === 0 ? (
@@ -257,7 +257,7 @@ export function ShipmentsDeliveriesWorkspace() {
             No active consignments yet. Accepted or dispatched purchase orders will appear here.
           </div>
         ) : (
-          <div className="divide-y divide-amber-100/60">
+          <div className="divide-y divide-[#dcc2f9]/40">
             {orders.map((order, index) => {
               const total = resolvePurchaseOrderTotal(order as unknown as Record<string, unknown>);
               const status = String(order.status ?? '')
@@ -276,7 +276,7 @@ export function ShipmentsDeliveriesWorkspace() {
               return (
                 <div
                   key={order.id || `${order.po_number}-${index}`}
-                  className="grid grid-cols-12 items-center gap-4 px-6 py-4 text-sm transition-colors hover:bg-amber-50/40"
+                  className="grid grid-cols-12 items-center gap-4 px-6 py-4 text-sm transition-colors hover:bg-[#faf7fe]"
                 >
                   <div className="col-span-2 font-semibold text-slate-800">
                     {order.po_number || 'PO-PENDING'}
@@ -317,7 +317,7 @@ export function ShipmentsDeliveriesWorkspace() {
                         type="button"
                         disabled={updatingId === order.id || dispatchBusy}
                         onClick={() => openDispatchModal(order)}
-                        className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-600 disabled:opacity-50"
+                        className="rounded-lg bg-vendor-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-vendor-secondary disabled:opacity-50"
                       >
                         Dispatch Now
                       </button>
@@ -436,7 +436,7 @@ export function ShipmentsDeliveriesWorkspace() {
               <button
                 type="submit"
                 disabled={dispatchBusy || !dispatchForm.po_id}
-                className="rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                className="rounded-lg bg-vendor-primary px-5 py-2 text-xs font-semibold text-white disabled:opacity-60"
               >
                 {dispatchBusy ? 'Dispatching…' : 'Confirm Dispatch'}
               </button>

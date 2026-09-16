@@ -223,8 +223,8 @@ function DeliveriesWorkspace() {
           No shipments match the selected lifecycle stage.
         </p>
       ) : (
-        <div className="w-full overflow-hidden rounded-xl border border-amber-200/70 bg-white shadow-sm">
-          <div className="grid grid-cols-12 items-center gap-3 border-b border-amber-100 bg-[#FFF9ED] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
+        <div className="w-full overflow-hidden rounded-xl border border-[#dcc2f9]/70 bg-white shadow-sm">
+          <div className="grid grid-cols-12 items-center gap-3 border-b border-[#dcc2f9]/50 bg-[#faf7fe] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
             <div className="col-span-2">Tracking</div>
             <div className="col-span-3">Purchase Order</div>
             <div className="col-span-2">Carrier</div>
@@ -234,7 +234,7 @@ function DeliveriesWorkspace() {
             <div className="col-span-1 text-right">Action</div>
           </div>
 
-          <div className="divide-y divide-amber-100/60">
+          <div className="divide-y divide-[#dcc2f9]/40">
             {visibleShipments.map((s, index) => {
               const inTransit = s.status.toUpperCase() === 'IN_TRANSIT';
               return (

@@ -264,8 +264,8 @@ export default function VendorPortalDashboard() {
 
   if (!currentVendor) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center bg-amber-50/20">
-        <div className="animate-pulse font-mono text-xs text-gray-500">Authenticating vendor session...</div>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="animate-pulse font-mono text-xs text-vendor-muted">Authenticating vendor session...</div>
       </div>
     );
   }
@@ -283,10 +283,10 @@ export default function VendorPortalDashboard() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">Vendor Dashboard</h1>
-          <p className="mt-0.5 text-xs text-gray-500">
+          <h1 className="text-2xl font-black tracking-tight text-vendor-charcoal">Vendor Dashboard</h1>
+          <p className="mt-0.5 text-xs text-vendor-muted">
             Live procurement sync for vendor{' '}
-            <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">
+            <span className="font-mono font-semibold text-vendor-primary">
               {vendorLabel} ({vendorEmailLabel})
             </span>{' '}
             across partner hospitals.
@@ -297,30 +297,30 @@ export default function VendorPortalDashboard() {
           type="button"
           onClick={() => void fetchVendorOrders({ silent: false })}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-xs transition-all hover:bg-gray-50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-200 dark:hover:bg-zinc-700"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[#dcc2f9]/70 bg-white px-3 py-1.5 text-xs font-semibold text-vendor-charcoal shadow-xs transition-all hover:bg-[#faf7fe] disabled:opacity-60"
         >
-          <RefreshCw className={`h-3.5 w-3.5 text-amber-600 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3.5 w-3.5 text-vendor-primary ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl border border-amber-200/60 bg-amber-50/60 p-5 dark:border-amber-900/40 dark:bg-amber-950/20">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400">
+        <div className="rounded-3xl border border-[#dcc2f9]/70 bg-white p-5 shadow-sm">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-vendor-primary">
             Pending POs
           </span>
-          <div className="mt-2 text-3xl font-black text-amber-950 dark:text-amber-200">{pendingCount}</div>
-          <span className="mt-1 block font-mono text-[11px] text-amber-700/80 dark:text-amber-400/80">
+          <div className="mt-2 text-3xl font-black text-vendor-charcoal">{pendingCount}</div>
+          <span className="mt-1 block font-mono text-[11px] text-vendor-muted">
             {PROCUREMENT_PO_TABLE} · pending vendor action
           </span>
         </div>
 
-        <div className="rounded-3xl border border-orange-200/60 bg-orange-50/60 p-5 dark:border-orange-900/40 dark:bg-orange-950/20">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-orange-800 dark:text-orange-400">
+        <div className="rounded-3xl border border-[#dcc2f9]/70 bg-[#faf7fe] p-5 shadow-sm">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-vendor-secondary">
             Active Shipments
           </span>
-          <div className="mt-2 text-3xl font-black text-orange-950 dark:text-orange-200">{activeShipmentsCount}</div>
-          <span className="mt-1 block font-mono text-[11px] text-orange-700/80 dark:text-orange-400/80">
+          <div className="mt-2 text-3xl font-black text-vendor-charcoal">{activeShipmentsCount}</div>
+          <span className="mt-1 block font-mono text-[11px] text-vendor-muted">
             shipments · IN_TRANSIT
           </span>
         </div>
@@ -338,9 +338,9 @@ export default function VendorPortalDashboard() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mb-4 border-b border-gray-100 pb-4 dark:border-zinc-800">
-          <h3 className="text-sm font-black uppercase tracking-wider text-gray-900 dark:text-white">
+      <div className="rounded-3xl border border-[#dcc2f9]/70 bg-white p-6 shadow-sm">
+        <div className="mb-4 border-b border-[#dcc2f9]/50 pb-4">
+          <h3 className="text-sm font-black uppercase tracking-wider text-vendor-charcoal">
             Latest Incoming Orders
           </h3>
           <p className="text-[11px] text-gray-400">Most recent purchase orders · accept or reject inline.</p>
@@ -361,7 +361,7 @@ export default function VendorPortalDashboard() {
               return (
                 <div
                   key={order.id || order.po_number}
-                  className="flex flex-col justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50/40 p-4 transition-all hover:border-amber-200 md:flex-row md:items-center dark:border-zinc-800 dark:bg-zinc-800/30 dark:hover:border-amber-900/50"
+                  className="flex flex-col justify-between gap-4 rounded-2xl border border-[#dcc2f9]/50 bg-[#faf7fe]/60 p-4 transition-all hover:border-vendor-secondary md:flex-row md:items-center"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -400,7 +400,7 @@ export default function VendorPortalDashboard() {
                           type="button"
                           disabled={busyOrderId === order.id}
                           onClick={() => void handleUpdateOrderStatus(order, 'accept')}
-                          className="rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-amber-600 disabled:opacity-60"
+                          className="rounded-xl bg-vendor-primary px-3 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-vendor-secondary disabled:opacity-60"
                         >
                           {busyOrderId === order.id ? '…' : 'Accept'}
                         </button>

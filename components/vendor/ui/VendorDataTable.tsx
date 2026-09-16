@@ -30,8 +30,8 @@ export function VendorDataTable<T>({
 
   if (loading) {
     return (
-      <div className="animate-pulse rounded-xl border border-[#F4A261]/20 bg-white p-8">
-        <div className="h-4 w-1/3 rounded bg-[#F4A261]/20" />
+      <div className="animate-pulse rounded-xl border border-[#dcc2f9]/70 bg-white p-8">
+        <div className="h-4 w-1/3 rounded bg-vendor-accent/30" />
       </div>
     );
   }
@@ -39,11 +39,11 @@ export function VendorDataTable<T>({
   const cellPy = dense ? 'py-2' : 'py-3';
 
   return (
-    <div className="w-full overflow-hidden rounded-xl border border-[#F4A261]/20 bg-white shadow-sm">
+    <div className="w-full overflow-hidden rounded-xl border border-[#dcc2f9]/70 bg-white shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse text-left text-sm">
           <thead>
-            <tr className="border-b border-[#F4A261]/20 bg-[#FFF7E8] text-[10px] font-bold uppercase tracking-wider text-[#2B2B2B]/70">
+            <tr className="border-b border-[#dcc2f9]/70 bg-[#faf7fe] text-[10px] font-bold uppercase tracking-wider text-vendor-muted">
               {columns.map((col) => (
                 <th
                   key={col.key}
@@ -54,12 +54,12 @@ export function VendorDataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#F4A261]/10 text-[#2B2B2B]">
+          <tbody className="divide-y divide-[#dcc2f9]/40 text-vendor-charcoal">
             {safeRows.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-8 text-center text-xs text-gray-500"
+                  className="px-4 py-8 text-center text-xs text-vendor-muted"
                 >
                   {emptyMessage}
                 </td>
@@ -68,7 +68,7 @@ export function VendorDataTable<T>({
               safeRows.map((row) => (
                 <tr
                   key={rowKey(row)}
-                  className="transition-colors hover:bg-[#FFF7E8]/50"
+                  className="transition-colors hover:bg-[#faf7fe]/80"
                 >
                   {columns.map((col) => (
                     <td
@@ -79,7 +79,7 @@ export function VendorDataTable<T>({
                     >
                       {col.render
                         ? col.render(row)
-                        : (row as Record<string, any>)[col.key] ?? '—'}
+                        : String((row as Record<string, unknown>)[col.key] ?? '—')}
                     </td>
                   ))}
                 </tr>
@@ -91,6 +91,3 @@ export function VendorDataTable<T>({
     </div>
   );
 }
-
-// Export as default as well so both import styles work seamlessly
-export default VendorDataTable;

@@ -54,7 +54,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
   if (isAuthRoute(pathname)) {
     return (
       <PatientAuthProvider>
-        {children}
+        <div className="min-h-screen w-full overscroll-none bg-slate-50">{children}</div>
         <Toaster position="top-right" closeButton />
       </PatientAuthProvider>
     );
@@ -63,7 +63,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
   if (!hydrated) {
     return (
       <PatientAuthProvider>
-        <div className="flex min-h-screen items-center justify-center bg-[#F4F8F7]">
+        <div className="flex min-h-screen w-full items-center justify-center overscroll-none bg-[#F4F8F7]">
           <div className="flex items-center gap-3 rounded-2xl bg-[#113831] px-6 py-4 text-white shadow-xl">
             <Loader2 className="h-5 w-5 animate-spin text-[#EAF5F2]" />
             <span className="text-xs font-black">Connecting to Patient Workspace…</span>
@@ -75,10 +75,10 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
 
   return (
     <PatientAuthProvider>
-      <div className="flex min-h-screen bg-[#F4F8F7] font-sans text-[#0E2924]">
+      <div className="flex min-h-screen w-full overscroll-none bg-[#F4F8F7] font-sans text-[#0E2924]">
       <PatientSidebar patientName={patientName} onLogout={handleLogout} />
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto md:ml-64">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain md:ml-64">
         <header className="bg-white border-b border-gray-100 py-3 px-6 shadow-xs sticky top-0 z-40">
           <div className="flex items-center justify-between">
             <div className="flex min-w-0 items-center gap-3">

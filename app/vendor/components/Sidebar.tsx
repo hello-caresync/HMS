@@ -20,9 +20,9 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   ];
 
   return (
-    <aside className="hidden md:flex w-64 bg-[#4A5D5E] border-r border-slate-200 flex flex-col shrink-0 h-full z-50 shadow-md">
+    <aside className="hidden md:flex w-64 bg-[#3b1466] border-r border-[#dcc2f9]/40 flex flex-col shrink-0 h-full z-50 shadow-md">
       <div className="p-6 border-b border-white/10 flex items-center gap-3">
-        <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center font-black text-white text-sm">CS</div>
+        <div className="h-8 w-8 rounded-lg bg-[#6a38a0]/40 flex items-center justify-center font-black text-[#ceaef2] text-sm">CS</div>
         <h2 className="text-base font-black tracking-tight text-white leading-none">CuraSync</h2>
       </div>
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto no-scrollbar">
@@ -31,7 +31,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             key={link.id}
             onClick={() => setActiveTab(link.id)}
             className={`w-full flex items-center px-4 py-3 text-xs font-bold rounded-xl transition-all cursor-pointer text-left ${
-              activeTab === link.id ? 'bg-white text-[#4A5D5E] shadow-sm' : 'text-slate-100 hover:bg-white/10'
+              activeTab === link.id ? 'bg-[#6a38a0] text-white shadow-sm' : 'text-white/85 hover:bg-white/10'
             }`}
           >
             {link.name}

@@ -18,7 +18,7 @@ export function LifecycleStepper({
   counts = {},
 }: LifecycleStepperProps) {
   return (
-    <div className="flex w-full items-center gap-2 overflow-x-auto rounded-xl border border-amber-200/60 bg-amber-50/40 p-2.5 shadow-sm">
+    <div className="flex w-full items-center gap-2 overflow-x-auto rounded-xl border border-[#dcc2f9]/70 bg-[#faf7fe]/80 p-2.5 shadow-sm">
       {LIFECYCLE_STAGES.map((stage, idx) => {
         const isActive = currentStage === stage.key;
         const count = counts[stage.key] ?? 0;
@@ -30,15 +30,15 @@ export function LifecycleStepper({
               onClick={() => onSelectStage?.(stage.key === currentStage ? 'ALL' : stage.key)}
               className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
                 isActive
-                  ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300'
-                  : 'bg-amber-100/70 text-slate-700 hover:bg-amber-200/80 hover:text-slate-900'
+                  ? 'bg-vendor-primary text-white shadow-sm ring-2 ring-[#ceaef2]'
+                  : 'bg-[#dcc2f9]/50 text-vendor-charcoal hover:bg-[#ceaef2]/40 hover:text-vendor-charcoal'
               }`}
             >
               <span>{stage.label}</span>
               {count > 0 ? (
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-                    isActive ? 'bg-white text-amber-600' : 'bg-amber-300 text-slate-900'
+                    isActive ? 'bg-white/20 text-white' : 'bg-vendor-primary/15 text-vendor-primary'
                   }`}
                 >
                   {count}
@@ -46,7 +46,7 @@ export function LifecycleStepper({
               ) : null}
             </button>
             {idx < LIFECYCLE_STAGES.length - 1 ? (
-              <span className="shrink-0 text-xs font-bold text-amber-400" aria-hidden>
+              <span className="hidden shrink-0 text-[#ceaef2] sm:inline" aria-hidden>
                 →
               </span>
             ) : null}
@@ -56,5 +56,3 @@ export function LifecycleStepper({
     </div>
   );
 }
-
-export default LifecycleStepper;

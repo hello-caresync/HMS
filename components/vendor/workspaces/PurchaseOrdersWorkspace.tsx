@@ -43,7 +43,7 @@ type VendorPortalOrder = PurchaseOrderRow & {
 const FILTER_TABS: FilterTab[] = ['ALL', 'ISSUED', 'ACCEPTED', 'DISPATCHED', 'DELIVERED'];
 
 const CHECKBOX_CLASS =
-  'h-4 w-4 cursor-pointer rounded border-slate-300 text-amber-600 focus:ring-2 focus:ring-amber-500 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50';
+  'h-4 w-4 cursor-pointer rounded border-slate-300 text-vendor-primary focus:ring-2 focus:ring-vendor-primary focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50';
 
 const HOSPITAL_NAME_MAP: Record<string, string> = {
   'a0000000-0000-0000-0000-000000000001': REGAL_HOSPITAL_NAME,
@@ -476,7 +476,7 @@ function PurchaseOrdersWorkspace() {
             }}
             className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold tracking-wide transition ${
               activeTab === tab
-                ? 'border border-amber-300 bg-amber-50 text-amber-800'
+                ? 'border border-[#ceaef2] bg-[#faf7fe] text-vendor-charcoal'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
@@ -485,8 +485,8 @@ function PurchaseOrdersWorkspace() {
         ))}
       </div>
 
-      <div className="w-full overflow-hidden rounded-xl border border-amber-200/70 bg-white shadow-sm">
-        <div className="grid grid-cols-12 items-center gap-4 border-b border-amber-100 bg-[#FFF9ED] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
+      <div className="w-full overflow-hidden rounded-xl border border-[#dcc2f9]/70 bg-white shadow-sm">
+        <div className="grid grid-cols-12 items-center gap-4 border-b border-[#dcc2f9]/50 bg-[#faf7fe] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
           <div className="col-span-1 flex items-center">
             <input
               type="checkbox"
@@ -508,11 +508,11 @@ function PurchaseOrdersWorkspace() {
 
         {loading ? (
           <div className="flex items-center justify-center gap-2 p-10 text-center text-sm font-medium text-slate-500">
-            <RefreshCw className="h-5 w-5 animate-spin text-amber-500" aria-hidden />
+            <RefreshCw className="h-5 w-5 animate-spin text-vendor-primary" aria-hidden />
             Loading purchase orders…
           </div>
         ) : filteredOrders.length > 0 ? (
-          <div className="divide-y divide-amber-100/60">
+          <div className="divide-y divide-[#dcc2f9]/40">
             {filteredOrders.map((order, index) => {
               const pending = isVendorActionablePurchaseOrder(order.status);
               const orderTab = purchaseOrderFilterTab(order.status);
@@ -522,8 +522,8 @@ function PurchaseOrdersWorkspace() {
               return (
                 <div
                   key={order.id || `${order.po_number}-${index}`}
-                  className={`grid grid-cols-12 items-center gap-4 px-6 py-4 text-sm transition-colors hover:bg-amber-50/40 ${
-                    isSelected ? 'bg-amber-50/40' : ''
+                  className={`grid grid-cols-12 items-center gap-4 px-6 py-4 text-sm transition-colors hover:bg-[#faf7fe] ${
+                    isSelected ? 'bg-[#faf7fe]/80' : ''
                   }`}
                 >
                   <div className="col-span-1 flex items-center">
@@ -573,7 +573,7 @@ function PurchaseOrdersWorkspace() {
                           type="button"
                           disabled={updatingId === order.id || bulkBusy}
                           onClick={() => void handleAcceptReject(order.id, 'accept')}
-                          className="rounded-md bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-amber-600 disabled:opacity-50"
+                          className="rounded-md bg-vendor-primary px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-vendor-secondary disabled:opacity-50"
                         >
                           Accept
                         </button>

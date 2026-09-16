@@ -235,12 +235,12 @@ export function BillingPaymentsWorkspace() {
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3">
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+        <div className="rounded-2xl border border-[#dcc2f9]/50 bg-[#faf7fe]/80 px-4 py-3">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-vendor-muted">
             <Receipt className="h-3.5 w-3.5" />
             Awaiting Settlement
           </div>
-          <div className="mt-1 text-2xl font-black text-amber-900">{formatInr(awaitingSettlementTotal)}</div>
+          <div className="mt-1 text-2xl font-black text-vendor-charcoal">{formatInr(awaitingSettlementTotal)}</div>
         </div>
         <div className="rounded-2xl border border-teal-100 bg-teal-50/70 px-4 py-3">
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-teal-700">
@@ -258,8 +258,8 @@ export function BillingPaymentsWorkspace() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-amber-200/70 bg-white shadow-sm">
-        <div className="grid grid-cols-12 items-center gap-4 border-b border-amber-100 bg-[#FFF9ED] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
+      <div className="overflow-hidden rounded-xl border border-[#dcc2f9]/70 bg-white shadow-sm">
+        <div className="grid grid-cols-12 items-center gap-4 border-b border-[#dcc2f9]/50 bg-[#faf7fe] px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
           <div className="col-span-2">Invoice & Date</div>
           <div className="col-span-2">Reference PO</div>
           <div className="col-span-2">Hospital</div>
@@ -271,7 +271,7 @@ export function BillingPaymentsWorkspace() {
 
         {loading ? (
           <div className="flex items-center justify-center gap-2 p-10 text-sm text-slate-500">
-            <RefreshCw className="h-5 w-5 animate-spin text-amber-500" aria-hidden />
+            <RefreshCw className="h-5 w-5 animate-spin text-vendor-primary" aria-hidden />
             Loading billing & payments…
           </div>
         ) : invoices.length === 0 ? (
@@ -279,11 +279,11 @@ export function BillingPaymentsWorkspace() {
             No invoices yet. Mark purchase orders as delivered, then generate an invoice here.
           </div>
         ) : (
-          <div className="divide-y divide-amber-100/60">
+          <div className="divide-y divide-[#dcc2f9]/40">
             {invoices.map((invoice) => (
               <div
                 key={invoice.id || invoice.invoice_number}
-                className="grid grid-cols-12 items-center gap-4 px-6 py-4 text-sm transition-colors hover:bg-amber-50/40"
+                className="grid grid-cols-12 items-center gap-4 px-6 py-4 text-sm transition-colors hover:bg-[#faf7fe]"
               >
                 <div className="col-span-2">
                   <p className="font-semibold text-slate-800">{invoice.invoice_number}</p>

@@ -11,7 +11,7 @@ export default function VendorLoginPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+          <Loader2 className="h-6 w-6 animate-spin text-[#6a38a0]" />
         </div>
       }
     >

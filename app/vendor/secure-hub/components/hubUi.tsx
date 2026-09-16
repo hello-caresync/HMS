@@ -8,16 +8,16 @@ const BADGE_BASE =
   'inline-flex items-center px-2.5 py-0.5 text-[10px] uppercase font-black tracking-wider rounded-md border';
 
 export const inputClassName =
-  'w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold bg-white text-slate-900 shadow-3xs placeholder:text-slate-800 transition-all focus:outline-none focus:border-blue-600';
+  'w-full border border-[#dcc2f9]/70 rounded-xl px-3 py-2 text-xs font-semibold bg-white text-[#2e1053] shadow-3xs placeholder:text-[#684594] transition-all focus:outline-none focus:border-[#6a38a0] focus:ring-2 focus:ring-[#6a38a0]/20';
 
 export const selectClassName =
-  'border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold bg-white text-slate-900 shadow-3xs transition-all focus:outline-none focus:border-blue-600 cursor-pointer';
+  'border border-[#dcc2f9]/70 rounded-xl px-3 py-2 text-xs font-semibold bg-white text-[#2e1053] shadow-3xs transition-all focus:outline-none focus:border-[#6a38a0] cursor-pointer';
 
 export const cardClassName =
-  'relative overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-xs p-5 transition-all hover:shadow-md';
+  'relative overflow-hidden bg-white border border-[#dcc2f9]/70 rounded-2xl shadow-xs p-5 transition-all hover:shadow-md';
 
 export const panelClassName =
-  'bg-white border border-slate-200 rounded-2xl shadow-xs transition-all hover:shadow-md';
+  'bg-white border border-[#dcc2f9]/70 rounded-2xl shadow-xs transition-all hover:shadow-md';
 
 export const nestedPanelClassName =
   'bg-slate-50/70 border border-slate-200 rounded-xl p-4';
@@ -29,10 +29,10 @@ export const sectionTitleClassName =
   'text-base font-black text-slate-800 tracking-tight';
 
 export const btnPrimaryClassName =
-  'inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer active:scale-[0.98]';
+  'inline-flex items-center justify-center bg-[#6a38a0] hover:bg-[#a36fdb] text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer active:scale-[0.98]';
 
 export const btnLogisticsClassName =
-  'inline-flex items-center justify-center bg-[#4A5D5E] hover:bg-slate-800 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer active:scale-[0.98]';
+  'inline-flex items-center justify-center bg-[#3b1466] hover:bg-[#6a38a0] text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer active:scale-[0.98]';
 
 export const btnOutlineClassName =
   'inline-flex items-center justify-center bg-white border border-slate-200 text-slate-800 hover:bg-slate-100 font-black text-xs px-5 py-2.5 rounded-xl shadow-3xs transition-all cursor-pointer active:scale-[0.98]';

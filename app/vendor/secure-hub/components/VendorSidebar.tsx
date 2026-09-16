@@ -14,10 +14,10 @@ type VendorSidebarProps = {
 };
 
 const ACTIVE_NAV_CLASS =
-  'group flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl bg-[#0A4174] px-3 py-2.5 text-left text-sm font-black text-amber-500 shadow-sm transition-all';
+  'group flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl bg-[#6a38a0] px-3 py-2.5 text-left text-sm font-black text-white shadow-sm transition-all';
 
 const INACTIVE_NAV_CLASS =
-  'group flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-800 transition-all hover:bg-[#0A4174]/40 hover:text-amber-500';
+  'group flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-white/80 transition-all hover:bg-white/10 hover:text-white';
 
 export default function VendorSidebar({
   navItems,
@@ -36,12 +36,12 @@ export default function VendorSidebar({
   };
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-slate-800/80 bg-[#0F172A] custom-scrollbar">
-      <div className="border-b border-white/5 px-4 py-4">
-        <p className="text-[11px] font-black uppercase tracking-wider text-slate-800">
+    <aside className="flex h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-[#dcc2f9]/40 bg-[#3b1466] custom-scrollbar">
+      <div className="border-b border-white/10 px-4 py-4">
+        <p className="text-[11px] font-black uppercase tracking-wider text-[#ceaef2]">
           Vendor cockpit
         </p>
-        <p className="mt-1 font-mono text-xs font-black text-slate-950">
+        <p className="mt-1 font-mono text-xs font-black text-white">
           secure-hub / v2
         </p>
       </div>
@@ -61,15 +61,15 @@ export default function VendorSidebar({
                 <span
                   className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
                     isActive
-                      ? 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)]'
-                      : 'bg-slate-600 group-hover:bg-amber-500/70'
+                      ? 'bg-[#ceaef2] shadow-[0_0_6px_rgba(163,111,219,0.8)]'
+                      : 'bg-white/30 group-hover:bg-[#a36fdb]'
                   }`}
                   aria-hidden
                 />
                 <span className="truncate">{item.label}</span>
               </span>
               {showBadge && (
-                <span className="shrink-0 rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 font-mono text-[10px] font-black text-amber-500 tabular-nums">
+                <span className="shrink-0 rounded-full border border-[#ceaef2]/40 bg-[#6a38a0]/30 px-2 py-0.5 font-mono text-[10px] font-black text-[#ceaef2] tabular-nums">
                   {newPoCount}
                 </span>
               )}
@@ -81,11 +81,11 @@ export default function VendorSidebar({
       <div className="shrink-0 space-y-2 border-t border-white/5 p-4">
         <Link
           href={APP_ROUTES.hospital}
-          className="flex w-full items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs font-black text-slate-900 transition-all hover:bg-[#0A4174]/50 hover:text-amber-500"
+          className="flex w-full items-center justify-center rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-xs font-black text-white transition-all hover:bg-[#6a38a0]"
         >
           Open hospital console
         </Link>
-        <p className="text-center font-mono text-[10px] font-black text-slate-800">
+        <p className="text-center font-mono text-[10px] font-black text-white/60">
           node · curasync-vendor
         </p>
       </div>

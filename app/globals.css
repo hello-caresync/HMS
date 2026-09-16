@@ -5,6 +5,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  --canvas-background: #f8fafc;
   --background: #fdf4f2;
   --foreground: #171717;
   --hub-background: #fdf4f2;
@@ -66,14 +67,14 @@
   --color-sidebar-panel: #1e293b;
   --color-obsidian: #0b0f19;
 
-  --color-vendor-primary: #ffb703;
-  --color-vendor-secondary: #f77f00;
-  --color-vendor-cream: #fff7e8;
+  --color-vendor-primary: #6a38a0;
+  --color-vendor-secondary: #a36fdb;
+  --color-vendor-cream: #faf7fe;
   --color-vendor-card: #ffffff;
-  --color-vendor-accent: #f4a261;
-  --color-vendor-charcoal: #2b2b2b;
-  --color-vendor-muted: #6b6b6b;
-  --color-vendor-sidebar: #1e1e1e;
+  --color-vendor-accent: #ceaef2;
+  --color-vendor-charcoal: #2e1053;
+  --color-vendor-muted: #684594;
+  --color-vendor-sidebar: #3b1466;
   --color-vendor-success: #2a9d8f;
   --color-vendor-warning: #d8a657;
   --color-vendor-danger: #e76f51;
@@ -253,8 +254,22 @@
   }
 }
 
+html,
+body,
+#__next {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  background-color: var(--canvas-background);
+}
+
+html {
+  height: 100%;
+}
+
 body {
-  background: var(--hub-background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
