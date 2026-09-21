@@ -12,8 +12,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Nexora ERP',
-  description: 'Hospital enterprise resource planning',
+  title: 'Regal Multispeciality Hospital',
+  description: 'Hospital Management & Patient Care Portal',
 };
 
 export default function RootLayout({

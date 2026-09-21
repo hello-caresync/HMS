@@ -22,7 +22,7 @@ function SystemStatusPill() {
   );
 }
 
-export default function NexoraAdminLogin() {
+export default function RegalAdminLogin() {
   const searchParams = useSearchParams();
   const reducedMotion = useReducedMotion();
   const redirectUrl = getAdminRedirectPath(searchParams.get('redirect'));

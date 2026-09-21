@@ -30,6 +30,7 @@ import {
   resolveCredentialHospitalId,
   resolveStaffPortalAccess,
 } from '@/lib/recordStaffLogin';
+import { LOGIN_FORM_AUTOCOMPLETE } from '@/lib/auth/login-form-security';
 import AuthLoginShell, {
   AuthAlert,
   AuthField,
@@ -187,7 +188,7 @@ export default function StaffLoginForm() {
       activeTagColor={activeMeta.tagColor}
       activeTitle={activeMeta.title}
     >
-      <form onSubmit={handleCredentialsSubmit} className="space-y-5">
+      <form onSubmit={handleCredentialsSubmit} autoComplete={LOGIN_FORM_AUTOCOMPLETE} className="space-y-5">
         {bannerMessage && <AuthAlert tone="info" message={bannerMessage} />}
         {error && <AuthAlert tone="error" message={error} />}
 
@@ -228,7 +229,7 @@ export default function StaffLoginForm() {
           value={identifier}
           onChange={setIdentifier}
           placeholder="Enter work email or staff ID"
-          autoComplete="username"
+          autoComplete="off"
           icon={Mail}
         />
 
@@ -239,7 +240,7 @@ export default function StaffLoginForm() {
           value={password}
           onChange={setPassword}
           placeholder="Enter security passcode"
-          autoComplete="current-password"
+          autoComplete="new-password"
           icon={Lock}
           trailing={
             <button

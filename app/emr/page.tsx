@@ -186,7 +186,7 @@ const SURGERIES: SurgeryRecord[] = [
     id: 'sx-1',
     date: '2022-08-09',
     procedure: 'Appendectomy · laparoscopic',
-    facility: 'Nexora Sandbox Surgical Unit',
+    facility: 'Regal Sandbox Surgical Unit',
   },
 ];
 

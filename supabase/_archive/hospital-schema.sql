@@ -1,4 +1,4 @@
--- Nexora Hospital App · Step 2–3 core tables (run in Supabase SQL editor)
+-- Regal Hospital App · Step 2–3 core tables (run in Supabase SQL editor)
 
 create table if not exists public.patients (
   id uuid primary key default gen_random_uuid(),

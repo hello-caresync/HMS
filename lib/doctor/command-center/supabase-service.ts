@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { enrichRowsWithPatientDemographics } from '@/lib/clinical/enrich-queue-demographics';
+import { resolveRawGenderFromRow } from '@/lib/clinical/format-gender';
 import {
   appointmentBelongsToDoctor,
   getDoctorQueueIdentifiers,
@@ -83,7 +85,7 @@ function mapRowToDoctorQueueItem(row: Record<string, unknown>): DoctorQueueItem 
     patientId: String(row.patient_id ?? row.patientId ?? row.uhid ?? id),
     patientName: String(row.patient_name ?? row.patientName ?? row.name ?? 'Patient'),
     age: (row.age ?? row.patient_age) as number | string | undefined,
-    gender: row.gender ? String(row.gender) : undefined,
+    gender: resolveRawGenderFromRow(row),
     tokenNumber: String(row.token_number ?? row.tokenNumber ?? row.uhid ?? `#${id.slice(-4)}`),
     time:
       slotTime ||
@@ -255,7 +257,21 @@ async function fetchDoctorAppointmentRows(
     return [];
   }
 
-  let query = supabase.from('appointments').select('*').or(orFilter);
+  let query = supabase
+    .from('appointments')
+    .select(
+      `
+      *,
+      patients:patient_id (
+        gender,
+        age,
+        patient_age,
+        date_of_birth,
+        dob
+      )
+    `,
+    )
+    .or(orFilter);
   const today = todayIsoDate();
 
   switch (dateFilter.mode) {
@@ -283,7 +299,15 @@ async function fetchDoctorAppointmentRows(
     return data.map((row) => asRecord(row));
   }
 
-  console.warn('Doctor queue OR filter failed, using client-side doctor match:', error);
+  console.warn('Doctor queue OR filter with patient join failed, retrying plain select:', error);
+
+  const plainJoinRetry = await supabase.from('appointments').select('*').or(orFilter).order('created_at', { ascending: orderAscending });
+
+  if (!plainJoinRetry.error && Array.isArray(plainJoinRetry.data)) {
+    return plainJoinRetry.data.map((row) => asRecord(row));
+  }
+
+  console.warn('Doctor queue OR filter failed, using client-side doctor match:', plainJoinRetry.error ?? error);
 
   const { data: fallbackRows, error: fallbackError } = await supabase
     .from('appointments')
@@ -391,7 +415,7 @@ function mapQueueRow(row: Record<string, unknown>, sourceTable: string): DoctorQ
     phone: row.phone ? String(row.phone) : row.patient_phone ? String(row.patient_phone) : undefined,
     patient_phone: row.patient_phone ? String(row.patient_phone) : row.phone ? String(row.phone) : undefined,
     age: (row.age ?? row.patient_age) as number | string | undefined,
-    gender: row.gender ? String(row.gender) : undefined,
+    gender: resolveRawGenderFromRow(row),
     blood_group: row.blood_group ? String(row.blood_group) : undefined,
     chief_complaint: String(row.chief_complaint ?? row.reason_for_visit ?? ''),
     reason_for_visit: String(row.reason_for_visit ?? row.chief_complaint ?? ''),
@@ -503,12 +527,20 @@ export async function fetchDoctorQueueRows(
     return String(a.created_at || '').localeCompare(String(b.created_at || ''));
   });
 
+  const enrichedQueue = await enrichRowsWithPatientDemographics(
+    supabase,
+    uniqueQueue.map((row) => ({
+      ...row,
+      patientId: row.patient_id ? String(row.patient_id) : undefined,
+    })),
+  );
+
   writeLocalJson(CACHE_KEYS.doctorQueue, {
     doctorId: session.doctorId,
-    appointments: uniqueQueue,
+    appointments: enrichedQueue,
   });
 
-  return uniqueQueue;
+  return enrichedQueue;
 }
 
 export const DEFAULT_ACTIVE_DOCTOR_ID = 'RH-D01';
@@ -629,7 +661,7 @@ export async function fetchConsultationAppointmentContext(
         appointment_id: String(row.id ?? row.appointment_id ?? appointmentId),
         patient_id: row.patient_id ? String(row.patient_id) : null,
         patient_name: String(row.patient_name ?? row.name ?? 'Patient'),
-        patient_gender: row.gender ? String(row.gender) : null,
+        patient_gender: resolveRawGenderFromRow(row) ?? null,
         patient_age: (row.age ?? row.patient_age) as number | string | null,
         blood_group: row.blood_group ? String(row.blood_group) : null,
         reason: String(row.chief_complaint ?? row.reason_for_visit ?? ''),

@@ -1,7 +1,7 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import CommunicationWorkspace from '@/components/vendor/workspaces/CommunicationWorkspace';
+import { VENDOR_PORTAL_ROUTES } from '@/lib/vendor/navigation';
 
-export default function VendorCommunicationPage() {
-  return <CommunicationWorkspace />;
+export default function LegacyCommunicationRedirect() {
+  redirect(VENDOR_PORTAL_ROUTES.dashboard);
 }

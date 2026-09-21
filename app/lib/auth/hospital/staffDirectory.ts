@@ -5,7 +5,7 @@ export const STAFF_DIRECTORY: StaffDirectoryEntry[] = [
   {
     employeeId: 'EMP-1001',
     email: 'admin@nexora.health',
-    password: 'Nexora@2026',
+    password: 'Regal@2026',
     displayName: 'Anita Deshmukh',
     role: 'hospital_admin',
     department: 'Hospital Administration',
@@ -14,7 +14,7 @@ export const STAFF_DIRECTORY: StaffDirectoryEntry[] = [
   {
     employeeId: 'EMP-2045',
     email: 'reception@nexora.health',
-    password: 'Nexora@2026',
+    password: 'Regal@2026',
     displayName: 'Kavitha Reddy',
     role: 'receptionist',
     department: 'Front Desk · OPD',
@@ -23,7 +23,7 @@ export const STAFF_DIRECTORY: StaffDirectoryEntry[] = [
   {
     employeeId: 'EMP-3012',
     email: 'nurse.icu@nexora.health',
-    password: 'Nexora@2026',
+    password: 'Regal@2026',
     displayName: 'Priya S. Nair',
     role: 'nurse',
     department: 'ICU · Critical Care',
@@ -32,7 +32,7 @@ export const STAFF_DIRECTORY: StaffDirectoryEntry[] = [
   {
     employeeId: 'EMP-4020',
     email: 'pharmacy@nexora.health',
-    password: 'Nexora@2026',
+    password: 'Regal@2026',
     displayName: 'Rajesh Kumar',
     role: 'pharmacist',
     department: 'Main Pharmacy',
@@ -41,7 +41,7 @@ export const STAFF_DIRECTORY: StaffDirectoryEntry[] = [
   {
     employeeId: 'EMP-5033',
     email: 'lab@nexora.health',
-    password: 'Nexora@2026',
+    password: 'Regal@2026',
     displayName: 'Meera Iyer',
     role: 'lab_tech',
     department: 'Central Laboratory',
@@ -50,7 +50,7 @@ export const STAFF_DIRECTORY: StaffDirectoryEntry[] = [
   {
     employeeId: 'EMP-6044',
     email: 'finance@nexora.health',
-    password: 'Nexora@2026',
+    password: 'Regal@2026',
     displayName: 'Vikram Patel',
     role: 'finance_team',
     department: 'Finance & Billing',
@@ -59,7 +59,7 @@ export const STAFF_DIRECTORY: StaffDirectoryEntry[] = [
   {
     employeeId: 'EMP-7055',
     email: 'procurement@nexora.health',
-    password: 'Nexora@2026',
+    password: 'Regal@2026',
     displayName: 'Sanjay Rao',
     role: 'purchase_officer',
     department: 'Procurement & SCM',
@@ -68,7 +68,7 @@ export const STAFF_DIRECTORY: StaffDirectoryEntry[] = [
   {
     employeeId: 'EMP-8066',
     email: 'it@nexora.health',
-    password: 'Nexora@2026',
+    password: 'Regal@2026',
     displayName: 'Arjun Mehta',
     role: 'it_admin',
     department: 'Information Technology',

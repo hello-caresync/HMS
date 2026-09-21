@@ -25,7 +25,10 @@ import {
 } from '@/lib/patient/family-members';
 import { patientProfileStorageKey } from '@/lib/patient/profileStore';
 import { DynamicSlotPicker } from '@/components/patient/DynamicSlotPicker';
+import { ProfileCompletionGate } from '@/components/patient/ProfileCompletionGate';
 import { bookAppointmentWithDoctor } from '@/lib/patient/book-appointment';
+import { usePatientProfileCompleteness } from '@/lib/patient/usePatientProfileCompleteness';
+import { profileIncompleteBookingMessage } from '@/lib/utils/profileCompleteness';
 import {
   mintPatientUhid,
   readPatientPortalSession,
@@ -36,7 +39,8 @@ import {
   resolveAutoSelectedSlot,
 } from '@/lib/scheduling/doctor-slot-service';
 import type { DynamicSlot } from '@/lib/scheduling/dynamic-slots';
-import { supabase } from '@/lib/supabaseClient';
+import { resolveActiveAuthUser } from '@/lib/auth/resolve-active-auth-user';
+import { createClient } from '@/lib/supabase/client';
 
 export interface DoctorOption {
   id: string;
@@ -63,7 +67,10 @@ export interface BookAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   hospitalId?: string;
+  /** Linked `public.patients.id` or portal patient identifier from dashboard */
   patientId?: string;
+  /** Supabase Auth user id from parent dashboard */
+  userId?: string;
   onBookingSuccess?: (appointmentRecord: Record<string, unknown>) => void;
 }
 
@@ -72,8 +79,10 @@ export function BookAppointmentModal({
   onClose,
   hospitalId,
   patientId,
+  userId,
   onBookingSuccess,
 }: BookAppointmentModalProps) {
+  const supabase = useMemo(() => createClient(), []);
   const [allDoctors, setAllDoctors] = useState<DoctorStaffRecord[]>([]);
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
@@ -90,6 +99,8 @@ export function BookAppointmentModal({
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [beneficiaryOptions, setBeneficiaryOptions] = useState<BeneficiaryOption[]>([]);
   const [selectedBeneficiaryId, setSelectedBeneficiaryId] = useState<string>(SELF_BENEFICIARY_ID);
+  const { loading: profileGateLoading, complete: profileComplete, missingFields } =
+    usePatientProfileCompleteness();
 
   const fetchDoctors = useCallback(async () => {
     if (!isOpen) return;
@@ -124,7 +135,7 @@ export function BookAppointmentModal({
     } finally {
       setLoadingDoctors(false);
     }
-  }, [hospitalId, isOpen, selectedDept]);
+  }, [hospitalId, isOpen, selectedDept, supabase]);
 
   const refreshBeneficiaryOptions = useCallback(() => {
     const options = loadBeneficiaryOptionsForActivePatient();
@@ -214,31 +225,46 @@ export function BookAppointmentModal({
     if (!isOpen || !selectedDoctorId || !appointmentDate) {
       setDynamicSlots([]);
       setAppointmentTime('');
+      setLoadingSlots(false);
       return;
     }
 
     let cancelled = false;
     setLoadingSlots(true);
-    void loadDynamicDoctorSchedule(supabase, selectedDoctorId, appointmentDate, symptoms).then(
-      ({ slots }) => {
+
+    void loadDynamicDoctorSchedule(supabase, selectedDoctorId, appointmentDate)
+      .then(({ slots }) => {
         if (cancelled) return;
         setDynamicSlots(slots);
         const auto = resolveAutoSelectedSlot(slots, appointmentTime);
         setAppointmentTime(auto?.time ?? '');
-        setLoadingSlots(false);
-      },
-    );
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        console.error('Failed to load doctor schedule:', err);
+        setDynamicSlots([]);
+        setAppointmentTime('');
+        toast.error('Could not load available slots. Please try again.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSlots(false);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [isOpen, selectedDoctorId, appointmentDate, symptoms]);
+    // Slot availability depends only on doctor + date — not reason/symptoms/beneficiary.
+  }, [isOpen, selectedDoctorId, appointmentDate]);
 
   const activeDoctor = doctors.find((doctor) => doctor.id === selectedDoctorId);
   const hasSelectableSlot = dynamicSlots.some((slot) => slot.isSelectable);
 
   const handleConfirmBooking = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!profileComplete) {
+      toast.error(profileIncompleteBookingMessage(missingFields));
+      return;
+    }
     if (!selectedDoctorId || !activeDoctor) {
       toast.error('Please select an attending doctor');
       return;
@@ -249,11 +275,30 @@ export function BookAppointmentModal({
     }
 
     setSubmitting(true);
+
     try {
       const sessionIdentity = resolveActivePatientFormIdentity();
       const session = readPatientPortalSession();
+      const authContext = await resolveActiveAuthUser(
+        supabase,
+        userId ||
+          patientId ||
+          sessionIdentity?.patient_id ||
+          getActivePatientId() ||
+          session?.patient_id,
+      );
+
+      if (!authContext?.userId) {
+        toast.error('User session not found. Please log in again.');
+        return;
+      }
+
       const bookingPatientId =
-        patientId || sessionIdentity?.patient_id || getActivePatientId() || session?.patient_id;
+        patientId ||
+        sessionIdentity?.patient_id ||
+        getActivePatientId() ||
+        session?.patient_id ||
+        authContext.userId;
 
       const bookingDepartment =
         selectedDept === 'ALL' ? activeDoctor.department : selectedDept;
@@ -271,11 +316,20 @@ export function BookAppointmentModal({
         session?.patient_name ||
         'Verified Patient';
 
+      const bookingFor =
+        selectedBeneficiaryId === SELF_BENEFICIARY_ID
+          ? 'SELF'
+          : selectedBeneficiary?.relation || 'DEPENDENT';
+
       const result = await bookAppointmentWithDoctor({
         patientId: bookingPatientId,
+        authUserId: authContext.userId,
         patientName: bookingPatientName,
+        phone: sessionIdentity?.phone || session?.phone,
         beneficiary_id: selectedBeneficiary?.id,
         beneficiary_relation: selectedBeneficiary?.relation,
+        booking_for: bookingFor,
+        skipProfileCheck: true,
         doctor_uuid: rosterDoctor?.id,
         doctor_id: rosterDoctor?.doctor_id || activeDoctor.id,
         doctor_record_id: rosterDoctor?.id || activeDoctor.id,
@@ -302,8 +356,12 @@ export function BookAppointmentModal({
       });
       onClose();
     } catch (err: unknown) {
-      console.error('Booking submission failed:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to book appointment. Please try again.');
+      console.error('Booking failed:', err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Failed to book appointment. Please try again.';
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -334,6 +392,13 @@ export function BookAppointmentModal({
           </button>
         </div>
 
+        {profileGateLoading ? (
+          <div className="rounded-xl border border-[#EADBCE] bg-[#FAF6F0] p-4 text-xs font-medium text-[#7C5C48]">
+            Verifying profile readiness for clinical booking…
+          </div>
+        ) : !profileComplete ? (
+          <ProfileCompletionGate missingFields={missingFields} compact />
+        ) : (
         <form onSubmit={handleConfirmBooking} className="space-y-4">
           <div>
             <label className={fieldLabelClass}>Booking For</label>
@@ -490,6 +555,7 @@ export function BookAppointmentModal({
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

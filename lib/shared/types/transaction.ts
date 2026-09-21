@@ -1,4 +1,4 @@
-import type { NexoraModule } from './common';
+import type { RegalModule } from './common';
 import type { SharedBillingItemInput } from './billing';
 import type { SharedInventoryUpdate } from './inventory';
 
@@ -9,7 +9,7 @@ export interface SharedTransactionInput {
   sourceType: SharedTransactionSourceType;
   sourceId: string;
   patientId?: string;
-  originatingModule: NexoraModule;
+  originatingModule: RegalModule;
   billingItems: SharedBillingItemInput[];
   inventoryUpdates?: SharedInventoryUpdate[];
   paymentMethod?: 'cash' | 'upi' | 'card' | 'insurance' | 'corporate';

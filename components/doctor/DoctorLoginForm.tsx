@@ -5,6 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, Eye, EyeOff, KeyRound, Loader2, Stethoscope } from 'lucide-react';
 import { toast } from 'sonner';
 
+import {
+  LOGIN_FORM_AUTOCOMPLETE,
+  LOGIN_IDENTIFIER_INPUT_PROPS,
+  LOGIN_PASSWORD_INPUT_PROPS,
+} from '@/lib/auth/login-form-security';
 import { authenticateDoctorCredential } from '@/lib/auth/doctorAuth';
 import { saveDoctorSession } from '@/lib/doctor/session';
 import { supabase } from '@/lib/supabase';
@@ -75,7 +80,7 @@ export function DoctorLoginForm({ redirectTo = '/doctor/dashboard' }: DoctorLogi
         </div>
       )}
 
-      <form onSubmit={handleLogin} className="space-y-4">
+      <form onSubmit={handleLogin} autoComplete={LOGIN_FORM_AUTOCOMPLETE} className="space-y-4">
         <div className="space-y-1.5">
           <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
             Doctor ID or Hospital Email
@@ -85,11 +90,12 @@ export function DoctorLoginForm({ redirectTo = '/doctor/dashboard' }: DoctorLogi
             <input
               type="text"
               required
-              autoComplete="username"
+              name="doctor-portal-identifier"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="suriraju@gmail.com or SURI-RH-26-12"
+              placeholder="Doctor ID or hospital email"
               className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pr-4 pl-10 text-sm font-medium text-slate-900 transition focus:border-teal-600 focus:bg-white focus:outline-none"
+              {...LOGIN_IDENTIFIER_INPUT_PROPS}
             />
           </div>
         </div>
@@ -103,11 +109,12 @@ export function DoctorLoginForm({ redirectTo = '/doctor/dashboard' }: DoctorLogi
             <input
               type={showPasscode ? 'text' : 'password'}
               required
-              autoComplete="current-password"
+              name="doctor-portal-passcode"
               value={passcode}
               onChange={(e) => setPasscode(e.target.value)}
               placeholder="Assigned clinician passcode"
               className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pr-10 pl-10 font-mono text-sm font-bold text-slate-900 transition focus:border-teal-600 focus:bg-white focus:outline-none"
+              {...LOGIN_PASSWORD_INPUT_PROPS}
             />
             <button
               type="button"

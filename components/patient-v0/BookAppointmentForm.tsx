@@ -346,7 +346,7 @@ export function BookAppointmentForm({ patientId, initialDoctorId, onBooked, onNo
                     clearDoctorSelection();
                   }}
                 >
-                  <option value="all">All Nexora branches</option>
+                  <option value="all">All Regal branches</option>
                   {branches.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name} · {b.city}

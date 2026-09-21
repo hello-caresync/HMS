@@ -1,18 +1,16 @@
 'use client';
 
 import React, { Suspense, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Loader2, Lock, ShieldCheck } from 'lucide-react';
 
 import { clearStaleAuthArtifacts, purgeLocalAdminSessions } from '@/lib/auth/active-session';
 import { HospitalSignInForm } from '@/components/auth/HospitalSignInForm';
 import { HOSPITAL_TENANT_ID, REGAL_HOSPITAL_NAME } from '@/lib/regal/constants';
-import { RegalHospitalLogo } from '@/components/brand/RegalHospitalLogo';
+import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
 
 function UnifiedHospitalLoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect');
 
   useEffect(() => {
     purgeLocalAdminSessions();
@@ -35,30 +33,25 @@ function UnifiedHospitalLoginForm() {
         </button>
         <div className="inline-flex items-center gap-1.5 rounded-full border border-[#144970] bg-[#07253a] px-3 py-1 font-mono text-[10px] font-bold text-cyan-300">
           <ShieldCheck className="h-3.5 w-3.5 text-cyan-400" />
-          <span>REGAL HOSPITAL OS</span>
+          <span>HOSP-01</span>
         </div>
       </div>
 
       <div className="relative z-10 mx-auto my-auto w-full max-w-md space-y-6 rounded-3xl border border-slate-200 bg-white p-8 text-slate-800 shadow-2xl">
-        <div className="space-y-2 text-center">
-          <div className="mb-1 flex justify-center">
-            <RegalHospitalLogo heightClass="h-9" showNodeBadge />
+        <div className="space-y-3 text-center">
+          <div className="flex justify-center">
+            <RegalHospitalLogo heightClass="h-11" framed />
           </div>
           <span className="block font-mono text-[10px] font-bold uppercase tracking-widest text-cyan-700">
             Unified Hospital Access
           </span>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900">Regal Hospital Sign-In</h1>
           <p className="text-xs text-slate-500">
-            Single portal for administrators, clinical staff, and operational teams
+            Single portal for administrators, clinical staff, and operational teams · Node{' '}
+            {HOSPITAL_TENANT_ID}
           </p>
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold text-slate-600">
-            <span className="font-mono text-cyan-800">{HOSPITAL_TENANT_ID}</span>
-            <span className="text-slate-300">·</span>
-            <span>{REGAL_HOSPITAL_NAME}</span>
-          </div>
         </div>
 
-        <HospitalSignInForm redirectUrl={redirectUrl} />
+        <HospitalSignInForm />
 
         <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 pt-3 text-[11px] text-slate-500">
           <Lock className="h-3.5 w-3.5 text-slate-400" />

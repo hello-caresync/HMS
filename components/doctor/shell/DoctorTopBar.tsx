@@ -21,7 +21,7 @@ export default function DoctorTopBar() {
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-4">
           <div className="hidden min-w-0 sm:block">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#7A7558]">Nexora · Doctor</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#7A7558]">Regal · Doctor</p>
             <p className="truncate text-[13px] font-semibold text-[#1C1B18]">
               {session?.fullName ?? 'Consultant'}
               <span className="font-normal text-[#9C9890]"> · {session?.specialization ?? '—'}</span>

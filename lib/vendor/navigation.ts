@@ -1,7 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard,
-  MessageSquare,
   Receipt,
   Settings,
   ShoppingCart,
@@ -15,7 +14,6 @@ export const VENDOR_PORTAL_ROUTES = {
   purchaseOrders: '/vendor/portal/purchase-orders',
   deliveries: '/vendor/portal/deliveries',
   billing: '/vendor/portal/billing',
-  communication: '/vendor/portal/communication',
   settings: '/vendor/portal/settings',
   /** Legacy aliases — redirect to MVP modules */
   catalog: '/vendor/portal/dashboard',
@@ -23,13 +21,14 @@ export const VENDOR_PORTAL_ROUTES = {
   contracts: '/vendor/portal/dashboard',
   serviceRequests: '/vendor/portal/dashboard',
   analytics: '/vendor/portal/dashboard',
-  notifications: '/vendor/portal/communication',
+  notifications: '/vendor/portal/notifications',
   organization: '/vendor/portal/settings',
   quotations: '/vendor/portal/purchase-orders',
   invoices: '/vendor/portal/billing',
   warehouse: '/vendor/portal/deliveries',
   compliance: '/vendor/portal/settings',
-  support: '/vendor/portal/communication',
+  support: '/vendor/portal/dashboard',
+  communication: '/vendor/portal/dashboard',
 } as const;
 
 export type VendorNavItem = {
@@ -40,7 +39,7 @@ export type VendorNavItem = {
   badge?: number;
 };
 
-/** V0 MVP sidebar — 6 core modules only */
+/** V0 MVP sidebar — core modules only (no messaging). */
 export const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   { key: 'dashboard', label: 'Dashboard', href: VENDOR_PORTAL_ROUTES.dashboard, icon: LayoutDashboard },
   {
@@ -51,12 +50,6 @@ export const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   },
   { key: 'deliveries', label: 'Deliveries', href: VENDOR_PORTAL_ROUTES.deliveries, icon: Truck },
   { key: 'billing', label: 'Billing & Payments', href: VENDOR_PORTAL_ROUTES.billing, icon: Receipt },
-  {
-    key: 'communication',
-    label: 'Messages',
-    href: VENDOR_PORTAL_ROUTES.communication,
-    icon: MessageSquare,
-  },
   { key: 'settings', label: 'Profile & Settings', href: VENDOR_PORTAL_ROUTES.settings, icon: Settings },
 ];
 
@@ -80,13 +73,6 @@ export function isVendorNavActive(pathname: string, href: string): boolean {
     return ['/vendor/portal/billing', '/vendor/portal/invoices'].some(
       (route) => pathname === route || pathname.startsWith(`${route}/`),
     );
-  }
-  if (href === VENDOR_PORTAL_ROUTES.communication) {
-    return [
-      '/vendor/portal/communication',
-      '/vendor/portal/notifications',
-      '/vendor/portal/support',
-    ].some((route) => pathname === route || pathname.startsWith(`${route}/`));
   }
   if (href === VENDOR_PORTAL_ROUTES.settings) {
     return ['/vendor/portal/settings', '/vendor/portal/organization', '/vendor/portal/compliance'].some(

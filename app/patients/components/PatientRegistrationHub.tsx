@@ -38,7 +38,7 @@ export default function PatientRegistrationHub() {
       >
         <div className="border-b-2 border-slate-200 px-4 py-3">
           <p className="text-sm font-bold text-slate-900">Patient Registration</p>
-          <p className="text-[10px] uppercase tracking-wider text-slate-800">Phase 4 · Nexora</p>
+          <p className="text-[10px] uppercase tracking-wider text-slate-800">Phase 4 · Regal</p>
         </div>
         <nav className="flex-1 space-y-0.5 p-2">
           <button

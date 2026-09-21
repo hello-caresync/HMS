@@ -29,7 +29,7 @@ export const mockProfile = {
     thursday: '09:00–17:00',
     friday: '09:00–17:00',
   },
-  hospital: { id: '00000000-0000-4000-a000-000000000001', name: 'Nexora Multispeciality Hospital', code: 'NX-HOSP-01' },
+  hospital: { id: '00000000-0000-4000-a000-000000000001', name: 'Regal Multispeciality Hospital', code: 'HOSP-01' },
 };
 
 export const mockStore = {

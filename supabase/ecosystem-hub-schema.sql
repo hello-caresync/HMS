@@ -1,4 +1,4 @@
--- Nexora Ecosystem Hub — central audit + activity feed
+-- Regal Ecosystem Hub — central audit + activity feed
 -- Run after hospital-v0-schema.sql and cross-app-realtime-schema.sql
 
 create table if not exists public.ecosystem_activity (

@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { resolveActiveAuthUser } from '@/lib/auth/resolve-active-auth-user';
 import { BookAppointmentModal } from '@/components/patient/BookAppointmentModal';
+import { todayIsoDate } from '@/lib/hospital/smartq-wait';
+import { resolveEffectivePatientId } from '@/lib/patient/resolve-effective-patient-id';
 import { readPatientPortalSession } from '@/lib/patient/portal-session';
-import { getActivePatientId } from '@/lib/patient/active-patient-node';
+import { createClient } from '@/lib/supabase/client';
 import { CACHE_KEYS, readLocalJson, writeLocalJson } from '@/lib/persistence/local-cache';
 import {
   deduplicateAppointments,
@@ -140,10 +142,13 @@ function AppointmentCard({
 
 export default function MyAppointmentsPage() {
   const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [appointments, setAppointments] = useState<MyAppointmentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [authUserId, setAuthUserId] = useState('');
+  const [bookingPatientId, setBookingPatientId] = useState('');
 
   const fetchAppointments = useCallback(async () => {
     const session = resolveActivePatientSession();
@@ -157,6 +162,15 @@ export default function MyAppointmentsPage() {
     setLoading(true);
 
     try {
+      const auth = await resolveActiveAuthUser(supabase, session.patientId);
+      const resolved = await resolveEffectivePatientId(supabase, {
+        phone: session.phone,
+        sessionPatientId: auth?.userId || session.patientId,
+      });
+      if (auth?.userId) setAuthUserId(auth.userId);
+      setBookingPatientId(resolved.effectivePatientId || session.patientId);
+
+      const linkedPatientIds = resolved.linkedPatientIds;
       const { appointments: scopedRows } = await fetchMyPrivateAppointments(supabase, session);
       let combinedList = [...scopedRows];
 
@@ -175,6 +189,7 @@ export default function MyAppointmentsPage() {
         const localOnly = filterLocalAppointmentsForSession(
           [...(Array.isArray(cached) ? cached : []), ...legacyList],
           session,
+          linkedPatientIds,
         );
 
         combinedList = deduplicateAppointments([...combinedList, ...localOnly]);
@@ -189,12 +204,12 @@ export default function MyAppointmentsPage() {
         writeLocalJson(CACHE_KEYS.patientAppointmentsAlt, combinedList);
       }
     } catch (err) {
-      console.warn('Private appointments fetch notice:', err);
+      console.warn('Appointments fetch notice:', err);
       setAppointments([]);
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, supabase]);
 
   useEffect(() => {
     const session = resolveActivePatientSession();
@@ -233,9 +248,9 @@ export default function MyAppointmentsPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchAppointments, sessionChecked]);
+  }, [fetchAppointments, sessionChecked, supabase]);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayIsoDate();
   const { upcoming, past } = useMemo(() => {
     const up: MyAppointmentRecord[] = [];
     const hist: MyAppointmentRecord[] = [];
@@ -268,7 +283,7 @@ export default function MyAppointmentsPage() {
             Facility:{' '}
             <span className="font-semibold text-[#8C5A3C]">HOSP-01 (Bengaluru)</span>
             {' · '}
-            {appointments.length} private consultation{appointments.length === 1 ? '' : 's'} on record
+            {appointments.length} booked consultation{appointments.length === 1 ? '' : 's'} on record
           </p>
         </div>
 
@@ -296,7 +311,7 @@ export default function MyAppointmentsPage() {
         <div className="flex h-48 items-center justify-center rounded-xl border border-[#EADBCE] bg-white">
           <div className="flex items-center gap-2 text-xs font-semibold text-[#7C5C48]">
             <Loader2 className="h-5 w-5 animate-spin text-[#8C5A3C]" />
-            Loading your private consultations...
+            Loading your OPD consultations...
           </div>
         </div>
       ) : appointments.length === 0 ? (
@@ -360,7 +375,8 @@ export default function MyAppointmentsPage() {
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
         hospitalId={portalSession?.hospital_id}
-        patientId={getActivePatientId() || portalSession?.patient_id}
+        patientId={bookingPatientId || portalSession?.patient_id}
+        userId={authUserId || portalSession?.patient_id}
         onBookingSuccess={() => void fetchAppointments()}
       />
     </div>

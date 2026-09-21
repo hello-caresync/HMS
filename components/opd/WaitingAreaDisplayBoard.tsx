@@ -36,7 +36,7 @@ export function WaitingAreaDisplayBoard() {
         <div className="flex items-center gap-3">
           <Tv className="h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-black">Nexora OPD · Waiting Area</h1>
+            <h1 className="text-2xl font-black">Regal OPD · Waiting Area</h1>
             <p className="text-sm text-white/75">Live queue · multilingual voice announcements</p>
           </div>
         </div>

@@ -71,7 +71,7 @@ export function PrintAdmissionSlipModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Admission Slip Preview" onClose={onClose}>
       <div className="rounded-lg border-2 border-[#0F172A] p-4 text-center">
-        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Nexora HMS — IPD Admission</p>
+        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS — IPD Admission</p>
         <p className="mt-2 text-sm font-bold text-[#0F172A]">{patient.patientName}</p>
         <p className="font-mono text-[10px] text-[#2563EB]">{patient.uhid}</p>
         <p className="mt-2 text-[10px] text-slate-600">{patient.ward} · {patient.bed}</p>

@@ -1,4 +1,4 @@
-import type { NexoraServiceContext } from '../../types/context';
+import type { RegalServiceContext } from '../../types/context';
 import type { SharedAuditFootprint } from '../../types/transaction';
 import type { ServiceResult } from '../../types/common';
 import { fail, ok } from '../../types/common';
@@ -28,7 +28,7 @@ async function computeImmutableHash(
 /** packages/shared/services/audit — append-only immutable footprint */
 export async function writeAuditLog(
   input: WriteAuditLogInput,
-  ctx: NexoraServiceContext,
+  ctx: RegalServiceContext,
 ): Promise<ServiceResult<SharedAuditFootprint>> {
   const recordedAt = new Date().toISOString();
   const auditId = `AUD-${ctx.correlationId}`;

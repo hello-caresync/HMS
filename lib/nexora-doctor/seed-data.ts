@@ -184,7 +184,7 @@ export function buildDoctorProfile(doctorId: string, fullName: string, email: st
     email,
     department: 'Internal Medicine',
     specialization,
-    hospital: 'Nexora General Hospital',
+    hospital: 'Regal Multispeciality Hospital',
     licenseNumber,
     phone: '+91 98765 00000',
     workingHours: [

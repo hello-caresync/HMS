@@ -91,7 +91,7 @@ async function fetchMemberRow(identifier: string): Promise<{
   return {
     member: row,
     departmentName: row.departments?.name ?? 'General',
-    hospitalName: row.hospitals?.hospital_name ?? 'Nexora Hospital',
+    hospitalName: row.hospitals?.hospital_name ?? 'Regal Hospital',
     hospitalCredentialId:
       row.hospitals?.registration_number?.trim() || row.hospital_id,
     onboardingCompleted: row.hospitals?.onboarding_completed ?? false,

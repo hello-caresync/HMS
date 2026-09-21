@@ -11,8 +11,9 @@ import {
   Users,
 } from 'lucide-react';
 
-import { RegalHospitalLogoMark } from '@/components/brand/RegalHospitalLogo';
+import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
 import { logoutPatientSession } from '@/lib/auth/patientAuth';
+import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import { patientClasses } from '@/lib/patient/theme';
 
 const PATIENT_NAV = [
@@ -60,18 +61,12 @@ export function PatientSidebar({ patientName = 'Patient', onLogout }: PatientSid
       className={`hidden h-full w-64 shrink-0 flex-col justify-between overflow-y-auto p-4 shadow-sm md:flex ${patientClasses.navShell}`}
       aria-label="Patient portal navigation"
     >
-      <div className="shrink-0 border-b border-[#5B3E2B] pb-4 pt-1">
-        <div className="flex items-center gap-2.5">
-          <RegalHospitalLogoMark
-            heightClass="h-7"
-            className="h-8 w-8 rounded-lg border border-[#8C6246]/60 bg-[#5E422E] p-0.5"
-          />
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-bold text-white">Regal Hospital</h2>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#EADBCE]">
-              Patient Portal
-            </p>
-          </div>
+      <div className="shrink-0 border-b border-amber-900/20 px-1 pb-4 pt-1">
+        <div className="rounded-xl bg-white/95 p-2.5 shadow-sm flex items-center justify-center">
+          <RegalHospitalLogo heightClass="h-7" widthClass="w-auto" framed={false} priority />
+        </div>
+        <div className="mt-2 text-center text-[10px] font-semibold uppercase tracking-wider text-amber-200/80">
+          Patient Care Portal • {REGAL_HOSPITAL_CODE}
         </div>
       </div>
 

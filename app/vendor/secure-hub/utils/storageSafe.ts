@@ -1,5 +1,4 @@
 import {
-  ChatMessage,
   EnterprisePO,
   GeneratedInvoice,
   POExtendedStatus,
@@ -97,23 +96,6 @@ export function normalizeInvoices(raw: unknown): GeneratedInvoice[] {
   return raw
     .filter((entry) => entry != null)
     .map((entry, index) => normalizeInvoice(entry, index));
-}
-
-export function normalizeChatMessage(raw: unknown, index: number): ChatMessage {
-  const msg = (raw ?? {}) as Partial<ChatMessage>;
-  return {
-    id: msg.id ?? `MSG-SYNC-${index + 1}`,
-    sender: msg.sender === 'Hospital' ? 'Hospital' : 'Vendor',
-    text: msg.text ?? '',
-    timestamp: msg.timestamp ?? '—',
-  };
-}
-
-export function normalizeChatThreads(raw: unknown): ChatMessage[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .filter((entry) => entry != null)
-    .map((entry, index) => normalizeChatMessage(entry, index));
 }
 
 export function normalizeReturnRequest(raw: unknown, index: number): ReturnRequest {

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { resolveDoctorRegistrationEmail } from '@/lib/hospital/doctors';
+import { serializePostgrestError } from '@/lib/hospital/governance-vault-loader';
 import { REGAL_HOSPITAL_CODE, REGAL_HOSPITAL_NAME } from '@/lib/regal/constants';
 import { isHospitalCode, isHospitalUuid, resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
 
@@ -124,8 +125,19 @@ async function findExistingDoctorRow(
   const doctorCode = draft.staff_id_code.trim();
 
   if (email) {
-    const byEmail = await supabase.from('doctors').select('*').eq('email', email).maybeSingle();
-    if (!byEmail.error && byEmail.data) return asRecord(byEmail.data);
+    try {
+      const byEmail = await supabase.from('doctors').select('*').eq('email', email).maybeSingle();
+      if (byEmail.error) {
+        console.warn(
+          'Doctor directory lookup by email failed:',
+          serializePostgrestError(byEmail.error).summary,
+        );
+      } else if (byEmail.data) {
+        return asRecord(byEmail.data);
+      }
+    } catch (err: unknown) {
+      console.warn('Doctor directory lookup by email failed:', serializePostgrestError(err).summary);
+    }
   }
 
   if (doctorCode) {
@@ -134,12 +146,23 @@ async function findExistingDoctorRow(
       codeFilters.unshift(`doctor_id.eq.${doctorCode}`);
     }
 
-    const byCode = await supabase
-      .from('doctors')
-      .select('*')
-      .or(codeFilters.join(','))
-      .maybeSingle();
-    if (!byCode.error && byCode.data) return asRecord(byCode.data);
+    try {
+      const byCode = await supabase
+        .from('doctors')
+        .select('*')
+        .or(codeFilters.join(','))
+        .maybeSingle();
+      if (byCode.error) {
+        console.warn(
+          'Doctor directory lookup by code failed:',
+          serializePostgrestError(byCode.error).summary,
+        );
+      } else if (byCode.data) {
+        return asRecord(byCode.data);
+      }
+    } catch (err: unknown) {
+      console.warn('Doctor directory lookup by code failed:', serializePostgrestError(err).summary);
+    }
   }
 
   return null;
@@ -172,43 +195,54 @@ export async function upsertBookableDoctor(
   const existing = await findExistingDoctorRow(supabase, draft);
 
   const updateExisting = async (row: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> => {
-    const rowId = row.id ? String(row.id) : '';
-    if (rowId && isUuidValue(rowId)) {
-      const { error } = await supabase.from('doctors').update(payload).eq('id', rowId);
-      if (!error) return { ok: true };
-      return { ok: false, error: error.message };
-    }
+    try {
+      const rowId = row.id ? String(row.id) : '';
+      if (rowId && isUuidValue(rowId)) {
+        const { error } = await supabase.from('doctors').update(payload).eq('id', rowId);
+        if (!error) return { ok: true };
+        return { ok: false, error: serializePostgrestError(error).summary };
+      }
 
-    const email = draft.email?.trim().toLowerCase();
-    if (email) {
-      const { error } = await supabase.from('doctors').update(payload).eq('email', email);
-      if (!error) return { ok: true };
-      return { ok: false, error: error.message };
-    }
+      const email = draft.email?.trim().toLowerCase();
+      if (email) {
+        const { error } = await supabase.from('doctors').update(payload).eq('email', email);
+        if (!error) return { ok: true };
+        return { ok: false, error: serializePostgrestError(error).summary };
+      }
 
-    return { ok: false, error: 'Could not locate doctor row for update.' };
+      return { ok: false, error: 'Could not locate doctor row for update.' };
+    } catch (err: unknown) {
+      return { ok: false, error: serializePostgrestError(err).summary };
+    }
   };
 
-  if (existing) {
-    const updated = await updateExisting(existing);
-    if (updated.ok) return { ok: true };
-    return updated;
-  }
-
-  const { error } = await supabase.from('doctors').insert([payload]);
-  if (error) {
-    if (/duplicate|unique|already exists/i.test(error.message)) {
-      const retryExisting = await findExistingDoctorRow(supabase, draft);
-      if (retryExisting) {
-        const retried = await updateExisting(retryExisting);
-        if (retried.ok) return { ok: true };
-        return retried;
-      }
+  try {
+    if (existing) {
+      const updated = await updateExisting(existing);
+      if (updated.ok) return { ok: true };
+      return updated;
     }
-    return { ok: false, error: error.message };
-  }
 
-  return { ok: true };
+    const { error } = await supabase.from('doctors').insert([payload]);
+    if (error) {
+      const errorMessage = serializePostgrestError(error).summary;
+      if (/duplicate|unique|already exists/i.test(errorMessage)) {
+        const retryExisting = await findExistingDoctorRow(supabase, draft);
+        if (retryExisting) {
+          const retried = await updateExisting(retryExisting);
+          if (retried.ok) return { ok: true };
+          return retried;
+        }
+      }
+      return { ok: false, error: errorMessage };
+    }
+
+    return { ok: true };
+  } catch (err: unknown) {
+    const errorMessage = serializePostgrestError(err).summary;
+    console.warn('Doctor directory upsert failed:', errorMessage);
+    return { ok: false, error: errorMessage };
+  }
 }
 
 export async function hospitalDoctorFilterValues(
@@ -227,24 +261,30 @@ export async function fetchBookableDoctorsFromTable(
   supabase: SupabaseClient,
   hospitalId: string,
 ): Promise<Record<string, unknown>[]> {
-  const { fetchBookableDoctors } = await import('@/lib/hospital/doctors');
-  const doctors = await fetchBookableDoctors(supabase, hospitalId);
-  return doctors.map((doctor) => ({
-    doctor_id: doctor.doctor_id,
-    id: doctor.doctor_id,
-    doctor_code: doctor.doctor_id,
-    full_name: doctor.full_name,
-    doctor_name: doctor.doctor_name,
-    name: doctor.name,
-    department: doctor.department,
-    specialization: doctor.specialization,
-    specialty: doctor.specialty,
-    qualification: doctor.qualification,
-    room_number: doctor.room_number,
-    consultation_fee: doctor.consultation_fee,
-    fee: doctor.consultation_fee,
-    is_active: true,
-    is_available: true,
-    status: 'active',
-  }));
+  try {
+    const { fetchBookableDoctors } = await import('@/lib/hospital/doctors');
+    const doctors = await fetchBookableDoctors(supabase, hospitalId);
+    return doctors.map((doctor) => ({
+      doctor_id: doctor.doctor_id,
+      id: doctor.doctor_id,
+      doctor_code: doctor.doctor_id,
+      full_name: doctor.full_name,
+      doctor_name: doctor.doctor_name,
+      name: doctor.name,
+      department: doctor.department,
+      specialization: doctor.specialization,
+      specialty: doctor.specialty,
+      qualification: doctor.qualification,
+      room_number: doctor.room_number,
+      consultation_fee: doctor.consultation_fee,
+      fee: doctor.consultation_fee,
+      is_active: true,
+      is_available: true,
+      status: 'active',
+    }));
+  } catch (err: unknown) {
+    const errorMessage = serializePostgrestError(err).summary;
+    console.warn('Hospital doctor directory fetch failed — returning empty list:', errorMessage);
+    return [];
+  }
 }

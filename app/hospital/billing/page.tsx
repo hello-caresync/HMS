@@ -1,5 +1,6 @@
-import { BillingWorkspace } from '@/components/nexora-hospital/workspaces/BillingWorkspace';
+import { redirect } from 'next/navigation';
 
-export default function HospitalBillingPage() {
-  return <BillingWorkspace />;
+/** Standalone billing desk deprecated — settlement lives in /dashboard?tab=billing */
+export default function HospitalBillingRedirectPage() {
+  redirect('/dashboard?tab=billing');
 }

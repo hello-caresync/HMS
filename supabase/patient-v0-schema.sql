@@ -1,4 +1,4 @@
--- Nexora Patient App V0 · Ecosystem schema (Supabase SQL editor)
+-- Regal Patient App V0 · Ecosystem schema (Supabase SQL editor)
 
 create table if not exists public.ecosystem_patients (
   id uuid primary key default gen_random_uuid(),

@@ -271,7 +271,7 @@ export function getModuleConfig(key: string): HospitalModuleConfig {
       id: key,
       title: 'Hospital Module',
       description: 'Operational module canvas.',
-      layer: 'Nexora Hospital',
+      layer: 'Regal Hospital',
       features: ['Module registry pending'],
     };
   }

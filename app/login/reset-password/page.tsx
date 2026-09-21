@@ -28,7 +28,7 @@ export default function ResetPasswordPage() {
     event.preventDefault();
 
     if (!policy.valid) {
-      setMessage('Password does not meet Nexora security policy.');
+      setMessage('Password does not meet Regal security policy.');
       setIsSuccess(false);
       return;
     }
@@ -55,7 +55,7 @@ export default function ResetPasswordPage() {
   return (
     <AuthShell
       title="Create new password"
-      subtitle="Choose a strong password that meets Nexora enterprise policy."
+      subtitle="Choose a strong password that meets Regal enterprise policy."
       footer={
         <>
           Return to <AuthLink href={APP_ROUTES.login}>sign in</AuthLink>

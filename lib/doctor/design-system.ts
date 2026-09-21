@@ -1,5 +1,5 @@
 /**
- * Nexora Doctor · Clinical Design System
+ * Regal Doctor · Clinical Design System
  * Apple Health clarity · Linear density · Notion structure · Epic clinical depth
  */
 export const nx = {

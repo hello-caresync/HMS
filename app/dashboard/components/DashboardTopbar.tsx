@@ -40,7 +40,7 @@ export default function DashboardTopbar({
 
         <div className="hidden min-w-0 sm:block">
           <h1 className="truncate text-base font-semibold tracking-tight text-slate-900">
-            Nexora Operations
+            Regal Operations
           </h1>
           <p className="truncate text-xs text-slate-500">{today}</p>
         </div>

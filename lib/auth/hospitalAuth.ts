@@ -67,14 +67,45 @@ export function credentialRoleToStaffType(role: HospitalCredentialRole): string 
   return 'Staff';
 }
 
+const LEGACY_HOSPITAL_OPD_ROUTES = [
+  '/dashboard/opd',
+  '/hospital/opd',
+  '/hospital/opd-queue',
+  '/hospital/billing',
+  '/hospital/pharmacy',
+  '/hospital/admissions',
+] as const;
+
+/** Normalizes legacy desk routes to the main hospital ERP dashboard. */
+export function normalizeHospitalPostLoginRoute(route?: string | null): string {
+  const trimmed = route?.trim() ?? '';
+  if (!trimmed || !trimmed.startsWith('/')) return '/dashboard';
+
+  const lower = trimmed.toLowerCase();
+  if (
+    LEGACY_HOSPITAL_OPD_ROUTES.some(
+      (legacy) => lower === legacy || lower.startsWith(`${legacy}/`),
+    )
+  ) {
+    return '/dashboard';
+  }
+
+  if (lower.startsWith('/hospital/')) return '/dashboard';
+  return trimmed;
+}
+
 export function resolveCredentialDashboardRoute(
   role: HospitalCredentialRole,
   portalAccess?: string | null,
 ): string {
-  const route = portalAccess?.trim();
-  if (route && route.startsWith('/')) return route;
   if (role === 'admin') return '/dashboard';
   if (role === 'doctor') return '/doctor/dashboard';
+
+  const route = portalAccess?.trim();
+  if (route && route.startsWith('/')) {
+    return normalizeHospitalPostLoginRoute(route);
+  }
+
   return '/dashboard';
 }
 

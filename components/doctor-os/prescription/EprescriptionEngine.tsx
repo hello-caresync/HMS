@@ -189,7 +189,7 @@ export default function EprescriptionEngine() {
         <div className="col-span-12 lg:col-span-5">
           <div className="doctor-card min-h-[420px] border-2 border-brand-light bg-white shadow-sage">
             <div className="border-b border-brand-light pb-3 text-center">
-              <p className="text-xs font-bold uppercase tracking-widest text-brand-primary">Nexora Multispeciality Hospital</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-brand-primary">Regal Multispeciality Hospital</p>
               <p className="text-[10px] text-[#5A584A]">Rx · Verify at nexora.clinical/rx</p>
             </div>
             {patient && (

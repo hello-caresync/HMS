@@ -16,7 +16,7 @@ export default function AuthShell({ title, subtitle, children, footer }: AuthShe
       <aside className="hidden w-[42%] flex-col justify-between border-r border-[#0A4174]/40 bg-[#001D39] p-10 lg:flex">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#7BBDE8]">
-            Nexora Enterprise
+            Regal Multispeciality Hospital
           </p>
           <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight text-white">
             Hospital Management &amp; Procurement
@@ -47,7 +47,7 @@ export default function AuthShell({ title, subtitle, children, footer }: AuthShe
         <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden">
             <p className="font-mono text-[10px] uppercase tracking-wider text-[#0A4174]">
-              Nexora
+              Regal Hospital
             </p>
             <h2 className="mt-1 text-xl font-black text-[#001D39]">Enterprise Access</h2>
           </div>

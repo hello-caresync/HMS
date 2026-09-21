@@ -17,13 +17,13 @@ import {
   NEXORA_HMS_NAV,
   type NavItem,
   type NavSection,
-  type NexoraSidebarUser,
+  type RegalSidebarUser,
 } from './navigation.types';
 
-export type NexoraSystemSidebarProps = {
+export type RegalSystemSidebarProps = {
   activeModuleId: string;
   onNavigate: (moduleId: string) => void;
-  user?: NexoraSidebarUser;
+  user?: RegalSidebarUser;
   onSignOut?: () => void;
   onSettings?: () => void;
   /** Controlled collapsed state (optional) */
@@ -158,7 +158,7 @@ function NavSectionBlock({
   );
 }
 
-export default function NexoraSystemSidebar({
+export default function RegalSystemSidebar({
   activeModuleId,
   onNavigate,
   user = { name: 'Dr. Admin Console', role: 'Admin / Operations', initials: 'AC' },
@@ -166,7 +166,7 @@ export default function NexoraSystemSidebar({
   onSettings,
   collapsed: collapsedProp,
   onCollapsedChange,
-}: NexoraSystemSidebarProps) {
+}: RegalSystemSidebarProps) {
   const [collapsedInternal, setCollapsedInternal] = useState(false);
   const collapsed = collapsedProp ?? collapsedInternal;
 
@@ -202,16 +202,16 @@ export default function NexoraSystemSidebar({
     <Tooltip.Provider>
       <aside
         className={`flex h-screen shrink-0 flex-col border-r border-slate-800 bg-[#0F172A] text-slate-300 transition-[width] duration-200 ease-in-out ${collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH}`}
-        aria-label="Nexora HMS primary navigation"
+        aria-label="Regal Health HMS primary navigation"
       >
         {/* Header */}
         <div className="flex h-12 shrink-0 items-center gap-2 border-b border-slate-800 bg-[#0F172A] px-2">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#2563EB] text-[10px] font-black text-white">
-            N
+            R
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[11px] font-bold tracking-wide text-white">NEXORA HMS</p>
+              <p className="truncate text-[11px] font-bold tracking-wide text-white">Regal Health HMS</p>
               <span className="inline-flex rounded border border-[#2563EB]/40 bg-[#2563EB]/10 px-1 py-px text-[8px] font-bold uppercase tracking-wider text-[#93C5FD]">
                 Hospital App
               </span>

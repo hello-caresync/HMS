@@ -156,7 +156,7 @@ export default function LoginPanel({ redirectUrl }: LoginPanelProps) {
             </p>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-[clamp(0.75rem,2vh,1.25rem)] space-y-[clamp(0.65rem,1.5vh,1rem)]" noValidate>
+          <form onSubmit={handleSubmit} autoComplete="off" className="mt-[clamp(0.75rem,2vh,1.25rem)] space-y-[clamp(0.65rem,1.5vh,1rem)]" noValidate>
             <div>
               <label htmlFor="regal-email" className="mb-1 block text-xs font-semibold text-[#102033]">
                 Work Email
@@ -169,7 +169,7 @@ export default function LoginPanel({ redirectUrl }: LoginPanelProps) {
                 <input
                   id="regal-email"
                   type="email"
-                  autoComplete="email"
+                  autoComplete="off"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
@@ -206,7 +206,7 @@ export default function LoginPanel({ redirectUrl }: LoginPanelProps) {
                 <input
                   id="regal-password"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);

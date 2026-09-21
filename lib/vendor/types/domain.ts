@@ -1,4 +1,4 @@
-/** Nexora Vendor App — enterprise SRM domain models (FHIR-adjacent procurement). */
+/** Regal Vendor App — enterprise SRM domain models (FHIR-adjacent procurement). */
 
 export type VendorThemeMode = 'light' | 'dark';
 
@@ -245,14 +245,6 @@ export interface ServiceTicket {
   status: ServiceTicketStatus;
   assignedTechnician?: string;
   scheduledAt?: string;
-}
-
-export interface CommunicationThread {
-  id: string;
-  subject: string;
-  channel: 'Procurement' | 'Pharmacy' | 'Inventory' | 'Biomedical';
-  unreadCount: number;
-  lastMessageAt: string;
 }
 
 export interface VendorNotification {

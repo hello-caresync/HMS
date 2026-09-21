@@ -38,7 +38,7 @@ const PRE_AUTH: PreAuthRow[] = [
   {
     id: 'pa-1',
     procedure: 'Cardiac MRI with contrast',
-    provider: 'Nexora Imaging · Block C',
+    provider: 'Regal Imaging · Block C',
     submitted: '10 Jul 2026',
     status: 'approved',
     reference: 'PA-NX-2026-1182',
@@ -46,7 +46,7 @@ const PRE_AUTH: PreAuthRow[] = [
   {
     id: 'pa-2',
     procedure: 'Laparoscopic cholecystectomy',
-    provider: 'Nexora Surgical Centre',
+    provider: 'Regal Surgical Centre',
     submitted: '02 Jul 2026',
     status: 'pending',
     reference: 'PA-NX-2026-1094',
@@ -167,7 +167,7 @@ export function InsuranceView() {
               </>
             ) : (
               <>
-                <p className="text-[10px] font-black uppercase tracking-widest text-patient-text/60">Nexora Patient</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-patient-text/60">Regal Patient Portal</p>
                 <p className="mt-2 text-lg font-black">{PRIMARY_POLICY.payer.split('·')[0]?.trim()}</p>
                 <p className="mt-4 font-mono text-xl font-black text-patient-primary">{PRIMARY_POLICY.memberId}</p>
                 <p className="mt-2 text-xs font-bold text-patient-text/70">{PRIMARY_POLICY.effective}</p>

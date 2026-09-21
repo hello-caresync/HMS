@@ -1,5 +1,5 @@
 /**
- * Nexora Vendor Portal · live Supabase data layer.
+ * Regal Vendor Portal · live Supabase data layer.
  * Shared with the Hospital Procurement App via purchase_orders, shipments, invoices.
  * No dummy seed fallbacks — empty arrays and zero counts when tables are empty.
  */
@@ -14,12 +14,6 @@ import {
   hospitalNameForCode,
   matchesHospitalFilter,
 } from '@/lib/vendor/hospitals';
-import {
-  loadChannelMessages as loadUnifiedChannelMessages,
-  sendVendorProcurementMessage,
-  subscribeChannelMessages,
-} from '@/lib/ecosystem/channel-messaging-service';
-
 /** Shared vendor context used by both the hospital and vendor apps. */
 export const DEFAULT_VENDOR_ID = '11111111-1111-1111-1111-111111111111';
 export const VENDOR_ID = DEFAULT_VENDOR_ID;
@@ -86,16 +80,6 @@ export type Invoice = {
   item_details?: string;
 };
 
-export type ChannelMessage = {
-  id: string;
-  vendor_id: string;
-  hospital_code: string;
-  sender_role: 'HOSPITAL' | 'VENDOR' | string;
-  sender_name: string;
-  message_text: string;
-  created_at: string;
-};
-
 export type VendorProfile = {
   id: string;
   company_name: string;
@@ -128,7 +112,6 @@ export const INVOICEABLE_PO_STATUSES: string[] = ['ACCEPTED', 'DISPATCHED', 'GOO
 const DAY_MS = 24 * 60 * 60 * 1000;
 const VENDOR_REALTIME_CHANNEL = 'public:purchase_orders';
 const VENDOR_DASHBOARD_CHANNEL = 'v0-dashboard';
-const VENDOR_CHAT_CHANNEL = 'v0-chat';
 
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
@@ -708,56 +691,6 @@ export async function loadInvoices(
   }
 }
 
-export async function loadChannelMessages(
-  limit = 200,
-  hospitalCode = ALL_HOSPITALS_CODE,
-): Promise<LoadResult<ChannelMessage>> {
-  try {
-    const facilityCode = hospitalCode === ALL_HOSPITALS_CODE ? DEFAULT_HOSPITAL_CODE : hospitalCode;
-    const result = await loadUnifiedChannelMessages(supabase, {
-      channel_type: 'vendor_procurement',
-      facility_code: facilityCode,
-      vendor_id: VENDOR_ID,
-      limit,
-    });
-
-    return {
-      rows: result.rows.map((row) => ({
-        id: row.id,
-        vendor_id: String(row.vendor_id ?? VENDOR_ID),
-        hospital_code: String(row.hospital_code ?? facilityCode),
-        sender_role: String(row.sender_role).toUpperCase(),
-        sender_name: row.sender_name,
-        message_text: row.message,
-        created_at: row.created_at,
-      })),
-      error: result.error,
-    };
-  } catch (error) {
-    return { rows: [], error: errorMessage(error, 'Could not reach channel_messages') };
-  }
-}
-
-export async function sendChannelMessage(
-  messageText: string,
-  selectedHospitalCode?: string,
-): Promise<WriteResult> {
-  const facilityCode =
-    selectedHospitalCode && selectedHospitalCode !== ALL_HOSPITALS_CODE
-      ? selectedHospitalCode
-      : DEFAULT_HOSPITAL_CODE;
-
-  const result = await sendVendorProcurementMessage(supabase, {
-    message: messageText,
-    sender_role: 'vendor',
-    sender_name: 'MedSupply Dispatch',
-    facility_code: facilityCode,
-    vendor_id: VENDOR_ID,
-  });
-
-  return result.ok ? { ok: true } : { ok: false, error: result.error };
-}
-
 export async function loadVendorProfile(): Promise<{ profile: VendorProfile | null; error?: string }> {
   try {
     const { data, error } = await supabase
@@ -1053,30 +986,6 @@ export function subscribeDashboard(
   } catch {
     return () => {};
   }
-}
-
-export function subscribeVendorChat(
-  onInsert: (message: ChannelMessage) => void,
-  options?: VendorPortalRealtimeOptions,
-): () => void {
-  const hospitalCode = options?.hospitalCode ?? ALL_HOSPITALS_CODE;
-
-  return subscribeChannelMessages({
-    channel_type: 'vendor_procurement',
-    onInsert: (row) => {
-      const mapped: ChannelMessage = {
-        id: row.id,
-        vendor_id: String(row.vendor_id ?? VENDOR_ID),
-        hospital_code: String(row.hospital_code ?? DEFAULT_HOSPITAL_CODE),
-        sender_role: String(row.sender_role).toUpperCase(),
-        sender_name: row.sender_name,
-        message_text: row.message,
-        created_at: row.created_at,
-      };
-      if (!matchesHospitalFilter(mapped.hospital_code, hospitalCode)) return;
-      onInsert(mapped);
-    },
-  });
 }
 
 export function poStatusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' {

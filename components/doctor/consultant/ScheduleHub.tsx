@@ -123,7 +123,7 @@ const CLINICAL_WEEK: ClinicalSession[] = [
     end: '12:30',
     title: 'Teleconsultation Block',
     category: 'telehealth',
-    location: 'Virtual · Nexora Tele',
+    location: 'Regal Telehealth',
     patientCount: 4,
     status: 'upcoming',
     actionHref: '/doctor/communication?tab=tele',

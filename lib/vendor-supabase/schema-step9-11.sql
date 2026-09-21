@@ -1,4 +1,4 @@
--- Nexora Vendor App · Step 9+ tables (run in Supabase SQL editor if not present)
+-- Regal Vendor App · Step 9+ tables (run in Supabase SQL editor if not present)
 
 create table if not exists public.compliance_documents (
   id uuid primary key default gen_random_uuid(),

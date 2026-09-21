@@ -188,13 +188,21 @@ function escapeOrFilterValue(value: string): string {
 }
 
 /** Builds a Supabase `.or()` filter scoped to the active patient. */
-export function buildPatientScopeOrFilter(session: PatientAuthSession): string | null {
+export function buildPatientScopeOrFilter(
+  session: PatientAuthSession,
+  linkedPatientIds: string[] = [],
+): string | null {
   const parts: string[] = [];
   const phoneDigits = normalizePhoneDigits(session.phone);
   const phoneRaw = escapeOrFilterValue(session.phone);
 
+  for (const patientId of linkedPatientIds) {
+    const id = escapeOrFilterValue(patientId);
+    if (id) parts.push(`patient_id.eq.${id}`);
+  }
+
   if (session.patientId) {
-    parts.push(`patient_id.eq.${session.patientId}`);
+    parts.push(`patient_id.eq.${escapeOrFilterValue(session.patientId)}`);
   }
   if (session.uhid) {
     parts.push(`uhid.eq.${session.uhid}`);
@@ -237,6 +245,7 @@ export function hasVerifiedPatientIdentity(session: PatientAuthSession | null): 
 export function rowMatchesPatientSession(
   row: Record<string, unknown>,
   session: PatientAuthSession,
+  linkedPatientIds: string[] = [],
 ): boolean {
   const phoneDigits = normalizePhoneDigits(session.phone);
   const rowPhone = normalizePhoneDigits(String(row.phone ?? row.patient_phone ?? ''));
@@ -245,7 +254,11 @@ export function rowMatchesPatientSession(
   const rowUhid = String(row.uhid ?? '').trim();
   const rowName = String(row.patient_name ?? row.full_name ?? '').trim().toLowerCase();
   const sessionName = session.name.trim().toLowerCase();
+  const linkedIds = new Set(
+    [...linkedPatientIds, session.patientId].map((value) => String(value ?? '').trim()).filter(Boolean),
+  );
 
+  if (rowPatientId && linkedIds.has(rowPatientId)) return true;
   if (session.patientId && rowPatientId && rowPatientId === session.patientId) return true;
   if (session.uhid && rowUhid && rowUhid === session.uhid) return true;
   if (phoneDigits && rowPhone && rowPhone === phoneDigits) return true;

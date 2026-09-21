@@ -1,4 +1,4 @@
-/** Nexora Doctor App — domain types */
+/** Regal Doctor App — domain types */
 
 export type AppointmentStatus =
   | 'scheduled'

@@ -41,7 +41,7 @@ function initials(name: string): string {
 }
 
 export default function StaffSessionHeader({
-  moduleTitle = 'Nexora Hospital ERP',
+  moduleTitle = 'Regal Hospital ERP',
   showSearch = true,
   searchPlaceholder = 'Search UHID, employee, invoice…',
 }: StaffSessionHeaderProps) {

@@ -9,7 +9,7 @@ import DashboardSidebar from './DashboardSidebar';
 import ExecutiveDashboard from './executive/ExecutiveDashboard';
 import NotificationCenter from './NotificationCenter';
 
-export default function NexoraDashboard() {
+export default function RegalDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] =

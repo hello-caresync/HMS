@@ -1,3 +1,5 @@
+import { normalizeHospitalPostLoginRoute } from '@/lib/auth/hospitalAuth';
+
 import { clearNexoraRoleCookie, setNexoraRoleCookie } from './role-cookies';
 import { CACHE_KEYS, removeLocalJson } from '@/lib/persistence/local-cache';
 
@@ -28,15 +30,15 @@ export function parseActiveSession(raw: string | null): ActiveStaffSession | nul
   return null;
 }
 
-/** Hospital Admins land on staff provisioning first; all other roles use their portal route. */
+/** Hospital Admins land on staff provisioning first; all other roles use the root dashboard. */
 export function resolvePostLoginRoute(staffType: string, portalAccess: string): string {
   if (staffType === 'Admin') return ADMIN_PROVISIONING_PATH;
-  return portalAccess || '/dashboard';
+  return normalizeHospitalPostLoginRoute(portalAccess || '/dashboard');
 }
 
 /** Operational staff never route to the admin credential provisioning screen. */
 export function resolveOperationalStaffRoute(portalAccess: string): string {
-  const route = portalAccess || '/dashboard';
+  const route = normalizeHospitalPostLoginRoute(portalAccess || '/dashboard');
   if (route === ADMIN_PROVISIONING_PATH) return '/dashboard';
   return route;
 }

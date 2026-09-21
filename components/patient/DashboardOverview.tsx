@@ -3,9 +3,7 @@
 import type { ElementType } from 'react';
 import Link from 'next/link';
 import {
-  Activity,
   Calendar,
-  Clock,
   FileText,
   HeartPulse,
   IndianRupee,
@@ -23,6 +21,7 @@ import {
   type PatientBillingSnapshot,
 } from '@/lib/patient/patient-billing-status';
 import type { PatientClinicalRecord } from '@/lib/patient/patients-record';
+import { ProfileCompletionGate } from '@/components/patient/ProfileCompletionGate';
 import { patientClasses } from '@/lib/patient/theme';
 import { formatINR } from '@/lib/utils/currency';
 
@@ -31,9 +30,12 @@ export type DashboardVisit = {
   doctor_name: string;
   department: string;
   appointment_date: string;
+  appointment_time?: string;
   slot_time: string;
   token_number: number;
   queue_status: string;
+  status?: string;
+  booking_for?: string;
   reason?: string;
 };
 
@@ -58,6 +60,9 @@ export type DashboardOverviewProps = {
   vitals: PatientClinicalRecord | null;
   onRefresh: () => void;
   onBookConsultation: () => void;
+  profileComplete?: boolean;
+  profileGateLoading?: boolean;
+  profileMissingFields?: string[];
 };
 
 const sectionHeaderClass =
@@ -90,22 +95,64 @@ function StatCard({
   );
 }
 
-function queueStatusClass(status: string): string {
-  const value = status.toUpperCase();
-  if (value.includes('IN') || value.includes('CONSULT')) {
-    return patientClasses.badgeSuccess;
-  }
-  if (value.includes('WAIT')) {
-    return patientClasses.badgeWarning;
-  }
-  return 'inline-flex items-center gap-1 rounded-full border border-[#EADBCE] bg-[#F3ECE4] px-2 py-0.5 text-[10px] font-bold text-[#5C3826]';
-}
-
 function formatShortDate(value: string): string {
   if (!value) return '—';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value.slice(0, 10);
   return parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+}
+
+function formatVisitTime(value: string): string {
+  const text = String(value ?? '').trim();
+  if (!text) return 'TBD';
+  if (/^\d{1,2}:\d{2}/.test(text)) return text.slice(0, 5);
+  const parsed = new Date(text);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  }
+  return text;
+}
+
+function UpcomingVisitCard({ visit }: { visit: DashboardVisit }) {
+  const displayStatus = (visit.status || visit.queue_status || 'CONFIRMED').replace(/_/g, ' ');
+  const displayTime = formatVisitTime(visit.appointment_time || visit.slot_time);
+  const displayDate = formatShortDate(visit.appointment_date);
+
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+      <div className="flex min-w-0 items-center gap-3">
+        <Calendar className="h-6 w-6 shrink-0 text-amber-700" aria-hidden />
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+              Upcoming Visit
+            </span>
+            <span className="text-xs font-medium text-amber-900">
+              {displayDate} at {displayTime}
+            </span>
+          </div>
+          <h4 className="mt-1 text-sm font-bold text-stone-900">
+            {visit.doctor_name || 'Consulting Physician'}
+            <span className="text-xs font-normal text-stone-600">
+              {' '}
+              ({visit.department || 'General'})
+            </span>
+          </h4>
+          {visit.booking_for && visit.booking_for !== 'SELF' ? (
+            <p className="text-xs text-stone-500">For: {visit.booking_for}</p>
+          ) : null}
+          {visit.token_number ? (
+            <p className="mt-1 text-[11px] font-semibold text-[#8C5A3C]">
+              Queue token #{visit.token_number}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+        {displayStatus}
+      </span>
+    </div>
+  );
 }
 
 export function DashboardOverview({
@@ -122,7 +169,11 @@ export function DashboardOverview({
   vitals,
   onRefresh,
   onBookConsultation,
+  profileComplete = true,
+  profileGateLoading = false,
+  profileMissingFields = [],
 }: DashboardOverviewProps) {
+  const bookingBlocked = !profileGateLoading && !profileComplete;
   const firstName = patientName.split(/\s+/)[0] || patientName;
   const tokenLabel = activeVisit?.token_number
     ? `#${activeVisit.token_number}`
@@ -172,14 +223,23 @@ export function DashboardOverview({
             <Link href="/patient/profile" className={patientClasses.btnSecondaryOutline}>
               View Vitals
             </Link>
-            <button type="button" onClick={onBookConsultation} className={patientClasses.btnPrimary}>
+            <button
+              type="button"
+              onClick={onBookConsultation}
+              disabled={profileGateLoading || bookingBlocked}
+              className={patientClasses.btnPrimary}
+            >
               <span className="inline-flex items-center gap-1.5">
                 <PlusCircle className="h-3.5 w-3.5" aria-hidden />
-                Book Consultation
+                {bookingBlocked ? 'Complete Profile to Book' : 'Book Consultation'}
               </span>
             </button>
           </div>
         </div>
+
+        {bookingBlocked ? (
+          <ProfileCompletionGate missingFields={profileMissingFields} />
+        ) : null}
 
         <div className="flex flex-wrap gap-2">
           {[
@@ -252,45 +312,18 @@ export function DashboardOverview({
                     ? `${doctorsAvailable} doctor${doctorsAvailable === 1 ? '' : 's'} available to book now.`
                     : 'Book an OPD slot to receive your live queue token.'}
                 </p>
-                <button type="button" onClick={onBookConsultation} className={patientClasses.btnPrimary}>
-                  Book OPD Slot Now
+                <button
+                  type="button"
+                  onClick={onBookConsultation}
+                  disabled={profileGateLoading || bookingBlocked}
+                  className={patientClasses.btnPrimary}
+                >
+                  {bookingBlocked ? 'Complete Profile to Book OPD' : 'Book OPD Slot Now'}
                 </button>
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-stone-500">Token</span>
-                    <span className="text-2xl font-bold tracking-tight text-[#8C5A3C]">
-                      #{activeVisit.token_number || 1}
-                    </span>
-                  </div>
-                  <span className={queueStatusClass(activeVisit.queue_status)}>
-                    <Activity className="h-3 w-3" aria-hidden />
-                    {activeVisit.queue_status || 'WAITING'}
-                  </span>
-                </div>
-
-                <div className="flex items-start gap-3 rounded-lg border border-[#EADBCE] bg-[#FDFBF7] p-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8C5A3C] text-xs font-bold text-white">
-                    {activeVisit.doctor_name.replace(/^Dr\.?\s*/i, '').charAt(0) || 'D'}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-[#2B1810]">{activeVisit.doctor_name}</p>
-                    <p className="text-xs font-semibold text-[#8C5A3C]">{activeVisit.department} OPD</p>
-                    <div className="mt-1 flex flex-wrap gap-3 text-[11px] font-medium text-stone-500">
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatShortDate(activeVisit.appointment_date)}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {activeVisit.slot_time || 'TBD'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
+                <UpcomingVisitCard visit={activeVisit} />
                 {activeVisit.reason ? (
                   <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
                     <span className="font-bold">Reason:</span> {activeVisit.reason}

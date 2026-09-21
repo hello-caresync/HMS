@@ -1,8 +1,8 @@
 ﻿'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Activity,
   AlertTriangle,
@@ -21,7 +21,6 @@ import {
   PackageCheck,
   Phone,
   Plus,
-  Printer,
   QrCode,
   RefreshCw,
   Search,
@@ -79,7 +78,9 @@ import {
 import { DoctorsStaffCommandCenter } from '@/components/hospital/DoctorsStaffCommandCenter';
 import { IpdBedCensus } from '@/components/hospital/IpdBedCensus';
 import { SupplyOrdersCommandCenter } from '@/components/hospital/SupplyOrdersCommandCenter';
-import { RegalHospitalLogoMark } from '@/components/brand/RegalHospitalLogo';
+import { BillingCheckoutCommandCenter } from '@/components/hospital/BillingCheckoutCommandCenter';
+import { HospitalOperationsHeaderBrand, HospitalOperationsHeaderTitle } from '@/components/hospital/HospitalOperationsHeaderBrand';
+import { HospitalOperationsSidebarBrand } from '@/components/hospital/HospitalOperationsSidebarBrand';
 import { DASHBOARD_TAB_STORAGE_KEY } from '@/components/hospital/DashboardTabRedirect';
 import { mapHospitalStaffMember, toDashboardStaffRow } from '@/lib/hospital/staff-directory';
 import {
@@ -88,6 +89,20 @@ import {
   type DoctorStaffRecord,
 } from '@/lib/hospital/hospital-staff-roster';
 import { formatDoctorBookingOptionLabel } from '@/lib/hospital/doctors';
+import {
+  formatGenderDisplay,
+  resolveRawGenderFromRow,
+} from '@/lib/clinical/format-gender';
+import {
+  collectVisitIdsFromRow,
+  countPatientVisitsFromRow,
+  formatPatientAgeDisplay,
+  normalizeGenderFilterValue,
+  resolvePatientAgeFromRow,
+  resolvePatientDobFromRow,
+  resolvePatientGenderFromRow,
+  resolvePatientPhoneFromRow,
+} from '@/lib/clinical/patient-directory';
 import {
   isTenDigitPhone,
   parsePatientAge,
@@ -175,16 +190,24 @@ function isNavModule(value: string | null | undefined): value is NavModule {
   return Boolean(value && NAV_MODULES.includes(value as NavModule));
 }
 
-function readInitialDashboardTab(): NavModule {
-  if (typeof window === 'undefined') return 'dashboard';
-  const fromQuery = new URLSearchParams(window.location.search).get('tab');
-  if (isNavModule(fromQuery)) return fromQuery;
+function readStoredDashboardTab(): NavModule | null {
+  if (typeof window === 'undefined') return null;
   const stored = sessionStorage.getItem(DASHBOARD_TAB_STORAGE_KEY);
   if (isNavModule(stored)) {
     sessionStorage.removeItem(DASHBOARD_TAB_STORAGE_KEY);
     return stored;
   }
+  return null;
+}
+
+function resolveDashboardTab(tabParam: string | null, storedTab: NavModule | null): NavModule {
+  if (isNavModule(tabParam)) return tabParam;
+  if (storedTab) return storedTab;
   return 'dashboard';
+}
+
+function dashboardHrefForTab(tab: NavModule): string {
+  return tab === 'dashboard' ? '/dashboard' : `/dashboard?tab=${tab}`;
 }
 
 type ModalKind = 'opd' | 'pharmacy' | 'bed' | 'invoice' | 'supply' | null;
@@ -220,6 +243,7 @@ type QueueRow = {
   department: string;
   phone: string;
   doctor_name: string;
+  doctor_specialty: string;
   doctor_id: string;
   status: string;
   created_at: string;
@@ -270,11 +294,14 @@ type PatientProfile = {
   gender: string;
   age: number | null;
   patient_age: number | null;
+  dob?: string | null;
   record_status: string;
   booking_source?: string;
   appointment_id?: string;
   encounter_status?: string;
   doctor_name?: string;
+  consulting_doctor_name?: string;
+  consulting_doctor_specialty?: string;
   billing_status?: PatientBillingStatus;
   pending_invoice_id?: string;
 };
@@ -550,42 +577,107 @@ function formatEncounter(isoDate: string): string {
   return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+function flattenAppointmentDoctorFields(row: Record<string, unknown>): Record<string, unknown> {
+  const doctor = row.doctor;
+  if (!doctor || typeof doctor !== 'object' || Array.isArray(doctor)) return row;
+  const doctorRow = doctor as Record<string, unknown>;
+  return {
+    ...row,
+    doctor_name:
+      row.doctor_name ?? doctorRow.full_name ?? doctorRow.name ?? doctorRow.doctor_name,
+    doctor_specialty:
+      row.doctor_specialty ??
+      row.specialty ??
+      doctorRow.specialty ??
+      doctorRow.specialization ??
+      doctorRow.department ??
+      row.department,
+  };
+}
+
+function latestEncounterRowFromPatient(row: Record<string, unknown>): Record<string, unknown> | null {
+  const nested =
+    (row.encounters as Record<string, unknown>[] | undefined) ??
+    (row.appointments as Record<string, unknown>[] | undefined);
+  if (!Array.isArray(nested) || nested.length === 0) return null;
+  const sorted = [...nested].sort((a, b) =>
+    String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')),
+  );
+  return flattenAppointmentDoctorFields(sorted[0] as Record<string, unknown>);
+}
+
+function resolveConsultingDoctorFromPatientRow(row: Record<string, unknown>): {
+  name?: string;
+  specialty?: string;
+} {
+  const latest = latestEncounterRowFromPatient(row);
+  if (!latest) return {};
+  const name = String(latest.doctor_name ?? '').trim();
+  const specialty = String(latest.doctor_specialty ?? latest.department ?? '').trim();
+  return {
+    name: name && name !== 'Unassigned' ? name : undefined,
+    specialty: specialty || undefined,
+  };
+}
+
+function resolveDepartmentFromPatientRow(row: Record<string, unknown>): string {
+  const latest = latestEncounterRowFromPatient(row);
+  const fromEncounter = String(latest?.department ?? '').trim();
+  if (fromEncounter) return fromEncounter;
+  return 'General Outpatient';
+}
+
+function formatConsultingDoctorName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return trimmed;
+  return /^dr\.?\s/i.test(trimmed) ? trimmed : `Dr. ${trimmed}`;
+}
+
+function isBillingUnsettled(status?: PatientBillingStatus): boolean {
+  return status === 'pending_payment' || status === 'awaiting_consultation';
+}
+
 function mapQueueRow(row: Record<string, unknown>, sourceTable: string): QueueRow | null {
-  const status = String(row.status ?? row.queue_status ?? 'Waiting');
-  const token = String(row.token_number ?? row.uhid ?? row.token ?? '').trim();
-  const rawId = String(row.id ?? '').trim();
-  const rawAppointmentId = String(row.appointment_id ?? '').trim();
+  const normalized = flattenAppointmentDoctorFields(row);
+  const status = String(normalized.status ?? normalized.queue_status ?? 'Waiting');
+  const token = String(normalized.token_number ?? normalized.uhid ?? normalized.token ?? '').trim();
+  const rawId = String(normalized.id ?? '').trim();
+  const rawAppointmentId = String(normalized.appointment_id ?? '').trim();
   const id = isUuidValue(rawId) ? rawId : isUuidValue(rawAppointmentId) ? rawAppointmentId : '';
-  const patientName = String(row.patient_name ?? row.name ?? '').trim();
+  const patientName = String(normalized.patient_name ?? normalized.name ?? '').trim();
   if (!id && !token && !patientName) return null;
-  const ageRaw = row.age ?? row.patient_age;
-  const channel = classifyQueueSource(row);
+  const ageRaw = normalized.age ?? normalized.patient_age;
+  const channel = classifyQueueSource(normalized);
+  const department = String(normalized.department ?? 'General Medicine');
   return {
     id,
     token: token || (isUuidValue(rawId) ? rawId.slice(0, 8) : rawId) || '—',
     token_number: token,
-    uhid: String(row.uhid ?? token ?? ''),
+    uhid: String(normalized.uhid ?? token ?? ''),
     patient_name: patientName || 'Unnamed Patient',
-    department: String(row.department ?? 'General Medicine'),
-    phone: String(row.phone ?? row.patient_phone ?? ''),
-    doctor_name: String(row.doctor_name ?? 'Unassigned'),
-    doctor_id: String(row.doctor_id ?? row.doctor_code ?? row.doctor_employee_id ?? ''),
+    department,
+    phone: String(normalized.phone ?? normalized.patient_phone ?? ''),
+    doctor_name: String(normalized.doctor_name ?? 'Unassigned'),
+    doctor_specialty: String(
+      normalized.doctor_specialty ?? normalized.specialty ?? normalized.specialization ?? department,
+    ),
+    doctor_id: String(normalized.doctor_id ?? normalized.doctor_code ?? normalized.doctor_employee_id ?? ''),
     status,
-    created_at: String(row.created_at ?? ''),
-    appointment_date: String(row.appointment_date ?? row.created_at ?? ''),
-    slot_time: String(row.slot_time ?? row.time_slot ?? row.appointment_time ?? ''),
-    reschedule_status: String(row.reschedule_status ?? ''),
-    source: String(row.source ?? (channel === 'walk-in' ? 'WALK_IN' : 'PATIENT_APP')),
+    created_at: String(normalized.created_at ?? ''),
+    appointment_date: String(normalized.appointment_date ?? normalized.created_at ?? ''),
+    slot_time: String(normalized.slot_time ?? normalized.time_slot ?? normalized.appointment_time ?? ''),
+    reschedule_status: String(normalized.reschedule_status ?? ''),
+    source: String(normalized.source ?? (channel === 'walk-in' ? 'WALK_IN' : 'PATIENT_APP')),
     channel,
     source_table: sourceTable,
-    gender: String(row.gender ?? row.sex ?? ''),
+    gender: resolveRawGenderFromRow(normalized) ?? '',
     age:
       ageRaw == null || ageRaw === ''
         ? null
         : Number.isFinite(Number(ageRaw))
           ? Number(ageRaw)
           : null,
-    consultation_fee: resolveDoctorConsultationFee(row),
+    consultation_fee: resolveDoctorConsultationFee(normalized),
   };
 }
 
@@ -616,104 +708,150 @@ function patientKey(name: string, phone: string, uhid: string): string {
 
 function buildPatientDirectory(queue: QueueRow[], extraPatients: Record<string, unknown>[]): PatientProfile[] {
   const directory = new Map<string, PatientProfile>();
+  const visitIdsByKey = new Map<string, Set<string>>();
+  const registryVisitBaseline = new Map<string, number>();
 
-  const upsert = (input: {
-    id: string;
-    uhid: string;
-    patient_name: string;
-    phone: string;
-    department: string;
-    created_at: string;
-    gender: string;
-    age: number | null;
-    patient_age?: number | null;
-    visits?: number;
-  }) => {
-    const key = patientKey(input.patient_name, input.phone, input.uhid);
-    const existing = directory.get(key);
-    const resolvedAge = input.patient_age ?? input.age;
-    if (!existing) {
-      directory.set(key, {
-        id: input.id,
-        uhid: input.uhid,
-        patient_name: input.patient_name,
-        phone: input.phone,
-        department: input.department,
-        visits: input.visits ?? 1,
-        last_encounter: input.created_at,
-        first_registered: input.created_at,
-        gender: input.gender,
-        age: resolvedAge,
-        patient_age: resolvedAge,
-        record_status: 'Verified Profile',
-      });
-      return;
-    }
-    existing.visits += input.visits ?? 1;
-    if (input.created_at && (!existing.last_encounter || input.created_at > existing.last_encounter)) {
-      existing.last_encounter = input.created_at;
-      existing.department = input.department || existing.department;
-    }
-    if (input.created_at && (!existing.first_registered || input.created_at < existing.first_registered)) {
-      existing.first_registered = input.created_at;
-    }
-    if (!existing.gender && input.gender) existing.gender = input.gender;
-    if (existing.age == null && resolvedAge != null) existing.age = resolvedAge;
-    if (existing.patient_age == null && resolvedAge != null) existing.patient_age = resolvedAge;
-    if (existing.uhid.startsWith('NX-OPD-') && input.uhid && !input.uhid.startsWith('NX-OPD-')) {
-      existing.uhid = input.uhid;
+  const mergeVisitIds = (key: string, ids: string[]) => {
+    if (!visitIdsByKey.has(key)) visitIdsByKey.set(key, new Set());
+    const bucket = visitIdsByKey.get(key)!;
+    for (const id of ids) {
+      if (id) bucket.add(id);
     }
   };
 
-  for (const visit of queue) {
-    upsert({
-      id: visit.id,
-      uhid: visit.uhid,
-      patient_name: visit.patient_name,
-      phone: visit.phone,
-      department: visit.department,
-      created_at: visit.created_at || visit.appointment_date,
-      gender: visit.gender,
-      age: visit.age,
-      patient_age: visit.age,
-    });
-  }
+  const syncVisitCount = (key: string, profile: PatientProfile) => {
+    profile.visits = Math.max(
+      visitIdsByKey.get(key)?.size ?? 0,
+      registryVisitBaseline.get(key) ?? 0,
+      profile.visits,
+    );
+  };
+
+  const touchEncounterDates = (
+    profile: PatientProfile,
+    createdAt: string,
+    department?: string,
+  ) => {
+    if (createdAt && (!profile.last_encounter || createdAt > profile.last_encounter)) {
+      profile.last_encounter = createdAt;
+      if (department) profile.department = department;
+    }
+    if (createdAt && (!profile.first_registered || createdAt < profile.first_registered)) {
+      profile.first_registered = createdAt;
+    }
+  };
 
   for (const row of extraPatients) {
-    const ageRaw = row.patient_age ?? row.age;
-    upsert({
-      id: String(row.id ?? row.uhid ?? ''),
-      uhid: String(row.uhid ?? row.id ?? ''),
-      patient_name: String(row.full_name ?? row.patient_name ?? row.name ?? ''),
-      phone: String(row.phone ?? row.mobile ?? ''),
-      department: String(row.department ?? 'General Outpatient'),
-      created_at: String(row.created_at ?? row.last_visit_at ?? ''),
-      gender: String(row.gender ?? row.sex ?? ''),
-      age:
-        ageRaw == null || ageRaw === ''
-          ? null
-          : Number.isFinite(Number(ageRaw))
-            ? Number(ageRaw)
-            : null,
-      patient_age:
-        row.patient_age == null || row.patient_age === ''
-          ? null
-          : Number.isFinite(Number(row.patient_age))
-            ? Number(row.patient_age)
-            : null,
-      visits: Number(row.visit_count ?? 0) || 1,
-    });
+    const patientName = String(row.full_name ?? row.patient_name ?? row.name ?? '').trim();
+    const phone = resolvePatientPhoneFromRow(row);
+    const uhid = String(row.uhid ?? row.id ?? '').trim();
+    const key = patientKey(patientName, phone, uhid);
+    const resolvedAge = resolvePatientAgeFromRow(row);
+    const gender = resolvePatientGenderFromRow(row);
+    const dob = resolvePatientDobFromRow(row);
+    const createdAt = String(row.created_at ?? row.last_visit_at ?? '');
+    const department = resolveDepartmentFromPatientRow(row);
+    const consulting = resolveConsultingDoctorFromPatientRow(row);
+    const visitIds = collectVisitIdsFromRow(row);
+    const registryVisits = countPatientVisitsFromRow(row);
+
+    mergeVisitIds(key, visitIds);
+    registryVisitBaseline.set(
+      key,
+      Math.max(registryVisitBaseline.get(key) ?? 0, registryVisits),
+    );
+
+    const existing = directory.get(key);
+    if (!existing) {
+      directory.set(key, {
+        id: String(row.id ?? uhid),
+        uhid,
+        patient_name: patientName,
+        phone,
+        department,
+        visits: Math.max(visitIds.length, registryVisits),
+        last_encounter: createdAt,
+        first_registered: createdAt,
+        gender,
+        age: resolvedAge,
+        patient_age: resolvedAge,
+        dob,
+        record_status: 'Verified Profile',
+        consulting_doctor_name: consulting.name,
+        consulting_doctor_specialty: consulting.specialty,
+      });
+    } else {
+      if (phone) existing.phone = phone;
+      if (gender) existing.gender = gender;
+      if (resolvedAge != null) {
+        existing.age = resolvedAge;
+        existing.patient_age = resolvedAge;
+      }
+      if (dob) existing.dob = dob;
+      touchEncounterDates(existing, createdAt, department);
+      if (existing.uhid.startsWith('NX-OPD-') && uhid && !uhid.startsWith('NX-OPD-')) {
+        existing.uhid = uhid;
+      }
+      if (consulting.name) {
+        existing.consulting_doctor_name = consulting.name;
+        existing.consulting_doctor_specialty = consulting.specialty;
+      }
+      syncVisitCount(key, existing);
+    }
+  }
+
+  for (const visit of queue) {
+    const key = patientKey(visit.patient_name, visit.phone, visit.uhid);
+    const createdAt = visit.created_at || visit.appointment_date;
+    const visitId =
+      visit.id ||
+      `queue:${key}:${createdAt}:${visit.token_number || visit.token || visit.uhid}`;
+    mergeVisitIds(key, [visitId]);
+
+    const existing = directory.get(key);
+    if (!existing) {
+      directory.set(key, {
+        id: visit.id || visit.uhid,
+        uhid: visit.uhid,
+        patient_name: visit.patient_name,
+        phone: visit.phone,
+        department: visit.department,
+        visits: visitIdsByKey.get(key)?.size ?? 1,
+        last_encounter: createdAt,
+        first_registered: createdAt,
+        gender: visit.gender,
+        age: visit.age,
+        patient_age: visit.age,
+        record_status: 'Verified Profile',
+      });
+      continue;
+    }
+
+    if (!existing.phone && visit.phone) existing.phone = visit.phone;
+    if (!existing.gender && visit.gender) existing.gender = visit.gender;
+    if (existing.age == null && visit.age != null) {
+      existing.age = visit.age;
+      existing.patient_age = visit.age;
+    }
+    touchEncounterDates(existing, createdAt, visit.department);
+    syncVisitCount(key, existing);
   }
 
   return Array.from(directory.values()).map((patient) => {
+    const key = patientKey(patient.patient_name, patient.phone, patient.uhid);
+    const visitCount = Math.max(
+      visitIdsByKey.get(key)?.size ?? 0,
+      registryVisitBaseline.get(key) ?? 0,
+      patient.visits,
+    );
     const daysSince = waitMinutes(patient.last_encounter);
     const record_status =
       daysSince != null && daysSince <= 30 * 24 * 60
         ? 'Active Chart'
-        : patient.visits > 1
+        : visitCount > 1
           ? 'Longitudinal Chart'
           : 'Verified Profile';
-    return { ...patient, record_status };
+    return { ...patient, visits: visitCount, record_status };
   });
 }
 
@@ -764,12 +902,27 @@ function enrichPatientsWithBilling(
       billing_status = 'awaiting_consultation';
     }
 
+    const queueDoctorName =
+      latest?.doctor_name && latest.doctor_name !== 'Unassigned' ? latest.doctor_name : undefined;
+    const invoiceDoctorName =
+      pendingInvoice?.doctor_name && pendingInvoice.doctor_name !== 'Unassigned'
+        ? pendingInvoice.doctor_name
+        : undefined;
+    const consultingDoctorName = queueDoctorName || invoiceDoctorName || patient.consulting_doctor_name;
+    const consultingDoctorSpecialty =
+      latest?.doctor_specialty ||
+      patient.consulting_doctor_specialty ||
+      latest?.department ||
+      patient.department;
+
     return {
       ...patient,
       booking_source: latest?.source,
       appointment_id: latest?.id,
       encounter_status: latest?.status,
-      doctor_name: latest?.doctor_name || pendingInvoice?.doctor_name,
+      doctor_name: consultingDoctorName,
+      consulting_doctor_name: consultingDoctorName,
+      consulting_doctor_specialty: consultingDoctorSpecialty,
       billing_status,
       pending_invoice_id: pendingInvoice?.id,
     };
@@ -796,6 +949,100 @@ async function selectScoped(table: string, hospitalId: string): Promise<Record<s
   );
 }
 
+const APPOINTMENT_DOCTOR_JOIN_SELECT = `
+  *,
+  doctor:doctors (
+    id,
+    full_name,
+    name,
+    specialty,
+    department,
+    specialization
+  )
+`;
+
+/** Patient directory rows with latest encounter/appointment doctor joins when available. */
+async function fetchPatientsDirectory(hospitalId: string): Promise<Record<string, unknown>[]> {
+  if (!supabase || !hospitalId) return [];
+  const orFilter = buildHospitalDirectoryOrFilter(hospitalDirectoryFilterIds(hospitalId));
+  const aliases = hospitalIdQueryValues(hospitalId);
+  const nestedSelect = `
+    id,
+    uhid,
+    full_name,
+    patient_name,
+    name,
+    phone,
+    gender,
+    age,
+    patient_age,
+    dob,
+    date_of_birth,
+    created_at,
+    hospital_id,
+    visit_count,
+    last_visit_at,
+    encounters:encounters (
+      id,
+      created_at,
+      status,
+      billing_status,
+      doctor_name,
+      department,
+      doctor:doctors (
+        id,
+        full_name,
+        name,
+        specialty,
+        department,
+        specialization
+      )
+    ),
+    appointments:appointments (
+      id,
+      created_at,
+      status,
+      billing_status,
+      doctor_name,
+      department,
+      doctor:doctors (
+        id,
+        full_name,
+        name,
+        specialty,
+        department,
+        specialization
+      )
+    )
+  `;
+
+  const attempts = [
+    () => supabase.from('patients').select(nestedSelect).or(orFilter).order('created_at', { ascending: false }),
+    () =>
+      supabase
+        .from('patients')
+        .select(nestedSelect)
+        .in('hospital_id', aliases.length > 0 ? aliases : [hospitalId])
+        .order('created_at', { ascending: false }),
+    () => supabase.from('hospital_patients').select(nestedSelect).or(orFilter).order('created_at', { ascending: false }),
+  ];
+
+  for (const run of attempts) {
+    const { data, error } = await run();
+    if (!error && Array.isArray(data)) {
+      return (data as Record<string, unknown>[]).filter((row) =>
+        recordBelongsToHospitalNode(row, hospitalId),
+      );
+    }
+  }
+
+  const [patients, hospitalPatients] = await Promise.all([
+    selectScoped('patients', hospitalId),
+    selectScoped('hospital_patients', hospitalId),
+  ]);
+  return [...patients, ...hospitalPatients];
+}
+
 /** Facility-wide appointments for this hospital node — never filtered by doctor. */
 async function fetchNodeAppointments(hospitalId: string): Promise<Record<string, unknown>[]> {
   if (!supabase || !hospitalId) return [];
@@ -807,7 +1054,7 @@ async function fetchNodeAppointments(hospitalId: string): Promise<Record<string,
   for (const table of tables) {
     const primary = await supabase
       .from(table)
-      .select('*')
+      .select(APPOINTMENT_DOCTOR_JOIN_SELECT)
       .or(orFilter)
       .order('created_at', { ascending: false });
 
@@ -816,12 +1063,30 @@ async function fetchNodeAppointments(hospitalId: string): Promise<Record<string,
       rows = primary.data as Record<string, unknown>[];
     } else {
       const aliases = hospitalIdQueryValues(hospitalId);
-      const fallback = await supabase
+      const joinedFallback = await supabase
         .from(table)
-        .select('*')
+        .select(APPOINTMENT_DOCTOR_JOIN_SELECT)
         .in('hospital_id', aliases.length > 0 ? aliases : [hospitalId])
         .order('created_at', { ascending: false });
-      rows = (fallback.data as Record<string, unknown>[] | null) ?? [];
+      if (!joinedFallback.error && Array.isArray(joinedFallback.data)) {
+        rows = joinedFallback.data as Record<string, unknown>[];
+      } else {
+        const plain = await supabase
+          .from(table)
+          .select('*')
+          .or(orFilter)
+          .order('created_at', { ascending: false });
+        if (!plain.error && Array.isArray(plain.data)) {
+          rows = plain.data as Record<string, unknown>[];
+        } else {
+          const fallback = await supabase
+            .from(table)
+            .select('*')
+            .in('hospital_id', aliases.length > 0 ? aliases : [hospitalId])
+            .order('created_at', { ascending: false });
+          rows = (fallback.data as Record<string, unknown>[] | null) ?? [];
+        }
+      }
     }
 
     for (const row of rows) {
@@ -829,7 +1094,7 @@ async function fetchNodeAppointments(hospitalId: string): Promise<Record<string,
       const id = String(row.id ?? row.appointment_id ?? '');
       if (id && seen.has(id)) continue;
       if (id) seen.add(id);
-      merged.push(row);
+      merged.push(flattenAppointmentDoctorFields(row));
     }
   }
 
@@ -1104,9 +1369,12 @@ function EmptyState({
   );
 }
 
-export default function HospitalMasterDashboard() {
+function HospitalMasterDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<NavModule>(readInitialDashboardTab);
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<NavModule>(() =>
+    resolveDashboardTab(searchParams.get('tab'), readStoredDashboardTab()),
+  );
   const [currentUserRole, setCurrentUserRole] = useState(() => readHospitalAppSession()?.staff_type || 'Staff');
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
@@ -1248,7 +1516,6 @@ export default function HospitalMasterDashboard() {
         aptRows,
         opdRows,
         patientRows,
-        hospitalPatientRows,
         pharmRows,
         inventoryRows,
         bedRows,
@@ -1263,8 +1530,7 @@ export default function HospitalMasterDashboard() {
         selectScoped('hospital_staff', activeNode),
         fetchNodeAppointments(activeNode),
         selectScoped('hospital_opd_queue', activeNode),
-        selectScoped('patients', activeNode),
-        selectScoped('hospital_patients', activeNode),
+        fetchPatientsDirectory(activeNode),
         selectScoped('hospital_pharmacy_inventory', activeNode),
         selectScoped('inventory_items', activeNode),
         selectScoped('hospital_beds', activeNode),
@@ -1293,9 +1559,7 @@ export default function HospitalMasterDashboard() {
         ]).filter((row): row is QueueRow => Boolean(row)),
       );
       setMasterOpdQueue(liveQueue);
-      setPatientRegistry(
-        buildPatientDirectory(liveQueue, [...(patientRows || []), ...(hospitalPatientRows || [])]),
-      );
+      setPatientRegistry(buildPatientDirectory(liveQueue, patientRows || []));
 
       const pharmacySource = (pharmRows || []).length > 0 ? pharmRows : inventoryRows || [];
       setPharmacyItems(dedupePharmacyItems(pharmacySource.map(mapPharmacyRow)));
@@ -1334,7 +1598,7 @@ export default function HospitalMasterDashboard() {
         hospitalId: activeNode,
         hospitalInfo: nextHospitalInfo,
         opdQueue: liveQueue,
-        patientRegistry: buildPatientDirectory(liveQueue, [...(patientRows || []), ...(hospitalPatientRows || [])]),
+        patientRegistry: buildPatientDirectory(liveQueue, patientRows || []),
         staffMembers: mappedStaff,
         pharmacyItems: dedupePharmacyItems(pharmacySource.map(mapPharmacyRow)),
         beds: mappedBeds,
@@ -1452,6 +1716,20 @@ export default function HospitalMasterDashboard() {
     }
   }, [hospitalInfo.id]);
 
+  const loadPlatformDataRef = useRef(loadPlatformData);
+  const loadEmergencyDataRef = useRef(loadEmergencyData);
+  const loadBillingInvoicesRef = useRef(loadBillingInvoices);
+  const loadPharmacyDataRef = useRef(loadPharmacyData);
+  const loadVendorsRef = useRef(loadVendors);
+
+  useEffect(() => {
+    loadPlatformDataRef.current = loadPlatformData;
+    loadEmergencyDataRef.current = loadEmergencyData;
+    loadBillingInvoicesRef.current = loadBillingInvoices;
+    loadPharmacyDataRef.current = loadPharmacyData;
+    loadVendorsRef.current = loadVendors;
+  }, [loadPlatformData, loadEmergencyData, loadBillingInvoices, loadPharmacyData, loadVendors]);
+
   useEffect(() => {
     const session = readHospitalAppSession();
     const hospitalId = session?.hospital_id;
@@ -1485,6 +1763,21 @@ export default function HospitalMasterDashboard() {
     })();
   }, [router]);
 
+  const navigateToTab = useCallback(
+    (tab: NavModule) => {
+      setActiveTab(tab);
+      setMobileNavOpen(false);
+      router.replace(dashboardHrefForTab(tab), { scroll: false });
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const nextTab = resolveDashboardTab(tabParam, null);
+    setActiveTab((current) => (current === nextTab ? current : nextTab));
+  }, [searchParams]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
@@ -1499,16 +1792,22 @@ export default function HospitalMasterDashboard() {
   useEffect(() => {
     if (isVerifying) return;
     const activeNode = hospitalInfo.id;
-    void loadPlatformData(activeNode);
-    void loadEmergencyData();
-    void loadBillingInvoices();
+    if (!activeNode) return;
+
+    void loadPlatformDataRef.current(activeNode);
+    void loadEmergencyDataRef.current();
+    void loadBillingInvoicesRef.current();
 
     if (!supabase) return;
 
+    let reloadTimer: ReturnType<typeof setTimeout> | null = null;
     const reload = () => {
-      void loadPlatformData(activeNode);
-      void loadEmergencyData();
-      void loadBillingInvoices();
+      if (reloadTimer) clearTimeout(reloadTimer);
+      reloadTimer = setTimeout(() => {
+        void loadPlatformDataRef.current(activeNode);
+        void loadEmergencyDataRef.current();
+        void loadBillingInvoicesRef.current();
+      }, 400);
     };
 
     const announceOnlineBooking = (raw: unknown) => {
@@ -1616,16 +1915,6 @@ export default function HospitalMasterDashboard() {
         {
           event: '*',
           schema: 'public',
-          table: 'billing_invoices',
-          filter: `hospital_id=eq.${activeNode}`,
-        },
-        reload,
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
           table: 'hospital_supply_orders',
           filter: `hospital_id=eq.${activeNode}`,
         },
@@ -1648,7 +1937,7 @@ export default function HospitalMasterDashboard() {
           table: 'emergency_alerts',
         },
         () => {
-          void loadEmergencyData();
+          void loadEmergencyDataRef.current();
         },
       )
       .on(
@@ -1659,23 +1948,26 @@ export default function HospitalMasterDashboard() {
           table: 'emergency_triage',
         },
         () => {
-          void loadEmergencyData();
+          void loadEmergencyDataRef.current();
         },
       )
       .subscribe();
 
     return () => {
+      if (reloadTimer) clearTimeout(reloadTimer);
       void supabase.removeChannel(channel);
     };
-  }, [hospitalInfo.id, isVerifying, loadPlatformData, loadEmergencyData, loadBillingInvoices]);
+  }, [hospitalInfo.id, isVerifying]);
 
   useEffect(() => {
     if (isVerifying) return;
-    void loadBillingQueue();
+    void loadBillingInvoicesRef.current();
 
     if (!supabase) return;
     const activeNode = hospitalInfo.id;
+    if (!activeNode) return;
 
+    let billingReloadTimer: ReturnType<typeof setTimeout> | null = null;
     const billingChannel = supabase
       .channel(`hospital_billing_feed_${activeNode}`)
       .on(
@@ -1694,19 +1986,23 @@ export default function HospitalMasterDashboard() {
               { duration: 5000 },
             );
           }
-          void loadBillingInvoices();
+          if (billingReloadTimer) clearTimeout(billingReloadTimer);
+          billingReloadTimer = setTimeout(() => {
+            void loadBillingInvoicesRef.current();
+          }, 400);
         },
       )
       .subscribe();
 
     return () => {
+      if (billingReloadTimer) clearTimeout(billingReloadTimer);
       void supabase.removeChannel(billingChannel);
     };
-  }, [hospitalInfo.id, isVerifying, loadBillingInvoices]);
+  }, [hospitalInfo.id, isVerifying]);
 
   useEffect(() => {
     if (isVerifying) return;
-    void loadPharmacyData();
+    void loadPharmacyDataRef.current();
 
     if (!supabase) return;
     const activeHospital = hospitalInfo.id;
@@ -1758,11 +2054,11 @@ export default function HospitalMasterDashboard() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [hospitalInfo.id, isVerifying, loadPharmacyData]);
+  }, [hospitalInfo.id, isVerifying]);
 
   useEffect(() => {
     if (isVerifying) return;
-    void loadVendors();
+    void loadVendorsRef.current();
 
     if (!supabase) return;
     const activeHospital = hospitalInfo.id;
@@ -1784,7 +2080,7 @@ export default function HospitalMasterDashboard() {
               `Vendor ${String(incoming.company_name ?? 'partner')} provisioned in real time!`,
             );
           }
-          void loadVendors();
+          void loadVendorsRef.current();
         },
       )
       .subscribe();
@@ -1792,7 +2088,7 @@ export default function HospitalMasterDashboard() {
     return () => {
       void supabase.removeChannel(vendorChannel);
     };
-  }, [hospitalInfo.id, isVerifying, loadVendors]);
+  }, [hospitalInfo.id, isVerifying]);
 
   const closeModal = () => {
     if (isSubmittingFormulary) return;
@@ -2744,12 +3040,21 @@ export default function HospitalMasterDashboard() {
         const matchesPhone = digits.length >= 3 && phoneDigits.includes(digits);
         if (!matchesText && !matchesPhone) return false;
       }
-      if (genderFilter !== 'all' && patient.gender.toLowerCase() !== genderFilter) {
+      if (genderFilter !== 'all') {
+        const normalizedGender = normalizeGenderFilterValue(patient.gender);
+        if (normalizedGender !== genderFilter) return false;
+      }
+      const resolvedAge =
+        resolvePatientAgeFromRow({
+          dob: patient.dob,
+          age: patient.age,
+          patient_age: patient.patient_age,
+        }) ?? patient.patient_age ?? patient.age;
+      if (ageFilter === 'pediatric' && (resolvedAge == null || resolvedAge >= 18)) return false;
+      if (ageFilter === 'adult' && (resolvedAge == null || resolvedAge < 18 || resolvedAge >= 60)) {
         return false;
       }
-      if (ageFilter === 'pediatric' && (patient.age == null || patient.age >= 18)) return false;
-      if (ageFilter === 'adult' && (patient.age == null || patient.age < 18 || patient.age >= 60)) return false;
-      if (ageFilter === 'senior' && (patient.age == null || patient.age < 60)) return false;
+      if (ageFilter === 'senior' && (resolvedAge == null || resolvedAge < 60)) return false;
       return true;
     });
   }, [patientRegistry, searchQuery, genderFilter, ageFilter]);
@@ -2772,22 +3077,7 @@ export default function HospitalMasterDashboard() {
 
   const sidebar = (
     <>
-      <div className="p-4 border-b border-slate-800/80">
-        <div className="flex items-center gap-3">
-          <RegalHospitalLogoMark heightClass="h-7" className="h-10" />
-          <div>
-            <h2 className="text-sm font-extrabold text-white leading-tight tracking-wide">
-              {hospitalInfo.name || 'Regal Hospital'}
-            </h2>
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className="text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                {hospitalInfo.id}
-              </span>
-              <span className="text-[10px] text-slate-400">Bengaluru</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <HospitalOperationsSidebarBrand />
       <div className="p-5 overflow-y-auto flex-1">
         <nav className="space-y-1">
           {navLinks.map((item) => {
@@ -2797,10 +3087,7 @@ export default function HospitalMasterDashboard() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setMobileNavOpen(false);
-                }}
+                onClick={() => navigateToTab(item.id)}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isActive ? 'bg-[#18537a] text-white shadow-md font-bold' : 'text-slate-300 hover:text-white hover:bg-[#0e3b5b]/60'
                 }`}
@@ -2853,20 +3140,22 @@ export default function HospitalMasterDashboard() {
       )}
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="bg-white border-b border-slate-200 px-6 sm:px-8 py-4 flex items-center justify-between shrink-0 shadow-xs">
-          <div className="flex items-center gap-3">
-            <button type="button" className="md:hidden p-2 rounded-xl border border-slate-200" onClick={() => setMobileNavOpen(true)} aria-label="Open modules">
-              <Menu className="w-4 h-4" />
+        <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white py-3 pl-4 pr-6 shadow-xs sm:px-6 sm:py-4">
+          <div className="flex min-w-0 items-center gap-4">
+            <button
+              type="button"
+              className="rounded-xl border border-slate-200 p-2 md:hidden"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Open modules"
+            >
+              <Menu className="h-4 w-4" />
             </button>
-            <RegalHospitalLogoMark heightClass="h-7" className="h-10 border border-slate-200" />
-            <div>
-              <h2 className="text-base font-black text-slate-900 leading-tight">
-                {`${navLinks.find((n) => n.id === activeTab)?.label} Command Center`}
-              </h2>
-              <p className="text-xs text-slate-500">
-                Active Node: <span className="font-mono text-cyan-800 font-bold">{hospitalInfo.id} ({hospitalInfo.name})</span>
-              </p>
-            </div>
+            <HospitalOperationsHeaderBrand />
+            <HospitalOperationsHeaderTitle
+              title={`${navLinks.find((n) => n.id === activeTab)?.label} Command Center`}
+              nodeId={hospitalInfo.id}
+              nodeName={hospitalInfo.name || 'Regal Multispeciality Hospital'}
+            />
           </div>
           <div className="flex items-center gap-3">
             <button type="button" onClick={() => setActiveModal('opd')} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2">
@@ -2965,7 +3254,7 @@ export default function HospitalMasterDashboard() {
                 <button
                   type="button"
                   onClick={() => {
-                    setActiveTab('smartq');
+                    navigateToTab('smartq');
                     setOnlineBookingAlert(null);
                   }}
                   className="px-2.5 py-1.5 rounded-lg bg-violet-700 hover:bg-violet-600 text-white text-[11px] font-bold cursor-pointer"
@@ -2991,22 +3280,22 @@ export default function HospitalMasterDashboard() {
                 <p className="text-xs text-slate-500">Live census scoped to {hospitalInfo.id}. Empty modules stay empty until real records exist.</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <button type="button" onClick={() => setActiveTab('smartq')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
+                <button type="button" onClick={() => navigateToTab('smartq')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
                   <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">LIVE OPD QUEUE</div>
                   <div className="text-3xl font-black text-slate-900 mt-2">{opdQueue.length}</div>
                   <div className="text-xs font-medium text-cyan-700 mt-1">{opdQueue.length} waiting in triage</div>
                 </button>
-                <button type="button" onClick={() => setActiveTab('staff')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
+                <button type="button" onClick={() => navigateToTab('staff')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
                   <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">PROVISIONED STAFF</div>
                   <div className="text-3xl font-black text-slate-900 mt-2">{provisionedStaffCount}</div>
                   <div className="text-xs font-medium text-cyan-700 mt-1">{doctorCount} doctors verified</div>
                 </button>
-                <button type="button" onClick={() => setActiveTab('ipd')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
+                <button type="button" onClick={() => navigateToTab('ipd')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
                   <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">BED OCCUPANCY</div>
                   <div className="text-3xl font-black text-slate-900 mt-2">{occupancyRate}%</div>
                   <div className="text-xs font-medium text-cyan-700 mt-1">{occupiedBeds}/{beds.length} occupied</div>
                 </button>
-                <button type="button" onClick={() => setActiveTab('billing')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
+                <button type="button" onClick={() => navigateToTab('billing')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
                   <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Total Collections (₹)
                   </span>
@@ -3080,7 +3369,7 @@ export default function HospitalMasterDashboard() {
                   <div className="bg-[#FAFBFD] rounded-2xl border border-slate-200 p-6 space-y-3">
                     <h4 className="text-sm font-black text-slate-900">Vendor Supply</h4>
                     {supplyOrders.length === 0 ? (
-                      <EmptyState icon={PackageCheck} title="No purchase orders" body="No procurement records for this node." actionLabel="Create Purchase Order" onAction={() => setActiveTab('supply')} />
+                      <EmptyState icon={PackageCheck} title="No purchase orders" body="No procurement records for this node." actionLabel="Create Purchase Order" onAction={() => navigateToTab('supply')} />
                     ) : (
                       supplyOrders.slice(0, 3).map((po) => (
                         <div key={po.id} className="p-3 rounded-xl border border-slate-200 text-xs">
@@ -3364,30 +3653,29 @@ export default function HospitalMasterDashboard() {
                           <th className="py-3 px-4">Total Visits</th>
                           <th className="py-3 px-4">Last Encounter</th>
                           <th className="py-3 px-4">Clinical Record Status</th>
+                          <th className="py-3 px-4">Consulting Doctor</th>
                           <th className="py-3 px-4 text-center">Billing & Settlement</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {patientsWithBilling.map((patient) => {
-                          const pendingInvoice = invoices.find((inv) => inv.id === patient.pending_invoice_id);
-                          const breakdown = pendingInvoice
-                            ? computeCheckoutTotal({
-                                consultationFee: pendingInvoice.consultation_fee ?? 0,
-                                pharmacyAmount: pendingInvoice.medicine_fee ?? pendingInvoice.medicines_total ?? 0,
-                              })
-                            : null;
+                          const consultingName = patient.consulting_doctor_name || patient.doctor_name;
+                          const consultingSpecialty =
+                            patient.consulting_doctor_specialty || patient.department;
                           return (
                           <tr key={patientKey(patient.patient_name, patient.phone, patient.uhid)} className="hover:bg-slate-50/70 transition">
                             <td className="py-3.5 px-4 font-mono font-bold text-cyan-800">{patient.uhid}</td>
                             <td className="py-3.5 px-4">
                               <div className="font-bold text-slate-900">{patient.patient_name}</div>
                               <div className="text-[10px] text-slate-400">
-                                {patient.gender || 'Sex n/a'}
-                                {'  ·  '}
-                                {patient.patient_age ?? patient.age ? `${patient.patient_age ?? patient.age}y` : 'Age N/A'}
+                                {formatGenderDisplay(patient.gender)}
+                                {' · '}
+                                {formatPatientAgeDisplay(patient)}
                               </div>
                             </td>
-                            <td className="py-3.5 px-4 font-mono text-slate-600">{patient.phone || 'Not Provided'}</td>
+                            <td className="py-3.5 px-4 font-mono text-sm text-stone-700">
+                              {patient.phone ? patient.phone : 'Not provided'}
+                            </td>
                             <td className="py-3.5 px-4 font-mono font-bold text-slate-800">{patient.visits}</td>
                             <td className="py-3.5 px-4 font-mono text-slate-500">{formatEncounter(patient.last_encounter)}</td>
                             <td className="py-3.5 px-4">
@@ -3395,23 +3683,34 @@ export default function HospitalMasterDashboard() {
                                 {patient.record_status}
                               </span>
                             </td>
+                            <td className="py-3.5 px-4">
+                              {consultingName && consultingName !== 'Unassigned' ? (
+                                <>
+                                  <div className="font-bold text-slate-900">
+                                    {formatConsultingDoctorName(consultingName)}
+                                  </div>
+                                  {consultingSpecialty ? (
+                                    <div className="text-[10px] text-slate-400">{consultingSpecialty}</div>
+                                  ) : null}
+                                </>
+                              ) : (
+                                <span className="text-slate-400 text-xs italic">Unassigned</span>
+                              )}
+                            </td>
                             <td className="py-3.5 px-4 text-center">
-                              {patient.billing_status === 'pending_payment' && pendingInvoice ? (
+                              {patient.billing_status === 'paid' ? (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  Settled
+                                </span>
+                              ) : isBillingUnsettled(patient.billing_status) ? (
                                 <button
                                   type="button"
                                   disabled={isProcessingPayment}
                                   onClick={() => openPatientCheckout(patient)}
-                                  className="inline-flex flex-col items-center gap-0.5 rounded-xl bg-amber-50 px-3 py-1.5 text-[10px] font-black uppercase text-amber-800 border border-amber-200 hover:bg-amber-100 disabled:opacity-50"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors shadow-sm disabled:opacity-50"
                                 >
-                                  <span>Collect {breakdown ? inr(breakdown.totalAmount) : inr(pendingInvoice.amount)}</span>
-                                  <span className="font-normal normal-case text-[9px] text-amber-700">Consultation complete</span>
+                                  <span>Settle Bill</span>
                                 </button>
-                              ) : patient.billing_status === 'paid' ? (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  Settled
-                                </span>
-                              ) : patient.billing_status === 'awaiting_consultation' ? (
-                                <span className="text-[10px] text-slate-400 font-semibold">Awaiting consultation</span>
                               ) : (
                                 <span className="text-[10px] text-slate-300">—</span>
                               )}
@@ -3428,143 +3727,22 @@ export default function HospitalMasterDashboard() {
           )}
 
           {activeTab === 'billing' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-slate-900">Billing &amp; Checkout Command Center</h3>
-                  <p className="text-xs text-slate-500">
-                    Live invoices from Doctor Workspace  ·  Node {hospitalInfo.id}
-                  </p>
-                </div>
-                <button type="button" onClick={() => openDirectBilling()} className="px-3.5 py-2 rounded-xl bg-cyan-700 text-white text-xs font-bold flex items-center gap-1.5">
-                  <Plus className="w-3.5 h-3.5" /> Settle by Token
-                </button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div className="bg-white rounded-2xl p-5 border border-slate-200">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase font-mono">Collected</div>
-                  <div className="text-3xl font-black mt-2">{inr(collectedTotal)}</div>
-                </div>
-                <div className="bg-white rounded-2xl p-5 border border-amber-200 bg-amber-50/40">
-                  <div className="text-[11px] font-bold text-amber-700 uppercase font-mono">Pending checkout</div>
-                  <div className="text-3xl font-black mt-2 text-amber-900">{inr(pendingCheckoutTotal)}</div>
-                </div>
-                <div className="bg-white rounded-2xl p-5 border border-slate-200">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase font-mono">Open bills</div>
-                  <div className="text-3xl font-black mt-2">{openBillsCount}</div>
-                </div>
-              </div>
-              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                {invoices.length === 0 ? (
-                  <div className="p-6">
-                    <EmptyState icon={IndianRupee} title="Checkout queue is empty" body="Itemized bills appear here when a doctor completes a consultation or a cashier posts a direct invoice." actionLabel="Settle by Token" onAction={() => openDirectBilling()} />
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase">
-                        <tr>
-                          <th className="py-3 px-4">UHID / Bill ID</th>
-                          <th className="py-3 px-4">Patient Name</th>
-                          <th className="py-3 px-4">Doctor Name</th>
-                          <th className="py-3 px-4">Consultation Fee</th>
-                          <th className="py-3 px-4">Prescribed Medicines</th>
-                          <th className="py-3 px-4">Total Amount</th>
-                          <th className="py-3 px-4">Status</th>
-                          <th className="py-3 px-4 text-right">Collect Payment</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {invoices.map((inv) => {
-                          const pending = /pending|unpaid|unbilled/i.test(inv.status);
-                          return (
-                            <tr key={inv.id} className="align-top">
-                              <td className="py-3.5 px-4 font-mono font-bold text-cyan-800">{inv.uhid || inv.id.slice(0, 8)}</td>
-                              <td className="py-3.5 px-4 font-bold text-slate-900">{inv.patient_name}</td>
-                              <td className="py-3.5 px-4">{inv.doctor_name || 'Duty doctor'}</td>
-                              <td className="py-3.5 px-4 font-mono">{inr(inv.consultation_fee ?? 0)}</td>
-                              <td className="py-3.5 px-4">
-                                {(inv.prescribed_items ?? []).length === 0 ? (
-                                  <span className="text-slate-400">Settled at counter</span>
-                                ) : (
-                                  <ul className="space-y-1">
-                                    {(inv.prescribed_items ?? []).map((med) => (
-                                      <li key={`${inv.id}-${med.drug}`} className="text-slate-600">
-                                        {med.drug} · Qty {med.quantity ?? 1}
-                                        {med.frequency ? ` · ${med.frequency}` : ''}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                              </td>
-                              <td className="py-3.5 px-4 font-black text-emerald-700">
-                                {inr(
-                                  /pending|unpaid|unbilled/i.test(inv.status)
-                                    ? inv.consultation_fee ?? 0
-                                    : inv.amount,
-                                )}
-                                {/pending|unpaid|unbilled/i.test(inv.status) ? (
-                                  <span className="block text-[9px] font-normal text-slate-400">+ pharmacy at checkout</span>
-                                ) : null}
-                              </td>
-                              <td className="py-3.5 px-4">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${pending ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
-                                  {pending ? 'Pending' : 'Paid'}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-right">
-                                {pending ? (
-                                  <button
-                                    type="button"
-                                    disabled={isProcessingPayment}
-                                    onClick={() => openInvoiceCheckout(inv)}
-                                    className="px-3 py-1.5 rounded-lg bg-cyan-700 text-white text-[10px] font-bold uppercase disabled:opacity-50"
-                                  >
-                                    Settle &amp; Print
-                                  </button>
-                                ) : (
-                                  <div className="inline-flex items-center justify-end gap-2">
-                                    <span className="text-[10px] text-slate-500 font-mono">
-                                      {inv.paid_at ? formatEncounter(inv.paid_at) : 'Cleared'}
-                                      {inv.payment_method ? `  ·  ${inv.payment_method}` : ''}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setReceiptPreview({
-                                          id: inv.id,
-                                          invoice_number: inv.invoice_number,
-                                          uhid: inv.uhid,
-                                          patient_name: inv.patient_name,
-                                          doctor_name: inv.doctor_name,
-                                          department: inv.department,
-                                          token_number: inv.token_number ?? inv.uhid,
-                                          consultation_fee: inv.consultation_fee,
-                                          pharmacy_amount: inv.medicine_fee ?? inv.medicines_total ?? 0,
-                                          prescribed_items: inv.prescribed_items,
-                                          amount: inv.amount,
-                                          payment_method: inv.payment_method,
-                                          paid_at: inv.paid_at,
-                                        });
-                                        setReceiptPreviewOpen(true);
-                                      }}
-                                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 text-[10px] font-bold uppercase"
-                                    >
-                                      <Printer className="w-3 h-3" />
-                                      Receipt
-                                    </button>
-                                  </div>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
+            <BillingCheckoutCommandCenter
+              hospitalNodeId={hospitalInfo.id}
+              invoices={invoices}
+              collectedTotal={collectedTotal}
+              pendingCheckoutTotal={pendingCheckoutTotal}
+              openBillsCount={openBillsCount}
+              isProcessingPayment={isProcessingPayment}
+              formatCurrency={inr}
+              formatEncounter={formatEncounter}
+              onSettleByToken={() => openDirectBilling()}
+              onSettleInvoice={openInvoiceCheckout}
+              onPreviewReceipt={(receipt) => {
+                setReceiptPreview(receipt);
+                setReceiptPreviewOpen(true);
+              }}
+            />
           )}
 
           {activeTab === 'supply' && (
@@ -4251,5 +4429,21 @@ export default function HospitalMasterDashboard() {
         }}
       />
     </div>
+  );
+}
+
+function DashboardPageFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f1f5f9]">
+      <Loader2 className="h-8 w-8 animate-spin text-cyan-700" />
+    </div>
+  );
+}
+
+export default function HospitalDashboardPage() {
+  return (
+    <Suspense fallback={<DashboardPageFallback />}>
+      <HospitalMasterDashboard />
+    </Suspense>
   );
 }

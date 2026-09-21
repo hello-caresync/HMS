@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Bell, LogOut, Menu, Search, UserCircle, X } from 'lucide-react';
 
+import { HospitalOperationsHeaderBrand, HospitalOperationsHeaderTitle } from '@/components/hospital/HospitalOperationsHeaderBrand';
 import { clearAdminSession, getAdminSession } from '@/lib/admin/auth';
+import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import { hospitalHref } from '@/lib/nexora-hospital/navigation';
 import { useUnreadHospitalNotifications } from '@/lib/nexora-hospital/hooks';
 import { useHospitalStore } from '@/lib/nexora-hospital/store';
@@ -83,9 +85,13 @@ export function HospitalTopBar({ onMenuClick }: { onMenuClick?: () => void }) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <div className="hidden sm:block">
-          <p className="text-base font-extrabold text-[#0A2E36]">REGAL HOSPITAL</p>
-          <p className="text-sm font-medium text-[#005F6B]">Hospital Operations · RH-BLR-01</p>
+        <div className="hidden min-w-0 items-center gap-4 sm:flex">
+          <HospitalOperationsHeaderBrand className="lg:hidden" />
+          <HospitalOperationsHeaderTitle
+            title="Hospital Operations"
+            nodeId={REGAL_HOSPITAL_CODE}
+            nodeName={settings?.hospitalName ?? 'Regal Multispeciality Hospital'}
+          />
         </div>
       </div>
 

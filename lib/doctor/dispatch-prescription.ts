@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { createPendingConsultationInvoice } from '@/lib/billing/post-consultation-invoice';
+import { computeMedicineQuantity } from '@/lib/doctor/medicine-quantity';
 import { generatePostConsultationBill } from '@/lib/hospital/operations/consultation-billing-sync';
 import { postConsultationPharmacyBridge } from '@/lib/hospital/records-pharmacy';
 
@@ -68,19 +69,27 @@ async function insertWithColumnRetry(
   }
 }
 
+function resolveMedicineQuantity(med: DispatchMedication): number {
+  if (med.qty != null && med.qty > 0) return med.qty;
+  return computeMedicineQuantity(med.dosage, med.duration);
+}
+
 function medicinePayload(medications: DispatchMedication[]): Record<string, unknown>[] {
-  return medications.map((med) => ({
-    drug: med.name,
-    name: med.name,
-    medicine_name: med.name,
-    dose: med.dosage,
-    dosage: med.dosage,
-    frequency: med.timing || med.dosage,
-    duration: med.duration,
-    quantity: med.qty ?? 1,
-    qty: med.qty ?? 1,
-    instructions: med.timing || '',
-  }));
+  return medications.map((med) => {
+    const quantity = resolveMedicineQuantity(med);
+    return {
+      drug: med.name,
+      name: med.name,
+      medicine_name: med.name,
+      dose: med.dosage,
+      dosage: med.dosage,
+      frequency: med.timing || med.dosage,
+      duration: med.duration,
+      quantity,
+      qty: quantity,
+      instructions: med.timing || '',
+    };
+  });
 }
 
 async function completeAppointmentRows(
@@ -298,7 +307,7 @@ export async function dispatchDigitalPrescription(
             consultationFee: input.consultationFee ?? 500,
             medicines: input.medications.map((med) => ({
               name: med.name,
-              qty: med.qty ?? 1,
+              qty: resolveMedicineQuantity(med),
               price: med.price ?? 0,
             })),
           }),
@@ -323,7 +332,7 @@ export async function dispatchDigitalPrescription(
         doctorName: input.doctorName,
         medicines: input.medications.map((med) => ({
           name: med.name,
-          qty: med.qty,
+          qty: resolveMedicineQuantity(med),
           dosage: med.dosage,
           frequency: med.timing,
         })),

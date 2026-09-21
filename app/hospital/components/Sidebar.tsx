@@ -9,6 +9,8 @@ import {
   Bell, BrainCircuit, FolderOpen, BarChart3, Settings, ChevronDown, ChevronRight
 } from 'lucide-react';
 
+import { HospitalOperationsSidebarBrand } from '@/components/hospital/HospitalOperationsSidebarBrand';
+
 // Navigation structure schema mapping
 interface NavItem {
   title: string;
@@ -92,16 +94,8 @@ export default function Sidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200/80 bg-white shadow-sm overflow-y-auto">
       {/* Brand Header Header Branding */}
-      <div className="flex h-16 items-center px-6 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-200">
-            <Stethoscope className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-wider text-slate-800 uppercase">Nexora</h1>
-            <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Clinical Suite</p>
-          </div>
-        </div>
+      <div className="border-b border-slate-100 bg-[#0a2e47]">
+        <HospitalOperationsSidebarBrand />
       </div>
 
       {/* Navigation Matrix Workspace List */}

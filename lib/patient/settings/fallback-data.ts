@@ -5,7 +5,7 @@ import type { FamilyMemberRecord, MedicalFacility, PatientProfileForm } from './
 export const FALLBACK_FACILITIES: MedicalFacility[] = [
   {
     id: 'a1000000-0000-4000-a000-000000000001',
-    facilityName: 'Nexora Main Campus Hospital',
+    facilityName: 'Regal Multispeciality Hospital Hospital',
     facilityType: 'hospital',
     address: '42 Healthcare Avenue, Block A',
     city: 'Kochi',
@@ -14,7 +14,7 @@ export const FALLBACK_FACILITIES: MedicalFacility[] = [
   },
   {
     id: 'a1000000-0000-4000-a000-000000000002',
-    facilityName: 'Nexora City Centre Clinic',
+    facilityName: 'Regal Multispeciality Hospital',
     facilityType: 'clinic',
     address: '18 MG Road, Level 3',
     city: 'Kochi',

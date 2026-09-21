@@ -1,5 +1,5 @@
 import { SUPABASE_TABLES } from '../../client/supabase';
-import type { NexoraServiceContext } from '../../types/context';
+import type { RegalServiceContext } from '../../types/context';
 import type {
   SharedInventoryApplyResult,
   SharedInventoryUpdate,
@@ -21,7 +21,7 @@ export interface ApplyInventoryInput {
 /** packages/shared/services/inventory */
 export async function applyInventoryUpdates(
   input: ApplyInventoryInput,
-  ctx: NexoraServiceContext,
+  ctx: RegalServiceContext,
 ): Promise<ServiceResult<SharedInventoryApplyResult[]>> {
   if (!input.updates.length) {
     return ok([]);

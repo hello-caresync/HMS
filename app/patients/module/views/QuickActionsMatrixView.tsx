@@ -83,7 +83,7 @@ export function QuickActionModalContent({
         <textarea
           className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-[11px]"
           rows={3}
-          defaultValue="Dear patient, your appointment at Nexora Central Hospital is scheduled for 18 Jul, 10:00 AM — Cardiology OPD Block A."
+          defaultValue="Dear patient, your appointment at Regal Central Hospital is scheduled for 18 Jul, 10:00 AM — Cardiology OPD Block A."
         />
         <button type="button" className="w-full rounded-md bg-[#2563EB] py-2 text-[11px] font-bold text-white">
           Queue SMS for Delivery
@@ -96,7 +96,7 @@ export function QuickActionModalContent({
     return (
       <div className="space-y-3 text-center">
         <div className="mx-auto w-48 rounded-lg border-2 border-[#0F172A] bg-white p-3 shadow-md">
-          <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Nexora HMS</p>
+          <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS</p>
           <p className="mt-1 text-[11px] font-bold text-[#0F172A]">{patientName}</p>
           <p className="font-mono text-[10px] text-[#2563EB]">{uhid}</p>
           <div className="mt-2 flex h-8 items-end justify-center gap-px">

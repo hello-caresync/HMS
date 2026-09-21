@@ -1,6 +1,6 @@
 export type HrTab = 'directory' | 'rota' | 'payroll';
 
-/** Nexora 11 core hospital workforce roles */
+/** Regal 11 core hospital workforce roles */
 export type CoreRole =
   | 'Hospital Administrator'
   | 'Doctor / Consultant'

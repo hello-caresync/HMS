@@ -77,7 +77,7 @@ export default function MasterDataShell() {
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold text-slate-900">Master Data</p>
-            <p className="truncate text-[10px] uppercase tracking-wider text-slate-800">Nexora MDM</p>
+            <p className="truncate text-[10px] uppercase tracking-wider text-slate-800">Regal MDM</p>
           </div>
           <button
             type="button"

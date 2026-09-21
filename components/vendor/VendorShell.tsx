@@ -10,11 +10,7 @@ import {
   getVendorSession,
   resolveVendorCompanyDisplayName,
 } from '@/lib/auth/ecosystem-sessions';
-import {
-  VENDOR_NAV_ITEMS,
-  VENDOR_PORTAL_ROUTES,
-  isVendorNavActive,
-} from '@/lib/vendor/navigation';
+import { VENDOR_NAV_ITEMS, isVendorNavActive } from '@/lib/vendor/navigation';
 import { vendorClasses } from '@/lib/vendor/theme';
 import { useVendorAppStore } from '@/lib/vendor/store/vendor-app-store';
 
@@ -131,9 +127,6 @@ export function VendorShell({ children }: VendorShellProps) {
               <Wifi className="h-3 w-3" aria-hidden />
               {realtimeConnected ? 'Live sync' : 'Offline'}
             </span>
-            <Link href={VENDOR_PORTAL_ROUTES.communication} className={vendorClasses.btnGhost}>
-              Messages
-            </Link>
           </div>
         </header>
 

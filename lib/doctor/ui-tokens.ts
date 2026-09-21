@@ -1,4 +1,4 @@
-/** Nexora Doctor · Sage & Cream workstation tokens */
+/** Regal Doctor · Sage & Cream workstation tokens */
 export const sage = {
   primary: '#A39E75',
   secondary: '#C7C39E',

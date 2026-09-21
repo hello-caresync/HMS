@@ -7,7 +7,9 @@ import {
   rowMatchesPatientSession,
   type PatientAuthSession,
 } from '@/lib/auth/patientAuth';
+import { resolveActiveAuthUser } from '@/lib/auth/resolve-active-auth-user';
 import { readPatientPortalSession } from '@/lib/patient/portal-session';
+import { resolveEffectivePatientId } from '@/lib/patient/resolve-effective-patient-id';
 
 export type MyAppointmentRecord = {
   id: string;
@@ -22,8 +24,20 @@ export type MyAppointmentRecord = {
   reason?: string;
   token_number: number | string;
   queue_status?: string;
+  status?: string;
+  booking_for?: string;
   created_at?: string;
 };
+
+const APPOINTMENTS_DOCTOR_JOIN_SELECT = `
+  *,
+  doctor:doctors (
+    id,
+    full_name,
+    specialty,
+    department
+  )
+`;
 
 function resolveActivePatientSession(): PatientAuthSession | null {
   return readPatientAuthSession() ?? (() => {
@@ -76,7 +90,14 @@ export function deduplicateAppointments(items: MyAppointmentRecord[]): MyAppoint
   });
 }
 
+function readNestedDoctor(row: Record<string, unknown>): Record<string, unknown> | null {
+  const doctor = row.doctor;
+  if (!doctor || typeof doctor !== 'object') return null;
+  return doctor as Record<string, unknown>;
+}
+
 function mapRowToAppointmentRecord(row: Record<string, unknown>): MyAppointmentRecord {
+  const doctor = readNestedDoctor(row);
   const consultationFee = Number(row.consultation_fee ?? row.fee ?? 0);
   const tokenRaw = row.token_number ?? row.token;
   const tokenValue =
@@ -90,37 +111,76 @@ function mapRowToAppointmentRecord(row: Record<string, unknown>): MyAppointmentR
     id: String(row.appointment_id ?? row.id ?? ''),
     patient_id: row.patient_id ? String(row.patient_id) : undefined,
     patient_name: String(row.patient_name ?? row.full_name ?? ''),
-    doctor_name: String(row.doctor_name ?? 'Consulting physician'),
-    department: String(row.department ?? 'General Medicine'),
+    doctor_name: String(row.doctor_name ?? doctor?.full_name ?? doctor?.name ?? 'Consulting physician'),
+    department: String(
+      row.department ?? doctor?.department ?? doctor?.specialty ?? 'General Medicine',
+    ),
     hospital_name: String(row.hospital_name ?? 'Regal Hospital'),
-    appointment_date: String(row.appointment_date ?? ''),
+    appointment_date: String(row.appointment_date ?? row.created_at ?? '').slice(0, 10),
     slot_time: String(row.slot_time ?? row.appointment_time ?? row.time_slot ?? '—'),
     fee: consultationFee > 0 ? `₹${consultationFee.toLocaleString('en-IN')}` : undefined,
     reason: String(row.reason_for_visit ?? row.reason ?? row.chief_complaint ?? '').trim() || undefined,
     token_number: tokenValue,
     queue_status: String(row.queue_status ?? row.status ?? 'WAITING'),
+    status: String(row.status ?? row.queue_status ?? 'WAITING'),
+    booking_for: row.booking_for ? String(row.booking_for) : undefined,
     created_at: row.created_at ? String(row.created_at) : undefined,
   };
 }
 
-async function fetchScopedTableRows(
+function scopeRowsToSession(
+  rows: Record<string, unknown>[],
+  session: PatientAuthSession,
+  linkedPatientIds: string[],
+): MyAppointmentRecord[] {
+  return rows
+    .filter((row) => rowMatchesPatientSession(row, session, linkedPatientIds))
+    .map((row) => mapRowToAppointmentRecord(row))
+    .filter((row) => row.id);
+}
+
+async function fetchAppointmentsForPatient(
   supabase: SupabaseClient,
-  table: 'appointments' | 'patient_appointments',
   scopeFilter: string,
   session: PatientAuthSession,
+  linkedPatientIds: string[],
+): Promise<MyAppointmentRecord[]> {
+  const withDoctor = await supabase
+    .from('appointments')
+    .select(APPOINTMENTS_DOCTOR_JOIN_SELECT)
+    .or(scopeFilter)
+    .order('created_at', { ascending: false });
+
+  if (!withDoctor.error && withDoctor.data?.length) {
+    return scopeRowsToSession(withDoctor.data as Record<string, unknown>[], session, linkedPatientIds);
+  }
+
+  const plain = await supabase
+    .from('appointments')
+    .select('*')
+    .or(scopeFilter)
+    .order('created_at', { ascending: false });
+
+  if (plain.error || !plain.data?.length) return [];
+
+  return scopeRowsToSession(plain.data as Record<string, unknown>[], session, linkedPatientIds);
+}
+
+async function fetchLegacyPatientAppointments(
+  supabase: SupabaseClient,
+  scopeFilter: string,
+  session: PatientAuthSession,
+  linkedPatientIds: string[],
 ): Promise<MyAppointmentRecord[]> {
   const { data, error } = await supabase
-    .from(table)
+    .from('patient_appointments')
     .select('*')
     .or(scopeFilter)
     .order('created_at', { ascending: false });
 
   if (error || !data?.length) return [];
 
-  return data
-    .filter((row) => rowMatchesPatientSession(row as Record<string, unknown>, session))
-    .map((row) => mapRowToAppointmentRecord(row as Record<string, unknown>))
-    .filter((row) => row.id);
+  return scopeRowsToSession(data as Record<string, unknown>[], session, linkedPatientIds);
 }
 
 function mergeAppointmentLists(rows: MyAppointmentRecord[]): MyAppointmentRecord[] {
@@ -130,17 +190,18 @@ function mergeAppointmentLists(rows: MyAppointmentRecord[]): MyAppointmentRecord
 export function filterLocalAppointmentsForSession(
   rows: unknown[],
   session: PatientAuthSession,
+  linkedPatientIds: string[] = [],
 ): MyAppointmentRecord[] {
   if (!Array.isArray(rows)) return [];
 
   return rows
     .filter((row) => row && typeof row === 'object')
-    .filter((row) => rowMatchesPatientSession(row as Record<string, unknown>, session))
+    .filter((row) => rowMatchesPatientSession(row as Record<string, unknown>, session, linkedPatientIds))
     .map((row) => mapRowToAppointmentRecord(row as Record<string, unknown>))
     .filter((row) => row.id);
 }
 
-/** Fetches appointments strictly scoped to the verified patient session. */
+/** Fetches OPD appointments scoped to the signed-in patient from `public.appointments`. */
 export async function fetchMyPrivateAppointments(
   supabase: SupabaseClient,
   sessionOverride?: PatientAuthSession | null,
@@ -150,19 +211,38 @@ export async function fetchMyPrivateAppointments(
     return { session: null, appointments: [] };
   }
 
-  const scopeFilter = buildPatientScopeOrFilter(session);
+  const authContext = await resolveActiveAuthUser(supabase, session.patientId);
+  const resolvedPatient = await resolveEffectivePatientId(supabase, {
+    phone: session.phone,
+    sessionPatientId: authContext?.userId || session.patientId,
+  });
+
+  const linkedPatientIds = resolvedPatient.linkedPatientIds;
+  const scopeFilter = buildPatientScopeOrFilter(session, linkedPatientIds);
   if (!scopeFilter) {
     return { session, appointments: [] };
   }
 
+  if (process.env.NODE_ENV === 'development') {
+    console.debug('[my-appointments] User ID:', authContext?.userId ?? session.patientId);
+    console.debug('[my-appointments] Patient ID:', resolvedPatient.patientRecordId);
+    console.debug('[my-appointments] Scope filter:', scopeFilter);
+  }
+
   const [appointmentRows, legacyRows] = await Promise.all([
-    fetchScopedTableRows(supabase, 'appointments', scopeFilter, session),
-    fetchScopedTableRows(supabase, 'patient_appointments', scopeFilter, session),
+    fetchAppointmentsForPatient(supabase, scopeFilter, session, linkedPatientIds),
+    fetchLegacyPatientAppointments(supabase, scopeFilter, session, linkedPatientIds),
   ]);
+
+  const appointments = mergeAppointmentLists([...appointmentRows, ...legacyRows]);
+
+  if (process.env.NODE_ENV === 'development') {
+    console.debug('[my-appointments] Fetched rows:', appointments.length);
+  }
 
   return {
     session,
-    appointments: mergeAppointmentLists([...appointmentRows, ...legacyRows]),
+    appointments,
   };
 }
 

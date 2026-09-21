@@ -108,7 +108,7 @@ export const NEXORA_HMS_NAV: NavSection[] = [
   },
 ];
 
-export type NexoraSidebarUser = {
+export type RegalSidebarUser = {
   name: string;
   role: string;
   initials?: string;

@@ -1,4 +1,4 @@
--- Nexora Doctor App supporting tables.
+-- Regal Doctor App supporting tables.
 -- Run once in Supabase SQL Editor after the core patient/hospital schema.
 
 ALTER TABLE IF EXISTS patient_appointments

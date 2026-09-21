@@ -130,7 +130,7 @@ export const useEcosystemStore = create<EcosystemStore>()(
           status: 'Requested',
           type: input.type,
           token: nextToken(get().appointments),
-          location: input.type === 'Teleconsult' ? 'Nexora Telehealth Studio' : `OPD · ${doctor.roomNumber}`,
+          location: input.type === 'Teleconsult' ? 'Regal Telehealth Studio' : `OPD · ${doctor.roomNumber}`,
           roomNumber: doctor.roomNumber,
           branchId: branch?.id ?? doctor.branchId,
           branchName: branch?.name,

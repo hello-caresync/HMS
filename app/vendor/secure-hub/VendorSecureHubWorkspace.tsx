@@ -12,7 +12,6 @@ import {
   POInboxFilter,
   EnterprisePO,
   GeneratedInvoice,
-  ChatMessage,
   ComplianceDoc,
   ReturnRequest,
   POExtendedStatus,
@@ -23,7 +22,6 @@ import LogisticsView from './components/LogisticsView';
 import BillingView from './components/BillingView';
 import CatalogView from './components/CatalogView';
 import DocumentsView from './components/DocumentsView';
-import ChatView from './components/ChatView';
 import ReturnsView from './components/ReturnsView';
 import AnalyticsView from './components/AnalyticsView';
 import VendorSidebar from './components/VendorSidebar';
@@ -38,7 +36,6 @@ import {
 } from './components/hubUi';
 import {
   computePoLineTotal,
-  normalizeChatThreads,
   normalizeInvoices,
   normalizePurchaseOrders,
   normalizeReturnsList,
@@ -48,7 +45,6 @@ import {
 const SHARED_STORAGE_KEYS = {
   pos: 'curasync_shared_pos',
   invoices: 'curasync_shared_invoices',
-  chats: 'curasync_shared_chats',
   returns: 'curasync_shared_returns',
 } as const;
 
@@ -81,13 +77,11 @@ export default function VendorSecureHubWorkspace() {
 
   const [purchaseOrders, setPurchaseOrders] = useState<EnterprisePO[]>([]);
   const [invoices, setInvoices] = useState<GeneratedInvoice[]>([]);
-  const [chatThreads, setChatThreads] = useState<ChatMessage[]>([]);
   const [returnsList, setReturnsList] = useState<ReturnRequest[]>([]);
 
   const [trackingInput, setTrackingInput] = useState<string>('');
   const [podReceiver, setPodReceiver] = useState<string>('');
   const [podQty, setPodQty] = useState<string>('');
-  const [chatInput, setChatInput] = useState<string>('');
 
   const { inventory } = useRealtimeInventory();
   const catalog = useMemo(
@@ -135,12 +129,6 @@ export default function VendorSecureHubWorkspace() {
             normalizeInvoices,
           ),
         );
-        setChatThreads(
-          parseStorageArray(
-            localStorage.getItem(SHARED_STORAGE_KEYS.chats),
-            normalizeChatThreads,
-          ),
-        );
         setReturnsList(
           parseStorageArray(
             localStorage.getItem(SHARED_STORAGE_KEYS.returns),
@@ -150,7 +138,6 @@ export default function VendorSecureHubWorkspace() {
       } catch {
         setPurchaseOrders([]);
         setInvoices([]);
-        setChatThreads([]);
         setReturnsList([]);
       }
     };
@@ -172,7 +159,6 @@ export default function VendorSecureHubWorkspace() {
     [purchaseOrders],
   );
   const safeInvoices = useMemo(() => invoices ?? [], [invoices]);
-  const safeChatThreads = useMemo(() => chatThreads ?? [], [chatThreads]);
   const safeReturnsList = useMemo(() => returnsList ?? [], [returnsList]);
 
   const triggerToast = (msg: string) => {
@@ -264,28 +250,6 @@ export default function VendorSecureHubWorkspace() {
     triggerToast(`Tax invoice ${newInv.id} compiled.`);
   };
 
-  const handleSendChat = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
-
-    const newMsg: ChatMessage = {
-      id: `MSG-${Date.now()}`,
-      sender: 'Vendor',
-      text: chatInput.trim(),
-      timestamp: 'Just Now',
-    };
-
-    const updatedChats = normalizeChatThreads([...safeChatThreads, newMsg]);
-    setChatThreads(updatedChats);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(
-        SHARED_STORAGE_KEYS.chats,
-        JSON.stringify(updatedChats),
-      );
-    }
-    setChatInput('');
-  };
-
   const handleProcessReturn = (returnId: string) => {
     const updated = normalizeReturnsList(
       safeReturnsList.map((ret) =>
@@ -370,15 +334,6 @@ export default function VendorSecureHubWorkspace() {
           <DocumentsView
             documents={documents ?? []}
             triggerToast={triggerToast}
-          />
-        );
-      case 'communication':
-        return (
-          <ChatView
-            chatThreads={safeChatThreads}
-            chatInput={chatInput}
-            setChatInput={setChatInput}
-            handleSendChat={handleSendChat}
           />
         );
       case 'returns':

@@ -82,7 +82,7 @@ export function PrintScheduleModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="OT Schedule — Today" onClose={onClose} wide>
       <div className="rounded-lg border-2 border-[#0F172A] p-3 text-[10px]">
-        <p className="text-center text-[8px] font-bold uppercase tracking-widest text-slate-400">Nexora HMS — OT Daily Schedule</p>
+        <p className="text-center text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS — OT Daily Schedule</p>
         <p className="mt-2 text-center font-bold">2026-07-18 · 18 Cases · 72% Utilization</p>
         <ul className="mt-2 space-y-1">
           <li>08:00 OT-3 — Arjun Das — TKR Left — Dr. Kapoor</li>

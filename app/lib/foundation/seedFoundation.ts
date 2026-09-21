@@ -9,7 +9,7 @@ import type {
 export const SEED_BRANCHES: HospitalBranchConfig[] = [
   {
     branchId: 'BR-NEX-MAIN',
-    branchName: 'Nexora Multi-Specialty · Main Campus',
+    branchName: 'Regal Multispeciality Hospital',
     branchAddress: '42 Healthcare Avenue, Bengaluru, KA 560001',
     defaultTaxGst: {
       defaultGstPercent: 5,
@@ -19,7 +19,7 @@ export const SEED_BRANCHES: HospitalBranchConfig[] = [
   },
   {
     branchId: 'BR-NEX-NORTH',
-    branchName: 'Nexora North Wing',
+    branchName: 'Regal Multispeciality Hospital',
     branchAddress: '18 Ring Road North, Bengaluru, KA 560045',
     defaultTaxGst: {
       defaultGstPercent: 5,

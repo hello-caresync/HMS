@@ -22,21 +22,21 @@ export const DEMO_PATIENT_PASSWORD = 'patient123';
 export const SEED_BRANCHES: HospitalBranch[] = [
   {
     id: 'branch-main',
-    name: 'Nexora Main Campus',
+    name: 'Regal Multispeciality Hospital',
     code: 'MAIN',
     address: '42 Healthcare Avenue, Block A',
     city: 'Kochi',
   },
   {
     id: 'branch-city',
-    name: 'Nexora City Centre Clinic',
+    name: 'Regal Multispeciality Hospital',
     code: 'CITY',
     address: '18 MG Road, Level 3',
     city: 'Kochi',
   },
   {
     id: 'branch-north',
-    name: 'Nexora North Wing',
+    name: 'Regal Multispeciality Hospital',
     code: 'NORTH',
     address: '7 Wellness Park Road',
     city: 'Ernakulam',
@@ -203,7 +203,7 @@ export const SEED_APPOINTMENTS: EcosystemAppointment[] = [
     qrPayload: 'NEXORA:CHECKIN:appt-seed-1:ID_NEX_9021',
     queuePosition: 3,
     branchId: 'branch-main',
-    branchName: 'Nexora Main Campus',
+    branchName: 'Regal Multispeciality Hospital',
     estimatedCost: 1200,
     priorityTier: 'standard',
     createdAt: new Date().toISOString(),

@@ -1,4 +1,4 @@
-import type { NexoraServiceContext } from '../../types/context';
+import type { RegalServiceContext } from '../../types/context';
 import type { ServiceResult } from '../../types/common';
 import { ok } from '../../types/common';
 
@@ -10,7 +10,7 @@ export interface AuthSession {
 
 /** packages/shared/services/auth — headless identity verification */
 export async function verifyActorSession(
-  ctx: NexoraServiceContext,
+  ctx: RegalServiceContext,
 ): Promise<ServiceResult<AuthSession>> {
   if (!ctx.actorUserId) {
     return { ok: false, error: 'Missing actorUserId', code: 'AUTH_ACTOR_REQUIRED' };

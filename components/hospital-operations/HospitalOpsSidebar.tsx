@@ -55,7 +55,7 @@ export function HospitalOpsSidebar() {
   return (
     <aside className={hospitalOpsClasses.sidebar} aria-label="Hospital operations navigation">
       <div className="border-b border-[#3d5c55] px-4 py-4">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#CAD2C5]">Nexora</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#CAD2C5]">Regal Hospital</p>
         <h1 className="text-sm font-black text-white leading-tight">Hospital Operations</h1>
         <p className="text-[10px] font-bold text-[#CAD2C5] mt-0.5">Central Command Hub</p>
       </div>

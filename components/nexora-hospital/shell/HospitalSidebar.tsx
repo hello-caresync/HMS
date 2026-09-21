@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 
 import { clearAdminSession } from '@/lib/admin/auth';
+import { HospitalOperationsSidebarBrand } from '@/components/hospital/HospitalOperationsSidebarBrand';
 import { ui } from '@/components/nexora-hospital/ui/primitives';
 import { HOSPITAL_NAV, hospitalModuleFromPath } from '@/lib/nexora-hospital/navigation';
 
@@ -16,7 +17,9 @@ type HospitalSidebarProps = {
 export function HospitalSidebar({ mobile, onNavigate }: HospitalSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const active = hospitalModuleFromPath(pathname);
+  const dashboardTab = pathname === '/dashboard' ? searchParams.get('tab') : null;
 
   const handleLogout = () => {
     clearAdminSession();
@@ -34,13 +37,15 @@ export function HospitalSidebar({ mobile, onNavigate }: HospitalSidebarProps) {
       aria-label="Hospital navigation"
     >
       <div className="flex flex-1 flex-col overflow-hidden">
-        <div className={ui.sidebarBrand}>
-          <p className={ui.sidebarBrandTitle}>REGAL HOSPITAL</p>
-          <p className={ui.sidebarBrandSub}>Hospital Operations · RH-BLR-01</p>
-        </div>
+        <HospitalOperationsSidebarBrand />
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {HOSPITAL_NAV.map((item) => {
-            const isActive = active === item.id;
+            const isActive =
+              item.id === 'billing'
+                ? dashboardTab === 'billing'
+                : item.id === 'dashboard'
+                  ? pathname === '/dashboard' && dashboardTab !== 'billing'
+                  : active === item.id;
             return (
               <Link
                 key={item.id}

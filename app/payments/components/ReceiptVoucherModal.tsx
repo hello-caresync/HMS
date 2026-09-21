@@ -60,7 +60,7 @@ export default function ReceiptVoucherModal({ transaction, onClose }: ReceiptVou
                 N
               </div>
               <h2 id="receipt-title" className="text-sm font-bold tracking-tight text-slate-900">
-                Nexora Multispeciality Hospital
+                Regal Multispeciality Hospital
               </h2>
               <p className="text-[10px] text-slate-800">Payment Receipt · OPD Counter T-04</p>
               <p className="mt-1 font-mono text-[10px] text-slate-800">

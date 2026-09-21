@@ -1,4 +1,4 @@
-import type { NexoraServiceContext } from '../../types/context';
+import type { RegalServiceContext } from '../../types/context';
 import type { ServiceResult } from '../../types/common';
 import { ok } from '../../types/common';
 
@@ -18,7 +18,7 @@ export interface NotificationDispatchResult {
 /** packages/shared/services/notifications */
 export async function dispatchNotification(
   input: DispatchNotificationInput,
-  ctx: NexoraServiceContext,
+  ctx: RegalServiceContext,
 ): Promise<ServiceResult<NotificationDispatchResult>> {
   return ok({
     notificationId: `ntf-${ctx.correlationId}`,

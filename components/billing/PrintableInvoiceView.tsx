@@ -1,7 +1,9 @@
 'use client';
 
 import type { HospitalBillingInvoiceView } from '@/lib/hospital/billing-invoices-live';
+import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
 import { MEDICINE_GST_RATE } from '@/lib/billing/invoice-breakdown';
+import { REGAL_HOSPITAL_FULL_NAME, REGAL_HOSPITAL_NODE_LABEL } from '@/lib/regal/brand';
 import { formatINR } from '@/lib/utils/currency';
 
 type PrintableInvoiceViewProps = {
@@ -10,36 +12,24 @@ type PrintableInvoiceViewProps = {
 };
 
 export function PrintableInvoiceView({ invoice, printRef }: PrintableInvoiceViewProps) {
-  const hospitalName = invoice.hospital_name || 'Hospital';
-  const hospitalAddress = invoice.hospital_address || 'Address on file with billing desk';
+  const hospitalName = invoice.hospital_name || REGAL_HOSPITAL_FULL_NAME;
+  const hospitalAddress = invoice.hospital_address || 'Bengaluru · Regal Health HMS';
   const gstPercent = Math.round(MEDICINE_GST_RATE * 100);
+  const isSettled = /paid|settled/i.test(String(invoice.payment_status ?? ''));
 
   return (
-    <div ref={printRef} className="print-invoice mx-auto max-w-2xl bg-white p-8 text-slate-900">
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          .print-invoice,
-          .print-invoice * {
-            visibility: visible;
-          }
-          .print-invoice {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-          }
-          .no-print {
-            display: none !important;
-          }
-        }
-      `}</style>
-
-      <header className="border-b border-slate-200 pb-4">
+    <div
+      id="print-invoice-root"
+      ref={printRef}
+      className="print-invoice mx-auto max-w-2xl bg-white p-8 text-slate-900"
+    >
+      <header className="border-b border-slate-200 pb-4 text-center">
+        <div className="mb-3 flex justify-center">
+          <RegalHospitalLogo heightClass="h-10" framed={false} priority={false} />
+        </div>
         <h1 className="text-xl font-black">{hospitalName}</h1>
         <p className="text-sm text-slate-600">{hospitalAddress}</p>
+        <p className="mt-1 text-xs font-semibold text-slate-500">{REGAL_HOSPITAL_NODE_LABEL}</p>
         <p className="mt-2 text-xs font-bold uppercase tracking-wide text-slate-500">
           Tax Invoice · {invoice.invoice_number ?? invoice.id.slice(0, 8)}
         </p>
@@ -52,7 +42,7 @@ export function PrintableInvoiceView({ invoice, printRef }: PrintableInvoiceView
           <p className="text-slate-600">UHID: {invoice.patient_uhid ?? invoice.uhid}</p>
         </div>
         <div className="text-right">
-          <p className="text-xs font-bold uppercase text-slate-500">Consultation</p>
+          <p className="text-xs font-bold uppercase text-slate-500">Consulting Doctor</p>
           <p className="font-semibold">{invoice.doctor_name ?? 'Consulting physician'}</p>
           <p className="text-slate-600">{invoice.department ?? 'OPD'}</p>
           <p className="text-slate-600">
@@ -96,14 +86,24 @@ export function PrintableInvoiceView({ invoice, printRef }: PrintableInvoiceView
             <td className="pt-3 text-right font-black">{formatINR(invoice.total_payable ?? 0)}</td>
           </tr>
           <tr>
-            <td className="pt-1 text-xs text-slate-500">Payment status</td>
-            <td className="pt-1 text-right text-xs font-bold uppercase">{invoice.payment_status}</td>
+            <td className="pt-1 text-xs text-slate-500">Settlement status</td>
+            <td className="pt-1 text-right">
+              <span
+                className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase ${
+                  isSettled
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-amber-50 text-amber-800'
+                }`}
+              >
+                {invoice.payment_status}
+              </span>
+            </td>
           </tr>
         </tfoot>
       </table>
 
       <footer className="mt-8 border-t border-slate-200 pt-4 text-center text-xs text-slate-500">
-        Computer-generated invoice · {hospitalName}
+        Computer-generated invoice · {hospitalName} · Regal Health HMS
       </footer>
     </div>
   );
@@ -111,5 +111,7 @@ export function PrintableInvoiceView({ invoice, printRef }: PrintableInvoiceView
 
 export function printInvoiceElement(node: HTMLElement | null): void {
   if (!node || typeof window === 'undefined') return;
-  window.print();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => window.print());
+  });
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
@@ -15,8 +15,11 @@ import type { ClinicalNote } from '@/lib/clinical/types';
 
 /** Global patient-side realtime bridge for Rx + doctor advice toasts. */
 export function PatientClinicalRealtimeBridge() {
+  const patientIdRef = useRef(resolveActivePatientId());
+
   useEffect(() => {
-    const patientId = resolveActivePatientId();
+    const patientId = patientIdRef.current;
+    if (!patientId) return;
 
     const channel = supabase
       .channel(`patient_clinical_bridge_${patientId}`)

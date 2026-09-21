@@ -143,18 +143,6 @@ export const VENDOR_MODULE_REGISTRY: Record<string, VendorModuleConfig> = {
       { label: 'Revenue YTD', value: '₹4.2Cr' },
     ]),
   },
-  communication: {
-    slug: 'communication',
-    title: 'Communication Center',
-    description: 'Multi-channel messaging, secure attachments, video meeting requests, hospital broadcasts.',
-    features: ['Procurement · Pharmacy · Biomedical', 'Encrypted attachments', 'Broadcast inbox'],
-    panelTitle: 'Threads',
-    panelBody: panel([
-      { label: 'Unread', value: '5 messages' },
-      { label: 'Video requests', value: '1 pending' },
-      { label: 'Broadcasts', value: '2 this week' },
-    ]),
-  },
   notifications: {
     slug: 'notifications',
     title: 'Notifications',

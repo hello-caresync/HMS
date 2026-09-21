@@ -1,4 +1,4 @@
-# Nexora Ecosystem Hub — Central Sync Architecture
+# Regal Ecosystem Hub — Central Sync Architecture
 
 Hospital App is the **central operational hub**. All apps read/write the same Supabase database. Patient App never notifies Doctor App directly — every mutation flows through `lib/ecosystem/ecosystem-hub.ts`.
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Pill,
@@ -11,6 +11,11 @@ import {
   ShieldCheck,
   Star,
 } from 'lucide-react';
+
+import {
+  PrescriptionPrint,
+  printPrescriptionElement,
+} from '@/components/doctor/PrescriptionPrint';
 
 type MedicationRoute = 'Oral' | 'IV' | 'Topical' | 'Inhalation';
 
@@ -109,6 +114,7 @@ function createLineId(): string {
 }
 
 export default function EPrescriptionCorePage() {
+  const printRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [favourites, setFavourites] = useState<string[]>(FAVOURITE_SEED);
   const [draft, setDraft] = useState<FormDraft>(EMPTY_DRAFT);
@@ -168,7 +174,7 @@ export default function EPrescriptionCorePage() {
   };
 
   const handlePrint = () => {
-    showNotice('Printable prescription file queued · sandbox PDF simulation · read-only preview');
+    printPrescriptionElement(printRef.current);
   };
 
   const handleFinalize = () => {
@@ -439,50 +445,39 @@ export default function EPrescriptionCorePage() {
               </button>
             </div>
 
-            <article className="w-full rounded-xl border-2 border-slate-300 bg-white p-6 shadow-md">
-              <header className="border-b-2 border-slate-200 pb-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-800">
-                  Nexora e-Prescription · Standalone Vault
-                </p>
-                <h3 className="mt-1 text-lg font-black text-slate-950">Outpatient Prescription Sheet</h3>
-                <p className="mt-2 text-xs font-bold text-slate-800">
-                  Patient · {PATIENT.initials} · UHID {PATIENT.uhid}
-                </p>
-                <p className="text-xs font-bold text-slate-950">Date · 13 Jul 2026</p>
-              </header>
-
-              <div className="mt-5 min-h-[220px] space-y-3">
-                {prescriptionLines.length === 0 ? (
-                  <p className="rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm font-bold text-slate-800">
-                    No medications added · build Rx lines using the formulary panel
-                  </p>
-                ) : (
-                  prescriptionLines.map((line, index) => (
-                    <div
+            <div className="space-y-3">
+              <PrescriptionPrint
+                printRef={printRef}
+                patientName={PATIENT.initials}
+                patientUhid={PATIENT.uhid}
+                doctorName="Dr. Regal Clinician"
+                department="General Medicine · OPD"
+                issuedDate="13 Jul 2026"
+                lines={prescriptionLines.map((line) => ({
+                  id: line.id,
+                  nameStrength: line.nameStrength,
+                  dosage: line.dosage,
+                  frequency: line.frequency,
+                  duration: line.duration,
+                  route: line.route,
+                  specialInstructions: line.specialInstructions,
+                }))}
+              />
+              {prescriptionLines.length > 0 ? (
+                <div className="flex flex-wrap gap-2 px-1">
+                  {prescriptionLines.map((line) => (
+                    <button
                       key={line.id}
-                      className="flex gap-3 border-b-2 border-slate-100 pb-3 last:border-b-0"
+                      type="button"
+                      onClick={() => removeLine(line.id)}
+                      className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-[10px] font-black uppercase text-rose-700 hover:bg-rose-100"
                     >
-                      <span className="font-black text-slate-950">{index + 1}.</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-black text-slate-950">{line.nameStrength}</p>
-                        <p className="mt-1 text-xs font-bold text-slate-800">
-                          {line.dosage} · {line.frequency} · {line.duration} · {line.route}
-                        </p>
-                        <p className="text-xs font-bold text-slate-950">{line.specialInstructions}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeLine(line.id)}
-                        className="shrink-0 text-[10px] font-black uppercase text-rose-700 hover:text-rose-900"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <footer className="mt-6 flex flex-col items-center gap-2 border-t-2 border-slate-200 pt-4 sm:flex-row sm:justify-between">
+                      Remove {line.nameStrength}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <div className="flex flex-col items-center gap-2 px-1 sm:flex-row sm:justify-between">
                 <div className="inline-flex items-center gap-2 rounded-lg border-2 border-emerald-400 bg-emerald-50 px-3 py-2">
                   <ShieldCheck className="h-5 w-5 text-emerald-800" aria-hidden />
                   <span className="text-xs font-black uppercase text-emerald-950">
@@ -492,8 +487,8 @@ export default function EPrescriptionCorePage() {
                 <p className="text-[10px] font-bold text-slate-800">
                   {prescriptionLines.length} active line(s) · sandbox transmission only
                 </p>
-              </footer>
-            </article>
+              </div>
+            </div>
           </section>
         </div>
       </div>

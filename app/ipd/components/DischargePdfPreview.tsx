@@ -46,7 +46,7 @@ export default function DischargePdfPreview({
           <article className="mx-auto max-w-lg rounded border border-slate-300 bg-white p-8 shadow-lg" style={{ fontFamily: 'Georgia, serif' }}>
             <header className="mb-6 border-b-2 border-slate-800 pb-4 text-center">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-800">
-                Nexora Central Hospital
+                Regal Central Hospital
               </p>
               <h1 className="mt-1 text-lg font-bold text-slate-900">Discharge Summary</h1>
               <p className="mt-2 text-xs text-slate-800">

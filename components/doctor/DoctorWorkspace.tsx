@@ -25,6 +25,7 @@ import {
   updateOpdQueueStatus,
 } from '@/lib/clinical/bridge';
 import type { OpdQueueItem, QueueStatus } from '@/lib/clinical/types';
+import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
 import { getActiveDoctorSession, type DoctorSession } from '@/lib/doctor/session';
 
 const emptySubscribe = () => () => {};
@@ -248,7 +249,11 @@ export function DoctorWorkspace() {
 
       <div className="relative mx-auto max-w-7xl space-y-6">
         <header className={`flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7 ${glassCard}`}>
-          <div>
+          <div className="flex min-w-0 flex-1 items-start gap-4">
+            <div className="hidden shrink-0 rounded-xl border border-white/80 bg-white/90 p-2 shadow-sm sm:block">
+              <RegalHospitalLogo heightClass="h-8" widthClass="w-auto" framed={false} priority={false} />
+            </div>
+            <div className="min-w-0">
             <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[#894A66]">
               <Stethoscope className="h-4 w-4" /> OPD Clinical Suite
             </div>
@@ -256,6 +261,7 @@ export function DoctorWorkspace() {
             <p className="mt-1 text-sm text-[#2C243B]/60">
               {doctorName} · {department} · {doctorId}
             </p>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center gap-2 rounded-2xl border border-white/80 bg-white/60 px-3 py-2 text-xs font-bold text-[#2C243B]/70">

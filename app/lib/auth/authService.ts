@@ -162,7 +162,7 @@ export async function completePasswordReset(
 ): Promise<{ ok: boolean; message: string }> {
   const policy = evaluatePasswordPolicy(newPassword);
   if (!policy.valid) {
-    return { ok: false, message: 'Password does not meet Nexora security policy.' };
+    return { ok: false, message: 'Password does not meet Regal security policy.' };
   }
 
   logUserActivity('unknown', 'Password reset completed (mock)', 'Hospital IAM');

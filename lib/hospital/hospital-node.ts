@@ -1,24 +1,18 @@
 import { isHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
 import {
   HOSPITAL_TENANT_ID,
-  LEGACY_ACTIVE_HOSPITAL_ID,
-  LEGACY_ROSTER_HOSPITAL_ID,
-  LEGACY_SEED_HOSPITAL_ID,
   REGAL_FACILITY_CODE,
   REGAL_HOSPITAL_CODE,
 } from '@/lib/regal/constants';
 
 export { REGAL_FACILITY_CODE, REGAL_HOSPITAL_CODE };
 
-/** Tenant codes + legacy UUIDs used when loading personnel/credential directories. */
+/** Tenant codes for the active Regal node — no seed/mock UUID fallbacks. */
 export function hospitalDirectoryFilterIds(preferredId?: string | null): string[] {
   const values = new Set<string>([
     HOSPITAL_TENANT_ID,
     REGAL_HOSPITAL_CODE,
     REGAL_FACILITY_CODE,
-    LEGACY_SEED_HOSPITAL_ID,
-    LEGACY_ROSTER_HOSPITAL_ID,
-    LEGACY_ACTIVE_HOSPITAL_ID,
   ]);
   const trimmed = preferredId?.trim();
   if (trimmed) values.add(trimmed);

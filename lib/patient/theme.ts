@@ -1,4 +1,4 @@
-/** Nexora Patient App — warm latte / chestnut clinical palette */
+/** Regal Patient App — warm latte / chestnut clinical palette */
 
 export const patientTheme = {
   canvas: '#FAF6F0',

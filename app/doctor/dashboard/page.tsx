@@ -28,6 +28,7 @@ import {
 import { CACHE_KEYS, writeLocalJson } from '@/lib/persistence/local-cache';
 import { handoffConsultationToHospitalBilling } from '@/lib/billing/consultation-billing-handoff';
 import { dispatchDigitalPrescription } from '@/lib/doctor/dispatch-prescription';
+import { computeMedicineQuantity } from '@/lib/doctor/medicine-quantity';
 import { toast } from 'sonner';
 import {
   Clock,
@@ -60,7 +61,6 @@ type MedicationRow = {
   dosage: string;
   timing: string;
   duration: string;
-  qty: number;
 };
 
 const NO_NUMBER_SPINNER =
@@ -144,7 +144,6 @@ export default function DoctorWorkstation() {
   const [drugInput, setDrugInput] = useState('');
   const [dosageInput, setDosageInput] = useState('1-0-1');
   const [durationInput, setDurationInput] = useState('3 Days');
-  const [qtyInput, setQtyInput] = useState(1);
   const [consultationFee, setConsultationFee] = useState(() =>
     resolveDoctorConsultationFeeFromSources([loadDoctorWorkspaceSession()]),
   );
@@ -296,7 +295,6 @@ export default function DoctorWorkstation() {
         dosage: dosageInput,
         timing: 'After Food',
         duration: durationInput,
-        qty: Math.max(1, Number(qtyInput) || 1),
       },
     ]);
     setDrugInput('');
@@ -405,7 +403,7 @@ export default function DoctorWorkstation() {
             frequency: med.dosage,
             duration: med.duration,
             instructions: doctorAdvice.trim() || med.timing,
-            quantity: med.qty,
+            quantity: computeMedicineQuantity(med.dosage, med.duration),
           })),
         },
       );
@@ -447,7 +445,6 @@ export default function DoctorWorkstation() {
           dosage: med.dosage,
           frequency: med.dosage,
           duration: med.duration,
-          quantity: med.qty,
         })),
       });
       setPatientHistory((prev) => [
@@ -711,7 +708,8 @@ export default function DoctorWorkstation() {
             </p>
           </div>
           {activePatient ? (
-            <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 gap-3.5">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="flex-1 space-y-3.5 overflow-y-auto p-4 pb-6">
               {statusMessage && (
                 <div
                   className={`p-3 rounded-xl border text-xs flex items-center gap-2 shrink-0 ${
@@ -795,7 +793,7 @@ export default function DoctorWorkstation() {
                 </div>
               </div>
 
-              <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-3 flex-1 flex flex-col min-h-[220px]">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
                 <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5 mb-2 shrink-0">
                   <Pill className="w-3.5 h-3.5 text-teal-700" />
                   Prescription Pad ({medications.length} Prescribed)
@@ -849,14 +847,6 @@ export default function DoctorWorkstation() {
                     <option value="15 Days">15 Days</option>
                     <option value="30 Days">30 Days</option>
                   </select>
-                  <input
-                    type="number"
-                    min={1}
-                    value={qtyInput}
-                    onChange={(e) => setQtyInput(Number(e.target.value) || 1)}
-                    className={`w-16 text-xs p-2 bg-white border border-slate-200 rounded-xl font-mono ${NO_NUMBER_SPINNER}`}
-                    title="Quantity"
-                  />
                   <button
                     type="submit"
                     className="px-3.5 py-2 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0"
@@ -866,60 +856,69 @@ export default function DoctorWorkstation() {
                   </button>
                 </form>
 
-                <div className="flex min-h-0 flex-1 flex-col gap-2.5">
-                  <div className="flex max-h-[180px] min-h-[44px] flex-col gap-2.5 overflow-y-auto overflow-x-hidden pr-1">
-                    {medications.length === 0 ? (
-                      <div className="py-6 text-center text-xs italic text-slate-400">
-                        No drugs added yet. Type medication above.
-                      </div>
-                    ) : (
-                      medications.map((med, i) => (
-                        <div
-                          key={i}
-                          className="flex min-h-[44px] w-full items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3"
-                        >
-                          <span className="min-w-0 truncate text-sm font-semibold text-slate-800">
-                            {med.name}
+                <div className="flex max-h-[180px] min-h-[44px] flex-col gap-2.5 overflow-y-auto overflow-x-hidden pr-1">
+                  {medications.length === 0 ? (
+                    <div className="py-6 text-center text-xs italic text-slate-400">
+                      No drugs added yet. Type medication above.
+                    </div>
+                  ) : (
+                    medications.map((med, i) => (
+                      <div
+                        key={i}
+                        className="flex min-h-[44px] w-full items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3"
+                      >
+                        <span className="min-w-0 truncate text-sm font-semibold text-slate-800">
+                          {med.name}
+                        </span>
+                        <div className="flex shrink-0 items-center gap-2.5 text-xs text-slate-600">
+                          <span className="rounded border border-emerald-200/60 bg-emerald-50 px-2 py-0.5 font-mono font-medium text-emerald-700">
+                            {med.dosage}
                           </span>
-                          <div className="flex shrink-0 items-center gap-2.5 text-xs text-slate-600">
-                            <span className="rounded border border-emerald-200/60 bg-emerald-50 px-2 py-0.5 font-mono font-medium text-emerald-700">
-                              {med.dosage}
-                            </span>
-                            <span>{med.duration}</span>
-                            <span className="font-medium text-slate-700">Qty: {med.qty}</span>
-                            <button
-                              type="button"
-                              onClick={() => setMedications((prev) => prev.filter((_, idx) => idx !== i))}
-                              className="ml-1 rounded p-1 text-rose-500 transition hover:bg-rose-50 hover:text-rose-700"
-                              title="Remove item"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+                          <span>{med.duration}</span>
+                          <button
+                            type="button"
+                            onClick={() => setMedications((prev) => prev.filter((_, idx) => idx !== i))}
+                            className="ml-1 rounded p-1 text-rose-500 transition hover:bg-rose-50 hover:text-rose-700"
+                            title="Remove item"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                      ))
-                    )}
-                  </div>
-
-                  <input
-                    type="text"
-                    placeholder="Doctor's Instructions / Dietary Advice..."
-                    value={doctorAdvice}
-                    onChange={(e) => setDoctorAdvice(e.target.value)}
-                    className="w-full shrink-0 rounded-xl border border-slate-200 bg-white p-2 text-xs text-slate-800 outline-none"
-                  />
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
-              <button
-                type="button"
-                disabled={isFinalizing}
-                onClick={handleDoneAndDispatch}
-                className="w-full py-4 bg-teal-800 hover:bg-teal-900 active:bg-teal-950 text-white font-black text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-50"
-              >
-                <CheckCircle2 className="w-5 h-5 text-emerald-300" />
-                {isFinalizing ? 'DISPATCHING TO PATIENT APP...' : '✓ DONE & DISPATCH DIGITAL PRESCRIPTION'}
-              </button>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="doctor-advice-input"
+                  className="text-xs font-semibold text-stone-700"
+                >
+                  Doctor&apos;s Instructions / Dietary Advice
+                </label>
+                <textarea
+                  id="doctor-advice-input"
+                  rows={3}
+                  placeholder="Doctor's Instructions / Dietary Advice..."
+                  value={doctorAdvice}
+                  onChange={(e) => setDoctorAdvice(e.target.value)}
+                  className="w-full resize-y rounded-xl border border-stone-200 p-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              </div>
+
+              <div className="shrink-0 border-t border-stone-100 bg-white/95 p-4 shadow-lg backdrop-blur">
+                <button
+                  type="button"
+                  disabled={isFinalizing}
+                  onClick={handleDoneAndDispatch}
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-800 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-900 active:bg-emerald-950 disabled:opacity-50"
+                >
+                  <CheckCircle2 className="h-5 w-5 text-emerald-200" />
+                  {isFinalizing ? 'DISPATCHING TO PATIENT APP...' : '✓ DONE & DISPATCH DIGITAL PRESCRIPTION'}
+                </button>
+              </div>
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#F0F7F5]">

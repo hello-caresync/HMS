@@ -425,7 +425,7 @@ export default function ClinicalSuitePage() {
                 <h2 className="text-sm font-black text-slate-950">Document Preview</h2>
                 {selectedTemplate ? (
                   <article className="mt-4 space-y-3 rounded-lg border-2 border-slate-200 bg-white p-4">
-                    <p className="text-xs font-black uppercase text-slate-800">Nexora Clinical · Sandbox</p>
+                    <p className="text-xs font-black uppercase text-slate-800">Regal Clinical · Sandbox</p>
                     <p className="text-lg font-black text-slate-950">{selectedTemplate.title}</p>
                     <p className="text-sm font-bold text-slate-950">Patient · P.N. · UHID NX-2026-301882</p>
                     <p className="text-xs font-bold leading-relaxed text-slate-800">

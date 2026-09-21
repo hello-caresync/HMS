@@ -1,41 +1,39 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { createClient } from '@/lib/supabase/client';
 import { countActiveEmergencyTriages } from '@/lib/hospital/operations/emergency-triage-sync';
 import type { SidebarBadgeCounts } from './types';
 
 export function useHospitalOpsRealtime(onRefresh: () => void) {
-  const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [connected, setConnected] = useState(false);
+  const onRefreshRef = useRef(onRefresh);
+
+  useEffect(() => {
+    onRefreshRef.current = onRefresh;
+  }, [onRefresh]);
 
   useEffect(() => {
     const supabase = createClient();
     let mounted = true;
 
-    const measureLatency = async () => {
-      const start = performance.now();
-      const { error } = await supabase.from('appointments').select('id').limit(1);
-      if (!mounted) return;
-      setLatencyMs(error ? null : Math.round(performance.now() - start));
-    };
-
-    void measureLatency();
-    const latencyTimer = window.setInterval(() => void measureLatency(), 15000);
-
     const channel = supabase
       .channel('hospital-ops-hub')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => onRefresh())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_triage' }, () =>
-        onRefresh(),
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () =>
+        onRefreshRef.current(),
       )
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'prescriptions' }, () => onRefresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_triage' }, () =>
+        onRefreshRef.current(),
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'prescriptions' }, () =>
+        onRefreshRef.current(),
+      )
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'system_events' }, () =>
-        onRefresh(),
+        onRefreshRef.current(),
       )
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'system_notifications' }, () =>
-        onRefresh(),
+        onRefreshRef.current(),
       )
       .subscribe((status: string) => {
         if (mounted) setConnected(status === 'SUBSCRIBED');
@@ -43,12 +41,11 @@ export function useHospitalOpsRealtime(onRefresh: () => void) {
 
     return () => {
       mounted = false;
-      window.clearInterval(latencyTimer);
       void supabase.removeChannel(channel);
     };
-  }, [onRefresh]);
+  }, []);
 
-  return { latencyMs, connected };
+  return { latencyMs: null as number | null, connected };
 }
 
 export async function fetchSidebarBadgeCounts(): Promise<SidebarBadgeCounts> {

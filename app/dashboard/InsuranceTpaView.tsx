@@ -86,7 +86,7 @@ export default function InsuranceTpaView() {
             columns={['Corporate', 'Limit', 'Utilized']}
             rows={[
               ['TechCorp India', '₹50L', '₹18L'],
-              ['Nexora Staff Plan', '₹10L', '₹2.4L'],
+              ['Regal Staff Plan', '₹10L', '₹2.4L'],
             ]}
           />
         </Panel>

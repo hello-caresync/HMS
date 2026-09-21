@@ -2,8 +2,8 @@ import React from 'react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Administrator Login | NEXORA Healthcare OS',
-  description: 'Enterprise Administrative Access Terminal',
+  title: 'Administrator Login | Regal Health HMS',
+  description: 'Hospital Management & Patient Care Portal',
 };
 
 export default function LoginLayout({

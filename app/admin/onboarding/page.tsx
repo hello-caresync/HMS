@@ -380,7 +380,7 @@ export default function HospitalOnboardingPage() {
         <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-bold uppercase tracking-wider text-teal-700">
-              Nexora Hospital App V0
+              Regal Hospital App V0
             </p>
             <h1 className="mt-1 text-3xl font-extrabold text-slate-900">
               Hospital Admin Onboarding

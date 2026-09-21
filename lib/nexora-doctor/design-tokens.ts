@@ -1,4 +1,4 @@
-/** Nexora Doctor — Soft Sage & Linen clinical palette */
+/** Regal Doctor — Soft Sage & Linen clinical palette */
 
 export const doctorColors = {
   sage: '#7A9A8B',

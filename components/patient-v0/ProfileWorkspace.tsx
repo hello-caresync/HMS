@@ -90,7 +90,7 @@ export function ProfileWorkspace() {
         <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-patient-plum">
           <KeyRound className="h-5 w-5" /> Account
         </h2>
-        <p className="mb-4 text-sm text-patient-lavender">Password changes are managed through Nexora secure identity. Contact support for reset.</p>
+        <p className="mb-4 text-sm text-patient-lavender">Password changes are managed through Regal secure identity. Contact support for reset.</p>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={handleSave} className={v0Ui.btnPrimary}>Save changes</button>
           <button type="button" onClick={handleLogout} className={v0Ui.btnDanger}>

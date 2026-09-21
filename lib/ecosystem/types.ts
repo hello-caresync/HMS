@@ -1,4 +1,4 @@
-/** Nexora Healthcare Ecosystem V0 — shared cross-app types */
+/** Regal Healthcare Ecosystem V0 — shared cross-app types */
 
 export type AppointmentStatus =
   | 'Requested'

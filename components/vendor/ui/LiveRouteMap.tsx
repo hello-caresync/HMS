@@ -5,7 +5,7 @@ export function LiveRouteMap({
   progressPct = 68,
   driverName = 'R. Kumar',
   origin = 'MedSupply Warehouse · BLR',
-  destination = 'Nexora City Hospital',
+  destination = 'Regal Multispeciality Hospital',
 }: {
   progressPct?: number;
   driverName?: string;

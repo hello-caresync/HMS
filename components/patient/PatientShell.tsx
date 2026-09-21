@@ -34,7 +34,7 @@ export function PatientShell({ children }: PatientShellProps) {
       <div className="flex min-h-screen min-w-0 flex-col md:ml-64">
         <header className={`sticky top-0 z-40 flex items-center justify-between px-4 py-3 md:px-8 ${patientClasses.topBar}`}>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-patient-charcoal md:text-base">{activeItem?.label ?? 'Nexora Patient'}</p>
+            <p className="truncate text-sm font-bold text-patient-charcoal md:text-base">{activeItem?.label ?? 'Regal Patient Portal'}</p>
             <p className="hidden truncate text-xs text-patient-muted md:block">{activeItem?.description ?? 'Clinical digital health companion'}</p>
           </div>
           <div className="flex items-center gap-2 md:hidden">

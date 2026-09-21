@@ -8,7 +8,6 @@ export type HubActiveModule =
   | 'billing'
   | 'catalog'
   | 'documents'
-  | 'communication'
   | 'returns'
   | 'analytics';
 
@@ -52,13 +51,6 @@ export interface CatalogProduct {
   hsnCode: string;
   stockAvailable: number;
   expiryBatch?: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  sender: 'Vendor' | 'Hospital';
-  text: string;
-  timestamp: string;
 }
 
 export interface ComplianceDoc {

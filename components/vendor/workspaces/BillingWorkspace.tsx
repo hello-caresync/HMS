@@ -34,7 +34,7 @@ function generateInvoiceNumber(): string {
   return `INV-${Date.now().toString().slice(-8)}`;
 }
 
-/** Nexora Vendor · billing & invoicing engine with GST auto-calc and invoice ledger. */
+/** Regal Vendor · billing & invoicing engine with GST auto-calc and invoice ledger. */
 function BillingWorkspace() {
   const { feedback, showSuccess, showError } = useVendorFeedback();
   const hospitalCode = useActiveHospitalCode();

@@ -1,4 +1,4 @@
-import type { NexoraServiceContext } from '../../types/context';
+import type { RegalServiceContext } from '../../types/context';
 import type {
   SharedBillingItem,
   SharedBillingItemInput,
@@ -33,7 +33,7 @@ export interface BuildInvoiceInput {
 /** packages/shared/services/billing */
 export function buildInvoice(
   input: BuildInvoiceInput,
-  ctx: NexoraServiceContext,
+  ctx: RegalServiceContext,
 ): ServiceResult<SharedInvoiceSummary> {
   if (!input.items.length) {
     return fail('At least one billing item is required', 'BILLING_EMPTY');

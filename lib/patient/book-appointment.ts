@@ -1,3 +1,4 @@
+import { resolveActiveAuthUser } from '@/lib/auth/resolve-active-auth-user';
 import { createClient } from '@/lib/supabase/client';
 import { resolveDoctorBookingIdentity } from '@/lib/hospital/doctor-booking-identity';
 import { insertAppointmentRowResilient } from '@/lib/hospital/appointments';
@@ -6,6 +7,8 @@ import { resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
 import { REGAL_FACILITY_CODE, REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import { createConsultationFromAppointment } from '@/lib/db/consultations';
 import { readPatientPortalSession, mintPatientUhid } from '@/lib/patient/portal-session';
+import { assertProfileCompleteForBooking } from '@/lib/patient/profile-completeness';
+import { resolveEffectivePatientId } from '@/lib/patient/resolve-effective-patient-id';
 import { assertSlotAvailableForBooking } from '@/lib/scheduling/doctor-slot-service';
 import {
   classifyConditionTier,
@@ -45,6 +48,11 @@ export interface BookAppointmentPayload {
   hospitalName?: string;
   hospitalId?: string;
   hospital_id?: string;
+  phone?: string;
+  booking_for?: string;
+  skipProfileCheck?: boolean;
+  authUserId?: string;
+  userId?: string;
   [key: string]: unknown;
 }
 
@@ -75,9 +83,32 @@ export async function bookAppointmentWithDoctor(
   const session = typeof window !== 'undefined' ? readPatientPortalSession() : null;
   const supabase = createClient();
 
-  const { data: authData } = await supabase.auth.getUser();
-  const patientId =
-    payload.patient_id || payload.patientId || authData?.user?.id || session?.patient_id || DEFAULT_PATIENT_ID;
+  if (!payload.skipProfileCheck) {
+    await assertProfileCompleteForBooking(supabase);
+  }
+
+  const fallbackAuthId = [
+    payload.authUserId,
+    payload.userId,
+    payload.patient_id,
+    payload.patientId,
+    session?.patient_id,
+  ]
+    .map((value) => String(value ?? '').trim())
+    .find(Boolean);
+
+  const authContext = await resolveActiveAuthUser(supabase, fallbackAuthId);
+
+  if (!authContext?.userId) {
+    throw new Error('User session not found. Please log in again.');
+  }
+
+  const sessionPatientHint =
+    payload.patient_id ||
+    payload.patientId ||
+    authContext.userId ||
+    session?.patient_id ||
+    DEFAULT_PATIENT_ID;
   const doctorIdentity = resolveDoctorBookingIdentity({
     doctor_uuid: payload.doctor_uuid,
     doctor_id: payload.doctor_id ?? payload.doctorId ?? payload.doctor?.doctor_id,
@@ -142,6 +173,12 @@ export async function bookAppointmentWithDoctor(
   }
   const phone = phoneCheck.phone!;
 
+  const resolvedPatient = await resolveEffectivePatientId(supabase, {
+    phone,
+    sessionPatientId: String(sessionPatientHint),
+  });
+  const patientId = resolvedPatient.effectivePatientId || String(sessionPatientHint);
+
   let tokenNumber = 1;
   try {
     const { count, error: countError } = await supabase
@@ -186,6 +223,7 @@ export async function bookAppointmentWithDoctor(
     department,
     reason_for_visit: reasonForVisit,
     chief_complaint: reasonForVisit,
+    symptoms: reasonForVisit,
     appointment_date: appointmentDate,
     appointment_time: appointmentTime,
     slot_time: appointmentTime,
@@ -201,7 +239,11 @@ export async function bookAppointmentWithDoctor(
     created_at: new Date().toISOString(),
   };
 
-  if (patientId && /^[0-9a-f-]{36}$/i.test(String(patientId))) {
+  if (payload.booking_for) {
+    insertPayload.booking_for = payload.booking_for;
+  }
+
+  if (patientId) {
     insertPayload.patient_id = patientId;
   }
 
@@ -222,17 +264,9 @@ export async function bookAppointmentWithDoctor(
 
   const appointmentId = String(apptData.appointment_id ?? apptData.id ?? '');
 
-  let linkedPatientUuid: string | null =
-    patientId && /^[0-9a-f-]{36}$/i.test(String(patientId)) ? String(patientId) : null;
-  if (!linkedPatientUuid) {
-    const { data: patientRow } = await supabase
-      .from('patients')
-      .select('id')
-      .eq('hospital_id', hospitalNodeTag)
-      .eq('phone', phone)
-      .maybeSingle();
-    linkedPatientUuid = patientRow?.id ? String(patientRow.id) : null;
-  }
+  const linkedPatientUuid =
+    resolvedPatient.patientRecordId ||
+    (patientId && /^[0-9a-f-]{36}$/i.test(String(patientId)) ? String(patientId) : null);
 
   try {
     await createConsultationFromAppointment(supabase, {

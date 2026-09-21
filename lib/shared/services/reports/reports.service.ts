@@ -1,4 +1,4 @@
-import type { NexoraServiceContext } from '../../types/context';
+import type { RegalServiceContext } from '../../types/context';
 import type { ServiceResult } from '../../types/common';
 import { ok } from '../../types/common';
 
@@ -11,7 +11,7 @@ export interface ReportSnapshotRef {
 /** packages/shared/services/reports */
 export async function enqueueReportSnapshot(
   dimension: string,
-  ctx: NexoraServiceContext,
+  ctx: RegalServiceContext,
 ): Promise<ServiceResult<ReportSnapshotRef>> {
   return ok({
     snapshotId: `RPT-${ctx.correlationId}`,

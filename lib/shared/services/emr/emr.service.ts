@@ -1,4 +1,4 @@
-import type { NexoraServiceContext } from '../../types/context';
+import type { RegalServiceContext } from '../../types/context';
 import type { ServiceResult } from '../../types/common';
 import { ok } from '../../types/common';
 
@@ -12,7 +12,7 @@ export interface EmrRecordRef {
 export async function linkEncounterToTransaction(
   ref: EmrRecordRef,
   transactionId: string,
-  ctx: NexoraServiceContext,
+  ctx: RegalServiceContext,
 ): Promise<ServiceResult<{ linked: true }>> {
   return ok({ linked: true });
 }

@@ -1,10 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, Eye, EyeOff, KeyRound, Loader2, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 
+import {
+  LOGIN_FORM_AUTOCOMPLETE,
+  LOGIN_IDENTIFIER_INPUT_PROPS,
+  LOGIN_PASSWORD_INPUT_PROPS,
+} from '@/lib/auth/login-form-security';
 import {
   ADMIN_PROVISIONING_PATH,
   persistActiveSession,
@@ -15,15 +20,16 @@ import { authenticateHospitalUser } from '@/lib/auth/hospitalAuth';
 import { isHospitalSetupCompleted } from '@/lib/auth/admin-setup';
 import { recordRealStaffLogin, type AuthenticatedUserPayload } from '@/lib/recordStaffLogin';
 import { saveDoctorSession } from '@/lib/doctor/session';
+import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
 import { supabase } from '@/lib/supabase';
 
 type HospitalSignInFormProps = {
-  redirectUrl?: string | null;
   onError?: (message: string) => void;
 };
 
-export function HospitalSignInForm({ redirectUrl, onError }: HospitalSignInFormProps) {
+export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [identifier, setIdentifier] = useState('');
   const [passcode, setPasscode] = useState('');
   const [showPasscode, setShowPasscode] = useState(false);
@@ -55,7 +61,7 @@ export function HospitalSignInForm({ redirectUrl, onError }: HospitalSignInFormP
         email: user.email,
         temporary_passcode: passcode.trim(),
         phone: user.phone,
-        portal_access: user.portal_access,
+        portal_access: '/dashboard',
       });
 
       localStorage.setItem(
@@ -83,7 +89,10 @@ export function HospitalSignInForm({ redirectUrl, onError }: HospitalSignInFormP
           portalRoute: '/doctor/dashboard',
         });
         toast.success(`Welcome back, ${user.full_name}!`);
-        router.push('/doctor/dashboard');
+        router.refresh();
+        router.push(
+          resolveLoginRedirect(searchParams.get('redirect'), '/doctor/dashboard', ['/doctor']),
+        );
         return;
       }
 
@@ -95,7 +104,7 @@ export function HospitalSignInForm({ redirectUrl, onError }: HospitalSignInFormP
         staff_type: user.staff_type,
         department: user.department,
         email: user.email,
-        portal_access: user.portal_access,
+        portal_access: '/dashboard',
       };
 
       persistActiveSession(session);
@@ -120,18 +129,27 @@ export function HospitalSignInForm({ redirectUrl, onError }: HospitalSignInFormP
 
       toast.success(`Welcome back, ${user.full_name}!`);
 
-      if (redirectUrl && redirectUrl.startsWith('/') && redirectUrl !== '/hospital/login') {
-        router.push(redirectUrl);
-        return;
-      }
-
       if (user.role === 'admin') {
         const setupDone = await isHospitalSetupCompleted(user.hospital_id);
-        router.push(setupDone ? '/dashboard' : ADMIN_PROVISIONING_PATH);
+        router.refresh();
+        router.push(
+          resolveLoginRedirect(
+            searchParams.get('redirect'),
+            setupDone ? '/hospital' : ADMIN_PROVISIONING_PATH,
+            ['/hospital', '/dashboard', '/staff'],
+          ),
+        );
         return;
       }
 
-      router.push(user.portal_access || '/dashboard');
+      router.refresh();
+      router.push(
+        resolveLoginRedirect(searchParams.get('redirect'), '/hospital', [
+          '/hospital',
+          '/dashboard',
+          '/staff',
+        ]),
+      );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Authentication failed. Please contact your administrator.';
       setErrorMessage(message);
@@ -150,7 +168,7 @@ export function HospitalSignInForm({ redirectUrl, onError }: HospitalSignInFormP
         </div>
       )}
 
-      <form onSubmit={handleSignIn} className="space-y-4">
+      <form onSubmit={handleSignIn} autoComplete={LOGIN_FORM_AUTOCOMPLETE} className="space-y-4">
         <div className="space-y-1.5">
           <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
             Employee ID or Email
@@ -160,11 +178,12 @@ export function HospitalSignInForm({ redirectUrl, onError }: HospitalSignInFormP
             <input
               type="text"
               required
-              autoComplete="username"
+              name="hospital-portal-identifier"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="RH-D02 or staff@regalhospital.com"
+              placeholder="Employee ID or work email"
               className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pr-4 pl-10 text-sm font-medium text-slate-900 transition focus:border-cyan-600 focus:bg-white focus:outline-none"
+              {...LOGIN_IDENTIFIER_INPUT_PROPS}
             />
           </div>
         </div>
@@ -178,11 +197,12 @@ export function HospitalSignInForm({ redirectUrl, onError }: HospitalSignInFormP
             <input
               type={showPasscode ? 'text' : 'password'}
               required
-              autoComplete="current-password"
+              name="hospital-portal-passcode"
               value={passcode}
               onChange={(e) => setPasscode(e.target.value)}
               placeholder="Assigned login PIN / passcode"
               className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pr-10 pl-10 font-mono text-sm font-bold text-slate-900 transition focus:border-cyan-600 focus:bg-white focus:outline-none"
+              {...LOGIN_PASSWORD_INPUT_PROPS}
             />
             <button
               type="button"

@@ -35,7 +35,7 @@ Admission: ${dateFrom} · Discharge: ${dateTo}
 Attending: ${MOCK_DOCTOR_PROFILE.fullName} · Reg ${MOCK_DOCTOR_PROFILE.licenseNumber}
 Active diagnoses: ${dx}
 
-Clinical course and management plan documented per Nexora EMR. Patient counselled on follow-up and red-flag symptoms.`;
+Clinical course and management plan documented per Regal EMR. Patient counselled on follow-up and red-flag symptoms.`;
   }, [patient, docType, dateFrom, dateTo]);
 
   const effectiveBody = body || autoBody;
@@ -121,7 +121,7 @@ Clinical course and management plan documented per Nexora EMR. Patient counselle
         <div className={`${sageUi.cardSolid} p-6 xl:col-span-7`}>
           <div className="flex items-start justify-between border-b border-[#E6E3C5] pb-4">
             <div>
-              <p className="font-serif text-lg font-black text-[#2B2A22]">Nexora University Hospital</p>
+              <p className="font-serif text-lg font-black text-[#2B2A22]">Regal Multispeciality Hospital</p>
               <p className="text-xs text-[#5C5A4E]">Verified clinical document · print-ready</p>
             </div>
             <div className="flex flex-col items-center gap-1 rounded-lg border border-[#E6E3C5] bg-[#FAFAF5] p-2">

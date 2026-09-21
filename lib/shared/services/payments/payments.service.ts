@@ -1,5 +1,5 @@
 import { SUPABASE_TABLES } from '../../client/supabase';
-import type { NexoraServiceContext } from '../../types/context';
+import type { RegalServiceContext } from '../../types/context';
 import type { SharedPaymentRecord } from '../../types/transaction';
 import type { ServiceResult } from '../../types/common';
 import { fail, ok } from '../../types/common';
@@ -13,7 +13,7 @@ export interface ProcessPaymentInput {
 /** packages/shared/services/payments — mock capture with optional Supabase persistence */
 export async function processPayment(
   input: ProcessPaymentInput,
-  ctx: NexoraServiceContext,
+  ctx: RegalServiceContext,
 ): Promise<ServiceResult<SharedPaymentRecord>> {
   if (input.amount <= 0) {
     return fail('Payment amount must be positive', 'PAY_INVALID_AMOUNT');

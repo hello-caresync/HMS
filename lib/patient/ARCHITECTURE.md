@@ -1,6 +1,6 @@
-# Nexora Patient App — Architecture (Phase 1)
+# Regal Patient App — Architecture (Phase 1)
 
-Enterprise patient companion within the Nexora static-export Next.js PWA (`curasync`).
+Enterprise patient companion within the Regal static-export Next.js PWA (`curasync`).
 
 ## Stack (aligned with spec)
 

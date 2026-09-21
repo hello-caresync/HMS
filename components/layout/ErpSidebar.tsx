@@ -35,7 +35,7 @@ export default function ErpSidebar() {
         {!collapsed && (
           <div className="min-w-0">
             <p className="truncate text-xs font-black tracking-tight text-white">
-              Nexora ERP
+              Regal Health HMS
             </p>
             <p className="truncate text-[10px] text-slate-200">
               Back-Office · {ERP_MODULE_COUNT} modules

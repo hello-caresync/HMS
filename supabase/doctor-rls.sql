@@ -1,4 +1,4 @@
--- Nexora Doctor App — Row Level Security (Supabase)
+-- Regal Doctor App — Row Level Security (Supabase)
 -- Doctors may only read/write clinical rows where doctor_id = auth.uid() mapped profile
 
 ALTER TABLE doctors ENABLE ROW LEVEL SECURITY;

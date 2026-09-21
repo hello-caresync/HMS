@@ -25,7 +25,7 @@ import {
   type PurchaseOrder,
 } from '@/lib/vendor/v0/portal-service';
 
-/** Nexora Vendor · live dashboard wired to shared Supabase procurement tables. */
+/** Regal Vendor · live dashboard wired to shared Supabase procurement tables. */
 function DashboardWorkspace() {
   const { feedback, showSuccess, showError } = useVendorFeedback();
   const hospitalCode = useActiveHospitalCode();

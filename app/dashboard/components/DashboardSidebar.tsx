@@ -75,7 +75,7 @@ export default function DashboardSidebar({ mobileOpen, onMobileClose }: Dashboar
           N
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold tracking-tight text-white">Nexora</p>
+          <p className="truncate text-sm font-bold tracking-tight text-white">Regal Hospital</p>
           <p className="truncate text-[10px] uppercase tracking-widest text-slate-200">
             Command Center
           </p>

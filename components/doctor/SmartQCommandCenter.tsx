@@ -28,6 +28,7 @@ import {
   fetchPatient360History,
   type Patient360HistoryItem,
 } from '@/lib/doctor/patient-360-history';
+import { formatGenderDisplay } from '@/lib/clinical/format-gender';
 import { createClient } from '@/lib/supabase/client';
 import { portalSurfaces } from '@/lib/shared/portal-surfaces';
 import { PortalEmptyState } from '@/components/shared/PortalEmptyState';
@@ -102,7 +103,7 @@ function mapStatus(status: LiveQueueRow['status']): QueueItem['status'] {
 
 function toQueueItem(row: LiveQueueRow): QueueItem {
   const age = row.age ?? calcAge(row.dob);
-  const gender = row.gender ?? '—';
+  const gender = formatGenderDisplay(row.gender);
   const waitMins = row.estimated_wait_minutes ?? 10;
   const mlMins = Math.max(8, Math.min((row.estimated_wait_minutes ?? 12) + 4, 25));
 

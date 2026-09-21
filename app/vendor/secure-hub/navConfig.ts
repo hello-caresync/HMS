@@ -33,11 +33,6 @@ export const VENDOR_NAV_ITEMS: VendorNavItem[] = [
     href: '/vendor/secure-hub?module=documents',
   },
   {
-    id: 'communication',
-    label: 'Hospital Live Chat',
-    href: '/vendor/secure-hub?module=communication',
-  },
-  {
     id: 'returns',
     label: 'Returns & Replacements',
     href: '/vendor/secure-hub?module=returns',

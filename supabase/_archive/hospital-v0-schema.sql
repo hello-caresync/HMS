@@ -1,4 +1,4 @@
--- Nexora Hospital App V0 · production schema (run after hospital-schema.sql + cross-app-realtime-schema.sql)
+-- Regal Hospital App V0 · production schema (run after hospital-schema.sql + cross-app-realtime-schema.sql)
 
 -- Extend patients table
 alter table public.patients

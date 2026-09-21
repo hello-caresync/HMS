@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 import { DashboardOverview, type DashboardPrescription, type DashboardVisit } from '@/components/patient/DashboardOverview';
 import { BookAppointmentModal } from '@/components/patient/BookAppointmentModal';
@@ -19,6 +20,7 @@ import {
   rowMatchesPatientSession,
   type PatientAuthSession,
 } from '@/lib/auth/patientAuth';
+import { resolveActiveAuthUser } from '@/lib/auth/resolve-active-auth-user';
 import { readPatientPortalSession } from '@/lib/patient/portal-session';
 import {
   fetchPatientClinicalRecordByPhone,
@@ -27,7 +29,11 @@ import {
 } from '@/lib/patient/patients-record';
 import { CACHE_KEYS, readLocalJson, writeLocalJson } from '@/lib/persistence/local-cache';
 import { isDemoMode } from '@/lib/shared/demo-mode';
+import { isTodayClinicAppointment } from '@/lib/hospital/smartq-wait';
 import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
+import { resolveEffectivePatientId } from '@/lib/patient/resolve-effective-patient-id';
+import { usePatientProfileCompleteness } from '@/lib/patient/usePatientProfileCompleteness';
+import { profileIncompleteBookingMessage } from '@/lib/utils/profileCompleteness';
 import { supabase } from '@/lib/supabaseClient';
 
 interface ActiveTokenRecord extends DashboardVisit {
@@ -48,18 +54,30 @@ function readCachedPatientAppointments(session: PatientAuthSession | null): Acti
   );
 }
 
+function parseTokenNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  const text = String(value ?? '').trim();
+  const match = text.match(/(\d+)/);
+  return match ? Number(match[1]) : 0;
+}
+
 function mapAppointmentRow(row: Record<string, unknown>): ActiveTokenRecord {
   return {
-    id: String(row.id ?? ''),
+    id: String(row.id ?? row.appointment_id ?? ''),
     patient_id: String(row.patient_id ?? row.uhid ?? ''),
     patient_name: String(row.patient_name ?? 'Patient'),
     doctor_name: String(row.doctor_name ?? 'Doctor'),
     department: String(row.department ?? 'OPD'),
     hospital_name: String(row.hospital_name ?? 'Regal Hospital'),
     appointment_date: String(row.appointment_date ?? row.created_at ?? ''),
+    appointment_time: String(
+      row.appointment_time ?? row.slot_time ?? row.time_slot ?? '',
+    ),
     slot_time: String(row.slot_time ?? row.appointment_time ?? row.time_slot ?? row.created_at ?? ''),
-    token_number: Number(row.token_number ?? 0),
+    token_number: parseTokenNumber(row.token_number),
     queue_status: String(row.queue_status ?? row.status ?? 'checked_in'),
+    status: String(row.status ?? row.queue_status ?? 'CONFIRMED'),
+    booking_for: row.booking_for ? String(row.booking_for) : undefined,
     fee: row.fee != null ? String(row.fee) : undefined,
     reason: row.chief_complaint ? String(row.chief_complaint) : row.reason ? String(row.reason) : undefined,
     created_at: row.created_at ? String(row.created_at) : undefined,
@@ -67,9 +85,63 @@ function mapAppointmentRow(row: Record<string, unknown>): ActiveTokenRecord {
 }
 
 function isTodayVisit(row: ActiveTokenRecord): boolean {
-  const today = new Date().toISOString().split('T')[0];
-  const dateValue = String(row.appointment_date ?? row.created_at ?? '').slice(0, 10);
-  return dateValue === today;
+  return isTodayClinicAppointment({
+    appointment_date: row.appointment_date,
+    created_at: row.created_at,
+  });
+}
+
+function isActiveQueueStatus(status: string): boolean {
+  const normalized = status.trim().toUpperCase();
+  return ['WAITING', 'SCHEDULED', 'CONFIRMED', 'PENDING', 'IN_CONSULTATION', 'CHECKED_IN'].includes(
+    normalized,
+  );
+}
+
+async function fetchScopedAppointments(
+  table: 'appointments' | 'patient_appointments',
+  scopeFilter: string,
+  session: PatientAuthSession,
+  linkedPatientIds: string[],
+): Promise<ActiveTokenRecord[]> {
+  const scoped = (data: Record<string, unknown>[] | null) =>
+    (data ?? [])
+      .filter((row) => rowMatchesPatientSession(row, session, linkedPatientIds))
+      .map((row) => mapAppointmentRow(row));
+
+  const withHospital = await supabase
+    .from(table)
+    .select('*')
+    .or(scopeFilter)
+    .or(`hospital_id.eq.${REGAL_HOSPITAL_CODE},hospital_code.eq.${REGAL_HOSPITAL_CODE}`)
+    .order('created_at', { ascending: false })
+    .limit(24);
+
+  if (!withHospital.error && withHospital.data?.length) {
+    return scoped(withHospital.data as Record<string, unknown>[]);
+  }
+
+  const fallback = await supabase
+    .from(table)
+    .select('*')
+    .or(scopeFilter)
+    .order('created_at', { ascending: false })
+    .limit(24);
+
+  if (fallback.error || !fallback.data?.length) return [];
+  return scoped(fallback.data as Record<string, unknown>[]);
+}
+
+function mergeAppointmentRows(rows: ActiveTokenRecord[]): ActiveTokenRecord[] {
+  const seen = new Set<string>();
+  const merged: ActiveTokenRecord[] = [];
+  for (const row of rows) {
+    const key = row.id || `${row.appointment_date}-${row.slot_time}-${row.doctor_name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(row);
+  }
+  return merged;
 }
 
 const EMPTY_VITALS: PatientClinicalRecord = {
@@ -110,6 +182,8 @@ export default function PatientDashboard() {
   const [activeVisitsCount, setActiveVisitsCount] = useState(0);
   const [patientName, setPatientName] = useState(() => readPatientAuthSession()?.name ?? '');
   const [patientId, setPatientId] = useState(() => readPatientAuthSession()?.patientId ?? '');
+  const [authUserId, setAuthUserId] = useState('');
+  const [bookingPatientId, setBookingPatientId] = useState('');
   const [loading, setLoading] = useState(true);
   const [billingSnapshot, setBillingSnapshot] = useState<PatientBillingSnapshot>(() =>
     buildBillingSnapshotFromBills([]),
@@ -120,6 +194,20 @@ export default function PatientDashboard() {
   const [vitals, setVitals] = useState<PatientClinicalRecord | null>(null);
   const [doctorsAvailable, setDoctorsAvailable] = useState(0);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const {
+    loading: profileGateLoading,
+    complete: profileComplete,
+    missingFields: profileMissingFields,
+  } = usePatientProfileCompleteness();
+
+  const handleBookConsultation = useCallback(() => {
+    if (!profileComplete) {
+      toast.error(profileIncompleteBookingMessage(profileMissingFields));
+      router.push('/patient/profile');
+      return;
+    }
+    setIsBookingModalOpen(true);
+  }, [profileComplete, profileMissingFields, router]);
 
   const fetchPrescriptions = useCallback(async (session: PatientAuthSession) => {
     const scopeFilter = buildPatientScopeOrFilter(session);
@@ -213,7 +301,13 @@ export default function PatientDashboard() {
     setPatientName(session.name);
     setPatientId(session.patientId);
 
-    const scopeFilter = buildPatientScopeOrFilter(session);
+    const resolvedPatient = await resolveEffectivePatientId(supabase, {
+      phone: session.phone,
+      sessionPatientId: session.patientId,
+    });
+
+    const linkedPatientIds = resolvedPatient.linkedPatientIds;
+    const scopeFilter = buildPatientScopeOrFilter(session, linkedPatientIds);
     if (!scopeFilter) {
       setActiveVisit(null);
       setActiveVisitsCount(0);
@@ -228,43 +322,26 @@ export default function PatientDashboard() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('patient_appointments')
-        .select('*')
-        .or(scopeFilter)
-        .order('created_at', { ascending: false })
-        .limit(12);
+      const [appointmentRows, ledgerRows] = await Promise.all([
+        fetchScopedAppointments('appointments', scopeFilter, session, linkedPatientIds),
+        fetchScopedAppointments('patient_appointments', scopeFilter, session, linkedPatientIds),
+      ]);
 
-      if (!error && data && data.length > 0) {
-        const scopedRows = (data as Record<string, unknown>[])
-          .filter((row) => rowMatchesPatientSession(row, session))
-          .map((row) => ({
-            ...mapAppointmentRow(row),
-            hospital_name: 'Regal Hospital',
-          }));
-        todayCount = scopedRows.filter(isTodayVisit).length;
-        latestAppointment = scopedRows.find(isTodayVisit) ?? scopedRows[0] ?? null;
-        if (scopedRows.length > 0) {
-          writeLocalJson(CACHE_KEYS.patientAppointments, scopedRows);
-          writeLocalJson(CACHE_KEYS.patientAppointmentsAlt, scopedRows);
-        }
-      }
+      const scopedRows = mergeAppointmentRows([...appointmentRows, ...ledgerRows]);
+      const todayRows = scopedRows.filter(isTodayVisit);
+      const activeTodayRows = todayRows.filter((row) => isActiveQueueStatus(row.queue_status));
 
-      if (!latestAppointment) {
-        const { data: apptRows } = await supabase
-          .from('appointments')
-          .select('*')
-          .or(scopeFilter)
-          .order('created_at', { ascending: false })
-          .limit(12);
+      todayCount = activeTodayRows.length > 0 ? activeTodayRows.length : todayRows.length;
+      latestAppointment =
+        activeTodayRows[0] ??
+        todayRows[0] ??
+        scopedRows.find((row) => isActiveQueueStatus(row.queue_status)) ??
+        scopedRows[0] ??
+        null;
 
-        if (apptRows && apptRows.length > 0) {
-          const scopedRows = (apptRows as Record<string, unknown>[])
-            .filter((row) => rowMatchesPatientSession(row, session))
-            .map((row) => mapAppointmentRow(row));
-          todayCount = scopedRows.filter(isTodayVisit).length;
-          latestAppointment = scopedRows.find(isTodayVisit) ?? scopedRows[0] ?? null;
-        }
+      if (scopedRows.length > 0) {
+        writeLocalJson(CACHE_KEYS.patientAppointments, scopedRows);
+        writeLocalJson(CACHE_KEYS.patientAppointmentsAlt, scopedRows);
       }
     } catch {
       console.warn('Dashboard DB load fallback active');
@@ -302,6 +379,17 @@ export default function PatientDashboard() {
     setCurrentPatient(session);
     setPatientName(session.name);
     setPatientId(session.patientId);
+
+    void (async () => {
+      const auth = await resolveActiveAuthUser(supabase, session.patientId);
+      if (auth?.userId) setAuthUserId(auth.userId);
+
+      const resolved = await resolveEffectivePatientId(supabase, {
+        phone: session.phone,
+        sessionPatientId: auth?.userId || session.patientId,
+      });
+      setBookingPatientId(resolved.effectivePatientId || session.patientId);
+    })();
 
     void fetchActiveToken();
 
@@ -344,14 +432,18 @@ export default function PatientDashboard() {
         bills={billingSnapshot.bills}
         vitals={vitals}
         onRefresh={() => void fetchActiveToken()}
-        onBookConsultation={() => setIsBookingModalOpen(true)}
+        onBookConsultation={handleBookConsultation}
+        profileComplete={profileComplete}
+        profileGateLoading={profileGateLoading}
+        profileMissingFields={profileMissingFields}
       />
 
       <BookAppointmentModal
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
         hospitalId={readPatientPortalSession()?.hospital_id}
-        patientId={patientId}
+        patientId={bookingPatientId || patientId}
+        userId={authUserId || patientId}
         onBookingSuccess={() => void fetchActiveToken()}
       />
     </>

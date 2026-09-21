@@ -42,7 +42,7 @@ function formatShortDate(value: string | null | undefined): string {
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 }
 
-/** Nexora Vendor · enterprise profile & settings with dual-card B2B layout. */
+/** Regal Vendor · enterprise profile & settings with dual-card B2B layout. */
 function ProfileSettingsWorkspace() {
   const { feedback, showSuccess, showError } = useVendorFeedback();
   const [form, setForm] = useState<ProfileForm>(emptyForm);

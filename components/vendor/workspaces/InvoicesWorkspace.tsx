@@ -23,7 +23,7 @@ import {
   type PurchaseOrder,
 } from '@/lib/vendor/v0/portal-service';
 
-/** Nexora Vendor · V0 billing workspace: raise GST invoices and track payouts. */
+/** Regal Vendor · V0 billing workspace: raise GST invoices and track payouts. */
 function InvoicesWorkspace() {
   const { feedback, showSuccess, showError } = useVendorFeedback();
   const [invoices, setInvoices] = useState<Invoice[]>([]);

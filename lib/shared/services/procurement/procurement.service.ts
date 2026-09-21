@@ -1,4 +1,4 @@
-import type { NexoraServiceContext } from '../../types/context';
+import type { RegalServiceContext } from '../../types/context';
 import type { ServiceResult } from '../../types/common';
 import { ok } from '../../types/common';
 
@@ -11,7 +11,7 @@ export interface PurchaseOrderRef {
 /** packages/shared/services/procurement */
 export async function validatePurchaseOrder(
   poId: string,
-  ctx: NexoraServiceContext,
+  ctx: RegalServiceContext,
 ): Promise<ServiceResult<PurchaseOrderRef>> {
   return ok({ poId, vendorId: 'VND-PLACEHOLDER', totalAmount: 0 });
 }

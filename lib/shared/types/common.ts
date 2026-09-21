@@ -1,5 +1,5 @@
 /**
- * Canonical Nexora standalone applications in the ERP ecosystem.
+ * Canonical Regal standalone applications in the ERP ecosystem.
  * Shared services are consumed by all five; none import UI layers from another app.
  */
 export const NEXORA_APPS = [
@@ -10,7 +10,7 @@ export const NEXORA_APPS = [
   'operations',
 ] as const;
 
-export type NexoraAppId = (typeof NEXORA_APPS)[number];
+export type RegalAppId = (typeof NEXORA_APPS)[number];
 
 /** Domain modules that can originate cross-cutting events (billing, stock, audit). */
 export const NEXORA_MODULES = [
@@ -29,7 +29,7 @@ export const NEXORA_MODULES = [
   'radiology',
 ] as const;
 
-export type NexoraModule = (typeof NEXORA_MODULES)[number];
+export type RegalModule = (typeof NEXORA_MODULES)[number];
 
 /** Uniform success / failure envelope for all headless services. */
 export type ServiceResult<T> =

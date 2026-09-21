@@ -1,4 +1,4 @@
-/** Nexora Vendor App — Purple Harmony B2B commerce design tokens */
+/** Regal Vendor App — Purple Harmony B2B commerce design tokens */
 
 export const VENDOR_BRAND = {
   name: 'NEXORA VENDOR',

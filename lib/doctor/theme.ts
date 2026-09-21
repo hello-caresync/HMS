@@ -1,4 +1,4 @@
-/** Nexora Doctor App — clinical plum gradient design tokens */
+/** Regal Doctor App — clinical plum gradient design tokens */
 export const doctorTheme = {
   primaryPlum: '#894A66',
   clinicalMauve: '#93688E',

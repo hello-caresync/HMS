@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 /**
- * Nexora Doctor App — Sage & Cream enterprise clinical workstation
+ * Regal Doctor App — Sage & Cream enterprise clinical workstation
  */
 const config: Config = {
   content: ['./app/**/*.{js,ts,jsx,tsx,mdx}', './components/**/*.{js,ts,jsx,tsx,mdx}'],

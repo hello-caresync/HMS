@@ -12,7 +12,7 @@ import {
 
 import { patientTheme } from '@/lib/patient/theme';
 
-/** Nexora Patient App — canonical route map */
+/** Regal Patient App — canonical route map */
 export const PATIENT_ROUTES = {
   root: '/patient',
   login: '/patient/auth/login',

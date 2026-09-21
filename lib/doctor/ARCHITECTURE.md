@@ -1,4 +1,4 @@
-# Nexora Doctor Workspace — Product Architecture
+# Regal Doctor Workspace — Product Architecture
 
 Enterprise-grade consultant workstation for physicians, surgeons, specialists, and residents. **Not** a hospital admin panel.
 

@@ -228,7 +228,7 @@ export const MOCK_PROCEDURES: EmergencyProcedure[] = [
 export const MOCK_AMBULANCES: AmbulanceUnit[] = [
   { id: 'amb1', vehicleId: 'AMB-07', callSign: 'Alpha-7', status: 'En Route', crew: 'Paramedic Raj + EMT Suresh', destination: 'City Ring Road — RTA site', etaMinutes: 8, lastAlert: 'ETA updated — traffic delay on NH-48' },
   { id: 'amb2', vehicleId: 'AMB-03', callSign: 'Bravo-3', status: 'At Scene', crew: 'Paramedic Anita + Driver Mohan', destination: 'Koramangala 4th Block', etaMinutes: null, lastAlert: 'Patient extricated — loading in 5 min' },
-  { id: 'amb3', vehicleId: 'AMB-12', callSign: 'Charlie-12', status: 'Returning', crew: 'Paramedic Joseph + EMT Ravi', destination: 'Nexora ER Bay 1', etaMinutes: 12, lastAlert: 'Critical patient onboard — pre-alert sent' },
+  { id: 'amb3', vehicleId: 'AMB-12', callSign: 'Charlie-12', status: 'Returning', crew: 'Paramedic Joseph + EMT Ravi', destination: 'Regal ER Bay 1', etaMinutes: 12, lastAlert: 'Critical patient onboard — pre-alert sent' },
   { id: 'amb4', vehicleId: 'AMB-05', callSign: 'Delta-5', status: 'Available', crew: 'Standby crew', destination: 'Station — ER Annex', etaMinutes: null, lastAlert: 'Ready for dispatch' },
   { id: 'amb5', vehicleId: 'AMB-09', callSign: 'Echo-9', status: 'Dispatched', crew: 'Paramedic Lakshmi + EMT Arun', destination: 'Indiranagar Metro incident', etaMinutes: 15, lastAlert: 'Dispatch confirmed 11:28' },
 ];

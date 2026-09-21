@@ -211,7 +211,7 @@ export const REGISTRY_CONFIG_DETAILS: Record<RegistryTreeNodeId, { title: string
     title: 'Institutional Profile & Branding',
     subtitle: 'Legal entity · branding · operational identifiers',
     fields: [
-      { label: 'Hospital Legal Name', value: 'Nexora Multispeciality Hospitals Pvt Ltd' },
+      { label: 'Hospital Legal Name', value: 'Regal Multispeciality Hospitals Pvt Ltd' },
       { label: 'Registration Reference', value: '[System Parameter Block Masked for Enterprise Security]', masked: true },
       { label: 'Primary Campus', value: 'Andheri East · Mumbai · 400069' },
       { label: 'Brand Theme', value: 'Navy Slate · Cobalt Blue · Clinical White' },
@@ -335,7 +335,7 @@ export const INTEGRATION_LOG_DETAILS: Record<IntegrationLogId, { title: string; 
     title: 'HL7 ADT Patient Demographics Feed',
     rows: [
       { label: 'Message Types', value: 'ADT^A01 · A02 · A03 · A08 · A11' },
-      { label: 'Sending Application', value: 'Nexora HMS — ADT Publisher' },
+      { label: 'Sending Application', value: 'Regal Health HMS — ADT Publisher' },
       { label: 'Receiving Systems', value: 'LIS · PACS · Billing · Insurance Pre-Auth' },
       { label: 'Auth Token', value: '[System Parameter Block Masked for Enterprise Security]', masked: true },
     ],

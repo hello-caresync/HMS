@@ -60,7 +60,7 @@ export default function DocumentsPage() {
               <article className="mt-4 space-y-3 rounded-lg border-2 border-slate-200 bg-slate-50 p-4">
                 <p className="flex items-center gap-1.5 text-xs font-black uppercase text-slate-800">
                   <FileText className="h-4 w-4" aria-hidden />
-                  Nexora Clinical · Sandbox
+                  Regal Clinical · Sandbox
                 </p>
                 <p className="text-lg font-black text-slate-950">{selected.title}</p>
                 <p className="text-sm font-bold text-slate-950">Patient · P.N. · UHID NX-2026-301882</p>

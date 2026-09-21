@@ -1,528 +1,929 @@
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import type { AuthError } from '@supabase/supabase-js';
+import type { PostgrestSingleResponse } from '@supabase/postgrest-js';
 import {
+  AlertCircle,
+  ArrowLeft,
   ArrowRight,
-  Building2,
-  ChevronDown,
+  CheckCircle2,
   Eye,
   EyeOff,
   Loader2,
   Lock,
   Mail,
-  Phone,
   ShieldCheck,
   User,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase/client';
+
+import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
+import {
+  extractErrorMessage,
+  isDisplayableAuthMessage,
+  isServiceRestrictedError,
+  resolveAuthUiError,
+  runNetworkSafe,
+  sanitizeAuthMessage,
+  SERVICE_RESTRICTED_MESSAGE,
+} from '@/lib/auth/parseAuthError';
+import {
+  establishPatientSessionAfterSignUp,
+  PATIENT_AUTH_CONNECTION_MESSAGE,
+  safeSignInWithPassword,
+  safeSignUpPatient,
+} from '@/lib/auth/patient-auth-request';
 import { persistPatientAuthSession } from '@/lib/auth/patientAuth';
-import { loadHospitalOptionsForLogin } from '@/lib/auth/staff-credential-auth';
-import { RegalHospitalLogo } from '@/components/brand/RegalHospitalLogo';
-import { isDemoMode } from '@/lib/shared/demo-mode';
-import { patientClasses } from '@/lib/patient/theme';
+import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
+import {
+  fetchRegisteredHospitals,
+  formatRegisteredHospitalLabel,
+  profileBelongsToHospital,
+  type RegisteredHospitalOption,
+} from '@/lib/patient/registered-hospitals';
+import { assertSupabaseConfigured, supabase } from '@/lib/supabase/client';
 
-type HospitalOption = {
+type AuthMode = 'signin' | 'register';
+
+type PatientProfileRow = {
   id: string;
-  name: string;
-  city?: string;
+  role: string | null;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  hospital_id: string | null;
 };
 
-type HospitalQueryRow = {
-  id?: unknown;
-  name?: unknown;
-  city?: unknown;
-};
+const INPUT_CLASS =
+  'w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] py-2 px-3 text-[12px] font-medium text-[#361E10] placeholder:text-[#94A3B8] focus:border-[#9E6A4B]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#9E6A4B]/15';
+const LABEL_CLASS =
+  'mb-1 block text-[10px] font-bold uppercase tracking-wider text-[#52331F]';
 
-type PatientRecord = {
-  id: string;
-  uhid: string;
-  full_name: string;
-  email: string;
-  phone: string;
-};
+const SIGN_IN_DENIED_MESSAGE =
+  'Invalid email or password. Please verify your credentials or register with a new account.';
+
+const PHONE_MISMATCH_MESSAGE =
+  'The entered phone number does not match registered records.';
+
+const RBAC_DENIED_MESSAGE =
+  'Access Denied: Clinicians and staff must use their designated portal.';
+
+const DUPLICATE_EMAIL_MESSAGE =
+  'An account with this email already exists. Please switch to Sign In.';
+
+const FORGOT_PASSWORD_HINT =
+  "Forgot password? Switch to 'Register New' to create an account with a new email address.";
+
+const HOSPITAL_SELECTION_REQUIRED =
+  'Please select a registered hospital to proceed.';
+
+const HOSPITAL_MISMATCH_MESSAGE =
+  'This account is not registered with the selected hospital. Choose the facility where you registered.';
 
 function mintUhid(): string {
   return `NX-PAT-${Math.floor(1000 + Math.random() * 9000)}`;
 }
 
+function phoneDigits(value: string | null | undefined): string {
+  return String(value ?? '')
+    .replace(/\D/g, '')
+    .slice(-10);
+}
+
 function formatPhone(digits: string): string {
-  const clean = digits.replace(/\D/g, '').slice(-10);
+  const clean = phoneDigits(digits);
   return clean ? `+91 ${clean}` : '';
 }
 
-function serializeAuthError(err: unknown): string {
-  if (!err) return 'Failed to complete request.';
-  if (typeof err === 'string') {
-    const trimmed = err.trim();
-    return !trimmed || trimmed === '{}' ? 'Failed to complete request.' : trimmed;
-  }
-
-  if (typeof err === 'object') {
-    const record = err as {
-      message?: unknown;
-      error_description?: unknown;
-      details?: unknown;
-      hint?: unknown;
-      error?: unknown;
-      msg?: unknown;
-      code?: unknown;
-    };
-    const candidates = [record.message, record.error_description, record.details, record.hint, record.error, record.msg];
-    for (const candidate of candidates) {
-      if (typeof candidate === 'string' && candidate.trim() && candidate.trim() !== '{}') {
-        return candidate.trim();
-      }
-    }
-
-    try {
-      const serialized = JSON.stringify(err);
-      if (serialized && serialized !== '{}' && serialized !== '[]' && serialized !== 'null') {
-        const code = typeof record.code === 'string' ? record.code : '';
-        return code ? `${code}: ${serialized}` : serialized;
-      }
-    } catch {
-      /* ignore circular errors */
-    }
-
-    if (typeof record.code === 'string' && record.code.trim()) {
-      return `Request failed (${record.code}).`;
-    }
-  }
-
-  return 'Failed to complete request.';
+function phonesMatch(stored: string | null | undefined, enteredDigits: string): boolean {
+  const storedDigits = phoneDigits(stored);
+  const entered = phoneDigits(enteredDigits);
+  return storedDigits.length === 10 && entered.length === 10 && storedDigits === entered;
 }
 
-const DEMO_PATIENT_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
-const DEMO_EMAILS = new Set(['patient@regalhospital.com', 'test@regalhospital.com']);
-const DEMO_PASSWORDS = new Set(['Patient@2026', '123456']);
-
-function isDemoPatientCredential(email: string, phoneDigits: string, password: string): boolean {
-  return (
-    DEMO_EMAILS.has(email) ||
-    phoneDigits === '9845012345' ||
-    DEMO_PASSWORDS.has(password)
-  );
+function normalizeRole(role: string | null | undefined): string {
+  return String(role ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
 }
 
-function pickDefaultHospitalId(options: HospitalOption[]): string {
-  const primary =
-    options.find((hospital: HospitalOption) => hospital.id === 'HOSP-01') ||
-    options.find((hospital: HospitalOption) => /regal/i.test(hospital.name));
-  return primary?.id || options[0]?.id || 'HOSP-01';
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function isInvalidLoginCredentials(error: AuthError | null | undefined): boolean {
+  if (!error) return false;
+
+  const message = extractErrorMessage(error).toLowerCase();
+  const code = String(
+    Reflect.get(error, 'status') ?? Reflect.get(error, 'code') ?? '',
+  ).toLowerCase();
+
+  return message.includes('invalid login credentials') || code === '400';
+}
+
+function mapSupabaseAuthError(error: AuthError | null | undefined, context: AuthMode): string {
+  const fallback =
+    context === 'signin'
+      ? SIGN_IN_DENIED_MESSAGE
+      : 'Registration failed. Please try again.';
+
+  if (!error) return fallback;
+
+  if (isServiceRestrictedError(error)) {
+    return SERVICE_RESTRICTED_MESSAGE;
+  }
+
+  if (context === 'signin' && isInvalidLoginCredentials(error)) {
+    return SIGN_IN_DENIED_MESSAGE;
+  }
+
+  const message = extractErrorMessage(error);
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes('user already registered') ||
+    lower.includes('already been registered') ||
+    lower.includes('already exists')
+  ) {
+    return DUPLICATE_EMAIL_MESSAGE;
+  }
+
+  if (lower.includes('password') && (lower.includes('short') || lower.includes('least'))) {
+    return 'Password must be at least 6 characters long.';
+  }
+
+  if (lower.includes('valid email') || lower.includes('unable to validate email')) {
+    return 'Enter a valid email address (for example, user@gmail.com).';
+  }
+
+  if (lower.includes('rate limit') || lower.includes('too many requests')) {
+    return 'Too many attempts. Please wait a moment and try again.';
+  }
+
+  if (lower.includes('email not confirmed')) {
+    return 'Please confirm your email address before signing in. Check your inbox for the verification link.';
+  }
+
+  if (
+    lower.includes('database error') ||
+    lower.includes('saving new user') ||
+    lower.includes('trigger')
+  ) {
+    return 'Account provisioning failed on the server (profiles trigger). Plain signup was attempted — contact hospital IT if this persists.';
+  }
+
+  return sanitizeAuthMessage(message, fallback);
 }
 
 function PatientAuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect') || searchParams.get('next') || '/patient/dashboard';
+  const postLoginPath = resolveLoginRedirect(
+    searchParams.get('redirect'),
+    '/patient/dashboard',
+    ['/patient'],
+  );
 
-  const [authMode, setAuthMode] = useState<'signin' | 'register'>('signin');
+  const [authMode, setAuthMode] = useState<AuthMode>('signin');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const [hospitals, setHospitals] = useState<HospitalOption[]>([]);
-  const [selectedHospitalId, setSelectedHospitalId] = useState('HOSP-01');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showForgotPasswordHint, setShowForgotPasswordHint] = useState(false);
 
   const [fullName, setFullName] = useState('');
-  const [age, setAge] = useState('');
-  const [gender, setGender] = useState('Female');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [hospitals, setHospitals] = useState<RegisteredHospitalOption[]>([]);
+  const [hospitalsLoading, setHospitalsLoading] = useState(true);
+  const [hospitalsLoadNotice, setHospitalsLoadNotice] = useState<string | null>(null);
+  const [selectedHospitalId, setSelectedHospitalId] = useState('');
+
+  const selectedHospital = useMemo(
+    () => hospitals.find((hospital) => hospital.id === selectedHospitalId) ?? null,
+    [hospitals, selectedHospitalId],
+  );
+
+  const canSubmit = Boolean(selectedHospital) && !hospitalsLoading;
+  const hospitalsFetchStartedRef = useRef(false);
 
   useEffect(() => {
-    void (async () => {
-      const options = await loadHospitalOptionsForLogin();
-      if (options.length > 0) {
-        const mapped = options.map((hospital: { id: string; name: string; location: string }): HospitalOption => ({
-          id: hospital.id,
-          name: hospital.name,
-          city: hospital.location,
-        }));
-        setHospitals(mapped);
-        setSelectedHospitalId(pickDefaultHospitalId(mapped));
-        return;
-      }
+    if (hospitalsFetchStartedRef.current) return;
+    hospitalsFetchStartedRef.current = true;
 
-      const { data } = await supabase.from('hospitals').select('id, name, city').order('name', { ascending: true });
-      if (data && data.length > 0) {
-        const mapped = (data as HospitalQueryRow[]).map((row: HospitalQueryRow): HospitalOption => ({
-          id: String(row.id ?? ''),
-          name: String(row.name ?? ''),
-          city: row.city ? String(row.city) : undefined,
-        }));
-        setHospitals(mapped);
-        setSelectedHospitalId(pickDefaultHospitalId(mapped));
+    let cancelled = false;
+
+    void (async () => {
+      setHospitalsLoading(true);
+      setHospitalsLoadNotice(null);
+
+      try {
+        assertSupabaseConfigured();
+        const result = await fetchRegisteredHospitals(supabase);
+
+        if (cancelled) return;
+
+        setHospitals(result.hospitals);
+
+        if (result.error && result.hospitals.length === 0) {
+          setHospitalsLoadNotice(
+            sanitizeAuthMessage(
+              result.error,
+              'Unable to load registered hospitals. Please try again shortly.',
+            ),
+          );
+          setSelectedHospitalId('');
+          return;
+        }
+
+        if (result.hospitals.length === 0) {
+          setHospitalsLoadNotice('No registered hospitals found. Contact hospital administration.');
+          setSelectedHospitalId('');
+          return;
+        }
+
+        setSelectedHospitalId((current) =>
+          current && result.hospitals.some((hospital) => hospital.id === current)
+            ? current
+            : result.hospitals[0].id,
+        );
+      } catch (err: unknown) {
+        if (cancelled) return;
+        setHospitals([]);
+        setSelectedHospitalId('');
+        setHospitalsLoadNotice(resolveAuthUiError(err, 'Unable to load registered hospitals.'));
+      } finally {
+        if (!cancelled) setHospitalsLoading(false);
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const selectedHospital = hospitals.find((hospital: HospitalOption) => hospital.id === selectedHospitalId);
+  const publishPatientAuthError = (err: unknown, fallback: string, credentialFailure = false) => {
+    const message = sanitizeAuthMessage(resolveAuthUiError(err, fallback), fallback);
+    if (message === SERVICE_RESTRICTED_MESSAGE && process.env.NODE_ENV === 'development') {
+      console.warn('[patient-auth] Connectivity or quota restriction:', message);
+    }
+    setErrorMessage(message);
+    setShowForgotPasswordHint(credentialFailure || message === SIGN_IN_DENIED_MESSAGE);
+    toast.error(message);
+  };
 
-  const completeLogin = (patient: PatientRecord, toastMessage?: string) => {
+  const completePatientSession = (params: {
+    patientId: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    hospital: RegisteredHospitalOption;
+    toastMessage?: string;
+  }) => {
     persistPatientAuthSession({
-      patientId: patient.id,
-      uhid: patient.uhid,
-      email: patient.email,
-      name: patient.full_name,
-      hospitalId: selectedHospitalId || 'HOSP-01',
-      hospitalName: selectedHospital?.name || 'Regal Hospital',
-      phone: patient.phone,
+      patientId: params.patientId,
+      uhid: mintUhid(),
+      email: params.email,
+      name: params.fullName,
+      hospitalId: params.hospital.id,
+      hospitalName: params.hospital.name,
+      phone: params.phone,
     });
-    toast.success(toastMessage || `Welcome to ${selectedHospital?.name || 'Patient Portal'}`);
-    router.push(redirectUrl.startsWith('/patient') ? redirectUrl : '/patient/dashboard');
+    toast.success(params.toastMessage || 'Welcome to your patient portal.');
+    router.refresh();
+    router.push(postLoginPath);
   };
 
-  const enterDemoPatientSession = (cleanEmail: string, cleanPhone: string) => {
-    const displayName =
-      fullName.trim() || (cleanEmail.includes('@') ? cleanEmail.split('@')[0] : '') || 'Demo Patient';
-    completeLogin(
-      {
-        id: DEMO_PATIENT_ID,
-        uhid: 'NX-PAT-9001',
-        full_name: displayName,
-        email: cleanEmail || 'patient@regalhospital.com',
-        phone: formatPhone(cleanPhone) || '+91 98450 12345',
-      },
-      'Test patient session authenticated',
+  const fetchPatientProfile = async (
+    userId: string,
+  ): Promise<
+    | { ok: true; profile: PatientProfileRow }
+    | { ok: false; error: string; signOutRequired: boolean }
+  > => {
+    const { data: profile, error: profileError } = await runNetworkSafe<
+      PostgrestSingleResponse<PatientProfileRow>
+    >(async () =>
+      supabase
+        .from('profiles')
+        .select('id, role, full_name, email, phone, hospital_id')
+        .eq('id', userId)
+        .maybeSingle(),
     );
+
+    if (profileError) {
+      const message = extractErrorMessage(profileError).toLowerCase();
+      if (
+        message.includes('does not exist') ||
+        message.includes('relation') ||
+        message.includes('schema cache')
+      ) {
+        return {
+          ok: false,
+          signOutRequired: true,
+          error: 'Patient profiles are not configured yet. Contact hospital support.',
+        };
+      }
+      return {
+        ok: false,
+        signOutRequired: true,
+        error: sanitizeAuthMessage(
+          extractErrorMessage(profileError),
+          'Could not verify your patient profile. Please try again.',
+        ),
+      };
+    }
+
+    if (!profile) {
+      return {
+        ok: false,
+        signOutRequired: true,
+        error: 'No patient profile found for this account. Please register first.',
+      };
+    }
+
+    return { ok: true, profile };
   };
 
-  const handleAuthSubmit = async (event: React.FormEvent) => {
+  const enforcePatientSignInChecks = async (
+    userId: string,
+    enteredPhoneDigits: string,
+    hospital: RegisteredHospitalOption,
+  ): Promise<{ ok: true; profile: PatientProfileRow } | { ok: false; error: string }> => {
+    const result = await fetchPatientProfile(userId);
+
+    if (!result.ok) {
+      if (result.signOutRequired) {
+        await runNetworkSafe(() => supabase.auth.signOut());
+      }
+      return { ok: false, error: result.error };
+    }
+
+    const { profile } = result;
+
+    if (normalizeRole(profile.role) !== 'PATIENT') {
+      await runNetworkSafe(() => supabase.auth.signOut());
+      return { ok: false, error: RBAC_DENIED_MESSAGE };
+    }
+
+    if (!profileBelongsToHospital(profile.hospital_id, hospital)) {
+      await runNetworkSafe(() => supabase.auth.signOut());
+      return { ok: false, error: HOSPITAL_MISMATCH_MESSAGE };
+    }
+
+    if (!phonesMatch(profile.phone, enteredPhoneDigits)) {
+      await runNetworkSafe(() => supabase.auth.signOut());
+      return { ok: false, error: PHONE_MISMATCH_MESSAGE };
+    }
+
+    return { ok: true, profile };
+  };
+
+  const upsertPatientProfile = async (params: {
+    userId: string;
+    email: string;
+    fullName: string;
+    phone: string;
+    hospitalId: string;
+  }) => {
+    const { error } = await runNetworkSafe<PostgrestSingleResponse<null>>(async () =>
+      supabase.from('profiles').upsert(
+        {
+          id: params.userId,
+          email: params.email.toLowerCase().trim(),
+          full_name: params.fullName.trim(),
+          phone: params.phone.trim(),
+          role: 'PATIENT',
+          hospital_id: params.hospitalId,
+        },
+        { onConflict: 'id' },
+      ),
+    );
+
+    if (error) {
+      const message = extractErrorMessage(error).toLowerCase();
+      if (
+        !message.includes('does not exist') &&
+        !message.includes('relation') &&
+        !message.includes('schema cache')
+      ) {
+        throw new Error(
+          sanitizeAuthMessage(
+            extractErrorMessage(error),
+            'Could not save your patient profile.',
+          ),
+        );
+      }
+    }
+  };
+
+  const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setErrorMessage(null);
+    setSuccessMessage(null);
+    setShowForgotPasswordHint(false);
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPhone = phone.replace(/\D/g, '').slice(0, 10);
-    const cleanName = fullName.trim();
-    const generatedUhid = mintUhid();
-    const hospitalId = selectedHospitalId || 'HOSP-01';
-    const hospitalName = selectedHospital?.name || 'Regal Hospital';
+    const cleanPhoneDigits = phoneDigits(phone);
+    const cleanPassword = password;
 
     try {
-      if (authMode === 'register') {
-        if (!cleanName) throw new Error('Please enter your full name.');
-        if (!cleanPhone && !cleanEmail) throw new Error('Phone or Email is required.');
+      assertSupabaseConfigured();
 
-        try {
-          const { error } = await supabase.from('appointments').insert({
-            hospital_id: hospitalId,
-            uhid: generatedUhid,
-            patient_name: cleanName,
-            phone: formatPhone(cleanPhone) || '+91 98450 00000',
-            department: 'General Medicine',
-            status: 'registered',
-            appointment_date: new Date().toISOString().split('T')[0],
-          });
-          if (error) {
-            console.warn('DB sync bypassed, persisting session directly:', error.message);
-          }
-        } catch (dbErr: unknown) {
-          console.warn('DB sync bypassed, persisting session directly:', dbErr);
-        }
+      if (!selectedHospital) {
+        throw new Error(HOSPITAL_SELECTION_REQUIRED);
+      }
 
-        completeLogin(
-          {
-            id: crypto.randomUUID(),
-            uhid: generatedUhid,
-            full_name: cleanName,
-            email: cleanEmail || 'patient@regalhospital.com',
-            phone: formatPhone(cleanPhone) || '+91 98450 12345',
-          },
-          `Account registered! UHID: ${generatedUhid}`,
+      if (cleanPhoneDigits.length !== 10) {
+        throw new Error('Enter your registered 10-digit mobile number.');
+      }
+      if (!cleanEmail || !isValidEmail(cleanEmail)) {
+        throw new Error('Enter a valid email address (for example, user@gmail.com).');
+      }
+      if (!cleanPassword.trim()) {
+        throw new Error('Password is required.');
+      }
+
+      const signInResult = await safeSignInWithPassword(supabase, {
+        email: cleanEmail,
+        password: cleanPassword,
+      });
+
+      if (!signInResult.ok) {
+        throw new Error(
+          signInResult.error
+            ? mapSupabaseAuthError(signInResult.error, 'signin')
+            : signInResult.message || PATIENT_AUTH_CONNECTION_MESSAGE,
         );
-        return;
       }
 
-      if (
-        isDemoMode() &&
-        isDemoPatientCredential(cleanEmail, cleanPhone, password.trim())
-      ) {
-        enterDemoPatientSession(cleanEmail, cleanPhone);
-        return;
+      const { data } = signInResult.data;
+
+      if (!data?.user) {
+        throw new Error(SIGN_IN_DENIED_MESSAGE);
       }
 
-      if (!cleanEmail && !cleanPhone) {
-        throw new Error('Please enter your registered email or phone number.');
-      }
-
-      let resolvedName =
-        cleanName || (cleanEmail.includes('@') ? cleanEmail.split('@')[0] : 'Verified Patient');
-      let resolvedUhid = generatedUhid;
-      let resolvedId = crypto.randomUUID();
-      let resolvedPhone = formatPhone(cleanPhone) || '+91 98450 12345';
-
-      try {
-        let query = supabase.from('appointments').select('id, uhid, patient_name, phone, email').eq('hospital_id', hospitalId);
-        if (cleanPhone) {
-          query = query.ilike('phone', `%${cleanPhone}%`);
-        } else if (cleanEmail) {
-          query = query.ilike('email', `%${cleanEmail}%`);
-        }
-
-        const { data, error } = await query.limit(1);
-        if (error) {
-          console.warn('Read fallback triggered:', error.message);
-        } else if (data && data.length > 0) {
-          const row = data[0] as {
-            id?: unknown;
-            uhid?: unknown;
-            patient_name?: unknown;
-            phone?: unknown;
-            email?: unknown;
-          };
-          resolvedName = String(row.patient_name || resolvedName);
-          resolvedUhid = String(row.uhid || resolvedUhid);
-          resolvedId = String(row.id || resolvedId);
-          resolvedPhone = String(row.phone || resolvedPhone);
-        }
-      } catch (fetchErr: unknown) {
-        console.warn('Read fallback triggered:', fetchErr);
-      }
-
-      completeLogin(
-        {
-          id: resolvedId,
-          uhid: resolvedUhid,
-          full_name: resolvedName,
-          email: cleanEmail || 'patient@regalhospital.com',
-          phone: resolvedPhone,
-        },
-        `Logged in to ${hospitalName}`,
+      const access = await enforcePatientSignInChecks(
+        data.user.id,
+        cleanPhoneDigits,
+        selectedHospital,
       );
+      if (!access.ok) {
+        throw new Error(access.error);
+      }
+
+      const displayName =
+        String(access.profile.full_name ?? '').trim() ||
+        String(data.user.user_metadata?.full_name ?? '').trim() ||
+        cleanEmail.split('@')[0] ||
+        'Patient';
+
+      completePatientSession({
+        patientId: data.user.id,
+        fullName: displayName,
+        email: cleanEmail,
+        phone: formatPhone(cleanPhoneDigits),
+        hospital: selectedHospital,
+        toastMessage: `Welcome back, ${displayName}`,
+      });
     } catch (err: unknown) {
-      const errorString = serializeAuthError(err);
-      setErrorMessage(errorString === '{}' ? 'Authentication error. Please check your credentials.' : errorString);
+      const credentialFailure =
+        err instanceof Error && err.message === SIGN_IN_DENIED_MESSAGE;
+      publishPatientAuthError(err, SIGN_IN_DENIED_MESSAGE, credentialFailure);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRegister = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setShowForgotPasswordHint(false);
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = fullName.trim();
+    const cleanPhoneDigits = phoneDigits(phone);
+    const formattedPhone = formatPhone(cleanPhoneDigits);
+
+    try {
+      assertSupabaseConfigured();
+
+      if (!selectedHospital) {
+        throw new Error(HOSPITAL_SELECTION_REQUIRED);
+      }
+
+      if (!cleanName) {
+        throw new Error('Please enter your full name.');
+      }
+      if (cleanPhoneDigits.length !== 10) {
+        throw new Error('Enter a valid 10-digit mobile number.');
+      }
+      if (!cleanEmail || !isValidEmail(cleanEmail)) {
+        throw new Error('Enter a valid email address (for example, user@gmail.com).');
+      }
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters long.');
+      }
+      if (password !== confirmPassword) {
+        throw new Error('Passwords do not match. Please re-enter your password.');
+      }
+
+      const signUpResult = await safeSignUpPatient(supabase, {
+        email: cleanEmail,
+        password,
+        metadata: {
+          full_name: cleanName,
+          phone: formattedPhone,
+          role: 'PATIENT',
+          hospital_id: selectedHospital.id,
+          hospital_name: selectedHospital.name,
+          hospital_code: selectedHospital.code,
+        },
+      });
+
+      if (!signUpResult.ok) {
+        throw new Error(
+          signUpResult.error
+            ? mapSupabaseAuthError(signUpResult.error, 'register')
+            : signUpResult.message || PATIENT_AUTH_CONNECTION_MESSAGE,
+        );
+      }
+
+      const { data } = signUpResult.data;
+
+      if (!data?.user) {
+        throw new Error('Registration failed. Please try again.');
+      }
+
+      if (data.user.identities?.length === 0) {
+        throw new Error(DUPLICATE_EMAIL_MESSAGE);
+      }
+
+      const registeredUserId = data.user.id;
+
+      await upsertPatientProfile({
+        userId: registeredUserId,
+        email: cleanEmail,
+        fullName: cleanName,
+        phone: formattedPhone,
+        hospitalId: selectedHospital.id,
+      });
+
+      const sessionResult = await establishPatientSessionAfterSignUp(supabase, {
+        email: cleanEmail,
+        password,
+        signUpUserId: registeredUserId,
+        signUpSession: data.session,
+      });
+
+      completePatientSession({
+        patientId: sessionResult.userId,
+        fullName: cleanName,
+        email: cleanEmail,
+        phone: formattedPhone,
+        hospital: selectedHospital,
+        toastMessage: sessionResult.signedInViaPassword || sessionResult.session
+          ? 'Patient account created successfully.'
+          : 'Welcome to your patient portal.',
+      });
+      return;
+    } catch (err: unknown) {
+      publishPatientAuthError(
+        err,
+        'Registration failed. Please check your inputs and try again.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const switchMode = (mode: AuthMode) => {
+    setAuthMode(mode);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setShowForgotPasswordHint(false);
+    setPhone('');
+    setPassword('');
+    setConfirmPassword('');
+  };
+
   return (
-    <div className="relative flex min-h-screen w-full flex-col justify-between overflow-hidden p-4 font-sans select-none sm:p-6">
-      <div className="z-10 mx-auto flex w-full max-w-md items-center justify-between pt-2">
-        <button
-          type="button"
-          onClick={() => router.push('/')}
-          className="text-xs font-semibold text-[#9c6644] transition-colors hover:text-[#7f5539]"
+    <main className="flex h-screen max-h-screen w-screen flex-col overflow-hidden bg-[#FBF7F2] text-[#361E10] select-none">
+      <header className="mx-auto flex w-full max-w-[430px] shrink-0 items-center justify-between px-4 pt-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#8C6044] transition hover:text-[#361E10]"
         >
-          &larr; Workspace Directory
-        </button>
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-[#e6ccb2] bg-[#ede0d4]/80 px-3 py-1 text-[10px] font-mono font-bold text-[#7f5539]">
-          <ShieldCheck className="h-3.5 w-3.5 text-[#b08968]" />
-          <span>PATIENT ENCOUNTER CLOUD</span>
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Workspace Directory
+        </Link>
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-[#EFE7DE] bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#52331F] shadow-xs">
+          <ShieldCheck className="h-3.5 w-3.5 text-[#0D9488]" />
+          Patient Encounter Cloud
         </div>
-      </div>
+      </header>
 
-      <div className="relative z-10 mx-auto my-auto w-full max-w-md space-y-5 rounded-3xl border border-[#e6ccb2] bg-white/95 p-8 text-[#43281c] shadow-2xl backdrop-blur-xl">
-        <div className="text-center space-y-1.5">
-          <div className="mb-1 flex justify-center">
-            <RegalHospitalLogo heightClass="h-9" showNodeBadge />
+      <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col justify-center px-4 py-2">
+        <div className="rounded-[2rem] border border-[#EFE7DE] bg-white p-5 shadow-[0_12px_40px_rgba(140,96,68,0.06)] sm:p-6">
+          <div className="mb-4 text-center">
+            <div className="mb-3 flex justify-center">
+              <RegalHospitalLogo heightClass="h-10" framed />
+            </div>
+            <span className="inline-flex rounded-full bg-[#ECFDF5] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#0D9488]">
+              Patient Portal · {selectedHospital?.code ?? 'HOSP-01'} •{' '}
+              {(selectedHospital?.city ?? 'Bengaluru').toUpperCase()}
+            </span>
+            <h1 className="sr-only">Patient Portal Sign In</h1>
+            <p className="mt-1 text-[11px] leading-relaxed text-[#7D6354]">
+              {authMode === 'signin'
+                ? 'Sign in with your registered email, mobile number, and password.'
+                : 'First-time patients must register before accessing the portal.'}
+            </p>
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-[#43281c]">Patient Portal</h1>
-          <p className="text-xs font-medium text-[#9c6644]">Secure access to appointments, queue tracking, and records</p>
-        </div>
 
-        <div className="grid grid-cols-2 rounded-2xl border border-[#e6ccb2] bg-[#faf7f2] p-1 text-xs font-bold">
-          <button
-            type="button"
-            onClick={() => {
-              setAuthMode('signin');
-              setErrorMessage(null);
-            }}
-            className={`py-2 rounded-xl transition-all cursor-pointer ${
-              authMode === 'signin' ? 'bg-white font-black text-[#43281c] shadow-xs' : 'text-[#9c6644] hover:text-[#43281c]'
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setAuthMode('register');
-              setErrorMessage(null);
-            }}
-            className={`py-2 rounded-xl transition-all cursor-pointer ${
-              authMode === 'register' ? 'bg-white font-black text-[#43281c] shadow-xs' : 'text-[#9c6644] hover:text-[#43281c]'
-            }`}
-          >
-            Register New
-          </button>
-        </div>
-
-        {errorMessage && (
-          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-800">
-            {typeof errorMessage === 'string' ? errorMessage : serializeAuthError(errorMessage)}
+          <div className="mb-3 grid grid-cols-2 rounded-full border border-[#EFE7DE] bg-[#FBF7F2] p-1">
+            <button
+              type="button"
+              onClick={() => switchMode('signin')}
+              className={`rounded-full py-1.5 text-[11px] font-bold transition ${
+                authMode === 'signin'
+                  ? 'bg-white text-[#361E10] shadow-xs'
+                  : 'text-[#8C6044] hover:text-[#52331F]'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode('register')}
+              className={`rounded-full py-1.5 text-[11px] font-bold transition ${
+                authMode === 'register'
+                  ? 'bg-white text-[#361E10] shadow-xs'
+                  : 'text-[#8C6044] hover:text-[#52331F]'
+              }`}
+            >
+              Register New
+            </button>
           </div>
-        )}
 
-        <form onSubmit={handleAuthSubmit} className="space-y-3.5">
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1">
-              <Building2 className="w-3.5 h-3.5 text-[#b08968]" />
-              Hospital / Healthcare Clinic
-            </label>
-            <div className="relative">
+          {successMessage ? (
+            <div
+              role="status"
+              className="mb-3 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[11px] font-medium leading-snug text-emerald-900"
+            >
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              <span>{successMessage}</span>
+            </div>
+          ) : null}
+
+          {isDisplayableAuthMessage(errorMessage) ? (
+            <div className="mb-3 space-y-2">
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-[11px] font-medium leading-snug text-rose-900"
+              >
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+                <span>{errorMessage}</span>
+              </div>
+              {authMode === 'signin' && showForgotPasswordHint ? (
+                <p className="rounded-xl border border-[#EFE7DE] bg-[#FBF7F2] px-3 py-2 text-[10px] font-medium leading-snug text-[#7D6354]">
+                  {FORGOT_PASSWORD_HINT}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          <form
+            onSubmit={authMode === 'signin' ? handleLogin : handleRegister}
+            autoComplete="off"
+            className="space-y-2.5"
+          >
+            <div>
+              <label className={LABEL_CLASS}>Hospital / Healthcare Clinic</label>
               <select
                 value={selectedHospitalId}
                 onChange={(e) => setSelectedHospitalId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition appearance-none cursor-pointer"
+                disabled={hospitalsLoading || hospitals.length === 0}
+                aria-label="Hospital clinic"
+                className={`${INPUT_CLASS} font-semibold ${hospitalsLoading ? 'opacity-70' : ''}`}
               >
-                {hospitals.length === 0 ? (
-                  <option value="HOSP-01">Regal Hospital (Bengaluru) - HOSP-01</option>
+                {hospitalsLoading ? (
+                  <option value="">Loading registered hospitals…</option>
+                ) : hospitals.length === 0 ? (
+                  <option value="">No registered hospitals found</option>
                 ) : (
-                  hospitals.map((hospital: HospitalOption) => (
+                  hospitals.map((hospital) => (
                     <option key={hospital.id} value={hospital.id}>
-                      {hospital.name} {hospital.city ? `(${hospital.city})` : ''} - {hospital.id}
+                      {formatRegisteredHospitalLabel(hospital)}
                     </option>
                   ))
                 )}
               </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+              {hospitalsLoadNotice ? (
+                <p className="mt-1 text-[10px] font-medium text-[#7D6354]">{hospitalsLoadNotice}</p>
+              ) : null}
+              {!hospitalsLoading && !selectedHospital ? (
+                <p className="mt-1 text-[10px] font-medium text-rose-700">
+                  {HOSPITAL_SELECTION_REQUIRED}
+                </p>
+              ) : null}
             </div>
-          </div>
 
-          {authMode === 'register' && (
-            <>
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1">
-                  <User className="w-3.5 h-3.5 text-[#b08968]" />
-                  Patient Full Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Ramesh Gowda"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900">Age</label>
+            {authMode === 'register' ? (
+              <div>
+                <label className={LABEL_CLASS}>Full Name</label>
+                <div className="relative">
+                  <User className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8]" />
                   <input
-                    type="number"
-                    min={0}
-                    max={120}
-                    placeholder="32"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition"
+                    type="text"
+                    required
+                    autoComplete="off"
+                    name="patient-full-name"
+                    placeholder="Your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className={`${INPUT_CLASS} pl-9`}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900">Gender</label>
-                  <select
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 focus:border-[#b08968] focus:outline-none"
+              </div>
+            ) : null}
+
+            <div>
+              <label className={LABEL_CLASS}>
+                {authMode === 'signin' ? 'Registered Mobile Phone Number' : 'Mobile Phone Number'}
+              </label>
+              <div className="flex overflow-hidden rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] focus-within:border-[#9E6A4B]/40 focus-within:ring-2 focus-within:ring-[#9E6A4B]/15">
+                <span className="flex items-center border-r border-[#E2E8F0] bg-[#FBF7F2] px-3 text-[12px] font-bold text-[#52331F]">
+                  +91
+                </span>
+                <input
+                  key={`phone-${authMode}`}
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]{10}"
+                  maxLength={10}
+                  required
+                  autoComplete="off"
+                  name="phone_number_no_autofill"
+                  placeholder="Enter 10-digit mobile number"
+                  aria-autocomplete="none"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  className="w-full bg-transparent py-2 px-3 text-[12px] font-medium text-[#361E10] placeholder:text-[#94A3B8] focus:outline-none"
+                  data-1p-ignore
+                  data-lpignore="true"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>
+                {authMode === 'signin' ? 'Registered Email Address' : 'Email Address'}
+              </label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8]" />
+                <input
+                  type="email"
+                  required
+                  autoComplete="one-time-code"
+                  name={
+                    authMode === 'signin'
+                      ? 'patient-signin-email'
+                      : 'patient-register-email'
+                  }
+                  placeholder="Enter your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`${INPUT_CLASS} pl-9`}
+                  data-1p-ignore
+                  data-lpignore="true"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>Password</label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8]" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  minLength={authMode === 'register' ? 6 : undefined}
+                  autoComplete="new-password"
+                  name={
+                    authMode === 'signin'
+                      ? 'patient-signin-password'
+                      : 'patient-register-password'
+                  }
+                  placeholder={
+                    authMode === 'register' ? 'Minimum 6 characters' : 'Enter your password'
+                  }
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`${INPUT_CLASS} pl-9 pr-10`}
+                  data-1p-ignore
+                  data-lpignore="true"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8C6044] hover:text-[#361E10]"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {authMode === 'register' ? (
+              <div>
+                <label className={LABEL_CLASS}>Confirm Password</label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8]" />
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    name="patient-register-confirm-password"
+                    placeholder="Re-enter your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={`${INPUT_CLASS} pl-9 pr-10`}
+                    data-1p-ignore
+                    data-lpignore="true"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8C6044] hover:text-[#361E10]"
+                    aria-label={
+                      showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'
+                    }
                   >
-                    <option value="Female">Female</option>
-                    <option value="Male">Male</option>
-                    <option value="Other">Other</option>
-                  </select>
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               </div>
-            </>
-          )}
+            ) : null}
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1">
-              <Mail className="w-3.5 h-3.5 text-[#b08968]" />
-              Email Address {authMode === 'signin' ? '' : '(Optional)'}
-            </label>
-            <input
-              type="email"
-              required={authMode === 'signin' && phone.length === 0}
-              placeholder="patient@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition"
-            />
-          </div>
+            <button
+              type="submit"
+              disabled={loading || !canSubmit}
+              className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#9E6A4B] py-2.5 text-[11px] font-bold uppercase tracking-wide text-white transition hover:bg-[#8B593C] disabled:opacity-60"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowRight className="h-4 w-4" />
+              )}
+              <span>
+                {loading
+                  ? authMode === 'signin'
+                    ? 'Signing in…'
+                    : 'Creating account…'
+                  : authMode === 'signin'
+                    ? 'Sign In to Patient Portal →'
+                    : 'Create Patient Account →'}
+              </span>
+            </button>
+          </form>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1">
-              <Phone className="w-3.5 h-3.5 text-[#b08968]" />
-              Mobile Phone {authMode === 'signin' ? '(Optional)' : '* Required'}
-            </label>
-            <div className="relative flex items-center">
-              <span className="absolute left-3 text-xs font-mono font-bold text-slate-700">+91</span>
-              <input
-                type="tel"
-                required={authMode === 'register'}
-                maxLength={10}
-                placeholder="98450 12345"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-3.5 py-2.5 text-xs font-mono font-bold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1">
-              <Lock className="w-3.5 h-3.5 text-[#b08968]" />
-              Password Key
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                placeholder="Enter access password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 pr-10 py-2.5 text-xs font-bold text-slate-950 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#b08968] focus:ring-2 focus:ring-[#ede0d4] transition"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className={`mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#b08968] to-[#9c6644] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-[#7f5539]/20 transition active:scale-[0.99] hover:from-[#ddb892] hover:to-[#b08968] disabled:opacity-50 ${patientClasses.btnPrimary}`}
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-            <span>
-              {loading
-                ? 'Validating Profile...'
-                : authMode === 'signin'
-                  ? 'Sign In To Patient Portal'
-                  : 'Register & Enter Portal'}
-            </span>
-          </button>
-        </form>
-
-          <div className="pt-2 border-t border-slate-100 text-center text-[10px] text-slate-500 font-medium">
-          Protected by End-to-End Hospital OS Encryption
+          <p className="mt-4 text-center text-[10px] font-medium text-[#7D6354]">
+            Protected by End-to-End Hospital OS Encryption
+          </p>
         </div>
       </div>
 
-      <footer className="z-10 mx-auto w-full max-w-md py-2 text-center font-mono text-[11px] text-[#9c6644]">
-        Regal Healthcare Network &bull; Patient Node {selectedHospitalId}
+      <footer className="shrink-0 pb-4 text-center text-[10px] font-medium text-[#8C6044]">
+        {selectedHospital?.name ?? 'Healthcare Network'} • Patient Node{' '}
+        {selectedHospital?.code ?? selectedHospital?.id ?? '—'}
       </footer>
-    </div>
+    </main>
   );
 }
 
-export default function PatientAuthPortal() {
+export default function PatientLoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen w-full items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-[#b08968]" />
+        <div className="flex h-screen w-full items-center justify-center bg-[#FBF7F2]">
+          <Loader2 className="h-6 w-6 animate-spin text-[#9E6A4B]" />
         </div>
       }
     >

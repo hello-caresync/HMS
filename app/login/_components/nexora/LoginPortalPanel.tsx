@@ -157,7 +157,7 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
               </p>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-[clamp(0.65rem,1.2vh,0.9rem)]" noValidate>
+            <form onSubmit={handleSubmit} autoComplete="off" className="space-y-[clamp(0.65rem,1.2vh,0.9rem)]" noValidate>
               <div>
                 <label htmlFor="nexora-email" className="mb-1 block text-[11px] font-bold tracking-[0.12em] text-[#64748B]">WORK EMAIL</label>
                 <div className="group relative">
@@ -165,7 +165,7 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
                   <input
                     id="nexora-email"
                     type="email"
-                    autoComplete="email"
+                    autoComplete="off"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setEmailError(''); setFormError(''); if (authStage === 'error') setAuthStage('idle'); }}
                     placeholder="Enter admin email"
@@ -183,7 +183,7 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
                   <input
                     id="nexora-password"
                     type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setPasswordError(''); setFormError(''); if (authStage === 'error') setAuthStage('idle'); }}
                     placeholder="Enter your password"
@@ -235,7 +235,7 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
                 <ShieldCheck className="h-3.5 w-3.5 text-[#3B82F6]" aria-hidden="true" />
                 <span>Secure administrator session</span>
               </div>
-              <p className="mt-1 text-[10px] text-[#94A3B8]">Protected access • NEXORA Healthcare OS</p>
+              <p className="mt-1 text-[10px] text-[#94A3B8]">Protected access • Regal Health HMS</p>
             </div>
           </div>
 
@@ -249,7 +249,7 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
         </motion.div>
 
         <footer className="mt-[clamp(0.4rem,1vh,0.75rem)] w-full max-w-[460px] shrink-0 text-center text-[10px] text-[#64748B]">
-          <p>© 2026 NEXORA Healthcare OS</p>
+          <p>© 2026 Regal Health HMS</p>
           <div className="mt-1 flex items-center justify-center gap-3 text-[#94A3B8]">
             <button type="button" className="hover:text-[#3B82F6]">Privacy</button>
             <button type="button" className="hover:text-[#3B82F6]">Security</button>

@@ -1,4 +1,4 @@
-/** Shared Tailwind class strings — Nexora Patient 5-color system (WCAG-safe). */
+/** Shared Tailwind class strings — Regal Patient Portal 5-color system (WCAG-safe). */
 
 import { patientClasses } from '@/lib/patient/theme';
 

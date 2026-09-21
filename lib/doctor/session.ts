@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
+import { CURASYNC_DOCTOR_SESSION_COOKIE } from '@/lib/auth/portal-route-guard';
+import { clearRegalRoleCookie, setNexoraRoleCookie } from '@/lib/auth/role-cookies';
 import { resolveDoctorConsultationFee } from '@/lib/hospital/doctors';
 
 export interface DoctorSession {
@@ -217,6 +218,10 @@ export function saveDoctorSession(session: DoctorSession, remember = true): void
 
   setNexoraRoleCookie('doctor');
 
+  const cookieAttrs = 'path=/; max-age=86400; SameSite=Lax';
+  document.cookie = `${CURASYNC_DOCTOR_SESSION_COOKIE}=${encodeURIComponent(serialized)}; ${cookieAttrs}`;
+  document.cookie = `auth-token=authenticated; ${cookieAttrs}`;
+
   dispatchSessionChanged(payload);
 }
 
@@ -228,6 +233,12 @@ export function clearDoctorSession(): void {
   localStorage.removeItem(PORTAL_SESSION_KEY);
   sessionStorage.removeItem('current_doctor');
   localStorage.removeItem('curasync_cached_doctor_queue');
+
+  const cookieAttrs = 'path=/; max-age=0; SameSite=Lax';
+  document.cookie = `${CURASYNC_DOCTOR_SESSION_COOKIE}=; ${cookieAttrs}`;
+  document.cookie = `auth-token=; ${cookieAttrs}`;
+  clearRegalRoleCookie();
+
   dispatchSessionChanged(null);
 }
 

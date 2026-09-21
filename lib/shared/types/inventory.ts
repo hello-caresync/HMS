@@ -1,4 +1,4 @@
-import type { NexoraModule } from './common';
+import type { RegalModule } from './common';
 
 /**
  * Cross-app stock mutation model — emitted by Pharmacy, Procurement, Laboratory, etc.
@@ -12,7 +12,7 @@ export interface SharedInventoryUpdate {
   /** Signed delta: negative deducts, positive replenishes */
   quantityChange: number;
   /** Module that initiated the stock movement */
-  triggeringModule: NexoraModule;
+  triggeringModule: RegalModule;
   /** Optional business reference (order id, dispense id, PO id) */
   referenceId?: string;
   /** Free-text reason for audit correlation */

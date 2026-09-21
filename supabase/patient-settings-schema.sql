@@ -106,7 +106,7 @@ insert into public.hospitals_and_clinics (
 ) values
   (
     'a1000000-0000-4000-a000-000000000001',
-    'Nexora Main Campus Hospital',
+    'Regal Multispeciality Hospital Hospital',
     'hospital',
     '42 Healthcare Avenue, Block A',
     'Kochi',
@@ -115,7 +115,7 @@ insert into public.hospitals_and_clinics (
   ),
   (
     'a1000000-0000-4000-a000-000000000002',
-    'Nexora City Centre Clinic',
+    'Regal Multispeciality Hospital',
     'clinic',
     '18 MG Road, Level 3',
     'Kochi',

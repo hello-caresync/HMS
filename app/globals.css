@@ -11,7 +11,7 @@
   --hub-background: #fdf4f2;
   --hub-border: #f5d5cf;
 
-  /* Nexora Patient — warm sand / light brown clinical system */
+  /* Regal Patient — warm sand / light brown clinical system */
   --patient-plum: #7f5539;
   --patient-canvas: #faf7f2;
   --patient-card: #faf7f2;
@@ -127,7 +127,7 @@
   --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.06);
 }
 
-/* ── Nexora Doctor · Soft Sage & Linen clinical layer ── */
+/* ── Regal Doctor · Soft Sage & Linen clinical layer ── */
 @layer components {
   .doctor-page {
     min-height: 100%;
@@ -488,11 +488,23 @@ textarea:-webkit-autofill:active {
   }
 
   #printable-receipt,
-  #printable-receipt * {
+  #printable-receipt *,
+  #print-invoice-root,
+  #print-invoice-root *,
+  #printable-prescription,
+  #printable-prescription *,
+  .print-invoice,
+  .print-invoice *,
+  .print-prescription,
+  .print-prescription * {
     visibility: visible;
   }
 
-  #printable-receipt {
+  #printable-receipt,
+  #print-invoice-root,
+  #printable-prescription,
+  .print-invoice,
+  .print-prescription {
     position: absolute;
     left: 0;
     top: 0;
@@ -501,6 +513,10 @@ textarea:-webkit-autofill:active {
     padding: 20px;
     box-shadow: none !important;
     border: none !important;
+    background: #fff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .no-print {

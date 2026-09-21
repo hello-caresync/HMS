@@ -1,4 +1,4 @@
-/** Nexora Doctor App — canonical TypeScript models (mirrors Prisma / Supabase) */
+/** Regal Doctor App — canonical TypeScript models (mirrors Prisma / Supabase) */
 
 export type DoctorRole = 'Doctor' | 'Specialist' | 'Surgeon' | 'Attending Physician';
 

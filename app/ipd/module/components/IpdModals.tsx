@@ -107,7 +107,7 @@ export function PrintWristbandModal({ onClose, patient }: ModalProps) {
   return (
     <ModalOverlay title="Patient Wristband" onClose={onClose}>
       <div className="rounded-lg border-2 border-[#0F172A] p-4 text-center">
-        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Nexora HMS — IPD</p>
+        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS — IPD</p>
         <p className="mt-2 text-sm font-bold text-[#0F172A]">{p.patientName}</p>
         <p className="font-mono text-[10px] text-[#2563EB]">{p.uhid}</p>
         <p className="mt-1 text-[9px] text-slate-600">{p.ward} · {p.bed}</p>

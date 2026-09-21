@@ -168,7 +168,7 @@ export function PrintSlipModal({ onClose, patientName, token }: { onClose: () =>
   return (
     <ModalOverlay title="Appointment Slip Preview" onClose={onClose}>
       <div className="rounded-lg border-2 border-[#0F172A] p-4 text-center">
-        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Nexora HMS — OPD Appointment</p>
+        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS — OPD Appointment</p>
         <p className="mt-2 text-sm font-bold text-[#0F172A]">{patientName}</p>
         <p className="font-mono text-lg font-bold text-[#2563EB]">{token}</p>
         <p className="mt-2 text-[10px] text-slate-500">Present at reception 15 min before slot</p>

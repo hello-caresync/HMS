@@ -184,6 +184,22 @@ export async function authenticatePortalCredential(params: {
   return { ok: true, user };
 }
 
+function isLegacyTestHospitalId(id: string): boolean {
+  const normalized = id.trim().toLowerCase();
+  return (
+    normalized.includes('11111111') ||
+    normalized.includes('a0000000') ||
+    normalized === '11111111-1111-1111-1111-111111111111' ||
+    normalized === 'a0000000-0000-0000-0000-000000000001'
+  );
+}
+
+function filterLoginHospitalOptions(
+  options: { id: string; name: string; location: string }[],
+): { id: string; name: string; location: string }[] {
+  return options.filter((option) => !isLegacyTestHospitalId(option.id));
+}
+
 export async function loadHospitalOptionsForLogin(): Promise<
   { id: string; name: string; location: string }[]
 > {
@@ -191,15 +207,17 @@ export async function loadHospitalOptionsForLogin(): Promise<
 
   const { data: hospitals } = await supabase
     .from('hospitals')
-    .select('id, name, city')
+    .select('id, name, city, hospital_code')
     .order('name', { ascending: true });
 
   if (hospitals?.length) {
-    return hospitals.map((row) => ({
-      id: String(row.id),
+    const mapped = hospitals.map((row) => ({
+      id: String(row.hospital_code ?? row.id),
       name: String(row.name),
       location: String(row.city ?? 'Bengaluru'),
     }));
+    const filtered = filterLoginHospitalOptions(mapped);
+    if (filtered.length > 0) return filtered;
   }
 
   const { data: tenants } = await supabase
@@ -208,11 +226,13 @@ export async function loadHospitalOptionsForLogin(): Promise<
     .order('hospital_name', { ascending: true });
 
   if (tenants?.length) {
-    return tenants.map((row) => ({
+    const mapped = tenants.map((row) => ({
       id: String(row.hospital_id),
       name: String(row.hospital_name),
       location: String(row.city ?? 'Bengaluru'),
     }));
+    const filtered = filterLoginHospitalOptions(mapped);
+    if (filtered.length > 0) return filtered;
   }
 
   for (const table of STAFF_TABLES) {
@@ -236,7 +256,8 @@ export async function loadHospitalOptionsForLogin(): Promise<
           location: 'Bengaluru',
         }));
 
-      if (options.length > 0) return options;
+      const filtered = filterLoginHospitalOptions(options);
+      if (filtered.length > 0) return filtered;
     }
   }
 

@@ -1,4 +1,4 @@
-# Database Schema — Nexora Doctor App
+# Database Schema — Regal Doctor App
 
 PostgreSQL schema managed by Prisma (`prisma/schema.prisma`).
 

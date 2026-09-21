@@ -16,6 +16,11 @@ import { toast } from 'sonner';
 
 import { purgeLocalAdminSessions } from '@/lib/auth/active-session';
 import {
+  LOGIN_FORM_AUTOCOMPLETE,
+  LOGIN_IDENTIFIER_INPUT_PROPS,
+  LOGIN_PASSWORD_INPUT_PROPS,
+} from '@/lib/auth/login-form-security';
+import {
   buildSuperAdminSessionPayload,
   persistSuperAdminClientSession,
 } from '@/lib/auth/superAdminAuth';
@@ -142,7 +147,11 @@ function SuperAdminLoginForm() {
           </div>
         ) : null}
 
-        <form onSubmit={(event) => void handleSuperAdminLogin(event)} className="space-y-4">
+        <form
+          onSubmit={(event) => void handleSuperAdminLogin(event)}
+          autoComplete={LOGIN_FORM_AUTOCOMPLETE}
+          className="space-y-4"
+        >
           <div className="space-y-1.5">
             <label className="block text-[11px] font-bold tracking-wider text-slate-700 uppercase">
               Platform Master Email
@@ -152,11 +161,12 @@ function SuperAdminLoginForm() {
               <input
                 type="email"
                 required
-                autoComplete="username"
+                name="super-admin-email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="superadmin@regalhospital.com"
+                placeholder="Platform master email"
                 className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pr-4 pl-10 text-sm font-medium text-slate-900 shadow-xs placeholder:text-slate-400 transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-100 focus:outline-none"
+                {...LOGIN_IDENTIFIER_INPUT_PROPS}
               />
             </div>
           </div>
@@ -170,11 +180,12 @@ function SuperAdminLoginForm() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
-                autoComplete="current-password"
+                name="super-admin-passcode"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
                 placeholder="Enter root passcode"
                 className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pr-10 pl-10 font-mono text-sm font-bold text-slate-900 shadow-xs placeholder:text-slate-400 transition-all focus:border-amber-500 focus:ring-2 focus:ring-amber-100 focus:outline-none"
+                {...LOGIN_PASSWORD_INPUT_PROPS}
               />
               <button
                 type="button"

@@ -1,5 +1,5 @@
 /**
- * Nexora Doctor OS — Design System v1
+ * Regal Doctor OS — Design System v1
  * Apple Health · Linear · Stripe · Epic clinical density
  */
 export const os = {

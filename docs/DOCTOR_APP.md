@@ -1,4 +1,4 @@
-# Nexora Doctor Management Application
+# Regal Doctor Management Application
 
 Production-grade doctor workstation with PostgreSQL, JWT authentication, real-time updates, and entrepreneur admin console.
 

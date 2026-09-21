@@ -1,5 +1,5 @@
 /**
- * Nexora Doctor — development authentication (client-side).
+ * Regal Doctor — development authentication (client-side).
  * Replace this module with Supabase Auth in production without changing UI shells.
  */
 

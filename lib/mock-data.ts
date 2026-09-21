@@ -1,4 +1,4 @@
-/** Nexora Doctor App — consolidated mock clinical data */
+/** Regal Doctor App — consolidated mock clinical data */
 
 export const MOCK_DOCTOR_PROFILE = {
   id: 'doc-1',

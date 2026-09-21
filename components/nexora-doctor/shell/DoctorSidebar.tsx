@@ -15,7 +15,7 @@ export function DoctorSidebar({ collapsed }: { collapsed?: boolean }) {
       <div className={cn(doctorUi.sidebarHeader, collapsed && 'px-2 text-center')}>
         {!collapsed ? (
           <>
-            <p className="text-lg font-bold tracking-tight text-white">Nexora</p>
+            <p className="text-lg font-bold tracking-tight text-white">Regal Hospital</p>
             <p className="text-xs text-[#A3B19B]">Doctor</p>
           </>
         ) : (
@@ -52,7 +52,7 @@ export function DoctorSidebar({ collapsed }: { collapsed?: boolean }) {
 
       {!collapsed && (
         <div className={doctorUi.sidebarFooter}>
-          <p className="text-xs font-medium text-white">Nexora Health Platform</p>
+          <p className="text-xs font-medium text-white">Regal Health HMS</p>
           <p className="mt-0.5 text-[10px] text-[#A3B19B]">Clinical workstation</p>
         </div>
       )}

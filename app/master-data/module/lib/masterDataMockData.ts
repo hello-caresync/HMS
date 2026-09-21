@@ -136,9 +136,9 @@ export const MDM_CENSUS: MdmCensus = {
 };
 
 export const ORG_HIERARCHY: OrgHierarchyNode[] = [
-  { id: 'org-1', level: 'Branch', name: 'Nexora Main Campus — Pune', parent: '—', status: 'Active' },
-  { id: 'org-2', level: 'Building', name: 'Main Clinical Block', parent: 'Nexora Main Campus', status: 'Active' },
-  { id: 'org-3', level: 'Building', name: 'Critical Care Tower', parent: 'Nexora Main Campus', status: 'Active' },
+  { id: 'org-1', level: 'Branch', name: 'Regal Multispeciality Hospital — Pune', parent: '—', status: 'Active' },
+  { id: 'org-2', level: 'Building', name: 'Main Clinical Block', parent: 'Regal Multispeciality Hospital', status: 'Active' },
+  { id: 'org-3', level: 'Building', name: 'Critical Care Tower', parent: 'Regal Multispeciality Hospital', status: 'Active' },
   { id: 'org-4', level: 'Floor', name: 'Ground Floor — Emergency & OPD', parent: 'Main Clinical Block', status: 'Active' },
   { id: 'org-5', level: 'Floor', name: '3rd Floor — ICU & CCU', parent: 'Critical Care Tower', status: 'Active' },
   { id: 'org-6', level: 'Block', name: 'Radiology Wing B', parent: 'Main Clinical Block', status: 'Mapped' },

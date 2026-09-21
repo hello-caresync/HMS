@@ -291,7 +291,7 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0f172a] text-slate-900">
-        <p className="font-mono text-xs uppercase tracking-wider">Securing Nexora staff session…</p>
+        <p className="font-mono text-xs uppercase tracking-wider">Securing Regal staff session…</p>
       </div>
     );
   }

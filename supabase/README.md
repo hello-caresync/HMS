@@ -2,7 +2,7 @@
 
 ## Use `migrations/` only
 
-The numbered files in `migrations/` are the **canonical** database schema for Nexora/CuraSync Phase 4 consolidation:
+The numbered files in `migrations/` are the **canonical** database schema for Regal/CuraSync Phase 4 consolidation:
 
 | File | Contents |
 |------|----------|

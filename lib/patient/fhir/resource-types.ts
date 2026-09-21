@@ -1,5 +1,5 @@
 /**
- * FHIR R4-lite shapes for Nexora Patient (interoperability with Hospital / Doctor apps).
+ * FHIR R4-lite shapes for Regal Patient Portal (interoperability with Hospital / Doctor apps).
  * Full validation against HL7 profiles can be layered in a dedicated package later.
  */
 

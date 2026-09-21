@@ -29,8 +29,8 @@ export function downloadOpdSlipPdf(
   img { display: block; margin: 12px auto; }
   @media print { body { padding: 16px; } }
 </style></head><body>
-  <h1>Nexora Digital OPD Pass</h1>
-  <p class="sub">${branch?.name ?? 'Nexora Healthcare'} · ${branch?.address ?? ''}</p>
+  <h1>Regal Digital OPD Pass</h1>
+  <p class="sub">${branch?.name ?? 'Regal Multispeciality Hospital'} · ${branch?.address ?? ''}</p>
   <div class="card">
     <img src="${qrUrl}" width="140" height="140" alt="QR" />
     <p class="token">${appointment.sequentialToken ?? appointment.token}</p>
@@ -42,7 +42,7 @@ export function downloadOpdSlipPdf(
     ${appointment.estimatedCost ? `<div class="row"><span class="label">Est. Cost</span><span class="val">₹${appointment.estimatedCost}</span></div>` : ''}
     ${directions ? `<div class="directions"><strong>Indoor Directions — ${directions.wing}</strong><ol>${directions.steps.map((s) => `<li>${s}</li>`).join('')}</ol></div>` : ''}
   </div>
-  <p style="font-size:11px;color:#8E7692;margin-top:16px;text-align:center">Scan QR at kiosk for instant check-in · Nexora Smart OPD</p>
+  <p style="font-size:11px;color:#8E7692;margin-top:16px;text-align:center">Scan QR at kiosk for instant check-in · Regal Smart OPD</p>
 </body></html>`;
 
   const blob = new Blob([html], { type: 'text/html' });

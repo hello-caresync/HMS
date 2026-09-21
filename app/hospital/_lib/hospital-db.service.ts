@@ -193,8 +193,6 @@ export async function insertModuleRecord(input: HospitalRecordInput): Promise<{ 
           full_name: input.subject,
           uhid: input.reference,
           phone: input.phone ?? null,
-          department: input.department,
-          status: 'Active',
           module_id: input.moduleId,
           updated_at: now,
         },

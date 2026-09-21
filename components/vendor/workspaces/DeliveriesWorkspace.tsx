@@ -42,7 +42,7 @@ type DispatchForm = {
 
 const emptyForm: DispatchForm = { po_id: '', carrier_name: '', tracking_number: '', driver_contact: '' };
 
-/** Nexora Vendor · V0 shipments workspace: dispatch accepted POs and track transit. */
+/** Regal Vendor · V0 shipments workspace: dispatch accepted POs and track transit. */
 function DeliveriesWorkspace() {
   const { feedback, showSuccess, showError } = useVendorFeedback();
   const hospitalCode = useActiveHospitalCode();

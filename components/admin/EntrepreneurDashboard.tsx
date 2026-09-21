@@ -122,7 +122,7 @@ export default function EntrepreneurDashboard() {
           <div className="mb-6 text-center">
             <Building2 className="mx-auto mb-2 h-10 w-10 text-[#A39E75]" />
             <h1 className="text-xl font-bold text-[#2B2A22]">Entrepreneur Console</h1>
-            <p className="text-sm text-[#5A584A]">System-level management for Nexora Doctor platform</p>
+            <p className="text-sm text-[#5A584A]">System-level management for Regal Doctor platform</p>
           </div>
           <input
             className="mb-3 w-full rounded-lg border border-[#E6E3C5] px-3 py-2 text-sm"
@@ -157,7 +157,7 @@ export default function EntrepreneurDashboard() {
       <header className="border-b border-[#E6E3C5] bg-white px-6 py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#A39E75]">Nexora Platform</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#A39E75]">Regal Health HMS</p>
             <h1 className="text-lg font-bold">Entrepreneur & Admin Dashboard</h1>
           </div>
           <div className="flex items-center gap-3">

@@ -8,7 +8,7 @@ function createEventId(): string {
 export function appendLoginHistoryEvent(
   employeeId: string,
   status: LoginHistoryStatus,
-  geoLocHint = 'On-premise terminal · Nexora Health',
+  geoLocHint = 'On-premise terminal · Regal Hospital',
 ): LoginHistoryEvent {
   const event: LoginHistoryEvent = {
     eventId: createEventId(),

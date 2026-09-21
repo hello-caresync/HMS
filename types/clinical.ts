@@ -1,4 +1,4 @@
-/** Strict clinical domain types — Nexora Doctor App */
+/** Strict clinical domain types — Regal Doctor App */
 
 export type DoctorRole = 'Doctor' | 'Specialist' | 'Surgeon' | 'Attending Physician';
 

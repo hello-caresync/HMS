@@ -91,7 +91,7 @@ function ContractsWorkspace() {
                       </p>
                       <p className="mt-2 font-serif text-2xl italic text-vendor-charcoal/80">Authorized Signatory</p>
                       <p className="mt-1 text-xs font-mono text-vendor-secondary">
-                        SHA-256 · Nexora CLM · {c.effective_date}
+                        SHA-256 · Regal CLM · {c.effective_date}
                       </p>
                     </div>
                     <span className="rounded-full border border-vendor-success/40 bg-vendor-success/15 px-2 py-0.5 text-[10px] font-bold text-vendor-charcoal">

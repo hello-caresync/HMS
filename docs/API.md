@@ -1,4 +1,4 @@
-# API Reference — Nexora Doctor App
+# API Reference — Regal Doctor App
 
 Base URL: `http://localhost:3000`
 

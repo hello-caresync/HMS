@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  LOGIN_FORM_AUTOCOMPLETE,
+  LOGIN_IDENTIFIER_INPUT_PROPS,
+  LOGIN_PASSWORD_INPUT_PROPS,
+} from '@/lib/auth/login-form-security';
 import { supabase } from '@/lib/supabase';
 import {
   resolveDoctorConsultationFeeFromSources,
@@ -14,6 +19,8 @@ import {
   resolveCredentialHospitalId,
   resolveCredentialHospitalName,
 } from '@/lib/recordStaffLogin';
+import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
+import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
 import {
   Stethoscope,
   Lock,
@@ -51,6 +58,12 @@ const ACCENT: Record<string, { from: string; to: string; glow: string }> = {
 
 export default function DoctorLoginPortal() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const postLoginPath = resolveLoginRedirect(
+    searchParams.get('redirect'),
+    '/doctor/dashboard',
+    ['/doctor'],
+  );
 
   const [roster, setRoster] = useState<HospitalDoctorRow[]>([]);
   const [identifier, setIdentifier] = useState('');
@@ -181,9 +194,10 @@ export default function DoctorLoginPortal() {
 
       saveDoctorSession(session, rememberMe);
       setLoginSuccess(true);
+      router.refresh();
 
       setTimeout(() => {
-        router.push('/doctor/dashboard');
+        router.push(postLoginPath);
       }, 1200);
     } catch (err) {
       console.error('Login error:', err);
@@ -266,18 +280,11 @@ export default function DoctorLoginPortal() {
           {/* LEFT — Credentials vault */}
           <div className="lg:col-span-5 p-8 sm:p-10 lg:p-12 bg-white/[0.97] text-slate-900 flex flex-col justify-between">
             <div>
-              <div className="flex items-center gap-3 mb-10">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-600 to-cyan-600 text-white flex items-center justify-center shadow-lg shadow-teal-600/30">
-                  <Stethoscope className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-teal-600">
-                    Regal Hospital · RH-BLR-01
-                  </p>
-                  <h2 className="text-xl font-black tracking-tight text-slate-900">
-                    Clinician Secure Gateway
-                  </h2>
-                </div>
+              <div className="mb-10">
+                <RegalHospitalLogo heightClass="h-10" framed className="mb-4" />
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-teal-600">
+                  Clinician Secure Gateway · HOSP-01
+                </p>
               </div>
 
               <div className="mb-8">
@@ -310,7 +317,7 @@ export default function DoctorLoginPortal() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleLogin} className="space-y-5">
+                <form onSubmit={handleLogin} autoComplete={LOGIN_FORM_AUTOCOMPLETE} className="space-y-5">
                   <div>
                     <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
                       Hospital Doctor ID / Email
@@ -319,12 +326,13 @@ export default function DoctorLoginPortal() {
                       <Building2 className="w-4 h-4 text-slate-400 absolute left-4 top-4 group-focus-within:text-teal-600 transition-colors" />
                       <input
                         type="text"
+                        name="doctor-portal-identifier"
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
-                        placeholder="RH-D06 or name@regalhospital.com"
+                        placeholder="Doctor ID or hospital email"
                         required
-                        autoComplete="username"
                         className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:bg-white focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
+                        {...LOGIN_IDENTIFIER_INPUT_PROPS}
                       />
                     </div>
                   </div>
@@ -337,12 +345,13 @@ export default function DoctorLoginPortal() {
                       <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-4 group-focus-within:text-teal-600 transition-colors" />
                       <input
                         type={showPasscode ? 'text' : 'password'}
+                        name="doctor-portal-passcode"
                         value={passcode}
                         onChange={(e) => setPasscode(e.target.value)}
                         placeholder="Enter your unique clinician PIN"
                         required
-                        autoComplete="current-password"
                         className="w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:bg-white focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
+                        {...LOGIN_PASSWORD_INPUT_PROPS}
                       />
                       <button
                         type="button"

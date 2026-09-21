@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
       activeTagColor="bg-teal-500/20 text-teal-300 border-teal-500/30"
       activeTitle="Account Recovery"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
         {message && <AuthAlert tone={isSuccess ? 'success' : 'error'} message={message} />}
 
         <AuthField
@@ -45,8 +45,8 @@ export default function ForgotPasswordPage() {
           type="email"
           value={email}
           onChange={setEmail}
-          placeholder="physician.aishwarya@nexora.local"
-          autoComplete="email"
+          placeholder="Registered work email"
+          autoComplete="off"
         />
 
         <AuthPrimaryButton

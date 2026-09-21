@@ -2,7 +2,7 @@ import { buildInvoice } from '../services/billing/billing.service';
 import { applyInventoryUpdates } from '../services/inventory/inventory.service';
 import { processPayment } from '../services/payments/payments.service';
 import { writeAuditLog } from '../services/audit/audit.service';
-import type { NexoraServiceContext } from '../types/context';
+import type { RegalServiceContext } from '../types/context';
 import { generateCorrelationId } from '../types/common';
 import type {
   SharedTransactionInput,
@@ -11,11 +11,11 @@ import type {
 
 /**
  * Decoupled automation pipeline — orchestrates billing → payment → inventory → audit.
- * Consumable from any Nexora app API route / Server Action without UI coupling.
+ * Consumable from any Regal app API route / Server Action without UI coupling.
  */
 export async function processSharedTransaction(
   input: SharedTransactionInput,
-  ctx: NexoraServiceContext,
+  ctx: RegalServiceContext,
 ): Promise<SharedTransactionResult> {
   const transactionId = `TXN-${ctx.correlationId}`;
   const correlationId = ctx.correlationId || generateCorrelationId('txn');

@@ -15,7 +15,7 @@ export function HospitalEcosystemFooter() {
         color: (HOSPITAL_COLORS as any).textMuted || '#64748b',
       }}
     >
-      <span className="font-bold text-[#1B5E3A]">Nexora Healthcare Ecosystem V0</span>
+      <span className="font-bold text-[#1B5E3A]">Regal Healthcare Ecosystem V0</span>
       <span className="mx-2 text-[#A8D5BA]">|</span>
       Connected Applications:{' '}
       <span className="text-[#1E2522]">

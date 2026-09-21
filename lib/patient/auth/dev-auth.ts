@@ -1,5 +1,5 @@
 /**
- * Nexora Patient V0 — authentication
+ * Regal Patient Portal — authentication
  */
 
 import { DEMO_PATIENT_EMAIL, DEMO_PATIENT_ID, DEMO_PATIENT_PASSWORD, SEED_PATIENT } from '@/lib/ecosystem/seed';

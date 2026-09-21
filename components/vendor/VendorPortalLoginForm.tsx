@@ -15,6 +15,11 @@ import {
 import { toast } from 'sonner';
 
 import {
+  LOGIN_FORM_AUTOCOMPLETE,
+  LOGIN_IDENTIFIER_INPUT_PROPS,
+  LOGIN_PASSWORD_INPUT_PROPS,
+} from '@/lib/auth/login-form-security';
+import {
   authenticateVendorCredential,
   VENDOR_AUTH_SERVICE_ERROR_MESSAGE,
   VENDOR_INVALID_CREDENTIALS_MESSAGE,
@@ -96,7 +101,7 @@ export function VendorPortalLoginForm({
           </div>
         ) : null}
 
-        <form onSubmit={handleVendorLogin} className="space-y-4">
+        <form onSubmit={handleVendorLogin} autoComplete={LOGIN_FORM_AUTOCOMPLETE} className="space-y-4">
           <div>
             <label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
               Vendor Rep Email
@@ -106,11 +111,12 @@ export function VendorPortalLoginForm({
               <input
                 type="email"
                 required
-                autoComplete="username"
+                name="vendor-portal-email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="vendor@supplier.com"
+                placeholder="Vendor representative email"
                 className="w-full rounded-xl border border-[#dcc2f9]/70 py-3 pr-3 pl-10 text-sm outline-none focus:border-[#6a38a0] focus:ring-2 focus:ring-[#6a38a0]/20"
+                {...LOGIN_IDENTIFIER_INPUT_PROPS}
               />
             </div>
           </div>
@@ -123,11 +129,12 @@ export function VendorPortalLoginForm({
               <input
                 type={showPasscode ? 'text' : 'password'}
                 required
-                autoComplete="current-password"
+                name="vendor-portal-passcode"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
                 placeholder="Enter your portal PIN"
                 className="w-full rounded-xl border border-[#dcc2f9]/70 py-3 pr-10 pl-10 text-sm outline-none focus:border-[#6a38a0] focus:ring-2 focus:ring-[#6a38a0]/20"
+                {...LOGIN_PASSWORD_INPUT_PROPS}
               />
               <button
                 type="button"

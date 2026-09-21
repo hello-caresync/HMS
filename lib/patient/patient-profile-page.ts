@@ -4,6 +4,7 @@ import {
   PATIENT_SESSION_STORAGE_KEY,
   readPatientAuthSession,
 } from '@/lib/auth/patientAuth';
+import { fetchAuthenticatedPatientContact } from '@/lib/auth/patient-profile';
 import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import { persistActivePatientNode } from '@/lib/patient/active-patient-node';
 import {
@@ -81,11 +82,28 @@ function hydrateProfileFromLocalCache(
   return profileDataToClinicalRecord(local, registeredBase);
 }
 
+function enrichIdentityFromAuthContact(
+  identity: ActivePatientFormIdentity,
+  contact: Awaited<ReturnType<typeof fetchAuthenticatedPatientContact>>,
+): ActivePatientFormIdentity {
+  if (!contact) return identity;
+
+  return {
+    ...identity,
+    patient_name: contact.full_name || identity.patient_name,
+    phone: contact.phone || identity.phone,
+    email: contact.email || identity.email,
+  };
+}
+
 export async function loadPatientProfilePageState(
   supabase: SupabaseClient,
 ): Promise<{ profile: PatientProfileState; isNewUser: boolean; familyMembers: FamilyMember[] } | null> {
-  const identity = resolveActivePatientFormIdentity();
-  if (!identity) return null;
+  const baseIdentity = resolveActivePatientFormIdentity();
+  if (!baseIdentity) return null;
+
+  const authContact = await fetchAuthenticatedPatientContact(supabase);
+  const identity = enrichIdentityFromAuthContact(baseIdentity, authContact);
 
   const registeredBase = createEmptyPatientProfile(identity);
   const localCache = loadLocalPatientProfile(identity.patient_id);

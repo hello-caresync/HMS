@@ -55,7 +55,7 @@ export default function DoctorOsProfile() {
       <header className="mb-6">
         <p className="text-[11px] font-bold uppercase tracking-widest text-brand-primary">Profile & Settings</p>
         <h1 className="text-xl font-black text-brand-text">{profile?.fullName ?? session?.fullName}</h1>
-        <p className="text-sm text-[#5A584A]">{profile?.hospital?.name ?? 'Nexora Hospital'} · {profile?.email}</p>
+        <p className="text-sm text-[#5A584A]">{profile?.hospital?.name ?? 'Regal Hospital'} · {profile?.email}</p>
       </header>
 
       <div className="mb-6 flex flex-wrap gap-2">

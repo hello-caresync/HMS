@@ -59,7 +59,7 @@ const INITIAL: PatientNotification[] = [
     id: 'n4',
     category: 'medications',
     title: 'Refill approved',
-    body: 'Metformin 500mg · pharmacy routing to Nexora In-house · pick-up after 4 PM.',
+    body: 'Metformin 500mg · pharmacy routing to Regal In-house · pick-up after 4 PM.',
     time: 'Yesterday',
     read: true,
     href: PATIENT_ROUTES.medications,

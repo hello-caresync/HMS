@@ -121,7 +121,7 @@ export function PrintOpdSlipModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="OPD Slip Preview" onClose={onClose}>
       <div className="rounded-lg border-2 border-[#0F172A] p-4 text-center">
-        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Nexora HMS — OPD Visit</p>
+        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS — OPD Visit</p>
         <p className="mt-2 text-2xl font-bold text-[#2563EB]">G-042</p>
         <p className="text-sm font-bold text-[#0F172A]">Rahul Sharma</p>
         <p className="font-mono text-[10px] text-slate-500">NX-2026-000412</p>

@@ -1,7 +1,6 @@
 import type {
   BatchLot,
   CatalogProduct,
-  CommunicationThread,
   ContractRecord,
   DemandForecastPoint,
   HospitalPartner,
@@ -61,7 +60,7 @@ export const MOCK_RFQS: RFQRecord[] = [
   {
     id: 'rfq-901',
     hospitalId: 'hosp-1',
-    hospitalName: 'Nexora City Hospital',
+    hospitalName: 'Regal Multispeciality Hospital',
     title: 'Critical care infusion pumps · Q3 replenishment',
     category: 'Equipment',
     dueDate: '28 Jul 2026',
@@ -72,7 +71,7 @@ export const MOCK_RFQS: RFQRecord[] = [
   {
     id: 'rfq-902',
     hospitalId: 'hosp-2',
-    hospitalName: 'Nexora Heart Institute',
+    hospitalName: 'Regal Heart Institute',
     title: 'Cardiology consumables · stent & cath lab',
     category: 'Surgical',
     dueDate: '02 Aug 2026',
@@ -83,7 +82,7 @@ export const MOCK_RFQS: RFQRecord[] = [
   {
     id: 'rfq-903',
     hospitalId: 'hosp-3',
-    hospitalName: 'Nexora Diagnostics Network',
+    hospitalName: 'Regal Diagnostics Network',
     title: 'Hematology reagent kits · 6-month tender',
     category: 'Laboratory',
     dueDate: '10 Aug 2026',
@@ -97,7 +96,7 @@ export const MOCK_PURCHASE_ORDERS: PurchaseOrder[] = [
   {
     id: 'po-4401',
     hospitalId: 'hosp-1',
-    hospitalName: 'Nexora City Hospital',
+    hospitalName: 'Regal Multispeciality Hospital',
     poNumber: 'NX-PO-2026-4401',
     status: 'New',
     lifecycleStage: 'Awarded',
@@ -113,7 +112,7 @@ export const MOCK_PURCHASE_ORDERS: PurchaseOrder[] = [
   {
     id: 'po-4398',
     hospitalId: 'hosp-2',
-    hospitalName: 'Nexora Heart Institute',
+    hospitalName: 'Regal Heart Institute',
     poNumber: 'NX-PO-2026-4398',
     status: 'Processing',
     lifecycleStage: 'Processing',
@@ -128,7 +127,7 @@ export const MOCK_PURCHASE_ORDERS: PurchaseOrder[] = [
   {
     id: 'po-4392',
     hospitalId: 'hosp-1',
-    hospitalName: 'Nexora City Hospital',
+    hospitalName: 'Regal Multispeciality Hospital',
     poNumber: 'NX-PO-2026-4392',
     status: 'Dispatched',
     lifecycleStage: 'Dispatched',
@@ -151,7 +150,7 @@ export const MOCK_INVOICES: VendorInvoice[] = [
   {
     id: 'inv-7781',
     poId: 'po-4380',
-    hospitalName: 'Nexora City Hospital',
+    hospitalName: 'Regal Multispeciality Hospital',
     subtotal: 420000,
     cgst: 37800,
     sgst: 37800,
@@ -163,7 +162,7 @@ export const MOCK_INVOICES: VendorInvoice[] = [
   {
     id: 'inv-7775',
     poId: 'po-4372',
-    hospitalName: 'Nexora Heart Institute',
+    hospitalName: 'Regal Heart Institute',
     subtotal: 980000,
     cgst: 0,
     sgst: 0,
@@ -177,7 +176,7 @@ export const MOCK_INVOICES: VendorInvoice[] = [
 export const MOCK_CONTRACTS: ContractRecord[] = [
   {
     id: 'ctr-201',
-    hospitalName: 'Nexora City Hospital',
+    hospitalName: 'Regal Multispeciality Hospital',
     title: 'Pharmacy formulary supply · FY26-27',
     status: 'Active',
     slaOnTimePct: 97,
@@ -187,7 +186,7 @@ export const MOCK_CONTRACTS: ContractRecord[] = [
   },
   {
     id: 'ctr-198',
-    hospitalName: 'Nexora Heart Institute',
+    hospitalName: 'Regal Heart Institute',
     title: 'Biomedical AMC · cath lab suite',
     status: 'Expiring',
     slaOnTimePct: 94,
@@ -240,7 +239,7 @@ export const MOCK_WAREHOUSES: WarehouseLocation[] = [
 export const MOCK_SERVICE_TICKETS: ServiceTicket[] = [
   {
     id: 'svc-301',
-    hospitalName: 'Nexora Heart Institute',
+    hospitalName: 'Regal Heart Institute',
     equipmentName: 'Cath Lab Injector System',
     type: 'Breakdown',
     priority: 'Emergency',
@@ -250,7 +249,7 @@ export const MOCK_SERVICE_TICKETS: ServiceTicket[] = [
   },
   {
     id: 'svc-298',
-    hospitalName: 'Nexora City Hospital',
+    hospitalName: 'Regal Multispeciality Hospital',
     equipmentName: 'MRI Chiller Unit',
     type: 'PM',
     priority: 'Routine',
@@ -259,18 +258,13 @@ export const MOCK_SERVICE_TICKETS: ServiceTicket[] = [
   },
 ];
 
-export const MOCK_THREADS: CommunicationThread[] = [
-  { id: 'th-1', subject: 'PO NX-PO-2026-4401 · partial dispatch approval', channel: 'Procurement', unreadCount: 2, lastMessageAt: '20 Jul 2026 · 11:42' },
-  { id: 'th-2', subject: 'Formulary add · Atorvastatin 20 mg', channel: 'Pharmacy', unreadCount: 0, lastMessageAt: '19 Jul 2026 · 09:15' },
-];
-
 export const MOCK_NOTIFICATIONS: VendorNotification[] = [
-  { id: 'n-1', title: 'New PO received', body: 'NX-PO-2026-4401 from Nexora City Hospital', actionable: true, href: '/vendor/portal/purchase-orders', createdAt: '20 Jul 2026 · 08:10', read: false },
+  { id: 'n-1', title: 'New PO received', body: 'NX-PO-2026-4401 from Regal Multispeciality Hospital', actionable: true, href: '/vendor/portal/purchase-orders', createdAt: '20 Jul 2026 · 08:10', read: false },
   { id: 'n-2', title: 'License expiry in 30 days', body: 'Drug License Form 20B · renew in Organization', actionable: true, href: '/vendor/portal/organization', createdAt: '19 Jul 2026 · 17:00', read: false },
 ];
 
 export const MOCK_SUPPORT: SupportTicket[] = [
-  { id: 'sup-44', subject: 'EDI 850 mapping · Nexora Heart Institute', category: 'Integration', status: 'In Progress', priority: 'Urgent' },
+  { id: 'sup-44', subject: 'EDI 850 mapping · Regal Heart Institute', category: 'Integration', status: 'In Progress', priority: 'Urgent' },
   { id: 'sup-41', subject: 'Payment advice download format', category: 'Finance', status: 'Open', priority: 'Routine' },
 ];
 

@@ -2,6 +2,7 @@
 
 import React from 'react';
 
+import { formatGenderDisplay } from '@/lib/clinical/format-gender';
 import {
   doctorQueueRowToItem,
   type DoctorQueueItem,
@@ -144,7 +145,7 @@ export function PatientQueue({
                 <div className="flex min-w-0 flex-col">
                   <h4 className="truncate text-sm font-semibold text-slate-900">{item.patientName}</h4>
                   <p className="truncate text-xs text-slate-500">
-                    {item.age ? `${item.age} Yrs` : '--'} • {item.gender || 'Other'}
+                    {formatGenderDisplay(item.gender)} · {item.age ? `${item.age}y` : '—'}
                   </p>
                 </div>
               </div>

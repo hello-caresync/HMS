@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 
+import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
 import { useDoctorAuth } from '@/lib/doctor/auth/DoctorAuthProvider';
+import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import {
   CLINICAL_SIDEBAR_NAV,
   isClinicalNavActive,
@@ -17,11 +19,15 @@ export default function DoctorOsSidebar() {
   const { session, signOut } = useDoctorAuth();
 
   return (
-    <aside className={sageSidebar.aside} aria-label="Nexora Doctor clinical navigation">
+    <aside className={sageSidebar.aside} aria-label="Regal Doctor clinical navigation">
       {/* Brand header */}
       <div className={sageSidebar.brand}>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-[#C7C39E]">Nexora</span>
-        <p className="text-sm font-bold">Doctor Workstation</p>
+        <div className="rounded-xl bg-white/95 p-2 shadow-sm flex items-center justify-center">
+          <RegalHospitalLogo heightClass="h-7" widthClass="w-auto" framed={false} priority={false} variant="onDark" />
+        </div>
+        <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-wider text-[#C7C39E]">
+          Doctor Workstation • {REGAL_HOSPITAL_CODE}
+        </p>
         {session && (
           <div className="mt-3 rounded-xl border border-[#C7C39E]/20 bg-white/5 p-3 backdrop-blur-sm">
             <p className="truncate text-sm font-semibold">{session.fullName}</p>
@@ -67,7 +73,7 @@ export default function DoctorOsSidebar() {
           <LogOut className="h-4 w-4" aria-hidden />
           Sign out
         </button>
-        <p className={sageSidebar.version}>Nexora Doctor · v2.0</p>
+        <p className={sageSidebar.version}>Regal Doctor · v2.0</p>
       </div>
     </aside>
   );

@@ -42,7 +42,7 @@ export default function ExecutiveDashboard({ metrics = DASHBOARD_METRICS }: Exec
             <span className="text-[10px] font-medium text-slate-800">Module 1 · Executive Dashboard</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 2xl:text-3xl">
-            Nexora Central Hospital
+            Regal Central Hospital
           </h1>
           <p className="mt-0.5 text-sm text-slate-800">
             Enterprise command center · clinical, commercial & governance cockpit

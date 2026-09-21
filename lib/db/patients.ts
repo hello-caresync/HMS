@@ -1,5 +1,6 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
+import { missingColumnFromPostgrestError } from '@/lib/hospital/appointments';
 import type { FamilyMember } from '@/lib/patient/family-members';
 import {
   clinicalRecordToPatientsRow,
@@ -7,6 +8,8 @@ import {
   type PatientClinicalRecord,
 } from '@/lib/patient/patients-record';
 import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
+
+const PATIENT_UPSERT_MAX_RETRIES = 12;
 
 export type PatientUpsertInput = PatientClinicalRecord & {
   familyMembers?: FamilyMember[];
@@ -30,11 +33,26 @@ export type HospitalPatientRow = {
   emergency_contact_phone?: string | null;
   emergency_contact_relation?: string | null;
   family_members?: unknown;
-  department?: string | null;
   status?: string | null;
   created_at?: string;
   updated_at?: string;
 };
+
+/** Maps PostgREST schema-cache errors to patient-safe copy (no raw column names). */
+export function sanitizePatientDbError(message: string | null | undefined): string {
+  const text = String(message ?? '').trim();
+  if (!text) return 'Could not save patient profile. Please try again.';
+
+  if (missingColumnFromPostgrestError(text) || /schema cache/i.test(text)) {
+    return 'Hospital records are syncing. Your profile details were saved locally — please try again in a moment.';
+  }
+
+  if (/duplicate key|unique constraint/i.test(text)) {
+    return 'This phone number is already registered. Contact reception if you need help linking your account.';
+  }
+
+  return text;
+}
 
 function hospitalUhidPrefix(hospitalId: string): string {
   return `${hospitalId.replace(/\s/g, '')}-P-`;
@@ -123,9 +141,45 @@ export function buildPatientUpsertPayload(
     hospital_id: hospitalId,
     patient_id: record.patient_id.trim() || null,
     family_members: familyMembersToJson(record.familyMembers),
-    department: 'General Medicine',
-    status: 'Active',
     updated_at: new Date().toISOString(),
+  };
+}
+
+async function upsertPatientRowResilient(
+  supabase: SupabaseClient,
+  payload: Record<string, unknown>,
+): Promise<{ data: HospitalPatientRow | null; error: PostgrestError | null }> {
+  let current: Record<string, unknown> = { ...payload };
+
+  for (let attempt = 0; attempt < PATIENT_UPSERT_MAX_RETRIES; attempt += 1) {
+    const { data, error } = await supabase
+      .from('patients')
+      .upsert(current, { onConflict: 'phone' })
+      .select('*')
+      .maybeSingle();
+
+    if (!error) {
+      return { data: (data as HospitalPatientRow | null) ?? null, error: null };
+    }
+
+    const missingColumn = missingColumnFromPostgrestError(error.message);
+    if (missingColumn && Object.prototype.hasOwnProperty.call(current, missingColumn)) {
+      const { [missingColumn]: _removed, ...next } = current;
+      current = next;
+      continue;
+    }
+
+    return { data: null, error };
+  }
+
+  return {
+    data: null,
+    error: {
+      message: 'Patient profile upsert exceeded schema retry limit.',
+      details: '',
+      hint: '',
+      code: 'PGRST000',
+    } as PostgrestError,
   };
 }
 
@@ -137,14 +191,10 @@ export async function upsertPatientProfileRecord(
 ): Promise<HospitalPatientRow> {
   const payload = buildPatientUpsertPayload(record, uhid, hospitalId);
 
-  const { data, error } = await supabase
-    .from('patients')
-    .upsert(payload, { onConflict: 'phone' })
-    .select('*')
-    .maybeSingle();
+  const { data, error } = await upsertPatientRowResilient(supabase, payload);
 
   if (error) {
-    throw new Error(error.message || 'Could not save patient profile.');
+    throw new Error(sanitizePatientDbError(error.message));
   }
 
   if (data) {
@@ -159,7 +209,9 @@ export async function upsertPatientProfileRecord(
     .maybeSingle();
 
   if (readError || !fallback) {
-    throw new Error(readError?.message || 'Patient saved but could not be reloaded.');
+    throw new Error(
+      sanitizePatientDbError(readError?.message || 'Patient saved but could not be reloaded.'),
+    );
   }
 
   return fallback as HospitalPatientRow;

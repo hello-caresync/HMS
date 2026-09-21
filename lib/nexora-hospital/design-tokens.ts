@@ -1,4 +1,4 @@
-/** Nexora Hospital Operations Hub — Teal & Cyan palette */
+/** Regal Hospital Operations Hub — Teal & Cyan palette */
 
 export const HOSPITAL_COLORS = {
   sidebar: '#004D56',
@@ -15,7 +15,7 @@ export const HOSPITAL_COLORS = {
   white: '#FFFFFF',
 } as const;
 
-/** Nexora Hospital App V0 — typography & layout tokens */
+/** Regal Hospital App V0 — typography & layout tokens */
 
 export const hospitalUi = {
   shell: 'min-h-screen bg-[#F0F8F9] text-[#0A2E36]',

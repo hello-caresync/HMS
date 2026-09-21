@@ -1,3 +1,6 @@
+import { resolveRawGenderFromRow } from '@/lib/clinical/format-gender';
+import { loadPatientDemographicsMap } from '@/lib/clinical/enrich-queue-demographics';
+import { subscribePostgresChannel } from '@/lib/realtime/subscription-lifecycle';
 import { createClient } from '@/lib/supabase/client';
 import { DEFAULT_ACTIVE_DOCTOR_ID, DEFAULT_PATIENT_ID } from '@/lib/doctor/command-center/supabase-service';
 import { appointmentBelongsToDoctor, getDoctorSession } from '@/lib/doctor/session';
@@ -105,13 +108,35 @@ async function enrichAppointmentRows(
 
   const patientMap = new Map<string, Record<string, unknown>>();
   if (patientIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from('patient_profiles')
-      .select('id, full_name, gender, date_of_birth, dob')
-      .in('id', patientIds);
+    const [profilesById, profilesByPatientId, demoMap] = await Promise.all([
+      supabase
+        .from('patient_profiles')
+        .select('id, patient_id, full_name, gender, date_of_birth, dob')
+        .in('id', patientIds),
+      supabase
+        .from('patient_profiles')
+        .select('id, patient_id, full_name, gender, date_of_birth, dob')
+        .in('patient_id', patientIds),
+      loadPatientDemographicsMap(supabase, patientIds),
+    ]);
 
-    for (const profile of (profiles ?? []) as Record<string, unknown>[]) {
-      if (profile.id) patientMap.set(String(profile.id), profile);
+    for (const profile of [
+      ...((profilesById.data ?? []) as Record<string, unknown>[]),
+      ...((profilesByPatientId.data ?? []) as Record<string, unknown>[]),
+    ]) {
+      const id = String(profile.id ?? '').trim();
+      const patientId = String(profile.patient_id ?? '').trim();
+      if (id) patientMap.set(id, profile);
+      if (patientId) patientMap.set(patientId, profile);
+    }
+
+    for (const [id, demo] of demoMap.entries()) {
+      const existing = patientMap.get(id) ?? {};
+      patientMap.set(id, {
+        ...existing,
+        gender: existing.gender ?? demo.gender,
+        age: existing.age ?? demo.age,
+      });
     }
   }
 
@@ -119,6 +144,9 @@ async function enrichAppointmentRows(
     const patientId = String(row.patient_id ?? '');
     const profile = patientMap.get(patientId);
     const dob = (profile?.date_of_birth ?? profile?.dob) as string | undefined;
+    const gender =
+      resolveRawGenderFromRow(row) ??
+      (profile?.gender ? String(profile.gender) : undefined);
 
     return {
       id: String(row.appointment_id ?? row.id ?? ''),
@@ -126,8 +154,8 @@ async function enrichAppointmentRows(
       patient_id: patientId || undefined,
       patient_name: String(row.patient_name ?? profile?.full_name ?? 'Patient'),
       doctor_name: row.doctor_name ? String(row.doctor_name) : undefined,
-      age: calcAge(dob),
-      gender: profile?.gender ? String(profile.gender) : undefined,
+      age: calcAge(dob) ?? (profile?.age as number | undefined),
+      gender,
       chief_complaint: String(
         row.reason_for_visit ?? row.chief_complaint ?? row.reason ?? 'OPD Review',
       ),
@@ -341,12 +369,11 @@ export async function createWalkInAppointment(patientName: string): Promise<void
 
 export function subscribeAppointmentsRealtime(onChange: () => void): () => void {
   const supabase = createClient();
-  const channel = supabase
-    .channel('curasync_appointments_realtime')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, onChange)
-    .subscribe();
 
-  return () => {
-    void supabase.removeChannel(channel);
-  };
+  return subscribePostgresChannel({
+    supabase,
+    channelName: 'curasync_appointments_realtime',
+    table: 'appointments',
+    onPayload: () => onChange(),
+  });
 }

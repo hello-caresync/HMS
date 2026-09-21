@@ -1,4 +1,4 @@
--- Nexora Hospital App V0 · onboarding & unified RBAC (run in Supabase SQL editor)
+-- Regal Hospital App V0 · onboarding & unified RBAC (run in Supabase SQL editor)
 
 create table if not exists public.hospitals (
   id uuid primary key default gen_random_uuid(),

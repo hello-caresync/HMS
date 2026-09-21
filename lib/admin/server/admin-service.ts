@@ -23,7 +23,7 @@ export async function getEntrepreneurDashboard(_session: AdminSession) {
         pendingLabs: 7,
         systemHealth: 'operational',
       },
-      hospitals: [{ id: '00000000-0000-4000-a000-000000000001', name: 'Nexora Multispeciality Hospital', code: 'NX-HOSP-01' }],
+      hospitals: [{ id: '00000000-0000-4000-a000-000000000001', name: 'Regal Multispeciality Hospital', code: 'HOSP-01' }],
       doctors,
       recentActivity: [
         { id: 'act-1', action: 'LOGIN', entityType: 'doctor', entityId: doctors[0]?.id ?? 'doc', at: new Date().toISOString() },

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { doctorMatchesDepartment } from '@/lib/hospital/departments';
+import { serializePostgrestError } from '@/lib/hospital/governance-vault-loader';
 import {
   buildHospitalDirectoryOrFilter,
   hospitalDirectoryFilterIds,
@@ -272,44 +273,52 @@ export async function fetchBookableDoctors(
   supabase: SupabaseClient,
   hospitalId = HOSPITAL_TENANT_ID,
 ): Promise<BookableDoctorRecord[]> {
-  const filterIds = await buildDoctorHospitalFilterIds(supabase, hospitalId);
-  const orFilter = buildHospitalDirectoryOrFilter(filterIds);
+  try {
+    const filterIds = await buildDoctorHospitalFilterIds(supabase, hospitalId);
+    const orFilter = buildHospitalDirectoryOrFilter(filterIds);
 
-  let result = await supabase
-    .from('doctors')
-    .select(DOCTOR_BOOKING_SELECT)
-    .or(orFilter)
-    .order('full_name', { ascending: true });
+    let result = await supabase
+      .from('doctors')
+      .select(DOCTOR_BOOKING_SELECT)
+      .or(orFilter)
+      .order('full_name', { ascending: true });
 
-  if (result.error) {
-    console.warn('Hospital doctor scoped query failed, retrying with select *:', result.error);
-    result = await supabase.from('doctors').select('*').or(orFilter).order('full_name', { ascending: true });
-  }
+    if (result.error) {
+      const retryMessage = serializePostgrestError(result.error).summary;
+      console.warn('Hospital doctor scoped query failed, retrying with select *:', retryMessage);
+      result = await supabase.from('doctors').select('*').or(orFilter).order('full_name', { ascending: true });
+    }
 
-  if (result.error) {
-    console.error('Hospital doctor fetch failed — returning empty list (no mock fallback):', result.error);
+    if (result.error) {
+      const errorMessage = serializePostgrestError(result.error).summary;
+      console.warn('Hospital doctor fetch failed — returning empty list:', errorMessage);
+      return [];
+    }
+
+    const rawRows = Array.isArray(result.data) ? result.data.map(asRecord) : [];
+    const activeRows = rawRows.filter(isDoctorRowActive);
+    const sourceRows = activeRows.filter((row) => doctorRowMatchesHospital(row, filterIds));
+
+    const seen = new Set<string>();
+    const doctors: BookableDoctorRecord[] = [];
+
+    for (const row of sourceRows) {
+      const mapped = mapBookableDoctorRecord(row);
+      if (!mapped) continue;
+      const key = mapped.doctor_id || mapped.full_name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      doctors.push(mapped);
+    }
+
+    return filterBlockedPhantomDoctors(
+      doctors.sort((a, b) => a.full_name.localeCompare(b.full_name)),
+    );
+  } catch (err: unknown) {
+    const errorMessage = serializePostgrestError(err).summary;
+    console.warn('Hospital doctor fetch failed — returning empty list:', errorMessage);
     return [];
   }
-
-  const rawRows = Array.isArray(result.data) ? result.data.map(asRecord) : [];
-  const activeRows = rawRows.filter(isDoctorRowActive);
-  const sourceRows = activeRows.filter((row) => doctorRowMatchesHospital(row, filterIds));
-
-  const seen = new Set<string>();
-  const doctors: BookableDoctorRecord[] = [];
-
-  for (const row of sourceRows) {
-    const mapped = mapBookableDoctorRecord(row);
-    if (!mapped) continue;
-    const key = mapped.doctor_id || mapped.full_name.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    doctors.push(mapped);
-  }
-
-  return filterBlockedPhantomDoctors(
-    doctors.sort((a, b) => a.full_name.localeCompare(b.full_name)),
-  );
 }
 
 export function formatDoctorOptionLabel(doctor: BookableDoctorRecord): string {

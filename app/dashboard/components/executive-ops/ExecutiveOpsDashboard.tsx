@@ -56,7 +56,7 @@ export default function ExecutiveOpsDashboard({
               Real-Time Command Center
             </span>
             <span className="text-sm font-medium text-slate-600">
-              Nexora Central Hospital · Executive Operations
+              Regal Multispeciality Hospital · Executive Operations
             </span>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-[#0F172A] sm:text-4xl">

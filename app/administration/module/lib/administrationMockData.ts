@@ -242,7 +242,7 @@ export const ORG_CONFIG_DETAILS: Record<OrgTreeNodeId, { title: string; rows: { 
   'hospital-profile': {
     title: 'Hospital Registration & Legal Profile',
     rows: [
-      { label: 'Legal Entity', value: 'Nexora Multispeciality Hospitals Pvt Ltd' },
+      { label: 'Legal Entity', value: 'Regal Multispeciality Hospitals Pvt Ltd' },
       { label: 'Registration Ref', value: '[Administrative License Verification Masked for Privacy Security]' },
       { label: 'Tax Compliance', value: '[Administrative License Verification Masked for Privacy Security]' },
       { label: 'Accreditation', value: 'NABH Pre-accreditation · NABL Lab' },

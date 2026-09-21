@@ -97,7 +97,7 @@ export default function ErpExecutiveHome() {
         <h1 className="text-2xl font-black tracking-tight text-slate-900">
           Executive Operations Cockpit
         </h1>
-        <p className="mt-1 text-sm text-slate-800">{today} · Nexora Multi-Specialty Campus</p>
+        <p className="mt-1 text-sm text-slate-800">{today} · Regal Multispeciality Hospital</p>
       </header>
 
       <section>

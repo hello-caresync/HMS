@@ -132,12 +132,12 @@ export default function HospitalPortalLayout({ children }: HospitalPortalLayoutP
     <div className="flex min-h-screen w-full bg-slate-50/40">
       <aside
         className="flex min-h-screen w-[280px] shrink-0 flex-col justify-between border-r border-slate-200/80 bg-white shadow-sm"
-        aria-label="Nexora Hospital ecosystem navigation"
+        aria-label="Regal Hospital ecosystem navigation"
       >
         <div>
           <header className="border-b border-slate-200/60 px-6 pb-4 pt-6">
             <span className="block text-lg font-bold uppercase tracking-wider text-[#00758C]">
-              Nexora Hospital
+              Regal Hospital
             </span>
             <p className="mt-1.5 text-xs font-semibold leading-snug text-slate-500">
               Enterprise Management Ecosystem

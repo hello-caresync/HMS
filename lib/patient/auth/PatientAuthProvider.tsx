@@ -268,7 +268,7 @@ export function PatientAuthGuard({ children }: { children: ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-patient-canvas text-patient-plum">
-        <p className="text-sm font-bold">Loading Nexora Patient…</p>
+        <p className="text-sm font-bold">Loading patient portal…</p>
       </div>
     );
   }

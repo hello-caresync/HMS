@@ -26,6 +26,7 @@ import {
   resolveActivePatientFormIdentity,
   type ActivePatientFormIdentity,
 } from '@/lib/patient/portal-session';
+import { sanitizePatientDbError } from '@/lib/db/patients';
 import { supabase } from '@/lib/supabaseClient';
 
 function applySessionRegistrationLock(
@@ -139,7 +140,11 @@ export default function PatientProfilePage() {
       setIsEditing(false);
       toast.success('Profile and family dependents saved successfully');
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Could not save profile.');
+      setSaveError(
+        err instanceof Error
+          ? sanitizePatientDbError(err.message)
+          : 'Could not save profile.',
+      );
     } finally {
       setSaving(false);
     }
@@ -193,8 +198,8 @@ export default function PatientProfilePage() {
         profile={profile}
         verifiedSession={{
           name: sessionIdentity?.patient_name || profile.full_name,
-          phone: sessionIdentity?.phone || profile.phone,
-          email: sessionIdentity?.email || profile.email,
+          phone: sessionIdentity?.phone || profile.phone || 'Not provided',
+          email: sessionIdentity?.email || profile.email || 'Not provided',
         }}
         isEditing={isEditing}
         isNewUser={isNewUser}

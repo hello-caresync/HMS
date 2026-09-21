@@ -1,5 +1,5 @@
 /**
- * Nexora Ecosystem Hub — Hospital-centric orchestration layer.
+ * Regal Ecosystem Hub — Hospital-centric orchestration layer.
  * All cross-app mutations flow through here: DB first, then realtime fan-out.
  * Patient App NEVER notifies Doctor App directly.
  */

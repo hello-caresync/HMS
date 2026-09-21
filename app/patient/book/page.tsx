@@ -13,6 +13,9 @@ import {
   readPatientPortalSession,
   resolveActivePatientFormIdentity,
 } from '@/lib/patient/portal-session';
+import { ProfileCompletionGate } from '@/components/patient/ProfileCompletionGate';
+import { usePatientProfileCompleteness } from '@/lib/patient/usePatientProfileCompleteness';
+import { profileIncompleteBookingMessage } from '@/lib/utils/profileCompleteness';
 import { toast } from 'sonner';
 import {
   AlertCircle,
@@ -58,6 +61,11 @@ function BookAppointmentContent() {
   const [appointmentDate, setAppointmentDate] = useState(
     new Date().toISOString().split('T')[0],
   );
+  const {
+    loading: profileGateLoading,
+    complete: profileComplete,
+    missingFields: profileMissingFields,
+  } = usePatientProfileCompleteness();
 
   const hospitalName =
     typeof window !== 'undefined'
@@ -117,6 +125,11 @@ function BookAppointmentContent() {
 
   const handleBookAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!profileComplete) {
+      toast.error(profileIncompleteBookingMessage(profileMissingFields));
+      router.push('/patient/profile');
+      return;
+    }
     const patientSession = readPatientPortalSession();
     if (!patientSession) {
       toast.error('Session expired. Please log in again.');
@@ -192,11 +205,19 @@ function BookAppointmentContent() {
         </div>
       )}
 
+      {profileGateLoading ? (
+        <div className="rounded-2xl border border-[#e6ccb2] bg-white p-6 text-xs font-bold text-[#4B736B]">
+          Checking profile readiness for OPD booking…
+        </div>
+      ) : !profileComplete ? (
+        <ProfileCompletionGate missingFields={profileMissingFields} />
+      ) : null}
+
       {loadingData ? (
         <div className="flex items-center gap-2 rounded-3xl border border-[#e6ccb2] bg-white p-8 text-xs font-bold text-[#4B736B]">
           <Loader2 className="h-4 w-4 animate-spin text-[#b08968]" /> Loading clinician…
         </div>
-      ) : selectedDoctor ? (
+      ) : selectedDoctor && profileComplete ? (
         <form
           onSubmit={(event) => void handleBookAppointment(event)}
           className="space-y-6 rounded-3xl border border-[#e6ccb2] bg-white p-6 shadow-sm sm:p-8"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { createClient } from '@/lib/supabase/client';
@@ -37,16 +37,21 @@ export function useEcosystemMessaging(options: UseEcosystemMessagingOptions) {
     setNotifications(await loadNotificationsForApp(supabase, app, recipientId));
   }, [app, recipientId]);
 
+  const refreshRef = useRef(refresh);
+  useEffect(() => {
+    refreshRef.current = refresh;
+  }, [refresh]);
+
   useEffect(() => {
     let alive = true;
     void (async () => {
-      await refresh();
+      await refreshRef.current();
       if (alive) setLoading(false);
     })();
     return () => {
       alive = false;
     };
-  }, [refresh]);
+  }, [app, recipientId]);
 
   useEffect(() => {
     const unsubscribe = subscribeEcosystemMessaging({

@@ -88,7 +88,7 @@ export default function InternalStaffLogin({
             </div>
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-sky-300/80">
-                Nexora Health Systems
+                Regal Multispeciality Hospital
               </p>
               <p className="text-sm font-bold text-white">Back-Office ERP</p>
             </div>
@@ -123,7 +123,7 @@ export default function InternalStaffLogin({
         <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden">
             <p className="font-mono text-[10px] uppercase tracking-wider text-slate-200">
-              Nexora Back-Office ERP
+              Regal Health HMS
             </p>
             <h2 className="mt-1 text-xl font-black text-slate-900">Staff Sign-In</h2>
           </div>
@@ -143,7 +143,7 @@ export default function InternalStaffLogin({
               </div>
             </div>
 
-            <form onSubmit={handlePasswordLogin} className="space-y-4">
+            <form onSubmit={handlePasswordLogin} autoComplete="off" className="space-y-4">
               {bannerMessage && <AuthAlert tone="info" message={bannerMessage} />}
               {error && <AuthAlert tone="error" message={error} />}
 
@@ -153,8 +153,8 @@ export default function InternalStaffLogin({
                 type="text"
                 value={identifier}
                 onChange={setIdentifier}
-                placeholder="EMP-3012 or nurse.icu@nexora.health"
-                autoComplete="username"
+                placeholder="Employee ID or work email"
+                autoComplete="off"
               />
 
               <AuthInput
@@ -163,8 +163,8 @@ export default function InternalStaffLogin({
                 type="password"
                 value={password}
                 onChange={setPassword}
-                placeholder="••••••••••"
-                autoComplete="current-password"
+                placeholder="Enter security password"
+                autoComplete="new-password"
               />
 
               <div className="flex items-center justify-between text-xs">

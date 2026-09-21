@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export const DASHBOARD_TAB_STORAGE_KEY = 'nexora_dashboard_tab';
+export const DASHBOARD_TAB_STORAGE_KEY = 'regal_dashboard_tab';
 
 export function DashboardTabRedirect({ tab }: { tab: string }) {
   const router = useRouter();

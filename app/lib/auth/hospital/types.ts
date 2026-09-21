@@ -87,10 +87,10 @@ export type StaffDirectoryEntry = {
 };
 
 /** @deprecated Use HospitalStaffProfile */
-export type NexoraSession = HospitalStaffProfile;
+export type RegalSession = HospitalStaffProfile;
 
 /** @deprecated Use InternalStaffRole */
-export type NexoraUserRole = InternalStaffRole;
+export type RegalUserRole = InternalStaffRole;
 
 export type ActivityLogEntry = {
   id: string;

@@ -23,7 +23,7 @@ export const useDoctorOsStore = create<DoctorOsState>()(
       theme: 'light',
       sidebarCollapsed: false,
       hospitalId: '00000000-0000-4000-a000-000000000001',
-      hospitalName: 'Nexora General Hospital',
+      hospitalName: 'Regal Multispeciality Hospital',
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set((s) => ({ theme: s.theme === 'light' ? 'dark' : 'light' })),
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),

@@ -13,9 +13,11 @@ import {
   User,
 } from 'lucide-react';
 
+import { ProfileCompletionGate } from '@/components/patient/ProfileCompletionGate';
 import { resolvePatientDbId } from '@/lib/patient/constants';
 import { usePatientAuth } from '@/lib/patient/auth/PatientAuthProvider';
 import { PATIENT_ROUTES } from '@/lib/patient/navigation';
+import { usePatientProfileCompleteness } from '@/lib/patient/usePatientProfileCompleteness';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
@@ -40,6 +42,11 @@ export default function LiveQueueContent() {
 
   const [queue, setQueue] = useState<QueueData | null>(null);
   const [loading, setLoading] = useState(true);
+  const {
+    loading: profileGateLoading,
+    complete: profileComplete,
+    missingFields: profileMissingFields,
+  } = usePatientProfileCompleteness();
 
   const fetchQueue = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
@@ -125,12 +132,24 @@ export default function LiveQueueContent() {
           <AlertCircle className="mx-auto h-10 w-10 text-[#BDE2F5]" />
           <h3 className="mt-3 text-lg font-bold text-[#1A332F]">No Active Queue</h3>
           <p className="mt-2 text-sm text-[#8E7692]">You don&apos;t have an active OPD check-in right now.</p>
-          <Link
-            href={PATIENT_ROUTES.bookAppointment}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#3B8C7E] px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#1A332F]"
-          >
-            <PlusCircle className="h-4 w-4" /> Book Appointment
-          </Link>
+          {profileGateLoading ? (
+            <p className="mt-6 text-xs font-semibold text-[#8E7692]">Checking profile readiness…</p>
+          ) : !profileComplete ? (
+            <div className="mt-6 text-left">
+              <ProfileCompletionGate
+                missingFields={profileMissingFields}
+                title="Complete your profile to generate an OPD token"
+                compact
+              />
+            </div>
+          ) : (
+            <Link
+              href={PATIENT_ROUTES.bookAppointment}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#3B8C7E] px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#1A332F]"
+            >
+              <PlusCircle className="h-4 w-4" /> Book Appointment
+            </Link>
+          )}
         </div>
       ) : (
         <div className="rounded-3xl border border-[#BDE2F5] bg-white/90 p-6 shadow-xl backdrop-blur-md">

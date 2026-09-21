@@ -65,7 +65,7 @@ export function GenerateIdCardModal({ onClose, employeeName, employeeCode }: { o
   return (
     <ModalOverlay title="Generate ID Card" onClose={onClose}>
       <div className="rounded-lg border-2 border-[#0F172A] p-4 text-center">
-        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Nexora HMS Staff ID</p>
+        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS Staff ID</p>
         <p className="mt-2 text-sm font-bold text-[#0F172A]">{employeeName}</p>
         <p className="font-mono text-[10px] text-[#2563EB]">{employeeCode}</p>
         <div className="mx-auto mt-2 h-16 w-16 rounded-full bg-slate-200" />

@@ -1,20 +1,24 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { HOSPITAL_USER_CREDENTIALS_TABLE } from '@/lib/auth/hospitalAuth';
-import {
-  buildHospitalDirectoryOrFilter,
-  hospitalDirectoryFilterIds,
-} from '@/lib/hospital/hospital-node';
+import { hospitalDirectoryFilterIds } from '@/lib/hospital/hospital-node';
 import { fetchGovernanceVendorRows } from '@/lib/hospital/procurement';
 import { fetchHospitalStaffDirectory, type HospitalStaffMember } from '@/lib/hospital/staff-directory';
 import { HOSPITAL_TENANT_ID } from '@/lib/regal/constants';
+import { createServerSupabase } from '@/lib/supabase/server';
 import { formatHospitalBadge, isUuidValue } from '@/lib/utils/formatters';
 
 const BASELINE_CREDENTIAL_COLUMNS =
   'id, full_name, email, passcode, role, hospital_id, employee_id, created_at, phone, department, is_active';
 
+const MINIMAL_CREDENTIAL_COLUMNS =
+  'id, full_name, email, role, hospital_id, employee_id, created_at';
+
 const BASELINE_STAFF_COLUMNS = 'id, full_name, email, role, created_at, hospital_id, staff_id_code, employee_id';
+const MINIMAL_STAFF_COLUMNS = 'id, full_name, email, role, created_at, hospital_id, employee_id';
+
 const BASELINE_DOCTOR_COLUMNS = 'id, full_name, email, created_at, doctor_code, registration_number';
+const MINIMAL_DOCTOR_COLUMNS = 'id, full_name, email, created_at';
 
 export type GovernanceVaultCredentialRow = Record<string, unknown> & {
   badge_id: string;
@@ -30,65 +34,186 @@ export type GovernanceVaultRawData = {
   errors: string[];
 };
 
+type SerializedPostgrestError = {
+  message: string | null;
+  details: string | null;
+  hint: string | null;
+  code: string | null;
+  summary: string;
+};
+
+type SafeSelectResult = {
+  rows: Record<string, unknown>[];
+  error: string | null;
+  ignorable: boolean;
+  missingRelation: boolean;
+  missingColumn: string | null;
+};
+
+const loggedIgnorableScopes = new Set<string>();
+
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
 }
 
-function extractQueryError(error: unknown): string | null {
+function readPostgrestField(error: unknown, key: 'message' | 'details' | 'hint' | 'code'): string | null {
   if (!error) return null;
-  if (typeof error === 'string') return error.trim() || null;
-  if (error instanceof Error) return error.message.trim() || null;
 
-  const record = asRecord(error);
-  const parts = [record.message, record.details, record.hint, record.code]
-    .map((part) => String(part ?? '').trim())
-    .filter(Boolean);
-
-  if (parts.length > 0) return parts.join(' | ');
-
-  try {
-    const serialized = JSON.stringify(error);
-    if (serialized && serialized !== '{}') return serialized;
-  } catch {
-    /* ignore circular structures */
+  if (typeof error === 'string') {
+    return key === 'message' ? error.trim() || null : null;
   }
 
-  return 'Unknown query error';
-}
+  if (typeof error !== 'object') return null;
 
-function logQueryError(scope: string, error: unknown): string | null {
-  const message = extractQueryError(error);
-  if (!message) return null;
+  const direct = Reflect.get(error, key);
+  if (typeof direct === 'string' && direct.trim()) {
+    return direct.trim();
+  }
+
+  if (key === 'message' && error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
 
   const record = asRecord(error);
-  console.error(`[governance-vault] ${scope}:`, {
-    message,
-    details: record.details ?? null,
-    hint: record.hint ?? null,
-    code: record.code ?? null,
-  });
-  return message;
+  const nested = record[key];
+  if (typeof nested === 'string' && nested.trim()) {
+    return nested.trim();
+  }
+
+  return null;
+}
+
+/** Extract Postgrest / Postgres fields even when the error object serializes as `{}`. */
+export function serializePostgrestError(error: unknown): SerializedPostgrestError {
+  const message = readPostgrestField(error, 'message');
+  const details = readPostgrestField(error, 'details');
+  const hint = readPostgrestField(error, 'hint');
+  const code = readPostgrestField(error, 'code');
+
+  const parts = [message, details, hint, code].filter(Boolean) as string[];
+  let summary = parts.join(' | ');
+
+  if (!summary) {
+    if (typeof error === 'string' && error.trim()) {
+      summary = error.trim();
+    } else {
+      try {
+        const encoded = JSON.stringify(error, Object.getOwnPropertyNames(error as object));
+        summary = encoded && encoded !== '{}' ? encoded : 'Unknown query error';
+      } catch {
+        summary = 'Unknown query error';
+      }
+    }
+  }
+
+  return { message, details, hint, code, summary };
+}
+
+function missingColumnFromMessage(message: string | null | undefined): string | null {
+  const text = String(message ?? '');
+  const cacheMatch = text.match(/Could not find the '([^']+)' column/i);
+  if (cacheMatch?.[1]) return cacheMatch[1];
+
+  const pgMatch = text.match(/column ["']?([\w]+)["']? (?:of relation [\w.]+ )?does not exist/i);
+  if (pgMatch?.[1]) return pgMatch[1];
+
+  return null;
+}
+
+function isMissingRelationError(serialized: SerializedPostgrestError): boolean {
+  const blob = serialized.summary.toLowerCase();
+  return (
+    serialized.code === '42P01' ||
+    serialized.code === 'PGRST205' ||
+    blob.includes('relation') && blob.includes('does not exist') ||
+    blob.includes('could not find the table') ||
+    blob.includes('schema cache') && blob.includes('table')
+  );
+}
+
+function isIgnorableGovernanceSchemaError(serialized: SerializedPostgrestError): boolean {
+  const blob = serialized.summary.toLowerCase();
+  return (
+    isMissingRelationError(serialized) ||
+    serialized.code === 'PGRST204' ||
+    serialized.code === '42501' ||
+    blob.includes('permission denied') ||
+    blob.includes('row-level security') ||
+    blob.includes('could not find') && blob.includes('column') ||
+    blob.includes('column') && blob.includes('does not exist') ||
+    blob.includes('invalid input syntax for type uuid')
+  );
+}
+
+function logQueryError(scope: string, error: unknown, options?: { force?: boolean }): SerializedPostgrestError {
+  const serialized = serializePostgrestError(error);
+  const ignorable = isIgnorableGovernanceSchemaError(serialized);
+
+  if (ignorable && !options?.force) {
+    if (!loggedIgnorableScopes.has(scope)) {
+      loggedIgnorableScopes.add(scope);
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(
+          `[governance-vault] ${scope} skipped (${serialized.code ?? 'schema'}): ${serialized.summary}`,
+        );
+      }
+    }
+    return serialized;
+  }
+
+  console.error(
+    `[governance-vault] ${scope}: ${serialized.summary}` +
+      (serialized.code ? ` [code=${serialized.code}]` : '') +
+      (serialized.details ? ` | details=${serialized.details}` : '') +
+      (serialized.hint ? ` | hint=${serialized.hint}` : ''),
+  );
+
+  return serialized;
+}
+
+function buildHospitalIdOrFilter(filterIds: string[]): string {
+  const parts = filterIds.filter(Boolean).map((id) => `hospital_id.eq.${id}`);
+  parts.push('hospital_id.is.null');
+  return parts.join(',');
 }
 
 async function runSafeSelect(
-  supabase: SupabaseClient,
-  table: string,
-  columns: string,
   scope: string,
   runQuery: () => PromiseLike<{ data: unknown[] | null; error: unknown }>,
-): Promise<{ rows: Record<string, unknown>[]; error: string | null }> {
+): Promise<SafeSelectResult> {
   try {
     const result = await runQuery();
     if (!result.error) {
-      return { rows: (result.data ?? []).map(asRecord), error: null };
+      return {
+        rows: (result.data ?? []).map(asRecord),
+        error: null,
+        ignorable: false,
+        missingRelation: false,
+        missingColumn: null,
+      };
     }
 
-    const message = logQueryError(scope, result.error);
-    return { rows: [], error: message };
+    const serialized = logQueryError(scope, result.error);
+    const missingRelation = isMissingRelationError(serialized);
+    const missingColumn = missingColumnFromMessage(serialized.summary);
+    const ignorable = isIgnorableGovernanceSchemaError(serialized);
+
+    return {
+      rows: [],
+      error: ignorable ? null : serialized.summary,
+      ignorable,
+      missingRelation,
+      missingColumn,
+    };
   } catch (err: unknown) {
-    const message = extractQueryError(err) ?? `${scope} threw unexpectedly`;
-    console.error(`[governance-vault] ${scope} threw:`, message);
-    return { rows: [], error: message };
+    const serialized = logQueryError(`${scope} threw`, err, { force: true });
+    return {
+      rows: [],
+      error: serialized.summary,
+      ignorable: false,
+      missingRelation: isMissingRelationError(serialized),
+      missingColumn: missingColumnFromMessage(serialized.summary),
+    };
   }
 }
 
@@ -97,58 +222,52 @@ async function fetchCredentialRows(
   hospitalId?: string,
 ): Promise<{ rows: Record<string, unknown>[]; error: string | null }> {
   const filterIds = hospitalDirectoryFilterIds(hospitalId);
-  const hospitalFilter = buildHospitalDirectoryOrFilter(filterIds);
+  const hospitalFilter = buildHospitalIdOrFilter(filterIds);
 
-  const scoped = await runSafeSelect(
-    supabase,
-    HOSPITAL_USER_CREDENTIALS_TABLE,
-    BASELINE_CREDENTIAL_COLUMNS,
-    'credentials (scoped baseline)',
-    () =>
+  const columnPlans = [BASELINE_CREDENTIAL_COLUMNS, MINIMAL_CREDENTIAL_COLUMNS, '*'] as const;
+
+  for (const columns of columnPlans) {
+    const scoped = await runSafeSelect(`credentials (${columns})`, () =>
       supabase
         .from(HOSPITAL_USER_CREDENTIALS_TABLE)
-        .select(BASELINE_CREDENTIAL_COLUMNS)
+        .select(columns)
         .or(hospitalFilter)
         .order('created_at', { ascending: false }),
-  );
+    );
 
-  if (scoped.rows.length > 0 || !scoped.error) {
-    return scoped;
+    if (scoped.rows.length > 0) {
+      return { rows: scoped.rows, error: null };
+    }
+
+    if (scoped.missingRelation) {
+      return { rows: [], error: null };
+    }
+
+    if (!scoped.error && !scoped.missingColumn) {
+      return { rows: [], error: null };
+    }
+
+    if (scoped.missingColumn && columns !== '*') {
+      continue;
+    }
+
+    if (columns === '*') {
+      const unscoped = await runSafeSelect('credentials (unscoped fallback)', () =>
+        supabase
+          .from(HOSPITAL_USER_CREDENTIALS_TABLE)
+          .select('*')
+          .order('created_at', { ascending: false }),
+      );
+
+      if (unscoped.missingRelation) {
+        return { rows: [], error: null };
+      }
+
+      return { rows: unscoped.rows, error: unscoped.error };
+    }
   }
 
-  const fallback = await runSafeSelect(
-    supabase,
-    HOSPITAL_USER_CREDENTIALS_TABLE,
-    '*',
-    'credentials (fallback select *)',
-    () =>
-      supabase
-        .from(HOSPITAL_USER_CREDENTIALS_TABLE)
-        .select('*')
-        .or(hospitalFilter)
-        .order('created_at', { ascending: false }),
-  );
-
-  if (fallback.rows.length > 0 || !fallback.error) {
-    return { rows: fallback.rows, error: scoped.error ?? fallback.error };
-  }
-
-  const unscoped = await runSafeSelect(
-    supabase,
-    HOSPITAL_USER_CREDENTIALS_TABLE,
-    '*',
-    'credentials (unscoped fallback)',
-    () =>
-      supabase
-        .from(HOSPITAL_USER_CREDENTIALS_TABLE)
-        .select('*')
-        .order('created_at', { ascending: false }),
-  );
-
-  return {
-    rows: unscoped.rows,
-    error: unscoped.error ?? fallback.error ?? scoped.error,
-  };
+  return { rows: [], error: null };
 }
 
 async function fetchStaffEnrichmentRows(
@@ -156,48 +275,82 @@ async function fetchStaffEnrichmentRows(
   hospitalId?: string,
 ): Promise<{ rows: Record<string, unknown>[]; error: string | null }> {
   const filterIds = hospitalDirectoryFilterIds(hospitalId);
-  if (filterIds.length === 0) {
-    return runSafeSelect(
-      supabase,
-      'hospital_staff',
-      BASELINE_STAFF_COLUMNS,
-      'staff enrichment (unscoped)',
-      () =>
-        supabase
-          .from('hospital_staff')
-          .select(BASELINE_STAFF_COLUMNS)
-          .order('created_at', { ascending: false }),
-    );
+  const columnPlans = [BASELINE_STAFF_COLUMNS, MINIMAL_STAFF_COLUMNS, '*'] as const;
+
+  for (const columns of columnPlans) {
+    const scoped = await runSafeSelect(`staff enrichment (${columns})`, () => {
+      let query = supabase.from('hospital_staff').select(columns).order('created_at', { ascending: false });
+      if (filterIds.length > 0) {
+        query = query.in('hospital_id', filterIds);
+      }
+      return query;
+    });
+
+    if (scoped.rows.length > 0) {
+      return { rows: scoped.rows, error: null };
+    }
+
+    if (scoped.missingRelation) {
+      return { rows: [], error: null };
+    }
+
+    if (!scoped.error && !scoped.missingColumn) {
+      return { rows: [], error: null };
+    }
+
+    if (scoped.missingColumn && columns !== '*') {
+      continue;
+    }
+
+    if (columns === '*') {
+      return { rows: scoped.rows, error: scoped.error };
+    }
   }
 
-  return runSafeSelect(
-    supabase,
-    'hospital_staff',
-    BASELINE_STAFF_COLUMNS,
-    'staff enrichment (scoped)',
-    () =>
-      supabase
-        .from('hospital_staff')
-        .select(BASELINE_STAFF_COLUMNS)
-        .in('hospital_id', filterIds)
-        .order('created_at', { ascending: false }),
-  );
+  return { rows: [], error: null };
 }
 
 async function fetchDoctorEnrichmentRows(
   supabase: SupabaseClient,
 ): Promise<{ rows: Record<string, unknown>[]; error: string | null }> {
-  return runSafeSelect(
-    supabase,
-    'doctors',
-    BASELINE_DOCTOR_COLUMNS,
-    'doctor enrichment',
-    () =>
-      supabase
-        .from('doctors')
-        .select(BASELINE_DOCTOR_COLUMNS)
-        .order('created_at', { ascending: false }),
-  );
+  const columnPlans = [BASELINE_DOCTOR_COLUMNS, MINIMAL_DOCTOR_COLUMNS, '*'] as const;
+
+  for (const columns of columnPlans) {
+    const result = await runSafeSelect(`doctor enrichment (${columns})`, () =>
+      supabase.from('doctors').select(columns).order('created_at', { ascending: false }),
+    );
+
+    if (result.rows.length > 0) {
+      return { rows: result.rows, error: null };
+    }
+
+    if (result.missingRelation) {
+      return { rows: [], error: null };
+    }
+
+    if (!result.error && !result.missingColumn) {
+      return { rows: [], error: null };
+    }
+
+    if (result.missingColumn && columns !== '*') {
+      continue;
+    }
+
+    if (columns === '*') {
+      return { rows: result.rows, error: result.error };
+    }
+  }
+
+  return { rows: [], error: null };
+}
+
+/** Prefer service-role on the server; browser callers should pass the shared client. */
+export function resolveGovernanceVaultSupabase(client?: SupabaseClient): SupabaseClient {
+  if (client) return client;
+  if (typeof window === 'undefined') {
+    return createServerSupabase();
+  }
+  throw new Error('Governance vault requires a Supabase client in the browser.');
 }
 
 function normalizeGovernanceCredentialBadge(row: Record<string, unknown>): string {
@@ -282,9 +435,10 @@ function enrichCredentialRows(
 
 /** Independent, resilient loaders for the governance vault directory table. */
 export async function fetchGovernanceVaultDirectory(
-  supabase: SupabaseClient,
+  supabase?: SupabaseClient,
   hospitalId?: string,
 ): Promise<GovernanceVaultRawData> {
+  const client = resolveGovernanceVaultSupabase(supabase);
   const tenantId = hospitalId?.trim() || HOSPITAL_TENANT_ID;
   const errors: string[] = [];
 
@@ -297,51 +451,61 @@ export async function fetchGovernanceVaultDirectory(
   let doctorEnrichmentRows: Record<string, unknown>[] = [];
 
   try {
-    const credentialResult = await fetchCredentialRows(supabase, tenantId);
+    const credentialResult = await fetchCredentialRows(client, tenantId);
     rawCredentialRows = credentialResult.rows;
     if (credentialResult.error) errors.push(credentialResult.error);
   } catch (err: unknown) {
-    const message = extractQueryError(err) ?? 'Credential fetch failed';
-    errors.push(message);
-    console.error('[governance-vault] credentials threw:', message);
+    const serialized = serializePostgrestError(err);
+    if (!isIgnorableGovernanceSchemaError(serialized)) {
+      errors.push(serialized.summary);
+      console.error('[governance-vault] credentials threw:', serialized.summary);
+    }
   }
 
   try {
-    const staffResult = await fetchStaffEnrichmentRows(supabase, tenantId);
+    const staffResult = await fetchStaffEnrichmentRows(client, tenantId);
     staffEnrichmentRows = staffResult.rows;
     if (staffResult.error) errors.push(staffResult.error);
   } catch (err: unknown) {
-    const message = extractQueryError(err) ?? 'Staff enrichment failed';
-    errors.push(message);
-    console.error('[governance-vault] staff enrichment threw:', message);
+    const serialized = serializePostgrestError(err);
+    if (!isIgnorableGovernanceSchemaError(serialized)) {
+      errors.push(serialized.summary);
+      console.error('[governance-vault] staff enrichment threw:', serialized.summary);
+    }
   }
 
   try {
-    const doctorResult = await fetchDoctorEnrichmentRows(supabase);
+    const doctorResult = await fetchDoctorEnrichmentRows(client);
     doctorEnrichmentRows = doctorResult.rows;
     if (doctorResult.error) errors.push(doctorResult.error);
   } catch (err: unknown) {
-    const message = extractQueryError(err) ?? 'Doctor enrichment failed';
-    errors.push(message);
-    console.error('[governance-vault] doctor enrichment threw:', message);
+    const serialized = serializePostgrestError(err);
+    if (!isIgnorableGovernanceSchemaError(serialized)) {
+      errors.push(serialized.summary);
+      console.error('[governance-vault] doctor enrichment threw:', serialized.summary);
+    }
   }
 
   credentialRows = enrichCredentialRows(rawCredentialRows, staffEnrichmentRows, doctorEnrichmentRows);
 
   try {
-    vendorRows = await fetchGovernanceVendorRows(supabase, tenantId);
+    vendorRows = await fetchGovernanceVendorRows(client, tenantId);
   } catch (err: unknown) {
-    const message = extractQueryError(err) ?? 'Vendor fetch failed';
-    errors.push(message);
-    console.error('[governance-vault] vendors threw:', message);
+    const serialized = serializePostgrestError(err);
+    if (!isIgnorableGovernanceSchemaError(serialized)) {
+      errors.push(serialized.summary);
+      console.error('[governance-vault] vendors threw:', serialized.summary);
+    }
   }
 
   try {
-    staffMembers = await fetchHospitalStaffDirectory(supabase, tenantId);
+    staffMembers = await fetchHospitalStaffDirectory(client, tenantId);
   } catch (err: unknown) {
-    const message = extractQueryError(err) ?? 'Staff roster fetch failed';
-    errors.push(message);
-    console.error('[governance-vault] staff threw:', message);
+    const serialized = serializePostgrestError(err);
+    if (!isIgnorableGovernanceSchemaError(serialized)) {
+      errors.push(serialized.summary);
+      console.error('[governance-vault] staff threw:', serialized.summary);
+    }
   }
 
   return { credentialRows, vendorRows, staffMembers, errors };

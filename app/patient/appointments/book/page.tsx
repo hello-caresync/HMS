@@ -36,6 +36,9 @@ import {
 import type { DynamicSlot } from '@/lib/scheduling/dynamic-slots';
 import { consultationDurationMinutes, classifyConditionTier } from '@/lib/scheduling/dynamic-slots';
 import { parsePatientAge, validatePhoneField } from '@/lib/hospital/indian-patient';
+import { ProfileCompletionGate } from '@/components/patient/ProfileCompletionGate';
+import { assertProfileCompleteForBooking } from '@/lib/patient/profile-completeness';
+import { usePatientProfileCompleteness } from '@/lib/patient/usePatientProfileCompleteness';
 import {
   mintPatientUhid,
   readPatientPortalSession,
@@ -362,6 +365,11 @@ export default function BookAppointmentPage() {
     date: string;
     slot: string;
   } | null>(null);
+  const {
+    loading: profileGateLoading,
+    complete: profileComplete,
+    missingFields: profileMissingFields,
+  } = usePatientProfileCompleteness();
 
   useEffect(() => {
     void loadPatientAndFamilyOptions();
@@ -544,6 +552,8 @@ export default function BookAppointmentPage() {
         router.push('/patient/login');
         return;
       }
+
+      await assertProfileCompleteForBooking(supabase);
 
       const cleanPatientName = stripRelationshipTag(
         selectedPatientName || patientSession.patient_name,
@@ -792,7 +802,16 @@ export default function BookAppointmentPage() {
         </div>
       )}
 
+      {profileGateLoading ? (
+        <div className="rounded-2xl border border-[#e6ccb2] bg-white p-6 text-xs font-bold text-[#b08968]">
+          Verifying profile completeness before SmartQ token generation…
+        </div>
+      ) : !profileComplete ? (
+        <ProfileCompletionGate missingFields={profileMissingFields} />
+      ) : null}
+
       {/* BOOKING FORM */}
+      {profileComplete ? (
       <form
         onSubmit={handleBookAppointment}
         className="rounded-3xl border border-[#e6ccb2] bg-white p-8 shadow-sm space-y-6"
@@ -1007,6 +1026,7 @@ export default function BookAppointmentPage() {
           )}
         </button>
       </form>
+      ) : null}
     </div>
   );
 }
