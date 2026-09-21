@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { LogOut } from 'lucide-react';
@@ -14,12 +15,42 @@ type HospitalSidebarProps = {
   onNavigate?: () => void;
 };
 
-export function HospitalSidebar({ mobile, onNavigate }: HospitalSidebarProps) {
+function HospitalSidebarNav({ mobile, onNavigate }: HospitalSidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const active = hospitalModuleFromPath(pathname);
   const dashboardTab = pathname === '/dashboard' ? searchParams.get('tab') : null;
+
+  return (
+    <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+      {HOSPITAL_NAV.map((item) => {
+        const isActive =
+          item.id === 'billing'
+            ? dashboardTab === 'billing'
+            : item.id === 'dashboard'
+              ? pathname === '/dashboard' && dashboardTab !== 'billing'
+              : active === item.id;
+        return (
+          <Link
+            key={item.id}
+            href={item.href}
+            onClick={onNavigate}
+            className={`${ui.navItem} ${isActive ? ui.navItemActive : ''}`}
+            style={isActive ? ui.navItemActiveBg : undefined}
+          >
+            <span className="text-lg" aria-hidden>
+              {item.emoji}
+            </span>
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+export function HospitalSidebar({ mobile, onNavigate }: HospitalSidebarProps) {
+  const router = useRouter();
 
   const handleLogout = () => {
     clearAdminSession();
@@ -38,30 +69,9 @@ export function HospitalSidebar({ mobile, onNavigate }: HospitalSidebarProps) {
     >
       <div className="flex flex-1 flex-col overflow-hidden">
         <HospitalOperationsSidebarBrand />
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {HOSPITAL_NAV.map((item) => {
-            const isActive =
-              item.id === 'billing'
-                ? dashboardTab === 'billing'
-                : item.id === 'dashboard'
-                  ? pathname === '/dashboard' && dashboardTab !== 'billing'
-                  : active === item.id;
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={onNavigate}
-                className={`${ui.navItem} ${isActive ? ui.navItemActive : ''}`}
-                style={isActive ? ui.navItemActiveBg : undefined}
-              >
-                <span className="text-lg" aria-hidden>
-                  {item.emoji}
-                </span>
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <Suspense fallback={<div className="flex-1 p-3" aria-hidden />}>
+          <HospitalSidebarNav mobile={mobile} onNavigate={onNavigate} />
+        </Suspense>
       </div>
 
       <div className="border-t border-white/10 p-3">

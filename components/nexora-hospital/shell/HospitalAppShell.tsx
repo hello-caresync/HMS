@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { Suspense, useState, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 
 import { HOSPITAL_COLORS } from '@/lib/nexora-hospital/design-tokens';
@@ -33,7 +33,9 @@ export function HospitalAppShell({ children }: { children: ReactNode }) {
   return (
     <HospitalBootstrap>
       <div className="min-h-screen bg-[#F0F8F9]" style={{ backgroundColor: HOSPITAL_COLORS.pageBg }}>
-        <HospitalSidebar />
+        <Suspense fallback={null}>
+          <HospitalSidebar />
+        </Suspense>
 
         {sidebarOpen && (
           <div className="fixed inset-0 z-40 lg:hidden">
@@ -44,7 +46,9 @@ export function HospitalAppShell({ children }: { children: ReactNode }) {
               aria-label="Close menu"
             />
             <div className="relative z-50 h-full w-64 shadow-2xl">
-              <HospitalSidebar mobile onNavigate={() => setSidebarOpen(false)} />
+              <Suspense fallback={null}>
+                <HospitalSidebar mobile onNavigate={() => setSidebarOpen(false)} />
+              </Suspense>
             </div>
           </div>
         )}

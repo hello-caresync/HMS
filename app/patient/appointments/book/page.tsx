@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { Suspense, useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
@@ -328,7 +328,7 @@ function buildConfirmedLocalMirrorRecord(
   };
 }
 
-export default function BookAppointmentPage() {
+function BookAppointmentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -1028,5 +1028,23 @@ export default function BookAppointmentPage() {
       </form>
       ) : null}
     </div>
+  );
+}
+
+function BookAppointmentFallback() {
+  return (
+    <div className="mx-auto max-w-xl p-6">
+      <div className="flex h-64 animate-pulse items-center justify-center rounded-3xl border border-[#E2D2C8] bg-white/80">
+        <p className="text-sm font-bold text-[#8E7692]">Loading booking form…</p>
+      </div>
+    </div>
+  );
+}
+
+export default function BookAppointmentPage() {
+  return (
+    <Suspense fallback={<BookAppointmentFallback />}>
+      <BookAppointmentPageContent />
+    </Suspense>
   );
 }
