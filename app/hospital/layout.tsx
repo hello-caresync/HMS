@@ -6,6 +6,7 @@ import { REGAL_HMS_DESCRIPTION, REGAL_HOSPITAL_FULL_NAME } from '@/lib/regal/bra
 import HospitalLayoutRouter from './_components/HospitalLayoutRouter';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export const metadata: Metadata = {
   title: REGAL_HOSPITAL_FULL_NAME,
