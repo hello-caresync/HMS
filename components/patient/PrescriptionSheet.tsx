@@ -14,11 +14,12 @@ function formatIssuedAt(iso?: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   return date.toLocaleString('en-IN', {
-    day: '2-digit',
+    day: 'numeric',
     month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: true,
   });
 }
 
@@ -31,12 +32,12 @@ function doctorBadge(rx: NormalizedPrescription): string {
 
 export function PrescriptionSheet({ rx }: PrescriptionSheetProps) {
   const medicineList = rx.medicines.length > 0 ? rx.medicines : rx.medications;
-  const advice =
-    rx.instructions ||
-    rx.clinical_notes ||
+  const doctorAdvice =
+    rx.doctor_advice ||
     rx.dietary_instructions ||
-    rx.diagnosis ||
+    rx.instructions ||
     '';
+  const reportedSymptoms = rx.reported_symptoms?.trim() ?? '';
 
   return (
     <article className="rounded-xl border border-[#EADBCE] bg-white p-5 shadow-xs print:break-inside-avoid">
@@ -56,10 +57,19 @@ export function PrescriptionSheet({ rx }: PrescriptionSheetProps) {
             </p>
           </div>
         </div>
-        <time className="shrink-0 text-[11px] font-semibold text-[#7C5C48]">
+        <time className="shrink-0 text-[11px] font-semibold text-[#7C5C48]" dateTime={rx.created_at}>
           {formatIssuedAt(rx.issued_at || rx.created_at)}
         </time>
       </header>
+
+      {reportedSymptoms ? (
+        <div className="mb-4 rounded-xl border border-[#EADBCE] bg-[#FAF6F0] p-4">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#8C5A3C]">
+            Reported symptoms
+          </p>
+          <p className="mt-1 text-xs font-medium leading-relaxed text-[#2B1810]">{reportedSymptoms}</p>
+        </div>
+      ) : null}
 
       {medicineList.length > 0 ? (
         <div className="overflow-hidden rounded-xl border border-[#EADBCE]">
@@ -97,12 +107,12 @@ export function PrescriptionSheet({ rx }: PrescriptionSheetProps) {
         </div>
       ) : null}
 
-      {advice ? (
-        <div className={`rounded-xl border border-[#E6CCB2] bg-[#FAF6F0] p-4 ${medicineList.length > 0 ? 'mt-4' : ''}`}>
+      {doctorAdvice ? (
+        <div className={`rounded-xl border border-[#E6CCB2] bg-[#FAF6F0] p-4 ${medicineList.length > 0 || reportedSymptoms ? 'mt-4' : ''}`}>
           <p className="text-[10px] font-bold uppercase tracking-wider text-[#8C5A3C]">
             Doctor&apos;s advice
           </p>
-          <p className="mt-1 text-xs font-medium leading-relaxed text-[#2B1810]">{advice}</p>
+          <p className="mt-1 text-xs font-medium leading-relaxed text-[#2B1810]">{doctorAdvice}</p>
         </div>
       ) : null}
 
