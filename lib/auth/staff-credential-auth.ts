@@ -104,7 +104,7 @@ async function authenticateSuperAdminLogin(
   cleanEmail: string,
   cleanPasscode: string,
 ): Promise<PortalAuthResult> {
-  const verified = await verifySuperAdminCredentials(cleanEmail, cleanPasscode);
+  const verified = verifySuperAdminCredentials(cleanEmail, cleanPasscode);
   if (verified) {
     return { ok: true, user: buildSuperAdminUser(cleanEmail, cleanPasscode) };
   }

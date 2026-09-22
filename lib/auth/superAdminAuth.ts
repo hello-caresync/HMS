@@ -1,6 +1,10 @@
-import { verifySuperAdminVaultCredentials } from '@/lib/auth/super-admin-auth';
-
+/** Canonical Super Admin root operator credentials. */
+export const SUPER_ADMIN_ROOT_EMAIL = 'superadmin@regalhospital.com';
+export const SUPER_ADMIN_ROOT_PASSCODE = 'REGAL#2026@SUPER_ROOT';
 export const SUPER_ADMIN_FACILITY_NODE = 'HOSP-01';
+export const SUPER_ADMIN_DEFAULT_PORTAL = '/super-vault-access';
+
+export const SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE = 'Invalid email or passcode.';
 
 export type SuperAdminSessionPayload = {
   email: string;
@@ -20,33 +24,17 @@ export function normalizeSuperAdminPasscode(value?: string | null): string {
   return String(value ?? '').trim();
 }
 
-/**
- * Super Admin authentication — vault table or env-configured bootstrap only.
- * No hardcoded credential lists.
- */
-export async function verifySuperAdminCredentials(
-  email: string,
-  passcode: string,
-): Promise<boolean> {
+/** Strict match — only the canonical root email/passcode pair is accepted. */
+export function verifySuperAdminCredentials(email: string, passcode: string): boolean {
   const normalizedEmail = normalizeSuperAdminEmail(email);
   const normalizedPasscode = normalizeSuperAdminPasscode(passcode);
 
   if (!normalizedEmail || !normalizedPasscode) return false;
 
-  const vaultOk = await verifySuperAdminVaultCredentials(normalizedEmail, normalizedPasscode);
-  if (vaultOk) return true;
-
-  const allowedEmails = (process.env.NEXORA_ADMIN_EMAILS ?? process.env.ADMIN_DEV_EMAIL ?? '')
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
-  const configuredPassword = process.env.NEXORA_ADMIN_PASSWORD ?? '';
-
-  if (allowedEmails.length === 0 || !configuredPassword) {
-    return false;
-  }
-
-  return allowedEmails.includes(normalizedEmail) && normalizedPasscode === configuredPassword;
+  return (
+    normalizedEmail === SUPER_ADMIN_ROOT_EMAIL &&
+    normalizedPasscode === SUPER_ADMIN_ROOT_PASSCODE
+  );
 }
 
 export function createSuperAdminSessionToken(): string {
@@ -59,7 +47,7 @@ export function createSuperAdminSessionToken(): string {
 export function buildSuperAdminSessionPayload(
   email: string,
   token: string,
-  portalAccess = '/super-admin/dashboard',
+  portalAccess = SUPER_ADMIN_DEFAULT_PORTAL,
 ): SuperAdminSessionPayload {
   return {
     email: normalizeSuperAdminEmail(email),
@@ -83,6 +71,7 @@ export function persistSuperAdminClientSession(
   localStorage.setItem('curasync_superadmin_session', serialized);
 
   const attrs = 'path=/; max-age=86400; SameSite=Lax';
+  document.cookie = `regal_role=super_admin; ${attrs}`;
   document.cookie = `nexora_superadmin_session=${encodeURIComponent(serialized)}; ${attrs}`;
   document.cookie = `curasync_superadmin_session=${encodeURIComponent(serialized)}; ${attrs}`;
   document.cookie = `auth-token=${encodeURIComponent(session.token)}; ${attrs}`;

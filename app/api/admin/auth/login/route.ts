@@ -7,6 +7,7 @@ import {
   createSuperAdminSessionToken,
   normalizeSuperAdminEmail,
   normalizeSuperAdminPasscode,
+  SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE,
   verifySuperAdminCredentials,
 } from '@/lib/auth/superAdminAuth';
 
@@ -30,15 +31,14 @@ export async function POST(req: Request) {
 
   if (!email || !passcode) {
     return NextResponse.json(
-      { success: false, error: 'Email and passcode required' },
+      { success: false, error: SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE },
       { status: 400 },
     );
   }
 
-  const verified = await verifySuperAdminCredentials(email, passcode);
-  if (!verified) {
+  if (!verifySuperAdminCredentials(email, passcode)) {
     return NextResponse.json(
-      { success: false, error: 'Invalid email or passcode.' },
+      { success: false, error: SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE },
       { status: 401 },
     );
   }
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     },
   });
 
-  response.cookies.set('nexora_role', 'super_admin', {
+  response.cookies.set('regal_role', 'super_admin', {
     ...SESSION_COOKIE_OPTIONS,
     httpOnly: false,
   });
