@@ -1,6 +1,7 @@
-import { verifySuperAdminVaultCredentials } from '@/lib/auth/super-admin-auth';
-
+export const SUPER_ADMIN_ROOT_EMAIL = 'superadmin@regalhospital.com';
+export const SUPER_ADMIN_ROOT_PASSCODE = 'REGAL#2026@SUPER_ROOT';
 export const SUPER_ADMIN_FACILITY_NODE = 'HOSP-01';
+export const SUPER_ADMIN_DEFAULT_PORTAL = '/super-vault-access';
 
 export type SuperAdminSessionPayload = {
   email: string;
@@ -20,10 +21,7 @@ export function normalizeSuperAdminPasscode(value?: string | null): string {
   return String(value ?? '').trim();
 }
 
-/**
- * Super Admin authentication — vault table or env-configured bootstrap only.
- * No hardcoded credential lists.
- */
+/** Accept only the canonical Super Admin root credential pair. */
 export async function verifySuperAdminCredentials(
   email: string,
   passcode: string,
@@ -33,20 +31,10 @@ export async function verifySuperAdminCredentials(
 
   if (!normalizedEmail || !normalizedPasscode) return false;
 
-  const vaultOk = await verifySuperAdminVaultCredentials(normalizedEmail, normalizedPasscode);
-  if (vaultOk) return true;
-
-  const allowedEmails = (process.env.NEXORA_ADMIN_EMAILS ?? process.env.ADMIN_DEV_EMAIL ?? '')
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
-  const configuredPassword = process.env.NEXORA_ADMIN_PASSWORD ?? '';
-
-  if (allowedEmails.length === 0 || !configuredPassword) {
-    return false;
-  }
-
-  return allowedEmails.includes(normalizedEmail) && normalizedPasscode === configuredPassword;
+  return (
+    normalizedEmail === SUPER_ADMIN_ROOT_EMAIL &&
+    normalizedPasscode === SUPER_ADMIN_ROOT_PASSCODE
+  );
 }
 
 export function createSuperAdminSessionToken(): string {
@@ -59,7 +47,7 @@ export function createSuperAdminSessionToken(): string {
 export function buildSuperAdminSessionPayload(
   email: string,
   token: string,
-  portalAccess = '/super-admin/dashboard',
+  portalAccess = SUPER_ADMIN_DEFAULT_PORTAL,
 ): SuperAdminSessionPayload {
   return {
     email: normalizeSuperAdminEmail(email),

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Crown,
   Building2,
   Copy,
   Check,
@@ -12,8 +11,6 @@ import {
   RefreshCw,
   Hospital,
   PlusCircle,
-  X,
-  Sparkles,
   ShieldCheck,
   ArrowLeft,
   ChevronRight,
@@ -314,52 +311,45 @@ export default function SuperAdminHospitalBlocksDashboard() {
   const tenantScopeLabel = formatTenantCredentialScopeLabel(selectedHospitalData);
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-800 font-sans p-4 sm:p-8">
-      <div className="w-full max-w-[1440px] mx-auto space-y-6">
+    <div className="w-full min-h-screen bg-slate-50 text-slate-800 font-sans p-4 sm:p-6">
+      <div className="w-full max-w-[1440px] mx-auto space-y-4">
 
-        {/* Super Admin Top Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-slate-950 via-purple-950 to-slate-900 text-white shadow-xl border border-purple-900/30">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-[11px] font-mono font-bold text-purple-300">
-              <Crown className="w-3.5 h-3.5 text-amber-400"/>
-              <span>SUPER ADMIN PLATFORM ROOT</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Hospital Tenant Directory & Credentials
+        <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+              Hospital Tenant Directory &amp; Credentials
             </h1>
-            <p className="text-xs text-purple-200">
-              Select any hospital block to inspect its dedicated staff credentials, or onboard a new healthcare facility.
+            <p className="mt-0.5 text-xs text-slate-500">
+              Select a facility node to manage provisioned staff access.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <button
+              type="button"
               onClick={() => setShowOnboardModal(true)}
-              className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-purple-600/30 transition flex items-center gap-2 cursor-pointer"
+              className="flex cursor-pointer items-center gap-2 rounded-xl bg-purple-700 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-purple-600"
             >
-              <PlusCircle className="w-4 h-4"/>
+              <PlusCircle className="h-4 w-4" />
               <span>Onboard New Hospital</span>
             </button>
             <button
+              type="button"
               onClick={loadPlatformData}
-              className="p-2.5 rounded-xl bg-purple-900/50 border border-purple-700/60 text-purple-200 hover:text-white transition flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+              className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
               title="Sync Platform Data"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
 
-        {/* VIEW 1: HOSPITAL BLOCKS (GRID VIEW) */}
         {!selectedHospitalId ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-purple-600"/>
-                Connected Hospital Tenants ({hospitals.length})
-              </h2>
-              <span className="text-xs text-slate-400">Click any block to open credential vault</span>
-            </div>
+          <div className="space-y-3">
+            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <Building2 className="h-4 w-4 text-purple-600" />
+              Connected Hospital Tenants ({hospitals.length})
+            </h2>
 
             {isLoading ? (
               <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm font-semibold text-slate-500">
@@ -389,8 +379,6 @@ export default function SuperAdminHospitalBlocksDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {hospitals.map((hosp) => {
                 const hospCreds = credentials.filter((c) => credentialBelongsToTenant(c, hosp));
-                const docCount = hospCreds.filter((c) => c.staff_type === 'Doctor').length;
-                const staffCount = hospCreds.length - docCount;
 
                 return (
                   <div
@@ -400,45 +388,33 @@ export default function SuperAdminHospitalBlocksDashboard() {
                       setSearchQuery('');
                       setSelectedRoleFilter('All');
                     }}
-                    className="group bg-white rounded-2xl border border-slate-200 hover:border-purple-500 p-6 shadow-xs hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-5"
+                    className="group flex cursor-pointer flex-col justify-between space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all duration-200 hover:border-purple-500 hover:shadow-md"
                   >
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 font-mono text-[10px] font-bold text-purple-700">
                           {formatHospitalNodeBadge(hosp)}
                         </span>
-                        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
+                        <span className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                           {hosp.status}
                         </span>
                       </div>
 
                       <div>
-                        <h3 className="text-lg font-black text-slate-900 group-hover:text-purple-700 transition">
+                        <h3 className="text-lg font-black text-slate-900 transition group-hover:text-purple-700">
                           {hosp.name}
                         </h3>
                         <p className="text-xs text-slate-400">{hosp.city}, Karnataka</p>
+                        <p className="mt-1 text-[11px] font-medium text-slate-500">
+                          {hospCreds.length} provisioned credential{hospCreds.length === 1 ? '' : 's'}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-100 grid grid-cols-3 gap-2 text-center">
-                      <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-                        <div className="text-base font-black text-slate-900">{hospCreds.length}</div>
-                        <div className="text-[10px] font-medium text-slate-400 uppercase">Accounts</div>
-                      </div>
-                      <div className="p-2 rounded-xl bg-blue-50/50 border border-blue-100">
-                        <div className="text-base font-black text-blue-700">{docCount}</div>
-                        <div className="text-[10px] font-medium text-blue-500 uppercase">Doctors</div>
-                      </div>
-                      <div className="p-2 rounded-xl bg-teal-50/50 border border-teal-100">
-                        <div className="text-base font-black text-teal-700">{staffCount}</div>
-                        <div className="text-[10px] font-medium text-teal-500 uppercase">Staff</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs font-bold text-purple-700 pt-2">
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-bold text-purple-700">
                       <span>View Hospital Vault</span>
-                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition"/>
+                      <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" />
                     </div>
                   </div>
                 );
