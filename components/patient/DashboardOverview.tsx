@@ -6,7 +6,6 @@ import {
   Calendar,
   Clock,
   FileText,
-  HeartPulse,
   IndianRupee,
   MapPin,
   PlusCircle,
@@ -17,7 +16,7 @@ import {
   Users,
 } from 'lucide-react';
 
-import { MissedVisitAlertBanner } from '@/components/patient/MissedVisitAlertBanner';
+import { MissedVisitRescheduleCard } from '@/components/patient/MissedVisitAlertBanner';
 
 import type { ConsultationBill } from '@/lib/hospital/operations/consultation-billing-sync';
 import {
@@ -25,7 +24,6 @@ import {
   billingStatusBadgeClass,
   type PatientBillingSnapshot,
 } from '@/lib/patient/patient-billing-status';
-import type { PatientClinicalRecord } from '@/lib/patient/patients-record';
 import { ProfileCompletionGate } from '@/components/patient/ProfileCompletionGate';
 import { patientClasses } from '@/lib/patient/theme';
 import { formatINR } from '@/lib/utils/currency';
@@ -70,7 +68,6 @@ export type DashboardOverviewProps = {
   doctorsAvailable: number;
   billingSnapshot: PatientBillingSnapshot;
   bills: ConsultationBill[];
-  vitals: PatientClinicalRecord | null;
   onRefresh: () => void;
   onBookConsultation: () => void;
   onReschedule: (visit: DashboardVisit) => void;
@@ -224,7 +221,6 @@ export function DashboardOverview({
   doctorsAvailable,
   billingSnapshot,
   bills,
-  vitals,
   onRefresh,
   onBookConsultation,
   onReschedule,
@@ -245,18 +241,8 @@ export function DashboardOverview({
       ? formatINR(billingSnapshot.totalOutstanding)
       : '₹0 (Cleared)';
 
-  const allergyChips = (vitals?.allergies || '')
-    .split(/[,;]+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 3);
-
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-4 py-6 font-sans text-slate-900 md:px-0">
-      {!loading && latestMissed ? (
-        <MissedVisitAlertBanner visit={latestMissed} onReschedule={onReschedule} />
-      ) : null}
-
       {/* Zone A — header + quick stats */}
       <section className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -433,47 +419,11 @@ export function DashboardOverview({
           </div>
         </div>
 
-        {/* Right column — vitals + billing */}
+        {/* Right column — reschedule alert + billing */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-[#EADBCE] bg-white p-4 shadow-xs">
-            <h2 className={sectionHeaderClass}>
-              <HeartPulse className="h-4 w-4 text-[#8C5A3C]" aria-hidden />
-              Vitals Snapshot
-            </h2>
-            <div className="grid grid-cols-2 gap-2">
-              <div className={patientClasses.chip}>BG: {vitals?.blood_group?.trim() || '—'}</div>
-              <div className={patientClasses.chip}>BP: {vitals?.blood_pressure?.trim() || '—'}</div>
-              <div className={patientClasses.chip}>
-                Pulse: {vitals?.heart_rate_bpm?.trim() ? `${vitals.heart_rate_bpm} bpm` : '—'}
-              </div>
-              <div className={patientClasses.chip}>
-                SpO₂: {vitals?.spo2_percentage?.trim() ? `${vitals.spo2_percentage}%` : '—'}
-              </div>
-            </div>
-            {allergyChips.length > 0 ? (
-              <div className="my-2.5">
-                <p className="mb-1 text-[11px] font-bold uppercase text-stone-400">Allergies</p>
-                <div className="flex flex-wrap gap-1">
-                  {allergyChips.map((allergy) => (
-                    <span
-                      key={allergy}
-                      className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900"
-                    >
-                      {allergy}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <p className="my-2.5 text-[11px] text-stone-400">No allergy alerts recorded.</p>
-            )}
-            <Link
-              href="/patient/profile"
-              className="block w-full rounded-lg border border-[#EADBCE] py-2 text-center text-xs font-semibold text-[#7F5539] transition hover:bg-[#FAF7F2]"
-            >
-              Update Profile
-            </Link>
-          </div>
+          {!loading && latestMissed ? (
+            <MissedVisitRescheduleCard visit={latestMissed} onReschedule={onReschedule} />
+          ) : null}
 
           <div className="rounded-xl border border-[#EADBCE] bg-white p-4 shadow-xs">
             <div className="mb-3 flex items-center justify-between">

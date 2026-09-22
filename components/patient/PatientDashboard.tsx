@@ -28,11 +28,6 @@ import {
 import { resolveActiveAuthUser } from '@/lib/auth/resolve-active-auth-user';
 import { readPatientPortalSession } from '@/lib/patient/portal-session';
 import {
-  fetchPatientClinicalRecordByPhone,
-  mapPatientsRowToClinicalRecord,
-  type PatientClinicalRecord,
-} from '@/lib/patient/patients-record';
-import {
   deduplicateAppointments,
   fetchMyPrivateAppointments,
   type MyAppointmentRecord,
@@ -47,34 +42,6 @@ import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import { usePatientProfileCompleteness } from '@/lib/patient/usePatientProfileCompleteness';
 import { profileIncompleteBookingMessage } from '@/lib/utils/profileCompleteness';
 import { supabase } from '@/lib/supabaseClient';
-
-const EMPTY_VITALS: PatientClinicalRecord = {
-  patient_id: '',
-  full_name: '',
-  phone: '',
-  email: '',
-  age: '',
-  gender: '',
-  blood_group: '',
-  emergency_contact_name: '',
-  emergency_contact_phone: '',
-  emergency_contact_relation: '',
-  address: '',
-  city: '',
-  state: '',
-  postal_code: '',
-  allergies: '',
-  chronic_conditions: '',
-  current_medications: '',
-  height_cm: '',
-  weight_kg: '',
-  bmi: '',
-  blood_pressure: '',
-  heart_rate_bpm: '',
-  spo2_percentage: '',
-  temperature_f: '',
-  hospital_id: REGAL_HOSPITAL_CODE,
-};
 
 function readCachedAppointments(session: PatientAuthSession): MyAppointmentRecord[] {
   if (typeof window === 'undefined') return [];
@@ -106,7 +73,6 @@ export default function PatientDashboard() {
   const [billsLoading, setBillsLoading] = useState(true);
   const [recentPrescriptions, setRecentPrescriptions] = useState<DashboardPrescription[]>([]);
   const [prescriptionCount, setPrescriptionCount] = useState(0);
-  const [vitals, setVitals] = useState<PatientClinicalRecord | null>(null);
   const [doctorsAvailable, setDoctorsAvailable] = useState(0);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [reschedulePrefill, setReschedulePrefill] = useState<AppointmentBookingPrefill | null>(null);
@@ -169,33 +135,6 @@ export default function PatientDashboard() {
         created_at: String(row.created_at ?? ''),
       })),
     );
-  }, []);
-
-  const fetchVitals = useCallback(async (session: PatientAuthSession) => {
-    const phone = session.phone || readPatientPortalSession()?.phone || '';
-    if (!phone) {
-      setVitals(null);
-      return;
-    }
-
-    try {
-      const row = await fetchPatientClinicalRecordByPhone(supabase, phone);
-      if (!row) {
-        setVitals(null);
-        return;
-      }
-      setVitals(
-        mapPatientsRowToClinicalRecord(row, {
-          ...EMPTY_VITALS,
-          patient_id: session.patientId,
-          full_name: session.name,
-          phone,
-          email: session.email ?? '',
-        }),
-      );
-    } catch {
-      setVitals(null);
-    }
   }, []);
 
   const fetchDoctorsAvailable = useCallback(async () => {
@@ -262,7 +201,6 @@ export default function PatientDashboard() {
       await Promise.all([
         fetchBillingSnapshot(resolvedPatientId, session.uhid),
         fetchPrescriptions(session, linkedIds),
-        fetchVitals(session),
         fetchDoctorsAvailable(),
       ]);
     } catch (err) {
@@ -285,7 +223,6 @@ export default function PatientDashboard() {
     fetchBillingSnapshot,
     fetchDoctorsAvailable,
     fetchPrescriptions,
-    fetchVitals,
     router,
   ]);
 
@@ -344,7 +281,6 @@ export default function PatientDashboard() {
         doctorsAvailable={doctorsAvailable}
         billingSnapshot={billingSnapshot}
         bills={billingSnapshot.bills}
-        vitals={vitals}
         onRefresh={() => void loadDashboard()}
         onBookConsultation={handleBookConsultation}
         onReschedule={handleReschedule}
