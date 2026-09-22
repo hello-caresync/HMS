@@ -28,27 +28,18 @@ import {
   normalizeGovernanceCredentialBadge,
 } from '@/lib/hospital/governance-vault-loader';
 import {
-  filterProductionSuperAdminTenants,
-  isBlockedSuperAdminTenantId,
-} from '@/lib/super-admin/tenant-directory';
-import {
   credentialBelongsToTenant,
   formatTenantCredentialScopeLabel,
 } from '@/lib/super-admin/tenant-credential-scope';
-import { formatHospitalNodeBadge } from '@/lib/utils/formatters';
+import {
+  fetchSuperAdminHospitalTenants,
+  formatHospitalTenantBadge,
+  type SuperAdminHospitalTenant,
+} from '@/lib/super-admin/hospital-tenants';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
-
-interface HospitalEntity {
-  id: string;
-  name: string;
-  city: string;
-  status: string;
-  hospital_code?: string;
-  facility_code?: string;
-}
 
 interface StaffCredential {
   id: string;
@@ -67,17 +58,6 @@ interface StaffCredential {
   staff_id?: string;
   doctor_id?: string;
   doctor_code?: string;
-}
-
-function normalizeHospital(row: Record<string, unknown>): HospitalEntity {
-  return {
-    id: String(row.id ?? row.hospital_id ?? ''),
-    name: String(row.name ?? row.hospital_name ?? 'Hospital'),
-    city: String(row.city ?? 'Bengaluru'),
-    status: String(row.status ?? 'Active'),
-    hospital_code: row.hospital_code ? String(row.hospital_code) : undefined,
-    facility_code: row.facility_code ? String(row.facility_code) : undefined,
-  };
 }
 
 function resolveDisplayStaffType(row: Record<string, unknown>): StaffCredential['staff_type'] {
@@ -132,9 +112,9 @@ function normalizeCredential(row: Record<string, unknown>): StaffCredential {
 }
 
 export default function SuperAdminHospitalBlocksDashboard() {
-  const [hospitals, setHospitals] = useState<HospitalEntity[]>([]);
+  const [hospitals, setHospitals] = useState<SuperAdminHospitalTenant[]>([]);
   const [credentials, setCredentials] = useState<StaffCredential[]>([]);
-  const [selectedHospitalId, setSelectedHospitalId] = useState<string | null>(null);
+  const [selectedHospitalCode, setSelectedHospitalCode] = useState<string | null>(null);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('All');
@@ -151,9 +131,8 @@ export default function SuperAdminHospitalBlocksDashboard() {
     setIsLoading(true);
     if (supabase) {
       try {
-        const [hospRes, tenantRes, vaultData] = await Promise.all([
-          supabase.from('hospitals').select('*').order('id', { ascending: true }),
-          supabase.from('hospital_tenants').select('*').order('hospital_id', { ascending: true }),
+        const [tenantRows, vaultData] = await Promise.all([
+          fetchSuperAdminHospitalTenants(supabase),
           fetchGovernanceVaultDirectory(supabase),
         ]);
 
@@ -176,37 +155,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
             });
           });
         setCredentials(creds);
-
-        const fromHospitals = (hospRes.data ?? []).map((row) =>
-          normalizeHospital(row as Record<string, unknown>),
-        );
-        const fromTenants = (tenantRes.data ?? []).map((row) =>
-          normalizeHospital(row as Record<string, unknown>),
-        );
-
-        const map = new Map<string, HospitalEntity>();
-        [...fromHospitals, ...fromTenants].forEach((h) => {
-          if (h.id) map.set(h.id, h);
-        });
-        creds.forEach((c) => {
-          if (
-            c.hospital_id &&
-            !isBlockedSuperAdminTenantId(c.hospital_id) &&
-            !map.has(c.hospital_id)
-          ) {
-            map.set(c.hospital_id, {
-              id: c.hospital_id,
-              name: c.hospital_name || c.hospital_id,
-              city: 'Bengaluru',
-              status: 'Active',
-            });
-          }
-        });
-        setHospitals(
-          filterProductionSuperAdminTenants(Array.from(map.values())).sort((a, b) =>
-            a.name.localeCompare(b.name),
-          ),
-        );
+        setHospitals(tenantRows);
       } catch (err) {
         console.error('Error fetching data from Supabase:', err);
       }
@@ -223,10 +172,10 @@ export default function SuperAdminHospitalBlocksDashboard() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'hospitals' }, () => {
           void loadPlatformData();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_tenants' }, () => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_user_credentials' }, () => {
           void loadPlatformData();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_user_credentials' }, () => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_staff_credentials' }, () => {
           void loadPlatformData();
         })
         .subscribe();
@@ -272,11 +221,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
       staff.hospital_name.toUpperCase(),
       'OFFICIAL CLINICAL ACCESS PASS',
       '=====================================',
-      `Hospital Node: ${staff.hospital_name} (${formatHospitalNodeBadge({
-        id: staff.hospital_id,
-        hospital_id: staff.hospital_id,
-        name: staff.hospital_name,
-      })})`,
+      `Hospital Node: ${staff.hospital_name} (${staff.hospital_id.toUpperCase()})`,
       `Staff ID: ${staff.badge_id}`,
       `Staff Member: ${staff.full_name}`,
       `Role: ${staff.staff_type} (${staff.department})`,
@@ -293,10 +238,12 @@ export default function SuperAdminHospitalBlocksDashboard() {
   };
 
   // Hospital-Scoped Filtered Credentials
-  const selectedHospitalData = hospitals.find((h) => h.id === selectedHospitalId);
+  const selectedHospitalData = hospitals.find(
+    (h) => h.hospital_code === selectedHospitalCode,
+  );
 
   const scopedCredentials = useMemo(() => {
-    if (!selectedHospitalId || !selectedHospitalData) return [];
+    if (!selectedHospitalCode || !selectedHospitalData) return [];
     return credentials.filter((c) => {
       const matchesHospital = credentialBelongsToTenant(c, selectedHospitalData);
       const matchesRole = selectedRoleFilter === 'All' || c.staff_type === selectedRoleFilter;
@@ -309,7 +256,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
 
       return matchesHospital && matchesRole && matchesSearch;
     });
-  }, [credentials, selectedHospitalId, selectedHospitalData, selectedRoleFilter, searchQuery]);
+  }, [credentials, selectedHospitalCode, selectedHospitalData, selectedRoleFilter, searchQuery]);
 
   const tenantScopeLabel = formatTenantCredentialScopeLabel(selectedHospitalData);
 
@@ -351,7 +298,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
         </div>
 
         {/* VIEW 1: HOSPITAL BLOCKS (GRID VIEW) */}
-        {!selectedHospitalId ? (
+        {!selectedHospitalCode ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
@@ -394,9 +341,9 @@ export default function SuperAdminHospitalBlocksDashboard() {
 
                 return (
                   <div
-                    key={hosp.id}
+                    key={hosp.hospital_code}
                     onClick={() => {
-                      setSelectedHospitalId(hosp.id);
+                      setSelectedHospitalCode(hosp.hospital_code);
                       setSearchQuery('');
                       setSelectedRoleFilter('All');
                     }}
@@ -405,7 +352,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                          {formatHospitalNodeBadge(hosp)}
+                          {formatHospitalTenantBadge(hosp)}
                         </span>
                         <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
@@ -453,7 +400,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
             <div className="flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setSelectedHospitalId(null)}
+                onClick={() => setSelectedHospitalCode(null)}
                 className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-slate-900 text-xs font-bold flex items-center gap-2 cursor-pointer shadow-2xs hover:bg-slate-50 transition"
               >
                 <ArrowLeft className="w-4 h-4"/>
@@ -463,8 +410,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-slate-500">Active Tenant:</span>
                 <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-black">
-                  {selectedHospitalData?.name} (
-                  {formatHospitalNodeBadge(selectedHospitalData ?? { id: selectedHospitalId ?? '' })})
+                  {selectedHospitalData?.name} ({selectedHospitalData ? formatHospitalTenantBadge(selectedHospitalData) : ''})
                 </span>
                 <button
                   type="button"
@@ -639,7 +585,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
         <StaffProvisioningModal
           open={showStaffModal}
           onClose={() => setShowStaffModal(false)}
-          hospitalId={selectedHospitalId ?? undefined}
+          hospitalId={selectedHospitalData?.hospital_code ?? selectedHospitalData?.id}
           hospitalName={selectedHospitalData?.name}
           onSuccess={() => {
             void loadPlatformData();
@@ -660,13 +606,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
 
               <div className="p-4 rounded-2xl bg-slate-900 text-white font-mono text-xs space-y-2 border border-slate-800">
                 <div className="text-purple-300 font-bold border-b border-slate-800 pb-1.5">
-                  🏥 {createdPacket.hospital_name} (
-                  {formatHospitalNodeBadge({
-                    id: createdPacket.hospital_id,
-                    hospital_id: createdPacket.hospital_id,
-                    name: createdPacket.hospital_name,
-                  })}
-                  )
+                  🏥 {createdPacket.hospital_name} ({createdPacket.hospital_id.toUpperCase()})
                 </div>
                 <div className="text-slate-300">Admin Name: <span className="text-white font-bold">{createdPacket.full_name}</span></div>
                 <div className="text-slate-300">Official Login: <span className="text-white font-bold">{createdPacket.email}</span></div>

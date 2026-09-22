@@ -7,6 +7,14 @@ import { HOSPITAL_TENANT_ID, REGAL_HOSPITAL_NAME } from '@/lib/regal/constants';
 
 export const HOSPITAL_USER_CREDENTIALS_TABLE = 'hospital_user_credentials';
 
+/** Legacy Super Admin onboard table — still honored for vault parity. */
+export const HOSPITAL_STAFF_CREDENTIALS_TABLE = 'hospital_staff_credentials';
+
+const STAFF_VAULT_TABLES = [
+  HOSPITAL_USER_CREDENTIALS_TABLE,
+  HOSPITAL_STAFF_CREDENTIALS_TABLE,
+] as const;
+
 export type HospitalCredentialRole = 'admin' | 'doctor' | 'staff' | 'nurse';
 
 export type HospitalUserCredential = {
@@ -172,6 +180,21 @@ function toAuthUser(credential: HospitalUserCredential, passcode: string): Hospi
   };
 }
 
+function normalizeLegacyStaffCredentialRow(row: Record<string, unknown>): Record<string, unknown> {
+  return {
+    ...row,
+    passcode: row.passcode ?? row.temporary_passcode ?? row.passcode_key,
+    role: row.role ?? row.staff_type,
+    employee_id: row.employee_id ?? row.staff_id_code ?? row.badge_id,
+    is_active: String(row.status ?? 'Active').toLowerCase() !== 'restricted',
+  };
+}
+
+function isLegacyCredentialRowActive(row: Record<string, unknown>): boolean {
+  const status = String(row.status ?? 'active').trim().toLowerCase();
+  return status !== 'restricted' && status !== 'suspended' && status !== 'inactive';
+}
+
 async function queryCredentialTable(
   supabase: SupabaseClient,
   table: string,
@@ -182,26 +205,31 @@ async function queryCredentialTable(
   const upperCode = trimmed.toUpperCase();
   const isEmail = trimmed.includes('@');
 
+  const pickFirst = async (
+    runQuery: () => PromiseLike<{ data: unknown[] | null; error: unknown }>,
+  ): Promise<Record<string, unknown> | null> => {
+    const { data, error } = await runQuery();
+    if (error || !Array.isArray(data) || data.length === 0) return null;
+    return asRecord(data[0]);
+  };
+
   if (isEmail) {
-    let query = supabase.from(table).select('*').ilike('email', lowerEmail);
+    let query = supabase.from(table).select('*').ilike('email', lowerEmail).limit(1);
     if (table === HOSPITAL_USER_CREDENTIALS_TABLE) query = query.eq('is_active', true);
-    const { data, error } = await query.maybeSingle();
-    if (!error && data) return asRecord(data);
-    return null;
+    return pickFirst(() => query);
   }
 
-  for (const column of ['employee_id', 'staff_id_code'] as const) {
-    let query = supabase.from(table).select('*').eq(column, upperCode);
+  for (const column of ['employee_id', 'staff_id_code', 'badge_id'] as const) {
+    let query = supabase.from(table).select('*').eq(column, upperCode).limit(1);
     if (table === HOSPITAL_USER_CREDENTIALS_TABLE) query = query.eq('is_active', true);
-    const { data, error } = await query.maybeSingle();
-    if (!error && data) return asRecord(data);
+    const row = await pickFirst(() => query);
+    if (row) return row;
   }
 
   if (isUuidValue(trimmed)) {
-    let query = supabase.from(table).select('*').eq('id', trimmed);
+    let query = supabase.from(table).select('*').eq('id', trimmed).limit(1);
     if (table === HOSPITAL_USER_CREDENTIALS_TABLE) query = query.eq('is_active', true);
-    const { data, error } = await query.maybeSingle();
-    if (!error && data) return asRecord(data);
+    return pickFirst(() => query);
   }
 
   return null;
@@ -211,13 +239,21 @@ async function findCredentialRow(
   supabase: SupabaseClient,
   identifier: string,
 ): Promise<Record<string, unknown> | null> {
-  const row = await queryCredentialTable(supabase, HOSPITAL_USER_CREDENTIALS_TABLE, identifier);
-  if (!row) return null;
+  for (const table of STAFF_VAULT_TABLES) {
+    const row = await queryCredentialTable(supabase, table, identifier);
+    if (!row) continue;
 
-  const credential = mapCredentialRow(row);
-  if (!credential.is_active) return null;
+    if (table === HOSPITAL_STAFF_CREDENTIALS_TABLE) {
+      if (!isLegacyCredentialRowActive(row)) continue;
+      return normalizeLegacyStaffCredentialRow(row);
+    }
 
-  return row;
+    const credential = mapCredentialRow(row);
+    if (!credential.is_active) continue;
+    return row;
+  }
+
+  return null;
 }
 
 export async function authenticateHospitalUser(

@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { HOSPITAL_USER_CREDENTIALS_TABLE } from '@/lib/auth/hospitalAuth';
+import {
+  HOSPITAL_STAFF_CREDENTIALS_TABLE,
+  HOSPITAL_USER_CREDENTIALS_TABLE,
+} from '@/lib/auth/hospitalAuth';
 import { hospitalDirectoryFilterIds } from '@/lib/hospital/hospital-node';
 import { fetchGovernanceVendorRows } from '@/lib/hospital/procurement';
 import { fetchHospitalStaffDirectory, type HospitalStaffMember } from '@/lib/hospital/staff-directory';
@@ -215,6 +218,43 @@ async function runSafeSelect(
       missingColumn: missingColumnFromMessage(serialized.summary),
     };
   }
+}
+
+function normalizeLegacyVaultCredentialRow(row: Record<string, unknown>): Record<string, unknown> {
+  const status = String(row.status ?? 'Active').trim().toLowerCase();
+  return {
+    ...row,
+    passcode: row.passcode ?? row.temporary_passcode ?? row.passcode_key,
+    role: row.role ?? row.staff_type,
+    employee_id: row.employee_id ?? row.staff_id_code ?? row.badge_id ?? row.id,
+    is_active: status !== 'restricted' && status !== 'suspended' && status !== 'inactive',
+  };
+}
+
+async function fetchLegacyStaffCredentialRows(
+  supabase: SupabaseClient,
+  hospitalId?: string,
+): Promise<{ rows: Record<string, unknown>[]; error: string | null }> {
+  const filterIds = hospitalDirectoryFilterIds(hospitalId);
+  const hospitalFilter = buildHospitalIdOrFilter(filterIds);
+
+  const result = await runSafeSelect('legacy staff credentials', () =>
+    supabase
+      .from(HOSPITAL_STAFF_CREDENTIALS_TABLE)
+      .select('*')
+      .or(hospitalFilter)
+      .order('created_at', { ascending: false }),
+  );
+
+  if (result.missingRelation) {
+    return { rows: [], error: null };
+  }
+
+  const rows = result.rows
+    .map(normalizeLegacyVaultCredentialRow)
+    .filter((row) => row.is_active !== false);
+
+  return { rows, error: result.error };
 }
 
 async function fetchCredentialRows(
@@ -451,9 +491,23 @@ export async function fetchGovernanceVaultDirectory(
   let doctorEnrichmentRows: Record<string, unknown>[] = [];
 
   try {
-    const credentialResult = await fetchCredentialRows(client, tenantId);
-    rawCredentialRows = credentialResult.rows;
+    const [credentialResult, legacyCredentialResult] = await Promise.all([
+      fetchCredentialRows(client, tenantId),
+      fetchLegacyStaffCredentialRows(client, tenantId),
+    ]);
+
+    const mergedByEmail = new Map<string, Record<string, unknown>>();
+    for (const row of [...credentialResult.rows, ...legacyCredentialResult.rows]) {
+      const email = String(row.email ?? '').trim().toLowerCase();
+      if (!email) continue;
+      if (!mergedByEmail.has(email)) {
+        mergedByEmail.set(email, row);
+      }
+    }
+
+    rawCredentialRows = Array.from(mergedByEmail.values());
     if (credentialResult.error) errors.push(credentialResult.error);
+    if (legacyCredentialResult.error) errors.push(legacyCredentialResult.error);
   } catch (err: unknown) {
     const serialized = serializePostgrestError(err);
     if (!isIgnorableGovernanceSchemaError(serialized)) {

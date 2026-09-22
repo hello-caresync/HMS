@@ -87,11 +87,21 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  if (path === '/super-vault-access' || path.startsWith('/super-vault-access/')) {
+  const superAdminVaultPaths = [
+    '/super-vault-access',
+    '/super-admin/tenants',
+    '/super-admin/staff-credentials',
+  ] as const;
+
+  const isSuperAdminVaultPath = superAdminVaultPaths.some(
+    (vaultPath) => path === vaultPath || path.startsWith(`${vaultPath}/`),
+  );
+
+  if (isSuperAdminVaultPath) {
     if (!isSuperAdminSession(request)) {
       return redirectWithCookies(
         request,
-        appendRedirectQuery('/super-admin/login', '/super-vault-access'),
+        appendRedirectQuery('/super-admin/login', path),
         applyCookies,
       );
     }
