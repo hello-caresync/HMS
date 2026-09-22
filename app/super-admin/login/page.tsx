@@ -82,7 +82,7 @@ function SuperAdminLoginForm() {
 
       const redirectTarget = searchParams.get('redirect')?.startsWith('/')
         ? searchParams.get('redirect')!
-        : '/super-vault-access';
+        : '/super-admin/dashboard';
 
       const session = buildSuperAdminSessionPayload(
         cleanEmail,

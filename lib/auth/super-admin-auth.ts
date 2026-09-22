@@ -1,10 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 
-import {
-  SUPER_ADMIN_ROOT_EMAIL,
-  SUPER_ADMIN_ROOT_PASSCODE,
-} from '@/lib/auth/superAdminAuth';
-
 export type SuperAdminUser = {
   id: string;
   hospital_id: string;
@@ -68,32 +63,27 @@ export async function verifySuperAdminVaultCredentials(
   email: string,
   passcode: string,
 ): Promise<boolean> {
-  const normalizedEmail = email.trim().toLowerCase();
-  const normalizedPasscode = passcode.trim();
-
-  if (
-    normalizedEmail !== SUPER_ADMIN_ROOT_EMAIL ||
-    normalizedPasscode !== SUPER_ADMIN_ROOT_PASSCODE
-  ) {
-    return false;
-  }
-
-  if (!supabase) return true;
+  if (!supabase) return false;
 
   const { data, error } = await supabase
     .from('super_admin_credentials_vault')
     .select('identifier, passcode, role_type, is_active')
-    .eq('identifier', SUPER_ADMIN_ROOT_EMAIL)
-    .eq('is_active', true)
-    .maybeSingle();
+    .eq('identifier', email.trim().toLowerCase())
+    .eq('is_active', true);
 
-  if (error || !data) return true;
+  if (error || !Array.isArray(data)) return false;
 
-  const record = data as Record<string, unknown>;
-  const stored = String(record.passcode ?? '');
-  const roleType = String(record.role_type ?? '');
-
-  return stored === SUPER_ADMIN_ROOT_PASSCODE && isSuperAdminVaultRole(roleType);
+  return data.some((row) => {
+    const record = row as Record<string, unknown>;
+    const identifier = String(record.identifier ?? '').trim().toLowerCase();
+    const stored = String(record.passcode ?? '');
+    const roleType = String(record.role_type ?? '');
+    return (
+      identifier === email.trim().toLowerCase() &&
+      stored === passcode.trim() &&
+      isSuperAdminVaultRole(roleType)
+    );
+  });
 }
 
 /** @deprecated Hardcoded email lists were removed. Super Admin is vault/role based. */
