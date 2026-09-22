@@ -104,6 +104,7 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         full_name: user.full_name,
         staff_type: user.staff_type,
         department: user.department,
+        staff_id_code: user.employee_id,
         email: user.email,
         portal_access: HOSPITAL_DESK_DASHBOARD_PATH,
       };
@@ -118,6 +119,7 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
           full_name: session.full_name,
           staff_type: session.staff_type,
           department: session.department,
+          staff_id_code: session.staff_id_code,
           email: session.email,
           portal_access: session.portal_access,
         });

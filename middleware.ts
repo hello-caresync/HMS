@@ -97,16 +97,23 @@ export async function middleware(request: NextRequest) {
     return redirectWithCookies(request, hospitalDeskLoginUrl(path), applyCookies);
   }
 
-  if (path === '/dashboard') {
+  if (path === '/hospital/dashboard' || path.startsWith('/hospital/dashboard?')) {
+    const suffix = path.slice('/hospital/dashboard'.length);
+    return redirectWithCookies(request, `${HOSPITAL_DESK_DASHBOARD_PATH}${suffix}`, applyCookies);
+  }
+
+  if (path === '/dashboard' || path.startsWith('/dashboard?')) {
     const verified = readVerifiedHospitalDeskSession(request);
     if (verified) {
-      return redirectWithCookies(
-        request,
-        resolveHospitalDeskHomePath(verified.staffType),
-        applyCookies,
-      );
+      if (resolveHospitalDeskHomePath(verified.staffType) === '/doctor/dashboard') {
+        return redirectWithCookies(request, '/doctor/dashboard', applyCookies);
+      }
+      return applyCookies(NextResponse.next({ request }));
     }
-    return redirectWithCookies(request, hospitalDeskLoginUrl(path), applyCookies);
+    if (!hasHospitalDeskSession(request) && !hasDoctorPortalSession(request)) {
+      return redirectWithCookies(request, hospitalDeskLoginUrl(path), applyCookies);
+    }
+    return applyCookies(NextResponse.next({ request }));
   }
 
   if (path === '/super-admin/dashboard' || path.startsWith('/super-admin/dashboard/')) {

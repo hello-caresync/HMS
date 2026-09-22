@@ -22,6 +22,7 @@ export type StaffPortalSession = {
   full_name: string;
   staff_type: string;
   department: string;
+  staff_id_code?: string;
   email: string;
   portal_access: string;
 };
@@ -62,7 +63,7 @@ export function persistStaffPortalSession(session: StaffPortalSession): void {
     role: session.staff_type,
     hospitalId: session.hospital_id,
     hospitalName: session.hospital_name,
-    portal_access: session.portal_access || '/hospital/dashboard',
+    portal_access: session.portal_access || '/dashboard',
   };
   const payload = JSON.stringify(hospitalSession);
 
@@ -139,7 +140,8 @@ export function hydrateHospitalDeskSessionFromCookies(): StaffPortalSession | nu
       staff_type: staffType,
       department: parsed.department || '',
       email: parsed.email || '',
-      portal_access: parsed.portal_access || '/hospital/dashboard',
+      staff_id_code: parsed.staff_id_code || '',
+      portal_access: parsed.portal_access || '/dashboard',
     };
 
     localStorage.setItem(SESSION_KEYS.admin, JSON.stringify(session));
@@ -169,6 +171,7 @@ export function readHospitalAppSession(): StaffPortalSession | null {
       full_name: parsed.full_name || 'Hospital User',
       staff_type: staffType,
       department: parsed.department || '',
+      staff_id_code: parsed.staff_id_code || '',
       email: parsed.email || '',
       portal_access: parsed.portal_access || '/dashboard',
     };

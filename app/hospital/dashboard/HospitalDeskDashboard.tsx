@@ -17,7 +17,6 @@ import {
   ListOrdered,
   Loader2,
   LogOut,
-  Menu,
   PackageCheck,
   Phone,
   Plus,
@@ -42,6 +41,17 @@ import {
   isHospitalAppRole,
   readHospitalAppSession,
 } from '@/lib/auth/ecosystem-sessions';
+import {
+  buildDeskScopeFromSession,
+  canViewBillingModule,
+  canViewEmergencyModule,
+  canViewIpdModule,
+  canViewSupplyModule,
+  filterByDepartmentField,
+  filterRowsByDepartmentScope,
+  isPlatformDeskAdmin,
+  type DeskScopeContext,
+} from '@/lib/hospital/department-scope';
 import { canManageStaffCredentials } from '@/lib/auth/hospital-rbac';
 import {
   buildHospitalDirectoryOrFilter,
@@ -82,7 +92,6 @@ import { IpdBedCensus } from '@/components/hospital/IpdBedCensus';
 import { SupplyOrdersCommandCenter } from '@/components/hospital/SupplyOrdersCommandCenter';
 import { BillingCheckoutCommandCenter } from '@/components/hospital/BillingCheckoutCommandCenter';
 import { HospitalOperationsHeaderBrand, HospitalOperationsHeaderTitle } from '@/components/hospital/HospitalOperationsHeaderBrand';
-import { HospitalOperationsSidebarBrand } from '@/components/hospital/HospitalOperationsSidebarBrand';
 import { DASHBOARD_TAB_STORAGE_KEY } from '@/components/hospital/DashboardTabRedirect';
 import { mapHospitalStaffMember, toDashboardStaffRow } from '@/lib/hospital/staff-directory';
 import {
@@ -1380,9 +1389,12 @@ function HospitalMasterDashboard() {
     resolveDashboardTab(searchParams.get('tab'), readStoredDashboardTab()),
   );
   const [currentUserRole, setCurrentUserRole] = useState(() => readHospitalAppSession()?.staff_type || 'Staff');
+  const [deskScope, setDeskScope] = useState<DeskScopeContext | null>(() =>
+    buildDeskScopeFromSession(readHospitalAppSession() ?? hydrateHospitalDeskSessionFromCookies()),
+  );
+  const deskScopeRef = useRef<DeskScopeContext | null>(deskScope);
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<ModalKind>(null);
 
   const [hospitalInfo, setHospitalInfo] = useState<HospitalInfo>(() => readCachedHospitalInfo() ?? emptyHospitalInfo());
@@ -1547,43 +1559,64 @@ function HospitalMasterDashboard() {
         selectScoped('hospital_emergencies', activeNode),
       ]);
 
-      const mappedStaff = (staffRows || []).map((row) =>
+      const scope = deskScopeRef.current;
+      const scopedStaffRows = filterRowsByDepartmentScope(staffRows || [], scope);
+      const mappedStaff = scopedStaffRows.map((row) =>
         toDashboardStaffRow(mapHospitalStaffMember(row, activeNode)),
       );
       setStaffMembers(mappedStaff);
 
       const bookableDoctors = await fetchActiveHospitalDoctors(supabase, activeNode);
-      setWalkInDoctorPool(bookableDoctors);
+      setWalkInDoctorPool(
+        filterByDepartmentField(bookableDoctors, scope, (doctor) => doctor.department),
+      );
 
-      const liveAppointments = aptRows || [];
+      const scopedAppointments = filterRowsByDepartmentScope(aptRows || [], scope);
+      const scopedOpdRows = filterRowsByDepartmentScope(opdRows || [], scope);
+      const scopedPatients = filterRowsByDepartmentScope(patientRows || [], scope);
+      const liveAppointments = scopedAppointments;
       const liveQueue = dedupeEncounterList(
         dedupeQueueRows([
           ...liveAppointments.map((row) => mapQueueRow(row, 'appointments')),
-          ...(opdRows || []).map((row) => mapQueueRow(row, 'hospital_opd_queue')),
+          ...scopedOpdRows.map((row) => mapQueueRow(row, 'hospital_opd_queue')),
         ]).filter((row): row is QueueRow => Boolean(row)),
       );
       setMasterOpdQueue(liveQueue);
-      setPatientRegistry(buildPatientDirectory(liveQueue, patientRows || []));
+      setPatientRegistry(buildPatientDirectory(liveQueue, scopedPatients));
 
       const pharmacySource = (pharmRows || []).length > 0 ? pharmRows : inventoryRows || [];
-      setPharmacyItems(dedupePharmacyItems(pharmacySource.map(mapPharmacyRow)));
+      const scopedPharmacy = filterRowsByDepartmentScope(pharmacySource, scope);
+      setPharmacyItems(dedupePharmacyItems(scopedPharmacy.map(mapPharmacyRow)));
 
-      const mappedBeds = (bedRows || []).map(mapBedRow);
+      const mappedBeds = canViewIpdModule(scope)
+        ? filterRowsByDepartmentScope(bedRows || [], scope).map(mapBedRow)
+        : [];
       setBeds(mappedBeds);
 
       const invoiceSource = (invoiceRows || []).length > 0 ? invoiceRows : billRows || [];
       const checkoutSource = (checkoutRows || []).length > 0 ? checkoutRows : invoiceSource;
-      const mappedInvoices = checkoutSource.map(mapCheckoutInvoice);
+      const scopedBillingRows = canViewBillingModule(scope)
+        ? filterRowsByDepartmentScope(checkoutSource, scope)
+        : [];
+      const mappedInvoices = scopedBillingRows.map(mapCheckoutInvoice);
       setInvoices(mappedInvoices);
       setPendingInvoices(mappedInvoices.filter((inv) => /pending|unpaid|unbilled/i.test(inv.status)));
 
       const supplySource =
         (poRows || []).length > 0 ? poRows : (supplyRows || []).length > 0 ? supplyRows : [];
-      const mappedSupply = supplySource.map(mapPurchaseOrderRow);
+      const scopedSupplyRows = canViewSupplyModule(scope)
+        ? filterRowsByDepartmentScope(supplySource, scope)
+        : [];
+      const mappedSupply = scopedSupplyRows.map(mapPurchaseOrderRow);
       setSupplyOrders(mappedSupply);
 
-      const emergencySource = (emergencyRows || []).length > 0 ? emergencyRows : hospitalEmergencyRows || [];
-      const nextEmergencies = emergencySource.map((row) => ({
+      const emergencySource = canViewEmergencyModule(scope)
+        ? (emergencyRows || []).length > 0
+          ? emergencyRows
+          : hospitalEmergencyRows || []
+        : [];
+      const scopedEmergency = filterRowsByDepartmentScope(emergencySource, scope);
+      const nextEmergencies = scopedEmergency.map((row) => ({
         id: String(row.id ?? ''),
         patient_name: String(row.patient_name ?? row.patient_info ?? ''),
         complaint: String(row.chief_complaint ?? row.patient_info ?? ''),
@@ -1711,6 +1744,11 @@ function HospitalMasterDashboard() {
     if (!supabase) return;
     const activeHospital = hospitalInfo.id;
 
+    if (!canViewSupplyModule(deskScopeRef.current)) {
+      setVendorsList([]);
+      return;
+    }
+
     try {
       const rows = await fetchHospitalVendors(supabase, activeHospital);
       setVendorsList(rows);
@@ -1727,6 +1765,10 @@ function HospitalMasterDashboard() {
   const loadVendorsRef = useRef(loadVendors);
 
   useEffect(() => {
+    deskScopeRef.current = deskScope;
+  }, [deskScope]);
+
+  useEffect(() => {
     loadPlatformDataRef.current = loadPlatformData;
     loadEmergencyDataRef.current = loadEmergencyData;
     loadBillingInvoicesRef.current = loadBillingInvoices;
@@ -1739,6 +1781,7 @@ function HospitalMasterDashboard() {
     const hospitalId = session?.hospital_id;
     const staffType = session?.staff_type || 'Staff';
     setCurrentUserRole(staffType);
+    setDeskScope(buildDeskScopeFromSession(session));
 
     if (!hospitalId || !isHospitalAppRole(staffType)) {
       router.replace('/hospital/login');
@@ -1770,7 +1813,6 @@ function HospitalMasterDashboard() {
   const navigateToTab = useCallback(
     (tab: NavModule) => {
       setActiveTab(tab);
-      setMobileNavOpen(false);
       router.replace(dashboardHrefForTab(tab), { scroll: false });
     },
     [router],
@@ -3019,8 +3061,9 @@ function HospitalMasterDashboard() {
     .filter((inv) => /pending|unpaid|unbilled/i.test(inv.status))
     .reduce((sum, inv) => sum + inv.amount, 0);
   const openBillsCount = invoices.filter((inv) => /pending|unpaid|unbilled/i.test(inv.status)).length;
-  const totalCollections = collectedTotal;
-  const outstanding = pendingCheckoutTotal;
+  const showBillingMetrics = canViewBillingModule(deskScope);
+  const totalCollections = showBillingMetrics ? collectedTotal : 0;
+  const outstanding = showBillingMetrics ? pendingCheckoutTotal : 0;
   const waitingCount = opdQueue.filter((q) => triageStage(q.status) === 'Waiting').length;
   const inConsultCount = opdQueue.filter((q) => triageStage(q.status) === 'In Consultation').length;
   const waitingMinutes = opdQueue
@@ -3072,59 +3115,37 @@ function HospitalMasterDashboard() {
     [filteredPatients, masterOpdQueue, invoices],
   );
 
-  const navLinks: Array<{ id: NavModule; label: string; icon: typeof LayoutGrid; badge?: number }> = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
-    { id: 'smartq', label: 'SmartQ OPD', icon: ListOrdered, badge: opdQueue.length },
-    { id: 'patients', label: 'Patients', icon: Users, badge: patientRegistry.length },
-    { id: 'ipd', label: 'IPD & Bed Census', icon: BedDouble, badge: beds.length },
-    { id: 'emergency', label: 'Emergency Desk', icon: AlertTriangle, badge: activeEmergencies.length },
-    { id: 'billing', label: 'Billing & Checkout', icon: IndianRupee, badge: pendingCheckout.length },
-    { id: 'supply', label: 'Supply & Orders', icon: PackageCheck, badge: supplyOrders.length + vendorsList.length },
-    { id: 'staff', label: 'Doctors & Staff', icon: HeartHandshake, badge: staffMembers.length },
-  ];
+  const navLinks = useMemo(() => {
+    const links: Array<{ id: NavModule; label: string; icon: typeof LayoutGrid; badge?: number }> = [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
+      { id: 'smartq', label: 'SmartQ OPD', icon: ListOrdered, badge: opdQueue.length },
+      { id: 'patients', label: 'Patients', icon: Users, badge: patientRegistry.length },
+      { id: 'ipd', label: 'IPD & Bed Census', icon: BedDouble, badge: beds.length },
+      { id: 'emergency', label: 'Emergency Desk', icon: AlertTriangle, badge: activeEmergencies.length },
+      { id: 'billing', label: 'Billing & Checkout', icon: IndianRupee, badge: pendingCheckout.length },
+      { id: 'supply', label: 'Supply & Orders', icon: PackageCheck, badge: supplyOrders.length + vendorsList.length },
+      { id: 'staff', label: 'Doctors & Staff', icon: HeartHandshake, badge: staffMembers.length },
+    ];
 
-  const sidebar = (
-    <>
-      <HospitalOperationsSidebarBrand />
-      <div className="p-5 overflow-y-auto flex-1">
-        <nav className="space-y-1">
-          {navLinks.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => navigateToTab(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  isActive ? 'bg-[#18537a] text-white shadow-md font-bold' : 'text-slate-300 hover:text-white hover:bg-[#0e3b5b]/60'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-300' : 'text-slate-400'}`} />
-                  <span>{item.label}</span>
-                </div>
-                {Boolean(item.badge) && (
-                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold ${isActive ? 'bg-cyan-400 text-slate-950' : 'bg-[#144466] text-cyan-200'}`}>
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-      <div className="p-4 border-t border-[#124263] bg-[#07253a] flex items-center justify-between">
-        <div className="truncate pr-2">
-          <div className="text-xs font-bold text-white truncate">{hospitalInfo.adminName}</div>
-          <div className="text-[10px] text-cyan-300/70 truncate">{hospitalInfo.adminEmail}</div>
-        </div>
-        <button type="button" onClick={handleLogout} className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-[#0e3b5b]" title="Log Out">
-          <LogOut className="w-4 h-4" />
-        </button>
-      </div>
-    </>
-  );
+    return links.filter((item) => {
+      if (item.id === 'billing') return canViewBillingModule(deskScope);
+      if (item.id === 'supply') return canViewSupplyModule(deskScope);
+      if (item.id === 'ipd') return canViewIpdModule(deskScope);
+      if (item.id === 'emergency') return canViewEmergencyModule(deskScope);
+      if (item.id === 'staff') return isPlatformDeskAdmin(deskScope?.staffType);
+      return true;
+    });
+  }, [
+    activeEmergencies.length,
+    beds.length,
+    deskScope,
+    opdQueue.length,
+    patientRegistry.length,
+    pendingCheckout.length,
+    staffMembers.length,
+    supplyOrders.length,
+    vendorsList.length,
+  ]);
 
   if (isVerifying) {
     return (
@@ -3135,57 +3156,78 @@ function HospitalMasterDashboard() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#f1f5f9] text-slate-800 font-sans overflow-hidden select-none">
-      <aside className="w-64 bg-[#0a2e47] text-slate-200 hidden md:flex flex-col justify-between shrink-0 shadow-2xl z-30">
-        {sidebar}
-      </aside>
-
-      {mobileNavOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <button type="button" className="absolute inset-0 bg-slate-950/50" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} />
-          <aside className="relative z-50 h-full w-64 bg-[#0a2e47] text-slate-200 flex flex-col justify-between">{sidebar}</aside>
+    <div className="flex w-full flex-col overflow-hidden bg-[#f1f5f9] font-sans text-slate-800 select-none">
+      <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white py-3 pl-4 pr-6 shadow-xs sm:px-6 sm:py-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <HospitalOperationsHeaderBrand />
+          <HospitalOperationsHeaderTitle
+            title={`${navLinks.find((n) => n.id === activeTab)?.label ?? 'Dashboard'} Command Center`}
+            nodeId={hospitalInfo.id}
+            nodeName={hospitalInfo.name || 'Regal Multispeciality Hospital'}
+          />
+          {deskScope?.department ? (
+            <span className="hidden rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-cyan-800 lg:inline">
+              {deskScope.department}
+            </span>
+          ) : null}
         </div>
-      )}
-
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white py-3 pl-4 pr-6 shadow-xs sm:px-6 sm:py-4">
-          <div className="flex min-w-0 items-center gap-4">
-            <button
-              type="button"
-              className="rounded-xl border border-slate-200 p-2 md:hidden"
-              onClick={() => setMobileNavOpen(true)}
-              aria-label="Open modules"
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={() => setActiveModal('opd')} className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500">
+            <Plus className="h-4 w-4" />
+            Issue OPD Token
+          </button>
+          {canProvisionStaff && (
+            <Link
+              href="/dashboard/staff-credentials"
+              className="flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-800"
             >
-              <Menu className="h-4 w-4" />
-            </button>
-            <HospitalOperationsHeaderBrand />
-            <HospitalOperationsHeaderTitle
-              title={`${navLinks.find((n) => n.id === activeTab)?.label} Command Center`}
-              nodeId={hospitalInfo.id}
-              nodeName={hospitalInfo.name || 'Regal Multispeciality Hospital'}
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setActiveModal('opd')} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Issue OPD Token
-            </button>
-            {canProvisionStaff && (
-              <Link
-                href="/dashboard/staff-credentials"
-                className="px-4 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold flex items-center gap-2"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                Staff Credentials Vault
-              </Link>
-            )}
-            <button type="button" onClick={() => void loadPlatformData(hospitalInfo.id)} className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50">
-              <RefreshCw className={`w-4 h-4 text-cyan-600 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </header>
+              <ShieldCheck className="h-4 w-4" />
+              Staff Credentials Vault
+            </Link>
+          )}
+          <button type="button" onClick={() => void loadPlatformData(hospitalInfo.id)} className="rounded-xl border border-slate-200 bg-white p-2 hover:bg-slate-50">
+            <RefreshCw className={`h-4 w-4 text-cyan-600 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+          <button type="button" onClick={handleLogout} className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-50 hover:text-rose-600" title="Log out">
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </header>
 
-        <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+      <div className="shrink-0 overflow-x-auto border-b border-slate-200 bg-white px-4 py-2 sm:px-6">
+        <nav className="flex min-w-max gap-1">
+          {navLinks.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => navigateToTab(item.id)}
+                className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-cyan-700 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                <Icon className={`h-4 w-4 ${isActive ? 'text-cyan-100' : 'text-slate-400'}`} />
+                <span>{item.label}</span>
+                {Boolean(item.badge) && (
+                  <span
+                    className={`rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      <div className="flex-1 space-y-6 overflow-y-auto p-6 sm:p-8">
           {billingCheckoutAlert && (
             <div className="flex items-start justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 shadow-xs">
               <div className="flex items-start gap-3 min-w-0">
@@ -3285,7 +3327,11 @@ function HospitalMasterDashboard() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-black text-slate-900">Facility Operations Snapshot</h3>
-                <p className="text-xs text-slate-500">Live census scoped to {hospitalInfo.id}. Empty modules stay empty until real records exist.</p>
+                <p className="text-xs text-slate-500">
+                  Live census scoped to {hospitalInfo.id}
+                  {deskScope?.department ? ` · ${deskScope.department}` : ''}. Empty modules stay empty until
+                  real records exist.
+                </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <button type="button" onClick={() => navigateToTab('smartq')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
@@ -3293,23 +3339,29 @@ function HospitalMasterDashboard() {
                   <div className="text-3xl font-black text-slate-900 mt-2">{opdQueue.length}</div>
                   <div className="text-xs font-medium text-cyan-700 mt-1">{opdQueue.length} waiting in triage</div>
                 </button>
-                <button type="button" onClick={() => navigateToTab('staff')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">PROVISIONED STAFF</div>
-                  <div className="text-3xl font-black text-slate-900 mt-2">{provisionedStaffCount}</div>
-                  <div className="text-xs font-medium text-cyan-700 mt-1">{doctorCount} doctors verified</div>
-                </button>
-                <button type="button" onClick={() => navigateToTab('ipd')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">BED OCCUPANCY</div>
-                  <div className="text-3xl font-black text-slate-900 mt-2">{occupancyRate}%</div>
-                  <div className="text-xs font-medium text-cyan-700 mt-1">{occupiedBeds}/{beds.length} occupied</div>
-                </button>
-                <button type="button" onClick={() => navigateToTab('billing')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
-                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Total Collections (₹)
-                  </span>
-                  <div className="text-3xl font-black text-slate-900 mt-2">{inr(totalCollections)}</div>
-                  <div className="text-xs font-medium text-emerald-600 mt-1">{inr(outstanding)} outstanding</div>
-                </button>
+                {isPlatformDeskAdmin(deskScope?.staffType) ? (
+                  <button type="button" onClick={() => navigateToTab('staff')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">PROVISIONED STAFF</div>
+                    <div className="text-3xl font-black text-slate-900 mt-2">{provisionedStaffCount}</div>
+                    <div className="text-xs font-medium text-cyan-700 mt-1">{doctorCount} doctors verified</div>
+                  </button>
+                ) : null}
+                {canViewIpdModule(deskScope) ? (
+                  <button type="button" onClick={() => navigateToTab('ipd')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">BED OCCUPANCY</div>
+                    <div className="text-3xl font-black text-slate-900 mt-2">{occupancyRate}%</div>
+                    <div className="text-xs font-medium text-cyan-700 mt-1">{occupiedBeds}/{beds.length} occupied</div>
+                  </button>
+                ) : null}
+                {showBillingMetrics ? (
+                  <button type="button" onClick={() => navigateToTab('billing')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Total Collections (₹)
+                    </span>
+                    <div className="text-3xl font-black text-slate-900 mt-2">{inr(totalCollections)}</div>
+                    <div className="text-xs font-medium text-emerald-600 mt-1">{inr(outstanding)} outstanding</div>
+                  </button>
+                ) : null}
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
@@ -3864,7 +3916,6 @@ function HospitalMasterDashboard() {
             </div>
           )}
         </div>
-      </main>
 
       {activeModal === 'opd' && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">

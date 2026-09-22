@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 
 import { resolveHospitalSessionRole } from '@/lib/auth/hospital-rbac';
 
-export const HOSPITAL_DESK_DASHBOARD_PATH = '/hospital/dashboard';
+export const HOSPITAL_DESK_DASHBOARD_PATH = '/dashboard';
 export const HOSPITAL_DESK_LOGIN_PATH = '/hospital/login';
 
 export type VerifiedHospitalDeskSession = {

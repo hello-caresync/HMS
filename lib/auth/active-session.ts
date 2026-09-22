@@ -14,6 +14,7 @@ export type ActiveStaffSession = {
   full_name: string;
   staff_type: string;
   department: string;
+  staff_id_code?: string;
   email: string;
   portal_access: string;
 };
