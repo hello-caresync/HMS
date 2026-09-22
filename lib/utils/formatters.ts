@@ -37,22 +37,6 @@ export function formatHospitalBadge(user: HospitalBadgeUser): string {
     return user.doctor_id.trim();
   }
 
-  const email = (user.email || '').toLowerCase().trim();
-  const name = (user.name || '').toLowerCase().trim();
-
-  if (email === 'aishwaryaregaladmin@gmail.com' || name.includes('aishwarya')) {
-    return 'HOSP-01-ADM01';
-  }
-  if (email === 'suriraju@gmail.com' || name.includes('suriraju')) {
-    return 'SURI-RH-26-12';
-  }
-  if (email === 'suresh@gmail.com' || name.includes('adsync')) {
-    return 'HOSP-01-VEN01';
-  }
-  if (email === 'ravi@gmail.com' || name.includes('ravi')) {
-    return 'HOSP-01-STF02';
-  }
-
   const roleRaw = (user.role || 'STF').toUpperCase();
   const prefix = roleRaw.includes('DOC')
     ? 'DOC'

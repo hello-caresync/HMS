@@ -23,10 +23,7 @@ import { createClient } from '@supabase/supabase-js';
 import { OnboardHospitalModal, type OnboardHospitalResult } from '@/components/admin/OnboardHospitalModal';
 import { StaffProvisioningModal } from '@/components/hospital/StaffProvisioningModal';
 import { credentialRoleToStaffType } from '@/lib/auth/hospitalAuth';
-import {
-  fetchGovernanceVaultDirectory,
-  normalizeGovernanceCredentialBadge,
-} from '@/lib/hospital/governance-vault-loader';
+import { fetchSuperAdminStaffCredentials } from '@/lib/super-admin/staff-credentials-loader';
 import {
   credentialBelongsToTenant,
   formatTenantCredentialScopeLabel,
@@ -89,22 +86,24 @@ function resolveDisplayStaffType(row: Record<string, unknown>): StaffCredential[
 }
 
 function normalizeCredential(row: Record<string, unknown>): StaffCredential {
-  const badge_id = String(row.badge_id ?? normalizeGovernanceCredentialBadge(row));
+  const badge_id = String(row.staff_id_code ?? row.employee_id ?? row.badge_id ?? '').trim().toUpperCase();
 
   return {
     id: String(row.id ?? ''),
-    hospital_id: String(row.hospital_id ?? ''),
+    hospital_id: String(row.hospital_id ?? row.hospital_code ?? ''),
     hospital_name: String(row.hospital_name ?? ''),
     full_name: String(row.full_name ?? ''),
     staff_type: resolveDisplayStaffType(row),
     department: String(row.department ?? ''),
     email: String(row.email ?? ''),
-    temporary_passcode: String(row.temporary_passcode ?? row.passcode ?? ''),
+    temporary_passcode: String(
+      row.passcode_key ?? row.temporary_passcode ?? row.passcode ?? '',
+    ),
     phone: row.phone ? String(row.phone) : undefined,
     portal_access: String(row.portal_access ?? '/dashboard'),
-    status: (row.status as StaffCredential['status']) ?? 'Active',
+    status: row.is_active === false ? 'Restricted' : 'Active',
     created_at: row.created_at ? String(row.created_at) : undefined,
-    badge_id,
+    badge_id: badge_id || String(row.id ?? ''),
     staff_id: row.staff_id ? String(row.staff_id) : undefined,
     doctor_id: row.doctor_id ? String(row.doctor_id) : undefined,
     doctor_code: row.doctor_code ? String(row.doctor_code) : undefined,
@@ -131,29 +130,16 @@ export default function SuperAdminHospitalBlocksDashboard() {
     setIsLoading(true);
     if (supabase) {
       try {
-        const [tenantRows, vaultData] = await Promise.all([
+        const [tenantRows, staffResult] = await Promise.all([
           fetchSuperAdminHospitalTenants(supabase),
-          fetchGovernanceVaultDirectory(supabase),
+          fetchSuperAdminStaffCredentials(supabase),
         ]);
 
-        if (vaultData.errors.length > 0) {
-          console.warn('[super-admin] governance vault partial load:', vaultData.errors);
+        if (staffResult.error) {
+          console.warn('[super-admin] hospital_staff load error:', staffResult.error);
         }
 
-        const creds = vaultData.credentialRows
-          .filter((row) => row.is_active !== false)
-          .map((row) => {
-            const record = row as Record<string, unknown>;
-            return normalizeCredential({
-              ...record,
-              badge_id: record.badge_id,
-              staff_type: credentialRoleToStaffType(
-                String(record.role ?? 'staff') as 'admin' | 'doctor' | 'staff' | 'nurse',
-              ),
-              temporary_passcode: record.passcode ?? record.temporary_passcode,
-              status: record.is_active === false ? 'Restricted' : 'Active',
-            });
-          });
+        const creds = staffResult.rows.map((row) => normalizeCredential(row as Record<string, unknown>));
         setCredentials(creds);
         setHospitals(tenantRows);
       } catch (err) {
@@ -172,10 +158,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'hospitals' }, () => {
           void loadPlatformData();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_user_credentials' }, () => {
-          void loadPlatformData();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_staff_credentials' }, () => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_staff' }, () => {
           void loadPlatformData();
         })
         .subscribe();
