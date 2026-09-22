@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
-  Activity,
   ArrowRight,
   CheckCircle2,
   Eye,
@@ -18,6 +17,7 @@ import {
   Zap,
 } from 'lucide-react';
 
+import { HospitalLogo } from '@/components/common/Logo';
 import {
   authenticateAdmin,
   isValidEmail,
@@ -116,11 +116,8 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
       </div>
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-[clamp(1rem,3vw,2rem)] py-[clamp(0.5rem,1.5vh,1.25rem)]">
-        <div className="mb-3 w-full max-w-[460px] rounded-xl border border-[#111A46]/20 bg-gradient-to-br from-[#050816] to-[#0A1028] p-3 lg:hidden">
-          <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-[#22D3EE]" aria-hidden="true" />
-            <p className="text-xs font-black tracking-wide text-white">NEXORA • ADMIN COMMAND CENTER</p>
-          </div>
+        <div className="mb-3 flex w-full max-w-[460px] justify-center lg:hidden">
+          <HospitalLogo className="h-10 w-auto" priority />
         </div>
 
         <motion.div
@@ -141,6 +138,9 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
             )}
 
             <div className="mb-[clamp(0.75rem,1.5vh,1.25rem)]">
+              <div className="mb-3 flex justify-center">
+                <HospitalLogo className="h-10 w-auto" priority />
+              </div>
               <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-[#DCE8FF] bg-[#EEF4FF] px-3 py-1 text-[10px] font-bold tracking-[0.16em] text-[#3B82F6]">
                 <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                 SECURE ADMIN PORTAL

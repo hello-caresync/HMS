@@ -10,8 +10,9 @@ import {
   Loader2,
   Lock,
   Mail,
-  Truck,
 } from 'lucide-react';
+
+import { HospitalLogo } from '@/components/common/Logo';
 import { toast } from 'sonner';
 
 import {
@@ -87,8 +88,8 @@ export function VendorPortalLoginForm({
     <div className="flex min-h-screen items-center justify-center p-6 font-sans">
       <div className="w-full max-w-md rounded-3xl border border-[#dcc2f9]/70 bg-white p-8 shadow-xl">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dcc2f9]/60 text-[#6a38a0]">
-            <Truck className="h-7 w-7" />
+          <div className="mb-3 flex justify-center">
+            <HospitalLogo className="h-11 w-auto" priority />
           </div>
           <h1 className="text-2xl font-black text-[#2e1053]">Vendor Portal</h1>
           <p className="mt-1 text-xs text-[#684594]">Hospital supply chain partner access</p>

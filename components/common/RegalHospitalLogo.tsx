@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
+import { REGAL_HOSPITAL_NODE_LABEL } from '@/lib/regal/brand';
 
-import { REGAL_HOSPITAL_LOGO_SRC, REGAL_HOSPITAL_NODE_LABEL } from '@/lib/regal/brand';
+import { HospitalLogo } from '@/components/common/Logo';
 
 export type RegalHospitalLogoProps = {
   /** Tailwind height class, e.g. `h-7`, `h-9` */
@@ -38,13 +38,9 @@ export function RegalHospitalLogo({
   variant = 'default',
 }: RegalHospitalLogoProps) {
   const image = (
-    <Image
-      src={REGAL_HOSPITAL_LOGO_SRC}
-      alt="Regal Multispeciality Hospital"
-      width={200}
-      height={56}
+    <HospitalLogo
+      className={`${heightClass} ${widthClass} object-left`}
       priority={priority}
-      className={`${heightClass} ${widthClass} object-contain object-left`}
     />
   );
 

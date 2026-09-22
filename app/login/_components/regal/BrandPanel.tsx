@@ -1,7 +1,9 @@
 'use client';
 
 import { motion, useReducedMotion } from 'framer-motion';
-import { Activity, Building2, HeartPulse, Network, Users } from 'lucide-react';
+import { Activity, Building2, Network, Users } from 'lucide-react';
+
+import { HospitalLogo } from '@/components/common/Logo';
 
 import { useCountUp } from '../useCountUp';
 
@@ -167,14 +169,8 @@ export default function BrandPanel({ reducedMotion }: { reducedMotion: boolean }
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex items-center gap-2.5"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#0EA5A4]/30 bg-[#0EA5A4]/10">
-            <HeartPulse className="h-4 w-4 text-[#0EA5A4]" aria-hidden="true" />
-          </div>
-          <div>
-            <p className="text-sm font-bold tracking-[0.12em] text-white sm:text-base">REGAL HOSPITAL</p>
-          </div>
+          <HospitalLogo className="h-10 w-auto sm:h-12" priority />
         </motion.div>
 
         <motion.div

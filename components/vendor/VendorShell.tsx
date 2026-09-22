@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronLeft, PanelLeftClose, PanelLeftOpen, Wifi } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
+import { HospitalLogo } from '@/components/common/Logo';
 import { HospitalSelector } from '@/components/vendor/HospitalSelector';
 import {
   getVendorSession,
@@ -27,13 +28,6 @@ export function VendorShell({ children }: VendorShellProps) {
     setCompanyName(resolveVendorCompanyDisplayName(getVendorSession()));
   }, []);
 
-  const companyInitials = companyName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
-
   const sidebarWidth = collapsed ? 'w-[4.5rem]' : 'w-64';
 
   return (
@@ -44,14 +38,12 @@ export function VendorShell({ children }: VendorShellProps) {
       >
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3 pb-3 pt-6">
           {!collapsed ? (
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold uppercase tracking-wider text-[#ceaef2]">
-                {companyName}
-              </p>
-              <p className="truncate text-[10px] font-medium text-white/70">Supplier Portal</p>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <HospitalLogo className="h-8 w-auto max-w-full" />
+              <p className="truncate text-[10px] font-medium text-white/70">{companyName}</p>
             </div>
           ) : (
-            <span className="mx-auto text-xs font-black text-[#ceaef2]">{companyInitials || 'VP'}</span>
+            <HospitalLogo className="mx-auto h-7 w-auto" />
           )}
           <button
             type="button"

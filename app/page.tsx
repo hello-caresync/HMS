@@ -9,8 +9,9 @@ import {
   UserCheck,
   Truck,
   ArrowRight,
-  Activity,
 } from 'lucide-react';
+
+import { HospitalLogo } from '@/components/common/Logo';
 
 interface PortalCard {
   id: string;
@@ -161,11 +162,8 @@ export default function WorkspacePortalSelector() {
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-between px-4 py-8 sm:px-6 sm:py-12 lg:px-12">
         <header className="mx-auto max-w-3xl shrink-0 pt-1 text-center">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/75 px-3 py-1 shadow-md shadow-sky-900/5 backdrop-blur-md">
-            <Activity className="h-3.5 w-3.5 animate-pulse text-sky-600" />
-            <span className="text-xs font-semibold tracking-wide text-slate-800">
-              Regal Healthcare • Unified Clinical Platform
-            </span>
+          <div className="mb-3 flex justify-center">
+            <HospitalLogo className="h-12 w-auto sm:h-14" priority href="/" />
           </div>
 
           <h1 className="mb-2 text-2xl font-extrabold tracking-tight text-stone-900 sm:text-4xl">

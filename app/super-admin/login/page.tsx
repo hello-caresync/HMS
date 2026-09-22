@@ -4,7 +4,6 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
-  Crown,
   Eye,
   EyeOff,
   KeyRound,
@@ -12,6 +11,8 @@ import {
   Mail,
   ShieldCheck,
 } from 'lucide-react';
+
+import { HospitalLogo } from '@/components/common/Logo';
 import { toast } from 'sonner';
 
 import { purgeLocalAdminSessions } from '@/lib/auth/active-session';
@@ -124,8 +125,8 @@ function SuperAdminLoginForm() {
 
       <div className="relative z-10 mx-auto my-auto w-full max-w-md space-y-6 rounded-3xl border border-slate-300 bg-[#f8fafc]/98 p-8 text-slate-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.45)] backdrop-blur-xl">
         <div className="space-y-2 text-center">
-          <div className="inline-flex rounded-2xl border border-amber-200 bg-amber-50 p-3 text-amber-600 shadow-xs">
-            <Crown className="h-7 w-7" />
+          <div className="flex justify-center">
+            <HospitalLogo className="h-11 w-auto" priority />
           </div>
           <div>
             <span className="block font-mono text-[10px] font-extrabold tracking-widest text-amber-700 uppercase">

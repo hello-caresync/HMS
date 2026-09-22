@@ -4,3 +4,5 @@ export {
   RegalHospitalLogoMark,
   type RegalHospitalLogoProps,
 } from '@/components/common/RegalHospitalLogo';
+
+export { HospitalLogo, type HospitalLogoProps } from '@/components/common/Logo';

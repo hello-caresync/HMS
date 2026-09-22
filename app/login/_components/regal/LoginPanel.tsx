@@ -10,13 +10,13 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  HeartPulse,
   Loader2,
   LockKeyhole,
   Mail,
   ShieldCheck,
 } from 'lucide-react';
 
+import { HospitalLogo } from '@/components/common/Logo';
 import {
   authenticateAdmin,
   isValidEmail,
@@ -105,16 +105,8 @@ export default function LoginPanel({ redirectUrl }: LoginPanelProps) {
       aria-label="Administrator login"
     >
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-[clamp(1rem,3vw,2rem)] py-[clamp(0.75rem,2vh,1.5rem)]">
-        <div className="mb-3 w-full max-w-[420px] rounded-xl border border-[#0EA5A4]/20 bg-gradient-to-br from-[#07111F] to-[#0D1B2A] p-3 lg:hidden">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0EA5A4]/15">
-              <HeartPulse className="h-4 w-4 text-[#0EA5A4]" aria-hidden="true" />
-            </div>
-            <p className="text-xs font-bold tracking-wide text-white">REGAL HOSPITAL</p>
-          </div>
-          <p className="mt-2 text-sm font-medium leading-snug text-white/90">
-            Intelligent Healthcare. <span className="text-[#38BDF8]">Connected Care.</span>
-          </p>
+        <div className="mb-3 flex w-full max-w-[420px] justify-center lg:hidden">
+          <HospitalLogo className="h-10 w-auto" priority />
         </div>
 
         <motion.div
@@ -137,12 +129,8 @@ export default function LoginPanel({ redirectUrl }: LoginPanelProps) {
             </motion.div>
           )}
 
-          <div className="mb-[clamp(0.75rem,2vh,1.25rem)] inline-flex items-center gap-2 rounded-full border border-[#DFF7F5] bg-[#DFF7F5]/60 px-3 py-1 text-[10px] font-semibold tracking-wide text-[#0EA5A4]">
-            <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#0EA5A4] opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#0EA5A4]" />
-            </span>
-            REGAL HOSPITAL • ADMIN PORTAL
+          <div className="mb-[clamp(0.75rem,2vh,1.25rem)] flex justify-center">
+            <HospitalLogo className="h-10 w-auto" priority />
           </div>
 
           <h2 className="text-[clamp(1.35rem,2vw,1.75rem)] font-bold text-[#102033]">Welcome back</h2>
