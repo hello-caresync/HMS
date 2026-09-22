@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   LOGIN_FORM_AUTOCOMPLETE,
@@ -30,9 +30,44 @@ import {
   EyeOff,
   ShieldCheck,
   CheckCircle2,
-  Clock3,
-  Users,
+  Lock,
+  FileText,
+  Activity,
+  Pill,
 } from 'lucide-react';
+
+const TELEMETRY_TILES = [
+  {
+    label: 'OPD Queue Optimization',
+    value: 'Zero-Latency Handoff',
+    subtitle: 'Instant token call & queue reassignment',
+    icon: Activity,
+  },
+  {
+    label: 'Digital Rx Engine',
+    value: '3-Click Dispatch',
+    subtitle: 'Standardized dosage & duration templates',
+    icon: FileText,
+  },
+  {
+    label: 'Tenancy Protection',
+    value: 'Encrypted Chamber',
+    subtitle: 'Consultations isolated per physician ID',
+    icon: Lock,
+  },
+  {
+    label: 'Dispensary Flow',
+    value: 'Direct Billing Clearance',
+    subtitle: 'Automated inventory allocation',
+    icon: Pill,
+  },
+] as const;
+
+const FEATURE_STRIP = [
+  { icon: '⚡', text: 'Sub-Second Cloudflare Edge Routing' },
+  { icon: '🔒', text: 'HIPAA/ABDM Architecture Ready' },
+  { icon: '📋', text: 'Standardized ICD-10 & Vitals Capture' },
+] as const;
 
 interface HospitalDoctorRow {
   doctor_id: string;
@@ -63,17 +98,6 @@ export default function DoctorLoginPortal() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
-  const previewDoctor = useMemo(() => {
-    const key = identifier.trim().toUpperCase();
-    return (
-      roster.find(
-        (d) =>
-          d.doctor_id.toUpperCase() === key ||
-          d.email?.toLowerCase() === identifier.trim().toLowerCase(),
-      ) ?? roster[0]
-    );
-  }, [identifier, roster]);
 
   useEffect(() => {
     const loadRoster = async () => {
@@ -386,59 +410,72 @@ export default function DoctorLoginPortal() {
             </div>
 
             <div className="relative z-10 my-6 flex flex-1 items-center">
-              <div className="w-full rounded-2xl border border-white/15 bg-slate-950/45 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
-                <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4">
+              <div className="w-full rounded-2xl border border-emerald-500/20 bg-emerald-950/40 p-6 shadow-2xl backdrop-blur-xl">
+                <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-emerald-500/20 pb-4">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200/80">
-                      Live OPD Cockpit Preview
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">
+                      Clinical Workspace OS · Regal Healthcare
                     </p>
-                    <h2 className="mt-1 text-lg font-bold text-white">
-                      Doctor Consultation Queue · Active Shift
+                    <h2 className="mt-1 text-lg font-bold text-emerald-100">
+                      Intelligent Outpatient &amp; Triage Hub
                     </h2>
-                    {previewDoctor ? (
-                      <p className="mt-0.5 text-xs text-white/60">
-                        {previewDoctor.doctor_name} · {previewDoctor.department}
-                      </p>
-                    ) : null}
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold text-white">
-                      <Users className="h-3.5 w-3.5 text-emerald-300" aria-hidden />
-                      4 Pending Patients
+                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3 py-1.5 text-[11px] font-semibold text-emerald-100">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold text-white">
-                      <Clock3 className="h-3.5 w-3.5 text-cyan-200" aria-hidden />
-                      Avg. Wait: 12 min
-                    </span>
-                  </div>
+                    Real-Time Sync Active
+                  </span>
                 </div>
 
-                <div className="rounded-xl border border-emerald-500/25 bg-emerald-950/40 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-white">Patient Mani</p>
-                      <p className="text-xs text-emerald-100/80">38y · Male</p>
-                      <p className="mt-2 text-xs leading-relaxed text-white/75">
-                        &ldquo;General checkup · Vitals Recorded&rdquo;
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-mono text-xs font-bold text-cyan-200">Token #04</p>
-                      <span className="mt-1 inline-block rounded-full border border-emerald-400/40 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-100">
-                        Ready for Consult
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {TELEMETRY_TILES.map((tile) => {
+                    const Icon = tile.icon;
+                    return (
+                      <div
+                        key={tile.label}
+                        className="group rounded-xl border border-emerald-500/20 bg-emerald-950/30 p-4 transition-all duration-300 hover:border-emerald-400/40 hover:bg-emerald-900/25 hover:shadow-[0_0_24px_rgba(52,211,153,0.12)]"
+                      >
+                        <div className="mb-2 flex items-center gap-2">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-300 transition-colors group-hover:border-emerald-400/40 group-hover:text-emerald-200">
+                            <Icon className="h-4 w-4" aria-hidden />
+                          </div>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/90">
+                            {tile.label}
+                          </p>
+                        </div>
+                        <p className="text-sm font-bold text-emerald-100">{tile.value}</p>
+                        <p className="mt-1 text-[11px] leading-relaxed text-slate-300">
+                          {tile.subtitle}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-950/50 p-3 backdrop-blur-md">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                    {FEATURE_STRIP.map((item) => (
+                      <span
+                        key={item.text}
+                        className="inline-flex items-center gap-2 text-[11px] font-medium text-emerald-100/90 transition-colors hover:text-emerald-50"
+                      >
+                        <span
+                          className="flex h-6 w-6 items-center justify-center rounded-md border border-emerald-400/25 bg-emerald-500/10 text-xs shadow-[0_0_12px_rgba(52,211,153,0.15)]"
+                          aria-hidden
+                        >
+                          {item.icon}
+                        </span>
+                        {item.text}
                       </span>
-                    </div>
+                    ))}
                   </div>
-                </div>
-
-                <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-teal-400/30 bg-teal-500/15 px-3 py-2 text-xs font-semibold text-teal-100">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-300" aria-hidden />
-                  Real-Time Digital Rx &amp; Pharmacy Clearance
                 </div>
               </div>
             </div>
 
-            <p className="relative z-10 text-[11px] leading-relaxed text-white/70">
+            <p className="relative z-10 text-[11px] leading-relaxed text-slate-300">
               Doctor-isolated data tenancy. Your active OPD tokens, clinical vitals intake, and
               prescriptions are synchronized strictly with your authorized clinician session.
             </p>
