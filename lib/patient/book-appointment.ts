@@ -242,6 +242,9 @@ export async function bookAppointmentWithDoctor(
   if (payload.booking_for) {
     insertPayload.booking_for = payload.booking_for;
   }
+  if (payload.beneficiary_relation) {
+    insertPayload.beneficiary_relation = payload.beneficiary_relation;
+  }
 
   if (patientId) {
     insertPayload.patient_id = patientId;

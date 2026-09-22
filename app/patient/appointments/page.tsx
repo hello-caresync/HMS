@@ -3,14 +3,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { resolveActiveAuthUser } from '@/lib/auth/resolve-active-auth-user';
+import { toast } from 'sonner';
 import { BookAppointmentModal } from '@/components/patient/BookAppointmentModal';
 import { todayIsoDate } from '@/lib/hospital/smartq-wait';
-import { resolveEffectivePatientId } from '@/lib/patient/resolve-effective-patient-id';
 import { readPatientPortalSession } from '@/lib/patient/portal-session';
 import { createClient } from '@/lib/supabase/client';
 import { CACHE_KEYS, readLocalJson, writeLocalJson } from '@/lib/persistence/local-cache';
 import {
+  cancelPatientAppointment,
   deduplicateAppointments,
   fetchMyPrivateAppointments,
   filterLocalAppointmentsForSession,
@@ -24,14 +24,73 @@ import {
   Download,
   FileText,
   Loader2,
+  MapPin,
   Plus,
   RotateCw,
   Stethoscope,
   Ticket,
-  Activity,
+  User,
+  XCircle,
 } from 'lucide-react';
 
 const cardClass = 'rounded-xl border border-[#EADBCE] bg-white p-5 shadow-xs';
+
+function formatSlotTime(value: string): string {
+  const raw = String(value ?? '').trim();
+  if (!raw || raw === '—') return '—';
+  const match = raw.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return raw;
+  const hours = Number(match[1]);
+  const minutes = match[2];
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const normalized = hours % 12 || 12;
+  return `${normalized}:${minutes} ${period}`;
+}
+
+function formatDisplayDate(value: string): string {
+  const raw = String(value ?? '').slice(0, 10);
+  if (!raw) return '—';
+  const date = new Date(`${raw}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return raw;
+  return date.toLocaleDateString('en-IN', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function normalizeStatus(value?: string): string {
+  return String(value ?? 'SCHEDULED').trim().toUpperCase().replace(/_/g, ' ');
+}
+
+function statusBadgeClass(status?: string): string {
+  const value = normalizeStatus(status);
+  if (value.includes('COMPLET') || value.includes('DONE')) {
+    return 'border-emerald-200 bg-emerald-50 text-emerald-800';
+  }
+  if (value.includes('CANCEL')) {
+    return 'border-rose-200 bg-rose-50 text-rose-800';
+  }
+  if (value.includes('CONFIRM') || value.includes('SCHEDUL') || value.includes('BOOK')) {
+    return 'border-sky-200 bg-sky-50 text-sky-800';
+  }
+  if (value.includes('WAIT') || value.includes('QUEUE')) {
+    return 'border-amber-200 bg-amber-50 text-amber-900';
+  }
+  if (value.includes('CONSULT') || value.includes('IN PROGRESS')) {
+    return 'border-violet-200 bg-violet-50 text-violet-800';
+  }
+  return 'border-[#EADBCE] bg-[#FAF6F0] text-[#6F4E37]';
+}
+
+function patientIndicator(appt: MyAppointmentRecord, accountHolderName: string): string {
+  if (appt.is_self || appt.booking_for?.toUpperCase() === 'SELF') {
+    return 'Self';
+  }
+  const relation = appt.beneficiary_relation || appt.booking_for || 'Dependent';
+  return `${appt.patient_name} (${relation})`;
+}
 
 function tokenProgress(status?: string): number {
   const value = (status || 'WAITING').toUpperCase();
@@ -44,30 +103,47 @@ function tokenProgress(status?: string): number {
 function AppointmentCard({
   appt,
   variant,
+  accountHolderName,
+  onCancel,
+  cancelling,
 }: {
   appt: MyAppointmentRecord;
   variant: 'upcoming' | 'past';
+  accountHolderName: string;
+  onCancel: (id: string) => void;
+  cancelling: boolean;
 }) {
   const progress = tokenProgress(appt.queue_status);
   const tokenLabel =
     typeof appt.token_number === 'string' && appt.token_number.startsWith('T-')
       ? appt.token_number
       : `#${appt.token_number || '—'}`;
+  const statusLabel = normalizeStatus(appt.status ?? appt.queue_status);
+  const isCancelled = statusLabel.includes('CANCEL');
+  const mapsQuery = encodeURIComponent(
+    `${appt.hospital_name ?? 'Regal Hospital'} OPD Block Bengaluru`,
+  );
 
   return (
     <article className={`${cardClass} space-y-3`}>
-      <div className="flex items-center justify-between gap-2 border-b border-[#F3ECE4] pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#F3ECE4] pb-3">
         <span className="flex items-center gap-1.5 text-xs font-bold text-[#7C5C48]">
           <Ticket className="h-3.5 w-3.5 text-[#8C5A3C]" />
           Token {tokenLabel}
         </span>
-        <span className="inline-flex items-center gap-1 rounded-full border border-[#EADBCE] bg-[#FAF6F0] px-2 py-0.5 text-[10px] font-bold uppercase text-[#6F4E37]">
-          <Activity className="h-3 w-3" />
-          {appt.queue_status || 'WAITING'}
+        <span
+          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadgeClass(appt.status ?? appt.queue_status)}`}
+        >
+          {statusLabel}
         </span>
       </div>
 
-      {variant === 'upcoming' ? (
+      <div className="inline-flex items-center gap-1.5 rounded-lg border border-[#EADBCE] bg-[#FAF6F0] px-2.5 py-1 text-[11px] font-semibold text-[#7C5C48]">
+        <User className="h-3 w-3 text-[#8C5A3C]" />
+        For: {patientIndicator(appt, accountHolderName)}
+      </div>
+
+      {variant === 'upcoming' && !isCancelled ? (
         <div>
           <div className="mb-1 flex justify-between text-[10px] font-semibold text-[#7C5C48]">
             <span>Queue progress</span>
@@ -79,7 +155,6 @@ function AppointmentCard({
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="mt-1 text-[10px] text-[#7C5C48]">Consultation Room · OPD Block A</p>
         </div>
       ) : null}
 
@@ -91,7 +166,7 @@ function AppointmentCard({
           <h3 className="text-sm font-bold text-[#2B1810]">{appt.doctor_name}</h3>
           <p className="flex items-center gap-1 text-xs font-medium text-[#8C5A3C]">
             <Stethoscope className="h-3 w-3" />
-            {appt.department} OPD
+            {appt.department}
           </p>
         </div>
       </div>
@@ -99,11 +174,11 @@ function AppointmentCard({
       <div className="flex flex-wrap gap-3 text-xs font-medium text-[#7C5C48]">
         <span className="inline-flex items-center gap-1">
           <Calendar className="h-3.5 w-3.5 text-[#8C5A3C]" />
-          {appt.appointment_date}
+          {formatDisplayDate(appt.appointment_date)}
         </span>
         <span className="inline-flex items-center gap-1">
           <Clock className="h-3.5 w-3.5 text-[#8C5A3C]" />
-          {appt.slot_time}
+          {formatSlotTime(appt.slot_time)}
         </span>
         {appt.fee ? (
           <span className="rounded-md bg-[#FAF6F0] px-2 py-0.5 text-[11px] font-bold text-[#2B1810]">
@@ -118,24 +193,44 @@ function AppointmentCard({
         </p>
       ) : null}
 
-      {variant === 'past' ? (
-        <div className="flex flex-wrap gap-2 border-t border-[#F3ECE4] pt-3">
-          <Link
-            href="/patient/prescriptions"
-            className="inline-flex items-center gap-1 rounded-lg border border-[#EADBCE] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#7F5539] hover:bg-[#FAF6F0]"
-          >
-            <FileText className="h-3 w-3" />
-            View Rx
-          </Link>
+      <div className="flex flex-wrap gap-2 border-t border-[#F3ECE4] pt-3">
+        <Link
+          href="/patient/prescriptions"
+          className="inline-flex items-center gap-1 rounded-lg border border-[#EADBCE] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#7F5539] hover:bg-[#FAF6F0]"
+        >
+          <FileText className="h-3 w-3" />
+          View Rx
+        </Link>
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 rounded-lg border border-[#EADBCE] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#7F5539] hover:bg-[#FAF6F0]"
+        >
+          <MapPin className="h-3 w-3" />
+          Directions
+        </a>
+        {variant === 'past' ? (
           <Link
             href="/patient/billing"
             className="inline-flex items-center gap-1 rounded-lg border border-[#EADBCE] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#7F5539] hover:bg-[#FAF6F0]"
           >
             <Download className="h-3 w-3" />
-            Download Receipt
+            Receipt
           </Link>
-        </div>
-      ) : null}
+        ) : null}
+        {variant === 'upcoming' && !isCancelled ? (
+          <button
+            type="button"
+            disabled={cancelling}
+            onClick={() => onCancel(appt.id)}
+            className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[11px] font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+          >
+            <XCircle className="h-3 w-3" />
+            Cancel
+          </button>
+        ) : null}
+      </div>
     </article>
   );
 }
@@ -149,6 +244,8 @@ export default function MyAppointmentsPage() {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [authUserId, setAuthUserId] = useState('');
   const [bookingPatientId, setBookingPatientId] = useState('');
+  const [accountHolderName, setAccountHolderName] = useState('');
+  const [cancellingId, setCancellingId] = useState('');
 
   const fetchAppointments = useCallback(async () => {
     const session = resolveActivePatientSession();
@@ -159,19 +256,24 @@ export default function MyAppointmentsPage() {
       return;
     }
 
+    setAccountHolderName(session.name);
     setLoading(true);
 
     try {
-      const auth = await resolveActiveAuthUser(supabase, session.patientId);
-      const resolved = await resolveEffectivePatientId(supabase, {
-        phone: session.phone,
-        sessionPatientId: auth?.userId || session.patientId,
-      });
-      if (auth?.userId) setAuthUserId(auth.userId);
-      setBookingPatientId(resolved.effectivePatientId || session.patientId);
+      const { appointments: scopedRows, context } = await fetchMyPrivateAppointments(
+        supabase,
+        session,
+      );
 
-      const linkedPatientIds = resolved.linkedPatientIds;
-      const { appointments: scopedRows } = await fetchMyPrivateAppointments(supabase, session);
+      if (context?.authUserId) setAuthUserId(context.authUserId);
+      if (context?.resolvedPatientId) {
+        setBookingPatientId(context.resolvedPatientId);
+      } else {
+        setBookingPatientId(session.patientId);
+      }
+
+      const linkedPatientIds = context?.linkedPatientIds ?? [session.patientId];
+      const familyMemberNames = context?.familyMemberNames ?? [];
       let combinedList = [...scopedRows];
 
       if (typeof window !== 'undefined') {
@@ -190,6 +292,7 @@ export default function MyAppointmentsPage() {
           [...(Array.isArray(cached) ? cached : []), ...legacyList],
           session,
           linkedPatientIds,
+          familyMemberNames,
         );
 
         combinedList = deduplicateAppointments([...combinedList, ...localOnly]);
@@ -204,12 +307,33 @@ export default function MyAppointmentsPage() {
         writeLocalJson(CACHE_KEYS.patientAppointmentsAlt, combinedList);
       }
     } catch (err) {
-      console.warn('Appointments fetch notice:', err);
+      console.warn('[patient/appointments] fetch error:', err);
       setAppointments([]);
     } finally {
       setLoading(false);
     }
   }, [router, supabase]);
+
+  const handleCancel = useCallback(
+    async (appointmentId: string) => {
+      setCancellingId(appointmentId);
+      try {
+        const result = await cancelPatientAppointment(supabase, appointmentId);
+        if (!result.ok) {
+          toast.error(result.error ?? 'Unable to cancel appointment');
+          return;
+        }
+        toast.success('Appointment cancelled');
+        await fetchAppointments();
+      } catch (err) {
+        console.warn('[patient/appointments] cancel error:', err);
+        toast.error('Unable to cancel appointment');
+      } finally {
+        setCancellingId('');
+      }
+    },
+    [fetchAppointments, supabase],
+  );
 
   useEffect(() => {
     const session = resolveActivePatientSession();
@@ -228,14 +352,7 @@ export default function MyAppointmentsPage() {
     if (!session) return;
 
     const channel = supabase
-      .channel(`realtime_private_patient_appointments_${session.patientId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'patient_appointments' },
-        () => {
-          void fetchAppointments();
-        },
-      )
+      .channel(`realtime_patient_appointments_${session.patientId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'appointments' },
@@ -255,7 +372,8 @@ export default function MyAppointmentsPage() {
     const up: MyAppointmentRecord[] = [];
     const hist: MyAppointmentRecord[] = [];
     for (const appt of appointments) {
-      if (appt.appointment_date >= today) up.push(appt);
+      const cancelled = normalizeStatus(appt.status ?? appt.queue_status).includes('CANCEL');
+      if (!cancelled && appt.appointment_date >= today) up.push(appt);
       else hist.push(appt);
     }
     return { upcoming: up, past: hist };
@@ -281,9 +399,11 @@ export default function MyAppointmentsPage() {
           <h1 className="text-xl font-bold text-[#2B1810]">My OPD Consultations</h1>
           <p className="mt-0.5 text-xs text-[#7C5C48]">
             Facility:{' '}
-            <span className="font-semibold text-[#8C5A3C]">HOSP-01 (Bengaluru)</span>
+            <span className="font-semibold text-[#8C5A3C]">
+              {portalSession?.hospital_name ?? 'HOSP-01 (Bengaluru)'}
+            </span>
             {' · '}
-            {appointments.length} booked consultation{appointments.length === 1 ? '' : 's'} on record
+            {appointments.length} consultation{appointments.length === 1 ? '' : 's'} on record
           </p>
         </div>
 
@@ -345,6 +465,9 @@ export default function MyAppointmentsPage() {
                   key={resolveAppointmentRecordKey(appt)}
                   appt={appt}
                   variant="upcoming"
+                  accountHolderName={accountHolderName}
+                  onCancel={handleCancel}
+                  cancelling={cancellingId === appt.id}
                 />
               ))
             )}
@@ -364,6 +487,9 @@ export default function MyAppointmentsPage() {
                   key={resolveAppointmentRecordKey(appt)}
                   appt={appt}
                   variant="past"
+                  accountHolderName={accountHolderName}
+                  onCancel={handleCancel}
+                  cancelling={cancellingId === appt.id}
                 />
               ))
             )}

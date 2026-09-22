@@ -191,6 +191,7 @@ function escapeOrFilterValue(value: string): string {
 export function buildPatientScopeOrFilter(
   session: PatientAuthSession,
   linkedPatientIds: string[] = [],
+  familyMemberNames: string[] = [],
 ): string | null {
   const parts: string[] = [];
   const phoneDigits = normalizePhoneDigits(session.phone);
@@ -217,11 +218,15 @@ export function buildPatientScopeOrFilter(
   }
   if (session.email) {
     const email = escapeOrFilterValue(session.email);
-    parts.push(`patient_email.ilike.${email}`);
-    parts.push(`email.ilike.${email}`);
+    parts.push(`patient_email.eq.${email}`);
+    parts.push(`email.eq.${email}`);
   }
   if (session.name) {
     const name = escapeOrFilterValue(session.name);
+    if (name) parts.push(`patient_name.ilike.${name}`);
+  }
+  for (const familyName of familyMemberNames) {
+    const name = escapeOrFilterValue(familyName);
     if (name) parts.push(`patient_name.ilike.${name}`);
   }
 
@@ -246,6 +251,7 @@ export function rowMatchesPatientSession(
   row: Record<string, unknown>,
   session: PatientAuthSession,
   linkedPatientIds: string[] = [],
+  familyMemberNames: string[] = [],
 ): boolean {
   const phoneDigits = normalizePhoneDigits(session.phone);
   const rowPhone = normalizePhoneDigits(String(row.phone ?? row.patient_phone ?? ''));
@@ -257,13 +263,25 @@ export function rowMatchesPatientSession(
   const linkedIds = new Set(
     [...linkedPatientIds, session.patientId].map((value) => String(value ?? '').trim()).filter(Boolean),
   );
+  const familyNames = new Set(
+    familyMemberNames.map((value) => String(value ?? '').trim().toLowerCase()).filter(Boolean),
+  );
 
   if (rowPatientId && linkedIds.has(rowPatientId)) return true;
   if (session.patientId && rowPatientId && rowPatientId === session.patientId) return true;
   if (session.uhid && rowUhid && rowUhid === session.uhid) return true;
-  if (phoneDigits && rowPhone && rowPhone === phoneDigits) return true;
+  if (
+    phoneDigits &&
+    rowPhone &&
+    (rowPhone === phoneDigits ||
+      rowPhone.endsWith(phoneDigits) ||
+      phoneDigits.endsWith(rowPhone))
+  ) {
+    return true;
+  }
   if (session.email && rowEmail && rowEmail === session.email) return true;
   if (sessionName && rowName && rowName === sessionName) return true;
+  if (rowName && familyNames.has(rowName)) return true;
   return false;
 }
 
