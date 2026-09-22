@@ -22,18 +22,17 @@ import {
 import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
 import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
 import {
-  Lock,
+  Activity,
+  AlertCircle,
   ArrowRight,
   Building2,
-  AlertCircle,
+  CheckCircle2,
   Eye,
   EyeOff,
-  ShieldCheck,
-  CheckCircle2,
-  Lock,
   FileText,
-  Activity,
+  Lock,
   Pill,
+  ShieldCheck,
 } from 'lucide-react';
 
 const TELEMETRY_TILES = [
