@@ -7,7 +7,11 @@ import { toast } from 'sonner';
 import { EntityEmptyState } from '@/components/nexora-hospital/ui/EntityEmptyState';
 import { ui } from '@/components/nexora-hospital/ui/primitives';
 import { useHospitalDoctors } from '@/hooks/useHospitalDoctors';
-import { checkInOpdPatient, updateOpdStatus } from '@/lib/nexora-hospital/services/hospital-db';
+import {
+  checkInOpdPatient,
+  markOpdVisitMissed,
+  updateOpdStatus,
+} from '@/lib/nexora-hospital/services/hospital-db';
 import { useHospitalStore } from '@/lib/nexora-hospital/store';
 import type { OpdVisit } from '@/lib/nexora-hospital/types';
 
@@ -22,10 +26,12 @@ function QueueCard({
   visit,
   status,
   onAdvance,
+  onMarkMissed,
 }: {
   visit: OpdVisit;
   status: OpdVisit['status'];
   onAdvance: (visit: OpdVisit, next: OpdVisit['status'], msg: string) => void;
+  onMarkMissed: (visit: OpdVisit) => void;
 }) {
   return (
     <li className="rounded-xl border border-[#B2EBF2] bg-white p-4 shadow-sm">
@@ -36,13 +42,26 @@ function QueueCard({
       <p className="mt-1 text-sm font-semibold text-[#007B8A]">Token {visit.queueNumber}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {status === 'Waiting' && (
-          <button
-            type="button"
-            className={ui.btnAction}
-            onClick={() => void checkInOpdPatient(visit.id).then(() => toast.success(`${visit.patientName} checked in`))}
-          >
-            Check-In
-          </button>
+          <>
+            <button
+              type="button"
+              className={ui.btnAction}
+              onClick={() =>
+                void checkInOpdPatient(visit.id).then(() =>
+                  toast.success(`${visit.patientName} checked in`),
+                )
+              }
+            >
+              Check-In
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100"
+              onClick={() => onMarkMissed(visit)}
+            >
+              Mark Missed / Next
+            </button>
+          </>
         )}
         {status === 'Checked-In' && (
           <button
@@ -73,10 +92,11 @@ export function OpdQueueWorkspace() {
   const [doctorFilter, setDoctorFilter] = useState('all');
 
   const filteredVisits = useMemo(() => {
-    if (doctorFilter === 'all') return opdVisits;
+    const active = opdVisits.filter((v) => v.status !== 'Missed');
+    if (doctorFilter === 'all') return active;
     const doc = doctors.find((d) => d.id === doctorFilter);
-    if (!doc) return opdVisits;
-    return opdVisits.filter(
+    if (!doc) return active;
+    return active.filter(
       (v) => v.doctorId === doc.id || v.doctorName.includes(doc.fullName.replace(/^Dr\.\s*/i, '')),
     );
   }, [opdVisits, doctorFilter, doctors]);
@@ -88,6 +108,15 @@ export function OpdQueueWorkspace() {
   const advance = async (visit: OpdVisit, next: OpdVisit['status'], msg: string) => {
     await updateOpdStatus(visit.id, next);
     toast.success(msg);
+  };
+
+  const markMissed = async (visit: OpdVisit) => {
+    const result = await markOpdVisitMissed(visit.id);
+    if (!result.ok) {
+      toast.error(result.error ?? 'Unable to mark appointment as missed');
+      return;
+    }
+    toast.success(`${visit.patientName} marked missed — queue advanced`);
   };
 
   return (
@@ -133,7 +162,13 @@ export function OpdQueueWorkspace() {
                 </li>
               ) : (
                 byStatus(status).map((v) => (
-                  <QueueCard key={v.id} visit={v} status={status} onAdvance={advance} />
+                  <QueueCard
+                    key={v.id}
+                    visit={v}
+                    status={status}
+                    onAdvance={advance}
+                    onMarkMissed={(target) => void markMissed(target)}
+                  />
                 ))
               )}
             </ul>

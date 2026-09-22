@@ -8,10 +8,12 @@ const STATUS_DB_MAP: Record<AppointmentLifecycleStatus, string> = {
   checked_in: 'CHECKED_IN',
   in_consultation: 'IN_CONSULTATION',
   completed: 'COMPLETED',
+  missed: 'MISSED',
 };
 
 function normalizeStatus(raw?: string): AppointmentLifecycleStatus {
   const s = String(raw ?? 'booked').toLowerCase();
+  if (s.includes('miss') || s.includes('no-show') || s.includes('noshow')) return 'missed';
   if (s.includes('consult')) return 'in_consultation';
   if (s.includes('complete')) return 'completed';
   if (s.includes('check')) return 'checked_in';

@@ -50,7 +50,7 @@ export type OpdVisit = {
   doctorName: string;
   queueNumber: string;
   department: string;
-  status: 'Waiting' | 'Checked-In' | 'In Consultation' | 'Completed';
+  status: 'Waiting' | 'Checked-In' | 'In Consultation' | 'Completed' | 'Missed';
   appointmentId?: string;
   appointmentTime?: string;
   waitMinutes?: number;

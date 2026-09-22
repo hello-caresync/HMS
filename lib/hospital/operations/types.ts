@@ -2,7 +2,8 @@ export type AppointmentLifecycleStatus =
   | 'booked'
   | 'checked_in'
   | 'in_consultation'
-  | 'completed';
+  | 'completed'
+  | 'missed';
 
 export type TriagePriority = 'P1' | 'P2' | 'P3';
 

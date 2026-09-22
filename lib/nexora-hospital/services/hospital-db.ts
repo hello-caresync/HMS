@@ -13,6 +13,8 @@ import {
 } from '@/lib/ecosystem/ecosystem-hub';
 import type { EcosystemAppointment } from '@/lib/ecosystem/types';
 
+import { markAppointmentMissedInDatabase } from '@/lib/hospital/mark-appointment-missed';
+
 import { inventoryStatus, useHospitalStore } from '../store';
 import type {
   BillingInvoice,
@@ -421,6 +423,43 @@ export async function createOpdFromAppointment(appointmentId: string): Promise<O
   }
 
   return visit;
+}
+
+/** Marks an OPD visit as no-show and persists MISSED on the linked appointment. */
+export async function markOpdVisitMissed(visitId: string): Promise<{ ok: boolean; error?: string }> {
+  const store = useHospitalStore.getState();
+  const visit = store.opdVisits.find((v) => v.id === visitId);
+  if (!visit) return { ok: false, error: 'Visit not found' };
+
+  store.upsertOpdVisit({ ...visit, status: 'Missed' });
+
+  const appointmentKey = visit.appointmentId ?? visit.id;
+  let dbResult: { ok: boolean; error?: string } = { ok: true };
+
+  if (supabaseReady()) {
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) {
+      await supabase.from('opd_visits').update({ status: 'Missed' }).eq('id', visitId);
+      dbResult = await markAppointmentMissedInDatabase(supabase, appointmentKey);
+    }
+  }
+
+  if (visit.appointmentId) {
+    const appt = store.appointments.find((a) => a.id === visit.appointmentId);
+    if (appt) {
+      store.upsertAppointment({ ...appt, status: 'MISSED' });
+    }
+  }
+
+  await insertHospitalNotification(
+    'Appointment marked missed',
+    `${visit.patientName} · ${visit.doctorName} · Token ${visit.queueNumber}`,
+    'opd',
+    'warning',
+    appointmentKey,
+  );
+
+  return dbResult;
 }
 
 export async function updateOpdStatus(visitId: string, status: OpdVisit['status']): Promise<void> {

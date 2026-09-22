@@ -15,6 +15,7 @@ export type MyAppointmentRecord = {
   id: string;
   patient_id?: string;
   patient_name: string;
+  doctor_id?: string;
   doctor_name: string;
   department: string;
   hospital_name?: string;
@@ -22,6 +23,7 @@ export type MyAppointmentRecord = {
   slot_time: string;
   fee?: string;
   reason?: string;
+  symptoms?: string;
   token_number: number | string;
   queue_status?: string;
   status?: string;
@@ -134,10 +136,18 @@ function mapRowToAppointmentRecord(
     (!bookingFor || bookingFor.toUpperCase() === 'SELF') &&
     (!sessionName || patientName.toLowerCase() === sessionName);
 
+  const clinicalReason =
+    String(row.reason_for_visit ?? row.reason ?? row.chief_complaint ?? row.symptoms ?? '').trim() ||
+    undefined;
+  const doctorId = String(
+    row.doctor_id ?? row.doctor_code ?? row.doctor_uuid ?? doctor?.id ?? '',
+  ).trim();
+
   return {
     id: String(row.appointment_id ?? row.id ?? `${patientName}-${appointmentDate}-${slotTime}`),
     patient_id: row.patient_id ? String(row.patient_id) : undefined,
     patient_name: patientName,
+    doctor_id: doctorId || undefined,
     doctor_name: String(row.doctor_name ?? doctor?.full_name ?? doctor?.name ?? 'Consulting physician'),
     department: String(
       row.department ?? doctor?.department ?? doctor?.specialty ?? 'General Medicine',
@@ -146,7 +156,8 @@ function mapRowToAppointmentRecord(
     appointment_date: appointmentDate,
     slot_time: slotTime,
     fee: consultationFee > 0 ? `₹${consultationFee.toLocaleString('en-IN')}` : undefined,
-    reason: String(row.reason_for_visit ?? row.reason ?? row.chief_complaint ?? '').trim() || undefined,
+    reason: clinicalReason,
+    symptoms: String(row.symptoms ?? clinicalReason ?? '').trim() || undefined,
     token_number: tokenValue,
     queue_status: String(row.queue_status ?? row.status ?? 'WAITING'),
     status: String(row.status ?? row.queue_status ?? 'WAITING'),

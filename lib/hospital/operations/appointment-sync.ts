@@ -165,6 +165,7 @@ const DOCTOR_STATUS: Record<AppointmentLifecycleStatus, string> = {
   checked_in: 'checked_in',
   in_consultation: 'in_progress',
   completed: 'completed',
+  missed: 'missed',
 };
 
 const TOKEN_STATUS: Record<AppointmentLifecycleStatus, string> = {
@@ -172,6 +173,7 @@ const TOKEN_STATUS: Record<AppointmentLifecycleStatus, string> = {
   checked_in: 'ISSUED',
   in_consultation: 'IN_CONSULTATION',
   completed: 'COMPLETED',
+  missed: 'MISSED',
 };
 
 function todayStr(): string {
@@ -202,6 +204,7 @@ export function nextWalkInToken(existing: { token_number?: unknown }[]): string 
 /** Map DB status values to hospital OPD lifecycle labels. */
 export function hospitalStatusFromDb(raw: unknown): AppointmentLifecycleStatus {
   const s = String(raw ?? 'booked').toLowerCase().replace(/[\s-]+/g, '_');
+  if (s.includes('miss') || s.includes('no_show') || s.includes('noshow')) return 'missed';
   if (s.includes('complete')) return 'completed';
   if (s === 'in_progress' || s.includes('consult')) return 'in_consultation';
   if (s.includes('check') || s === 'confirmed' || s === 'waiting' || s === 'scheduled') {

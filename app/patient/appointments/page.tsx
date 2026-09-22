@@ -4,7 +4,14 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { BookAppointmentModal } from '@/components/patient/BookAppointmentModal';
+import {
+  BookAppointmentModal,
+  type AppointmentBookingPrefill,
+} from '@/components/patient/BookAppointmentModal';
+import {
+  isMissedAppointmentStatus,
+  shouldTreatAsMissedAppointment,
+} from '@/lib/patient/appointment-status';
 import { todayIsoDate } from '@/lib/hospital/smartq-wait';
 import { readPatientPortalSession } from '@/lib/patient/portal-session';
 import { createClient } from '@/lib/supabase/client';
@@ -27,6 +34,7 @@ import {
   MapPin,
   Plus,
   RotateCw,
+  RefreshCcw,
   Stethoscope,
   Ticket,
   User,
@@ -64,7 +72,10 @@ function normalizeStatus(value?: string): string {
   return String(value ?? 'SCHEDULED').trim().toUpperCase().replace(/_/g, ' ');
 }
 
-function statusBadgeClass(status?: string): string {
+function statusBadgeClass(status?: string, missed = false): string {
+  if (missed || isMissedAppointmentStatus(status)) {
+    return 'border-amber-300 bg-amber-50 text-amber-900';
+  }
   const value = normalizeStatus(status);
   if (value.includes('COMPLET') || value.includes('DONE')) {
     return 'border-emerald-200 bg-emerald-50 text-emerald-800';
@@ -105,12 +116,14 @@ function AppointmentCard({
   variant,
   accountHolderName,
   onCancel,
+  onReschedule,
   cancelling,
 }: {
   appt: MyAppointmentRecord;
   variant: 'upcoming' | 'past';
   accountHolderName: string;
   onCancel: (id: string) => void;
+  onReschedule: (appt: MyAppointmentRecord) => void;
   cancelling: boolean;
 }) {
   const progress = tokenProgress(appt.queue_status);
@@ -118,8 +131,11 @@ function AppointmentCard({
     typeof appt.token_number === 'string' && appt.token_number.startsWith('T-')
       ? appt.token_number
       : `#${appt.token_number || '—'}`;
-  const statusLabel = normalizeStatus(appt.status ?? appt.queue_status);
-  const isCancelled = statusLabel.includes('CANCEL');
+  const isMissed = shouldTreatAsMissedAppointment(appt);
+  const statusLabel = isMissed
+    ? 'MISSED APPOINTMENT'
+    : normalizeStatus(appt.status ?? appt.queue_status);
+  const isCancelled = normalizeStatus(appt.status ?? appt.queue_status).includes('CANCEL');
   const mapsQuery = encodeURIComponent(
     `${appt.hospital_name ?? 'Regal Hospital'} OPD Block Bengaluru`,
   );
@@ -132,18 +148,25 @@ function AppointmentCard({
           Token {tokenLabel}
         </span>
         <span
-          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadgeClass(appt.status ?? appt.queue_status)}`}
+          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadgeClass(appt.status ?? appt.queue_status, isMissed)}`}
         >
           {statusLabel}
         </span>
       </div>
+
+      {isMissed ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] leading-relaxed text-amber-950">
+          You missed your scheduled window. Please reschedule for the next available slot or visit
+          OPD Reception for walk-in token allocation.
+        </div>
+      ) : null}
 
       <div className="inline-flex items-center gap-1.5 rounded-lg border border-[#EADBCE] bg-[#FAF6F0] px-2.5 py-1 text-[11px] font-semibold text-[#7C5C48]">
         <User className="h-3 w-3 text-[#8C5A3C]" />
         For: {patientIndicator(appt, accountHolderName)}
       </div>
 
-      {variant === 'upcoming' && !isCancelled ? (
+      {variant === 'upcoming' && !isCancelled && !isMissed ? (
         <div>
           <div className="mb-1 flex justify-between text-[10px] font-semibold text-[#7C5C48]">
             <span>Queue progress</span>
@@ -219,7 +242,17 @@ function AppointmentCard({
             Receipt
           </Link>
         ) : null}
-        {variant === 'upcoming' && !isCancelled ? (
+        {isMissed ? (
+          <button
+            type="button"
+            onClick={() => onReschedule(appt)}
+            className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-100 px-2.5 py-1.5 text-[11px] font-bold text-amber-950 hover:bg-amber-200"
+          >
+            <RefreshCcw className="h-3 w-3" />
+            Reschedule Consultation
+          </button>
+        ) : null}
+        {variant === 'upcoming' && !isCancelled && !isMissed ? (
           <button
             type="button"
             disabled={cancelling}
@@ -239,6 +272,7 @@ export default function MyAppointmentsPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [reschedulePrefill, setReschedulePrefill] = useState<AppointmentBookingPrefill | null>(null);
   const [appointments, setAppointments] = useState<MyAppointmentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -367,13 +401,29 @@ export default function MyAppointmentsPage() {
     };
   }, [fetchAppointments, sessionChecked, supabase]);
 
+  const handleReschedule = useCallback((appt: MyAppointmentRecord) => {
+    setReschedulePrefill({
+      doctorId: appt.doctor_id,
+      department: appt.department,
+      symptoms: appt.symptoms ?? appt.reason,
+      reason: appt.reason ?? appt.symptoms,
+    });
+    setIsBookingModalOpen(true);
+  }, []);
+
+  const closeBookingModal = useCallback(() => {
+    setIsBookingModalOpen(false);
+    setReschedulePrefill(null);
+  }, []);
+
   const today = todayIsoDate();
   const { upcoming, past } = useMemo(() => {
     const up: MyAppointmentRecord[] = [];
     const hist: MyAppointmentRecord[] = [];
     for (const appt of appointments) {
       const cancelled = normalizeStatus(appt.status ?? appt.queue_status).includes('CANCEL');
-      if (!cancelled && appt.appointment_date >= today) up.push(appt);
+      const missed = shouldTreatAsMissedAppointment(appt);
+      if (!cancelled && !missed && appt.appointment_date >= today) up.push(appt);
       else hist.push(appt);
     }
     return { upcoming: up, past: hist };
@@ -418,7 +468,10 @@ export default function MyAppointmentsPage() {
           </button>
           <button
             type="button"
-            onClick={() => setIsBookingModalOpen(true)}
+            onClick={() => {
+              setReschedulePrefill(null);
+              setIsBookingModalOpen(true);
+            }}
             className="inline-flex items-center gap-1.5 rounded-lg bg-[#8C5A3C] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#6F4E37]"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -443,7 +496,10 @@ export default function MyAppointmentsPage() {
           </p>
           <button
             type="button"
-            onClick={() => setIsBookingModalOpen(true)}
+            onClick={() => {
+              setReschedulePrefill(null);
+              setIsBookingModalOpen(true);
+            }}
             className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#8C5A3C] px-4 py-2 text-xs font-bold text-white hover:bg-[#6F4E37]"
           >
             Book Consultation
@@ -467,6 +523,7 @@ export default function MyAppointmentsPage() {
                   variant="upcoming"
                   accountHolderName={accountHolderName}
                   onCancel={handleCancel}
+                  onReschedule={handleReschedule}
                   cancelling={cancellingId === appt.id}
                 />
               ))
@@ -489,6 +546,7 @@ export default function MyAppointmentsPage() {
                   variant="past"
                   accountHolderName={accountHolderName}
                   onCancel={handleCancel}
+                  onReschedule={handleReschedule}
                   cancelling={cancellingId === appt.id}
                 />
               ))
@@ -499,11 +557,15 @@ export default function MyAppointmentsPage() {
 
       <BookAppointmentModal
         isOpen={isBookingModalOpen}
-        onClose={() => setIsBookingModalOpen(false)}
+        onClose={closeBookingModal}
         hospitalId={portalSession?.hospital_id}
         patientId={bookingPatientId || portalSession?.patient_id}
         userId={authUserId || portalSession?.patient_id}
-        onBookingSuccess={() => void fetchAppointments()}
+        prefill={reschedulePrefill}
+        onBookingSuccess={() => {
+          closeBookingModal();
+          void fetchAppointments();
+        }}
       />
     </div>
   );

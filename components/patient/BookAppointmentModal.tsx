@@ -63,6 +63,13 @@ function toDoctorOption(row: DoctorStaffRecord): DoctorOption {
   };
 }
 
+export interface AppointmentBookingPrefill {
+  doctorId?: string;
+  department?: string;
+  symptoms?: string;
+  reason?: string;
+}
+
 export interface BookAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -71,6 +78,8 @@ export interface BookAppointmentModalProps {
   patientId?: string;
   /** Supabase Auth user id from parent dashboard */
   userId?: string;
+  /** Pre-select clinician, department, and clinical reason (e.g. reschedule flow). */
+  prefill?: AppointmentBookingPrefill | null;
   onBookingSuccess?: (appointmentRecord: Record<string, unknown>) => void;
 }
 
@@ -80,6 +89,7 @@ export function BookAppointmentModal({
   hospitalId,
   patientId,
   userId,
+  prefill,
   onBookingSuccess,
 }: BookAppointmentModalProps) {
   const supabase = useMemo(() => createClient(), []);
@@ -152,6 +162,46 @@ export function BookAppointmentModal({
     void fetchDoctors();
     refreshBeneficiaryOptions();
   }, [isOpen, fetchDoctors, refreshBeneficiaryOptions]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedDept('ALL');
+      setSelectedDoctorId('');
+      setSymptoms('');
+      setAppointmentDate(new Date().toISOString().split('T')[0]);
+      setAppointmentTime('');
+      return;
+    }
+
+    if (!prefill) return;
+
+    const reason = String(prefill.symptoms ?? prefill.reason ?? '').trim();
+    if (reason) setSymptoms(reason);
+
+    if (prefill.department) {
+      setSelectedDept(prefill.department);
+    }
+  }, [isOpen, prefill]);
+
+  useEffect(() => {
+    if (!isOpen || !prefill?.doctorId || allDoctors.length === 0) return;
+
+    const targetId = String(prefill.doctorId).trim();
+    const match = allDoctors.find(
+      (row) =>
+        row.doctor_id === targetId ||
+        row.id === targetId ||
+        row.full_name === targetId,
+    );
+    const resolvedId = match?.doctor_id || match?.id || targetId;
+    setSelectedDoctorId(resolvedId);
+
+    if (prefill.department) {
+      setSelectedDept(prefill.department);
+    } else if (match?.department) {
+      setSelectedDept(match.department);
+    }
+  }, [isOpen, prefill, allDoctors]);
 
   useEffect(() => {
     if (!isOpen || typeof window === 'undefined') return;
@@ -379,8 +429,14 @@ export function BookAppointmentModal({
       <div className="w-full max-w-lg space-y-4 rounded-2xl border border-[#EADBCE] bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between border-b border-[#F3ECE4] pb-3">
           <div>
-            <h3 className="text-lg font-bold text-[#2B1810]">Book Outpatient Consultation</h3>
-            <p className="text-xs text-[#7C5C48]">Live scheduling with verified hospital physicians</p>
+            <h3 className="text-lg font-bold text-[#2B1810]">
+              {prefill ? 'Reschedule Consultation' : 'Book Outpatient Consultation'}
+            </h3>
+            <p className="text-xs text-[#7C5C48]">
+              {prefill
+                ? 'Your clinician and visit reason are pre-filled — pick a new date and slot'
+                : 'Live scheduling with verified hospital physicians'}
+            </p>
           </div>
           <button
             type="button"
@@ -551,7 +607,7 @@ export function BookAppointmentModal({
               }
               className="rounded-xl bg-[#8C5A3C] px-5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#6F4E37] disabled:opacity-50"
             >
-              {submitting ? 'Confirming...' : 'Confirm Appointment'}
+              {submitting ? 'Confirming...' : prefill ? 'Confirm Reschedule' : 'Confirm Appointment'}
             </button>
           </div>
         </form>
