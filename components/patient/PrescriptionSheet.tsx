@@ -40,7 +40,7 @@ export function PrescriptionSheet({ rx }: PrescriptionSheetProps) {
   const reportedSymptoms = rx.reported_symptoms?.trim() ?? '';
 
   return (
-    <article className="rounded-xl border border-[#EADBCE] bg-white p-5 shadow-xs print:break-inside-avoid">
+    <article className="rounded-2xl border border-sky-100 bg-white/90 p-6 shadow-sm backdrop-blur-sm print:break-inside-avoid">
       <header className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-[#F3ECE4] pb-4">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E6CCB2] bg-[#FAF6F0]">

@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pill } from 'lucide-react';
 
 import { PendingConsultationCard } from '@/components/patient/PendingConsultationCard';
+import { PrescriptionGuidanceRail } from '@/components/patient/PrescriptionGuidanceRail';
+import { PrescriptionMetricsRow } from '@/components/patient/PrescriptionMetricsRow';
 import { PrescriptionSheet } from '@/components/patient/PrescriptionSheet';
 import {
   readStoredPatientIdentity,
@@ -105,61 +107,70 @@ export default function PatientPrescriptionsPage() {
   const hasContent = Boolean(pendingConsultation || prescriptions.length > 0);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 md:px-8 print:max-w-none print:p-0">
-      <div className="mb-4 border-b border-[#EADBCE] pb-4 print:hidden">
-        <h1 className="text-xl font-bold text-[#2B1810]">My Digital Prescriptions</h1>
-        <p className="mt-0.5 text-xs text-[#7C5C48]">
+    <div className="mx-auto max-w-6xl px-4 py-8 print:max-w-none print:p-0">
+      <div className="mb-6 border-b border-sky-100 pb-5 print:hidden">
+        <h1 className="text-2xl font-bold text-slate-900">My Digital Prescriptions</h1>
+        <p className="mt-1 text-sm text-slate-600">
           Verified Patient:{' '}
-          <span className="font-semibold">{patientName || 'Patient'}</span>
-          {' · '}
-          {prescriptions.length} prescription{prescriptions.length === 1 ? '' : 's'} on record
+          <span className="font-semibold text-slate-900">{patientName || 'Patient'}</span>
         </p>
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-xs text-[#7C5C48]">Loading prescriptions...</div>
+        <div className="rounded-2xl border border-sky-100 bg-white/90 py-16 text-center text-sm text-slate-600 shadow-sm">
+          Loading prescriptions...
+        </div>
       ) : !hasContent ? (
-        <div className="rounded-xl border border-[#EADBCE] bg-white py-12 text-center shadow-xs">
-          <Pill className="mx-auto mb-3 h-8 w-8 text-[#EADBCE]" />
-          <p className="text-sm font-semibold text-[#2B1810]">No prescriptions found yet</p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-[#7C5C48]">
+        <div className="rounded-2xl border border-sky-100 bg-white/90 py-16 text-center shadow-sm">
+          <Pill className="mx-auto mb-3 h-10 w-10 text-sky-200" />
+          <p className="text-sm font-semibold text-slate-900">No prescriptions found yet</p>
+          <p className="mx-auto mt-1 max-w-md text-xs text-slate-600">
             When your doctor completes a consultation, your prescription will appear here instantly.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {pendingConsultation ? (
-            <PendingConsultationCard consultation={pendingConsultation} />
-          ) : null}
+        <div className="space-y-6">
+          <PrescriptionMetricsRow
+            pendingCount={pendingConsultation ? 1 : 0}
+            prescriptionCount={prescriptions.length}
+          />
 
-          {prescriptions.length > 0 ? (
-            <div className="space-y-3">
-              {prescriptions.length > 1 ? (
-                <div className="flex flex-wrap gap-2 print:hidden">
-                  {prescriptions.map((rx) => (
-                    <button
-                      key={rx.id}
-                      type="button"
-                      onClick={() => setSelectedRxId(rx.id)}
-                      className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
-                        rx.id === activeRx?.id
-                          ? 'border-[#8C5A3C] bg-[#8C5A3C] text-white'
-                          : 'border-[#EADBCE] bg-white text-[#7C5C48] hover:border-[#8C5A3C]'
-                      }`}
-                    >
-                      {rx.doctor_name || 'Prescription'} ·{' '}
-                      {new Date(rx.created_at || rx.issued_at || '').toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })}
-                    </button>
-                  ))}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="space-y-4 lg:col-span-2">
+              {pendingConsultation ? <PendingConsultationCard consultation={pendingConsultation} /> : null}
+
+              {prescriptions.length > 0 ? (
+                <div className="space-y-3">
+                  {prescriptions.length > 1 ? (
+                    <div className="flex flex-wrap gap-2 print:hidden">
+                      {prescriptions.map((rx) => (
+                        <button
+                          key={rx.id}
+                          type="button"
+                          onClick={() => setSelectedRxId(rx.id)}
+                          className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+                            rx.id === activeRx?.id
+                              ? 'border-sky-600 bg-sky-600 text-white'
+                              : 'border-sky-100 bg-white text-slate-600 hover:border-sky-300'
+                          }`}
+                        >
+                          {rx.doctor_name || 'Prescription'} ·{' '}
+                          {new Date(rx.created_at || rx.issued_at || '').toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {activeRx ? <PrescriptionSheet rx={activeRx} /> : null}
                 </div>
               ) : null}
-              {activeRx ? <PrescriptionSheet rx={activeRx} /> : null}
             </div>
-          ) : null}
+
+            <PrescriptionGuidanceRail showPendingTips={Boolean(pendingConsultation)} />
+          </div>
         </div>
       )}
     </div>
