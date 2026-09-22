@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 
 import {
+  mapHospitalStaffAuthRow,
   normalizeCredentialRole,
-  upsertHospitalUserCredential,
   type HospitalCredentialRole,
   type HospitalUserCredential,
 } from '@/lib/auth/hospitalAuth';
@@ -14,10 +14,8 @@ import {
   isCustomDepartmentSelection,
   resolveDepartmentValue,
 } from '@/lib/hospital/departments';
-import { upsertBookableDoctor } from '@/lib/hospital/doctors-directory';
 import { createHospitalStaffMember, type StaffRole } from '@/lib/hospital/staff-directory';
 import { validatePhoneField } from '@/lib/hospital/indian-patient';
-import { requireHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
 import { HOSPITAL_TENANT_ID } from '@/lib/regal/constants';
 import { supabase } from '@/lib/supabase';
 import { PhoneNumberInput } from '@/components/ui/PhoneNumberInput';
@@ -114,36 +112,15 @@ export function StaffProvisioningModal({
         return;
       }
 
-      const resolvedHospitalId = await requireHospitalUuid(supabase, hospitalId);
-      const rawEmployeeCode = form.staff_id_code.trim().toUpperCase() || undefined;
-
-      const credentialResult = await upsertHospitalUserCredential(supabase, {
-        hospital_id: resolvedHospitalId,
-        hospital_name: hospitalName,
-        employee_id: rawEmployeeCode,
-        email: form.email.trim().toLowerCase(),
-        full_name: form.full_name.trim(),
-        role: credentialRole,
-        department,
-        passcode,
-        phone: phoneCheck.phone ?? undefined,
-        portal_access: credentialRole === 'doctor' ? '/doctor/dashboard' : '/dashboard',
-      });
-
-      if (!credentialResult.ok || !credentialResult.credential) {
-        throw new Error(credentialResult.error ?? 'Could not save portal credential.');
-      }
-
+      const resolvedHospitalId = hospitalId?.trim() || HOSPITAL_TENANT_ID;
       const staffRole: StaffRole =
         credentialRole === 'admin' ? 'admin' : credentialRole === 'doctor' ? 'doctor' : 'staff';
-
-      const employeeId = credentialResult.credential.employee_id;
       const consultationFee = credentialRole === 'doctor'
         ? Math.max(0, Number(form.consultation_fee ?? DEFAULT_DOCTOR_FEE) || DEFAULT_DOCTOR_FEE)
         : null;
 
       const rosterResult = await createHospitalStaffMember(supabase, resolvedHospitalId, {
-        staff_id_code: employeeId,
+        staff_id_code: form.staff_id_code.trim().toUpperCase(),
         full_name: form.full_name.trim(),
         email: form.email.trim().toLowerCase(),
         passcode_key: passcode,
@@ -154,33 +131,31 @@ export function StaffProvisioningModal({
         is_active: true,
       });
 
-      if (!rosterResult.ok) {
-        console.warn('Roster sync skipped:', rosterResult.error);
+      if (!rosterResult.ok || !rosterResult.member) {
+        throw new Error(rosterResult.error ?? 'Could not save staff credential.');
       }
 
-      if (credentialRole === 'doctor') {
-        const doctorSync = await upsertBookableDoctor(supabase, resolvedHospitalId, {
-          staff_id_code: employeeId,
-          full_name: form.full_name.trim(),
-          email: form.email.trim().toLowerCase(),
-          phone: phoneCheck.phone ?? undefined,
-          department,
-          specialization: department || 'Consultant Physician',
-          qualification: 'MBBS, MD',
-          consultation_fee: consultationFee ?? DEFAULT_DOCTOR_FEE,
-          hospital_name: hospitalName,
-        });
-        if (!doctorSync.ok) {
-          console.warn('Doctor table sync warning:', doctorSync.error);
-        }
-      }
+      const employeeId = rosterResult.member.staff_id_code;
+      const credential = mapHospitalStaffAuthRow({
+        id: rosterResult.member.id,
+        hospital_id: rosterResult.member.hospital_id,
+        hospital_name: hospitalName,
+        staff_id_code: employeeId,
+        full_name: rosterResult.member.full_name,
+        email: rosterResult.member.email,
+        role: rosterResult.member.role,
+        department: rosterResult.member.department,
+        passcode_key: passcode,
+        is_active: true,
+        phone: phoneCheck.phone ?? undefined,
+      });
 
       toast.success(
         `${form.full_name.trim()} provisioned successfully with ID ${employeeId}!`,
       );
       if (onSuccess) {
         await Promise.resolve(
-          onSuccess({ credential: credentialResult.credential, passcode }),
+          onSuccess({ credential, passcode }),
         );
       }
       setForm({
@@ -207,9 +182,10 @@ export function StaffProvisioningModal({
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
         <h2 className="text-base font-bold text-slate-900">Onboard Staff Credential</h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          Writes login credentials to <code className="font-mono text-[10px]">hospital_user_credentials</code>,
-          syncs the staff roster, and publishes doctors to <code className="font-mono text-[10px]">public.doctors</code>{' '}
-          for patient booking.
+          Writes portal access to <code className="font-mono text-[10px]">public.hospital_staff</code>{' '}
+          using <code className="font-mono text-[10px]">staff_id_code</code>,{' '}
+          <code className="font-mono text-[10px]">passcode_key</code>, and{' '}
+          <code className="font-mono text-[10px]">is_active</code>.
         </p>
 
         {error && (

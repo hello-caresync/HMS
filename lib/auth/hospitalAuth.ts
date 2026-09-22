@@ -1,19 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { verifyPassword } from '@/lib/auth/hospital/password-utils';
-import { PROVISIONING_ACCESS_DENIED_MESSAGE } from '@/lib/auth/provisioning-gate';
 import { isHospitalAdminRole } from '@/lib/auth/hospital-admin-auth';
 import { HOSPITAL_TENANT_ID, REGAL_HOSPITAL_NAME } from '@/lib/regal/constants';
 
+/** Canonical portal identity table — email + passcode_key authentication. */
+export const HOSPITAL_STAFF_TABLE = 'hospital_staff';
+
 export const HOSPITAL_USER_CREDENTIALS_TABLE = 'hospital_user_credentials';
 
-/** Legacy Super Admin onboard table — still honored for vault parity. */
+/** Legacy Super Admin onboard table — provisioning helpers only. */
 export const HOSPITAL_STAFF_CREDENTIALS_TABLE = 'hospital_staff_credentials';
 
-const STAFF_VAULT_TABLES = [
-  HOSPITAL_USER_CREDENTIALS_TABLE,
-  HOSPITAL_STAFF_CREDENTIALS_TABLE,
-] as const;
+export const HOSPITAL_LOGIN_INVALID_MESSAGE = 'Invalid email or passcode.';
 
 export type HospitalCredentialRole = 'admin' | 'doctor' | 'staff' | 'nurse';
 
@@ -123,36 +121,9 @@ function nextEmployeeId(role: HospitalCredentialRole): string {
   return `${prefix}${Date.now().toString().slice(-4)}`;
 }
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function isUuidValue(value: string): boolean {
-  return UUID_PATTERN.test(value.trim());
-}
-
-async function verifyStoredPasscode(
-  row: Record<string, unknown>,
-  rawPasscode: string,
-): Promise<boolean> {
-  const plainKeys = ['passcode', 'temporary_passcode', 'passcode_key', 'password'] as const;
-  for (const key of plainKeys) {
-    const value = row[key];
-    if (typeof value === 'string' && value.length > 0 && value === rawPasscode) {
-      return true;
-    }
-  }
-
-  const hash = String(row.passcode_hash ?? row.password_hash ?? '');
-  if (hash) {
-    return verifyPassword(rawPasscode, hash);
-  }
-
-  return false;
-}
-
 export function mapCredentialRow(row: Record<string, unknown>): HospitalUserCredential {
   const role = normalizeCredentialRole(String(row.role ?? row.staff_type ?? 'staff'));
-  const employeeId = String(row.employee_id ?? row.staff_id_code ?? '').trim().toUpperCase();
+  const employeeId = String(row.staff_id_code ?? row.employee_id ?? '').trim().toUpperCase();
 
   return {
     id: String(row.id ?? ''),
@@ -165,11 +136,13 @@ export function mapCredentialRow(row: Record<string, unknown>): HospitalUserCred
     department: String(row.department ?? 'Operations'),
     phone: typeof row.phone === 'string' ? row.phone : undefined,
     portal_access: resolveCredentialDashboardRoute(role, String(row.portal_access ?? '')),
-    is_active:
-      row.is_active !== false &&
-      String(row.status ?? 'active').toLowerCase() !== 'restricted' &&
-      String(row.status ?? 'active').toLowerCase() !== 'suspended',
+    is_active: row.is_active !== false,
   };
+}
+
+/** Map a `public.hospital_staff` row into the shared portal session shape. */
+export function mapHospitalStaffAuthRow(row: Record<string, unknown>): HospitalUserCredential {
+  return mapCredentialRow(row);
 }
 
 function toAuthUser(credential: HospitalUserCredential, passcode: string): HospitalAuthUser {
@@ -180,82 +153,9 @@ function toAuthUser(credential: HospitalUserCredential, passcode: string): Hospi
   };
 }
 
-function normalizeLegacyStaffCredentialRow(row: Record<string, unknown>): Record<string, unknown> {
-  return {
-    ...row,
-    passcode: row.passcode ?? row.temporary_passcode ?? row.passcode_key,
-    role: row.role ?? row.staff_type,
-    employee_id: row.employee_id ?? row.staff_id_code ?? row.badge_id,
-    is_active: String(row.status ?? 'Active').toLowerCase() !== 'restricted',
-  };
-}
-
-function isLegacyCredentialRowActive(row: Record<string, unknown>): boolean {
-  const status = String(row.status ?? 'active').trim().toLowerCase();
-  return status !== 'restricted' && status !== 'suspended' && status !== 'inactive';
-}
-
-async function queryCredentialTable(
-  supabase: SupabaseClient,
-  table: string,
-  identifier: string,
-): Promise<Record<string, unknown> | null> {
-  const trimmed = identifier.trim();
-  const lowerEmail = trimmed.toLowerCase();
-  const upperCode = trimmed.toUpperCase();
-  const isEmail = trimmed.includes('@');
-
-  const pickFirst = async (
-    runQuery: () => PromiseLike<{ data: unknown[] | null; error: unknown }>,
-  ): Promise<Record<string, unknown> | null> => {
-    const { data, error } = await runQuery();
-    if (error || !Array.isArray(data) || data.length === 0) return null;
-    return asRecord(data[0]);
-  };
-
-  if (isEmail) {
-    let query = supabase.from(table).select('*').ilike('email', lowerEmail).limit(1);
-    if (table === HOSPITAL_USER_CREDENTIALS_TABLE) query = query.eq('is_active', true);
-    return pickFirst(() => query);
-  }
-
-  for (const column of ['employee_id', 'staff_id_code', 'badge_id'] as const) {
-    let query = supabase.from(table).select('*').eq(column, upperCode).limit(1);
-    if (table === HOSPITAL_USER_CREDENTIALS_TABLE) query = query.eq('is_active', true);
-    const row = await pickFirst(() => query);
-    if (row) return row;
-  }
-
-  if (isUuidValue(trimmed)) {
-    let query = supabase.from(table).select('*').eq('id', trimmed).limit(1);
-    if (table === HOSPITAL_USER_CREDENTIALS_TABLE) query = query.eq('is_active', true);
-    return pickFirst(() => query);
-  }
-
-  return null;
-}
-
-async function findCredentialRow(
-  supabase: SupabaseClient,
-  identifier: string,
-): Promise<Record<string, unknown> | null> {
-  for (const table of STAFF_VAULT_TABLES) {
-    const row = await queryCredentialTable(supabase, table, identifier);
-    if (!row) continue;
-
-    if (table === HOSPITAL_STAFF_CREDENTIALS_TABLE) {
-      if (!isLegacyCredentialRowActive(row)) continue;
-      return normalizeLegacyStaffCredentialRow(row);
-    }
-
-    const credential = mapCredentialRow(row);
-    if (!credential.is_active) continue;
-    return row;
-  }
-
-  return null;
-}
-
+/**
+ * Authenticate against `public.hospital_staff` using email (or staff_id_code) + passcode_key.
+ */
 export async function authenticateHospitalUser(
   supabase: SupabaseClient,
   identifier: string,
@@ -268,17 +168,26 @@ export async function authenticateHospitalUser(
     return { ok: false, error: 'Enter your Employee ID or email and security passcode.' };
   }
 
-  const row = await findCredentialRow(supabase, cleanIdentifier);
-  if (!row) {
-    return { ok: false, error: PROVISIONING_ACCESS_DENIED_MESSAGE };
+  const isEmail = cleanIdentifier.includes('@');
+  let query = supabase
+    .from(HOSPITAL_STAFF_TABLE)
+    .select('*')
+    .eq('passcode_key', cleanPasscode)
+    .eq('is_active', true);
+
+  if (isEmail) {
+    query = query.eq('email', cleanIdentifier.toLowerCase());
+  } else {
+    query = query.eq('staff_id_code', cleanIdentifier.toUpperCase());
   }
 
-  const valid = await verifyStoredPasscode(row, cleanPasscode);
-  if (!valid) {
-    return { ok: false, error: PROVISIONING_ACCESS_DENIED_MESSAGE };
+  const { data, error } = await query.maybeSingle();
+
+  if (error || !data) {
+    return { ok: false, error: HOSPITAL_LOGIN_INVALID_MESSAGE };
   }
 
-  const credential = mapCredentialRow(row);
+  const credential = mapHospitalStaffAuthRow(asRecord(data));
   return { ok: true, user: toAuthUser(credential, cleanPasscode) };
 }
 

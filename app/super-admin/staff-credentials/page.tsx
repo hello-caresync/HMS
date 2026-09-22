@@ -86,19 +86,17 @@ function resolveDisplayStaffType(row: Record<string, unknown>): StaffCredential[
 }
 
 function normalizeCredential(row: Record<string, unknown>): StaffCredential {
-  const badge_id = String(row.staff_id_code ?? row.employee_id ?? row.badge_id ?? '').trim().toUpperCase();
+  const badge_id = String(row.staff_id_code ?? '').trim().toUpperCase();
 
   return {
     id: String(row.id ?? ''),
-    hospital_id: String(row.hospital_id ?? row.hospital_code ?? ''),
+    hospital_id: String(row.hospital_id ?? ''),
     hospital_name: String(row.hospital_name ?? ''),
     full_name: String(row.full_name ?? ''),
     staff_type: resolveDisplayStaffType(row),
     department: String(row.department ?? ''),
     email: String(row.email ?? ''),
-    temporary_passcode: String(
-      row.passcode_key ?? row.temporary_passcode ?? row.passcode ?? '',
-    ),
+    temporary_passcode: String(row.passcode_key ?? ''),
     phone: row.phone ? String(row.phone) : undefined,
     portal_access: String(row.portal_access ?? '/dashboard'),
     status: row.is_active === false ? 'Restricted' : 'Active',

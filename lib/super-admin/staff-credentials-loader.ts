@@ -1,6 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { normalizeCredentialRole, resolveCredentialDashboardRoute } from '@/lib/auth/hospitalAuth';
 import { REGAL_HOSPITAL_NAME } from '@/lib/regal/constants';
+
+export const HOSPITAL_STAFF_DIRECTORY_COLUMNS =
+  'id, hospital_id, staff_id_code, full_name, email, passcode_key, role, department, is_active, created_at';
 
 export type SuperAdminStaffCredentialRow = Record<string, unknown> & {
   id: string;
@@ -21,13 +25,6 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
 }
 
-function resolvePortalAccess(role: string): string {
-  const normalized = role.trim().toLowerCase();
-  if (normalized.includes('doctor')) return '/doctor/dashboard';
-  if (normalized.includes('admin')) return '/dashboard';
-  return '/dashboard';
-}
-
 /** Map a `hospital_staff` row — no merges, mocks, or legacy tables. */
 export function mapSuperAdminStaffCredentialRow(
   row: Record<string, unknown>,
@@ -36,22 +33,22 @@ export function mapSuperAdminStaffCredentialRow(
   const fullName = String(row.full_name ?? '').trim();
   if (!id || !fullName) return null;
 
-  const role = String(row.role ?? row.staff_type ?? 'Staff').trim();
-  const staffCode = String(row.staff_id_code ?? row.employee_id ?? '').trim().toUpperCase();
-  const hospitalCode = String(row.hospital_code ?? row.hospital_id ?? 'HOSP-01').trim().toUpperCase();
+  const role = String(row.role ?? 'Staff').trim();
+  const staffCode = String(row.staff_id_code ?? '').trim().toUpperCase();
+  const hospitalId = String(row.hospital_id ?? 'HOSP-01').trim();
+  const normalizedRole = normalizeCredentialRole(role);
 
   return {
-    ...row,
     id,
-    hospital_id: hospitalCode,
-    hospital_name: String(row.hospital_name ?? REGAL_HOSPITAL_NAME).trim(),
+    hospital_id: hospitalId,
+    hospital_name: REGAL_HOSPITAL_NAME,
     full_name: fullName,
     email: String(row.email ?? '').trim().toLowerCase(),
     department: String(row.department ?? 'Operations').trim(),
     role,
-    passcode_key: String(row.passcode_key ?? row.passcode ?? row.temporary_passcode ?? '').trim(),
+    passcode_key: String(row.passcode_key ?? '').trim(),
     staff_id_code: staffCode,
-    portal_access: String(row.portal_access ?? resolvePortalAccess(role)).trim(),
+    portal_access: resolveCredentialDashboardRoute(normalizedRole),
     is_active: row.is_active !== false,
     created_at: row.created_at ? String(row.created_at) : undefined,
   };
@@ -66,7 +63,8 @@ export async function fetchSuperAdminStaffCredentials(
 ): Promise<{ rows: SuperAdminStaffCredentialRow[]; error: string | null }> {
   const { data, error } = await supabase
     .from('hospital_staff')
-    .select('*')
+    .select(HOSPITAL_STAFF_DIRECTORY_COLUMNS)
+    .eq('is_active', true)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -76,7 +74,7 @@ export async function fetchSuperAdminStaffCredentials(
 
   const rows = (data ?? [])
     .map((row) => mapSuperAdminStaffCredentialRow(asRecord(row)))
-    .filter((row): row is SuperAdminStaffCredentialRow => row !== null && row.is_active);
+    .filter((row): row is SuperAdminStaffCredentialRow => row !== null);
 
   return { rows, error: null };
 }

@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   authenticateHospitalUser,
+  HOSPITAL_LOGIN_INVALID_MESSAGE,
   normalizeCredentialRole,
 } from '@/lib/auth/hospitalAuth';
 import { PROVISIONING_ACCESS_DENIED_MESSAGE } from '@/lib/auth/provisioning-gate';
@@ -43,7 +44,7 @@ export function isDoctorPortalAccountActive(row: Record<string, unknown>): boole
 }
 
 export function mapDoctorRowToSession(row: Record<string, unknown>): DoctorSession {
-  const doctorCode = String(row.employee_id ?? row.doctor_code ?? '').trim().toUpperCase();
+  const doctorCode = String(row.staff_id_code ?? row.employee_id ?? row.doctor_code ?? '').trim().toUpperCase();
   const registryUuid = String(row.id ?? '').trim();
   const doctorUuid = /^[0-9a-f-]{36}$/i.test(registryUuid) ? registryUuid : undefined;
   const fullName = String(row.full_name ?? row.doctor_name ?? row.name ?? 'Consultant Physician').trim();
@@ -78,7 +79,7 @@ export function buildDoctorPortalSessionPayload(row: Record<string, unknown>): D
   };
 }
 
-/** Authenticate clinician against provisioned `hospital_user_credentials` (role = doctor). */
+/** Authenticate clinician against `public.hospital_staff` (role = doctor). */
 export async function authenticateDoctorCredential(
   supabase: SupabaseClient,
   identifierInput: string,
@@ -100,11 +101,12 @@ export async function authenticateDoctorCredential(
   }
 
   if (normalizeCredentialRole(result.user.role) !== 'doctor') {
-    return { ok: false, error: PROVISIONING_ACCESS_DENIED_MESSAGE };
+    return { ok: false, error: HOSPITAL_LOGIN_INVALID_MESSAGE };
   }
 
   const row = asRecord({
     id: result.user.id,
+    staff_id_code: result.user.employee_id,
     employee_id: result.user.employee_id,
     email: result.user.email,
     full_name: result.user.full_name,
