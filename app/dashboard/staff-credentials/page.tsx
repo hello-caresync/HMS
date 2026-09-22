@@ -168,7 +168,7 @@ export default function IdentityAccessGovernanceVault() {
     email: '',
     phone: '',
     address: '',
-    portal_passcode: '1234',
+    portal_passcode: '',
   });
 
   const fetchData = useCallback(async () => {
@@ -477,7 +477,7 @@ export default function IdentityAccessGovernanceVault() {
         email: '',
         phone: '',
         address: '',
-        portal_passcode: '1234',
+        portal_passcode: '',
       });
       await fetchData();
     } catch (err: unknown) {

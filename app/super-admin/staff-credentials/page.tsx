@@ -21,6 +21,7 @@ import {
 import { createClient } from '@supabase/supabase-js';
 
 import { OnboardHospitalModal, type OnboardHospitalResult } from '@/components/admin/OnboardHospitalModal';
+import { StaffProvisioningModal } from '@/components/hospital/StaffProvisioningModal';
 import { credentialRoleToStaffType } from '@/lib/auth/hospitalAuth';
 import {
   fetchGovernanceVaultDirectory,
@@ -30,6 +31,10 @@ import {
   filterProductionSuperAdminTenants,
   isBlockedSuperAdminTenantId,
 } from '@/lib/super-admin/tenant-directory';
+import {
+  credentialBelongsToTenant,
+  formatTenantCredentialScopeLabel,
+} from '@/lib/super-admin/tenant-credential-scope';
 import { formatHospitalNodeBadge } from '@/lib/utils/formatters';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -75,6 +80,34 @@ function normalizeHospital(row: Record<string, unknown>): HospitalEntity {
   };
 }
 
+function resolveDisplayStaffType(row: Record<string, unknown>): StaffCredential['staff_type'] {
+  const explicit = String(row.staff_type ?? '').trim();
+  if (
+    explicit === 'Doctor' ||
+    explicit === 'Nurse' ||
+    explicit === 'Admin' ||
+    explicit === 'Receptionist' ||
+    explicit === 'Pharmacist'
+  ) {
+    return explicit;
+  }
+
+  const role = String(row.role ?? explicit ?? 'staff').toLowerCase();
+  const department = String(row.department ?? '').toLowerCase();
+
+  if (role.includes('admin')) return 'Admin';
+  if (role.includes('doctor')) return 'Doctor';
+  if (role.includes('nurse')) return 'Nurse';
+  if (department.includes('pharmacy') || department.includes('pharmacist') || role.includes('pharmacist')) {
+    return 'Pharmacist';
+  }
+  if (department.includes('reception') || role.includes('reception')) return 'Receptionist';
+
+  return credentialRoleToStaffType(
+    String(row.role ?? 'staff') as 'admin' | 'doctor' | 'staff' | 'nurse',
+  ) as StaffCredential['staff_type'];
+}
+
 function normalizeCredential(row: Record<string, unknown>): StaffCredential {
   const badge_id = String(row.badge_id ?? normalizeGovernanceCredentialBadge(row));
 
@@ -83,7 +116,7 @@ function normalizeCredential(row: Record<string, unknown>): StaffCredential {
     hospital_id: String(row.hospital_id ?? ''),
     hospital_name: String(row.hospital_name ?? ''),
     full_name: String(row.full_name ?? ''),
-    staff_type: (row.staff_type as StaffCredential['staff_type']) ?? 'Admin',
+    staff_type: resolveDisplayStaffType(row),
     department: String(row.department ?? ''),
     email: String(row.email ?? ''),
     temporary_passcode: String(row.temporary_passcode ?? row.passcode ?? ''),
@@ -109,8 +142,8 @@ export default function SuperAdminHospitalBlocksDashboard() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Modal State (fixed type syntax)
   const [showOnboardModal, setShowOnboardModal] = useState(false);
+  const [showStaffModal, setShowStaffModal] = useState(false);
   const [createdPacket, setCreatedPacket] = useState<StaffCredential | null>(null);
 
   // Load all hospitals and credentials
@@ -118,37 +151,30 @@ export default function SuperAdminHospitalBlocksDashboard() {
     setIsLoading(true);
     if (supabase) {
       try {
-        const [hospRes, tenantRes, vaultData, legacyCredRes] = await Promise.all([
+        const [hospRes, tenantRes, vaultData] = await Promise.all([
           supabase.from('hospitals').select('*').order('id', { ascending: true }),
           supabase.from('hospital_tenants').select('*').order('hospital_id', { ascending: true }),
           fetchGovernanceVaultDirectory(supabase),
-          supabase.from('hospital_staff_credentials').select('*').order('created_at', { ascending: false }),
         ]);
 
         if (vaultData.errors.length > 0) {
           console.warn('[super-admin] governance vault partial load:', vaultData.errors);
         }
 
-        const userCreds = vaultData.credentialRows.map((row) => {
-          const record = row as Record<string, unknown>;
-          return normalizeCredential({
-            ...record,
-            badge_id: record.badge_id,
-            staff_type: credentialRoleToStaffType(String(record.role ?? 'staff') as 'admin' | 'doctor' | 'staff' | 'nurse'),
-            temporary_passcode: record.passcode ?? record.temporary_passcode,
+        const creds = vaultData.credentialRows
+          .filter((row) => row.is_active !== false)
+          .map((row) => {
+            const record = row as Record<string, unknown>;
+            return normalizeCredential({
+              ...record,
+              badge_id: record.badge_id,
+              staff_type: credentialRoleToStaffType(
+                String(record.role ?? 'staff') as 'admin' | 'doctor' | 'staff' | 'nurse',
+              ),
+              temporary_passcode: record.passcode ?? record.temporary_passcode,
+              status: record.is_active === false ? 'Restricted' : 'Active',
+            });
           });
-        });
-
-        const legacyCreds = (legacyCredRes.data ?? []).map((row) =>
-          normalizeCredential(row as Record<string, unknown>),
-        );
-
-        const merged = new Map<string, StaffCredential>();
-        [...legacyCreds, ...userCreds].forEach((cred) => {
-          const key = cred.email.toLowerCase();
-          if (!merged.has(key)) merged.set(key, cred);
-        });
-        const creds = Array.from(merged.values());
         setCredentials(creds);
 
         const fromHospitals = (hospRes.data ?? []).map((row) =>
@@ -201,9 +227,6 @@ export default function SuperAdminHospitalBlocksDashboard() {
           void loadPlatformData();
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_user_credentials' }, () => {
-          void loadPlatformData();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'hospital_staff_credentials' }, () => {
           void loadPlatformData();
         })
         .subscribe();
@@ -273,9 +296,9 @@ export default function SuperAdminHospitalBlocksDashboard() {
   const selectedHospitalData = hospitals.find((h) => h.id === selectedHospitalId);
 
   const scopedCredentials = useMemo(() => {
-    if (!selectedHospitalId) return [];
+    if (!selectedHospitalId || !selectedHospitalData) return [];
     return credentials.filter((c) => {
-      const matchesHospital = c.hospital_id === selectedHospitalId;
+      const matchesHospital = credentialBelongsToTenant(c, selectedHospitalData);
       const matchesRole = selectedRoleFilter === 'All' || c.staff_type === selectedRoleFilter;
       const badgeLabel = (c.badge_id ?? '').toLowerCase();
       const matchesSearch =
@@ -286,7 +309,9 @@ export default function SuperAdminHospitalBlocksDashboard() {
 
       return matchesHospital && matchesRole && matchesSearch;
     });
-  }, [credentials, selectedHospitalId, selectedRoleFilter, searchQuery]);
+  }, [credentials, selectedHospitalId, selectedHospitalData, selectedRoleFilter, searchQuery]);
+
+  const tenantScopeLabel = formatTenantCredentialScopeLabel(selectedHospitalData);
 
   return (
     <div className="w-full min-h-screen bg-slate-50 text-slate-800 font-sans p-4 sm:p-8">
@@ -363,7 +388,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
             ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {hospitals.map((hosp) => {
-                const hospCreds = credentials.filter((c) => c.hospital_id === hosp.id);
+                const hospCreds = credentials.filter((c) => credentialBelongsToTenant(c, hosp));
                 const docCount = hospCreds.filter((c) => c.staff_type === 'Doctor').length;
                 const staffCount = hospCreds.length - docCount;
 
@@ -435,12 +460,20 @@ export default function SuperAdminHospitalBlocksDashboard() {
                 <span>Back to All Hospital Blocks</span>
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-slate-500">Active Tenant:</span>
                 <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-black">
                   {selectedHospitalData?.name} (
                   {formatHospitalNodeBadge(selectedHospitalData ?? { id: selectedHospitalId ?? '' })})
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setShowStaffModal(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-purple-700 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-xs transition hover:bg-purple-600"
+                >
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  Onboard Staff Credential
+                </button>
               </div>
             </div>
 
@@ -474,6 +507,31 @@ export default function SuperAdminHospitalBlocksDashboard() {
                 </div>
               </div>
 
+              {scopedCredentials.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-purple-200 bg-purple-50/30 p-10 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-purple-700 shadow-xs">
+                    <ShieldCheck className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-lg font-black text-slate-900">
+                    No Active Staff Credentials Provisioned
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+                    This facility node currently has zero authorized users. Generate a new staff passkey
+                    to grant access.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowStaffModal(true)}
+                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-purple-700 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-purple-600"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    Onboard Staff Credential
+                  </button>
+                  <p className="mt-4 text-[11px] font-medium text-slate-500">
+                    Showing 0 credentials for {tenantScopeLabel}
+                  </p>
+                </div>
+              ) : (
               <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
                 <div className="max-h-[580px] overflow-y-auto overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
@@ -482,7 +540,7 @@ export default function SuperAdminHospitalBlocksDashboard() {
                         <th className="py-3 px-4">Staff Member & ID</th>
                         <th className="py-3 px-4">Department & Role</th>
                         <th className="py-3 px-4">Workspace Route</th>
-                        <th className="py-3 px-4">Deterministic Passcode</th>
+                        <th className="py-3 px-4">Security Passcode</th>
                         <th className="py-3 px-4 text-right">Access Pass</th>
                       </tr>
                     </thead>
@@ -559,9 +617,13 @@ export default function SuperAdminHospitalBlocksDashboard() {
                   </table>
                 </div>
               </div>
+              )}
 
               <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 pt-2">
-                <span>Showing {scopedCredentials.length} credentials for {selectedHospitalData?.name}</span>
+                <span>
+                  Showing {scopedCredentials.length} credential{scopedCredentials.length === 1 ? '' : 's'} for{' '}
+                  {tenantScopeLabel}
+                </span>
                 <span>Protected against cross-tenant exposure</span>
               </div>
             </div>
@@ -572,6 +634,16 @@ export default function SuperAdminHospitalBlocksDashboard() {
           open={showOnboardModal}
           onClose={() => setShowOnboardModal(false)}
           onSuccess={handleOnboardSuccess}
+        />
+
+        <StaffProvisioningModal
+          open={showStaffModal}
+          onClose={() => setShowStaffModal(false)}
+          hospitalId={selectedHospitalId ?? undefined}
+          hospitalName={selectedHospitalData?.name}
+          onSuccess={() => {
+            void loadPlatformData();
+          }}
         />
 
         {/* Modal: Handover Pass */}

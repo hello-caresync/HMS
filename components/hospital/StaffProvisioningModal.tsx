@@ -37,10 +37,11 @@ type StaffProvisioningModalProps = {
 
 const ROLE_OPTIONS: Array<{ label: string; value: string; credentialRole: HospitalCredentialRole }> = [
   { label: 'Doctor', value: 'Doctor', credentialRole: 'doctor' },
-  { label: 'Nurse', value: 'Nurse', credentialRole: 'nurse' },
-  { label: 'Billing Desk', value: 'Billing Desk', credentialRole: 'staff' },
-  { label: 'Receptionist', value: 'Receptionist', credentialRole: 'staff' },
   { label: 'Admin', value: 'Admin', credentialRole: 'admin' },
+  { label: 'Nurse', value: 'Nurse', credentialRole: 'nurse' },
+  { label: 'Receptionist', value: 'Receptionist', credentialRole: 'staff' },
+  { label: 'Pharmacist', value: 'Pharmacist', credentialRole: 'staff' },
+  { label: 'Billing Desk', value: 'Billing Desk', credentialRole: 'staff' },
 ];
 
 const DEFAULT_DOCTOR_FEE = 500;
@@ -79,6 +80,12 @@ export function StaffProvisioningModal({
     setForm((prev) => ({
       ...prev,
       role: nextRole,
+      department:
+        nextRole === 'Pharmacist'
+          ? 'Pharmacy'
+          : nextRole === 'Receptionist'
+            ? 'Front Desk'
+            : prev.department,
       consultation_fee: doctorSelected ? prev.consultation_fee ?? DEFAULT_DOCTOR_FEE : null,
     }));
   };
@@ -198,7 +205,7 @@ export function StaffProvisioningModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
-        <h2 className="text-base font-bold text-slate-900">Provision Hospital Personnel</h2>
+        <h2 className="text-base font-bold text-slate-900">Onboard Staff Credential</h2>
         <p className="text-xs text-slate-500 mt-0.5">
           Writes login credentials to <code className="font-mono text-[10px]">hospital_user_credentials</code>,
           syncs the staff roster, and publishes doctors to <code className="font-mono text-[10px]">public.doctors</code>{' '}

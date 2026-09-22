@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { verifyPassword } from '@/lib/auth/hospital/password-utils';
+import { PROVISIONING_ACCESS_DENIED_MESSAGE } from '@/lib/auth/provisioning-gate';
 import { isHospitalAdminRole } from '@/lib/auth/hospital-admin-auth';
 import { HOSPITAL_TENANT_ID, REGAL_HOSPITAL_NAME } from '@/lib/regal/constants';
 
@@ -210,30 +211,13 @@ async function findCredentialRow(
   supabase: SupabaseClient,
   identifier: string,
 ): Promise<Record<string, unknown> | null> {
-  const tables = [
-    HOSPITAL_USER_CREDENTIALS_TABLE,
-    'hospital_staff_credentials',
-    'hospital_staff',
-  ] as const;
+  const row = await queryCredentialTable(supabase, HOSPITAL_USER_CREDENTIALS_TABLE, identifier);
+  if (!row) return null;
 
-  for (const table of tables) {
-    const row = await queryCredentialTable(supabase, table, identifier);
-    if (!row) continue;
+  const credential = mapCredentialRow(row);
+  if (!credential.is_active) return null;
 
-    const credential = mapCredentialRow(row);
-    if (!credential.is_active) continue;
-    if (table === HOSPITAL_USER_CREDENTIALS_TABLE) return row;
-
-    const hasPasscode = ['passcode', 'temporary_passcode', 'passcode_key', 'passcode_hash', 'password'].some(
-      (key) => {
-        const value = row[key];
-        return typeof value === 'string' && value.length > 0;
-      },
-    );
-    if (hasPasscode || table === 'hospital_staff_credentials') return row;
-  }
-
-  return null;
+  return row;
 }
 
 export async function authenticateHospitalUser(
@@ -250,12 +234,12 @@ export async function authenticateHospitalUser(
 
   const row = await findCredentialRow(supabase, cleanIdentifier);
   if (!row) {
-    return { ok: false, error: 'No active account found for this Employee ID or email.' };
+    return { ok: false, error: PROVISIONING_ACCESS_DENIED_MESSAGE };
   }
 
   const valid = await verifyStoredPasscode(row, cleanPasscode);
   if (!valid) {
-    return { ok: false, error: 'Invalid security passcode. Verify your credentials and try again.' };
+    return { ok: false, error: PROVISIONING_ACCESS_DENIED_MESSAGE };
   }
 
   const credential = mapCredentialRow(row);

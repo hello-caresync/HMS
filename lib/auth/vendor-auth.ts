@@ -1,6 +1,7 @@
 import type { VendorSession } from './ecosystem-sessions';
 
 import { verifyPassword } from '@/lib/auth/hospital/password-utils';
+import { PROVISIONING_ACCESS_DENIED_MESSAGE } from '@/lib/auth/provisioning-gate';
 import { HOSPITAL_USER_CREDENTIALS_TABLE } from '@/lib/auth/hospitalAuth';
 import {
   isVendorCredentialRole,
@@ -12,8 +13,7 @@ export type VendorAuthResult =
   | { ok: true; vendor: VendorSession }
   | { ok: false; error: string };
 
-export const VENDOR_INVALID_CREDENTIALS_MESSAGE =
-  'Invalid vendor email or security passcode. Please verify your credentials.';
+export const VENDOR_INVALID_CREDENTIALS_MESSAGE = PROVISIONING_ACCESS_DENIED_MESSAGE;
 
 export const VENDOR_AUTH_SERVICE_ERROR_MESSAGE =
   'Unable to connect to the authentication service. Please try again.';

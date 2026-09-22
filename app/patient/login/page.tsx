@@ -63,7 +63,7 @@ const LABEL_CLASS =
   'mb-1 block text-[10px] font-bold uppercase tracking-wider text-[#52331F]';
 
 const SIGN_IN_DENIED_MESSAGE =
-  'Invalid email or password. Please verify your credentials or register with a new account.';
+  'Access denied. This identifier is not provisioned or has been revoked by facility administration.';
 
 const PHONE_MISMATCH_MESSAGE =
   'The entered phone number does not match registered records.';

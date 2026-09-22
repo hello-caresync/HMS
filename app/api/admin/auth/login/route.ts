@@ -18,14 +18,6 @@ const SESSION_COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 24,
 };
 
-function getAllowedAdminEmails(): string[] {
-  const raw = process.env.NEXORA_ADMIN_EMAILS ?? process.env.ADMIN_DEV_EMAIL ?? '';
-  return raw
-    .split(',')
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
-}
-
 export async function POST(req: Request) {
   const body = (await req.json()) as {
     email?: string;
@@ -43,54 +35,34 @@ export async function POST(req: Request) {
     );
   }
 
-  if (verifySuperAdminCredentials(email, passcode)) {
-    const token = createSuperAdminSessionToken();
-    const session = buildSuperAdminSessionPayload(email, token);
-
-    const response = NextResponse.json({
-      success: true,
-      role: 'super_admin',
-      facility_node: session.facility_node,
-      token,
-      user: {
-        email: session.email,
-        role: 'super_admin',
-      },
-    });
-
-    response.cookies.set('nexora_role', 'super_admin', {
-      ...SESSION_COOKIE_OPTIONS,
-      httpOnly: false,
-    });
-    response.cookies.set('nexora_superadmin_session', token, SESSION_COOKIE_OPTIONS);
-    response.cookies.set('auth-token', token, SESSION_COOKIE_OPTIONS);
-
-    return response;
-  }
-
-  const allowedEmails = getAllowedAdminEmails();
-  const configuredPassword = process.env.NEXORA_ADMIN_PASSWORD ?? '';
-
-  if (allowedEmails.length === 0 || !configuredPassword) {
+  const verified = await verifySuperAdminCredentials(email, passcode);
+  if (!verified) {
     return NextResponse.json(
       { success: false, error: 'Invalid email or passcode.' },
       { status: 401 },
     );
   }
 
-  if (!allowedEmails.includes(email) || passcode !== configuredPassword) {
-    return NextResponse.json(
-      { success: false, error: 'Invalid email or passcode.' },
-      { status: 401 },
-    );
-  }
+  const token = createSuperAdminSessionToken();
+  const session = buildSuperAdminSessionPayload(email, token);
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     success: true,
-    role: 'administrator',
+    role: 'super_admin',
+    facility_node: session.facility_node,
+    token,
     user: {
-      email,
-      role: 'administrator' as const,
+      email: session.email,
+      role: 'super_admin',
     },
   });
+
+  response.cookies.set('nexora_role', 'super_admin', {
+    ...SESSION_COOKIE_OPTIONS,
+    httpOnly: false,
+  });
+  response.cookies.set('nexora_superadmin_session', token, SESSION_COOKIE_OPTIONS);
+  response.cookies.set('auth-token', token, SESSION_COOKIE_OPTIONS);
+
+  return response;
 }

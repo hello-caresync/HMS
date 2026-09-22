@@ -1,13 +1,4 @@
-export const SUPER_ADMIN_ACCEPTED_EMAILS = [
-  'superadmin@regalhospital.com',
-  'superadmin@regalhms.com',
-  'aishwaryaananya43@gmail.com',
-] as const;
-
-export const SUPER_ADMIN_ACCEPTED_PASSCODES = [
-  'REGAL#2026@SUPER_ROOT',
-  'SuperAdmin@Regal2026',
-] as const;
+import { verifySuperAdminVaultCredentials } from '@/lib/auth/super-admin-auth';
 
 export const SUPER_ADMIN_FACILITY_NODE = 'HOSP-01';
 
@@ -29,20 +20,33 @@ export function normalizeSuperAdminPasscode(value?: string | null): string {
   return String(value ?? '').trim();
 }
 
-export function verifySuperAdminCredentials(email: string, passcode: string): boolean {
+/**
+ * Super Admin authentication — vault table or env-configured bootstrap only.
+ * No hardcoded credential lists.
+ */
+export async function verifySuperAdminCredentials(
+  email: string,
+  passcode: string,
+): Promise<boolean> {
   const normalizedEmail = normalizeSuperAdminEmail(email);
   const normalizedPasscode = normalizeSuperAdminPasscode(passcode);
 
   if (!normalizedEmail || !normalizedPasscode) return false;
 
-  const emailAllowed = (SUPER_ADMIN_ACCEPTED_EMAILS as readonly string[]).includes(
-    normalizedEmail,
-  );
-  const passcodeAllowed = (SUPER_ADMIN_ACCEPTED_PASSCODES as readonly string[]).includes(
-    normalizedPasscode,
-  );
+  const vaultOk = await verifySuperAdminVaultCredentials(normalizedEmail, normalizedPasscode);
+  if (vaultOk) return true;
 
-  return emailAllowed && passcodeAllowed;
+  const allowedEmails = (process.env.NEXORA_ADMIN_EMAILS ?? process.env.ADMIN_DEV_EMAIL ?? '')
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+  const configuredPassword = process.env.NEXORA_ADMIN_PASSWORD ?? '';
+
+  if (allowedEmails.length === 0 || !configuredPassword) {
+    return false;
+  }
+
+  return allowedEmails.includes(normalizedEmail) && normalizedPasscode === configuredPassword;
 }
 
 export function createSuperAdminSessionToken(): string {

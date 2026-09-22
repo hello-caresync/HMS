@@ -1,9 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import {
-  buildSuperAdminUser,
-  passesSuperAdminPasscodeCheck,
-  verifySuperAdminVaultCredentials,
-} from './super-admin-auth';
+
+import { PROVISIONING_ACCESS_DENIED_MESSAGE } from '@/lib/auth/provisioning-gate';
+import { verifySuperAdminCredentials } from '@/lib/auth/superAdminAuth';
+import { buildSuperAdminUser } from './super-admin-auth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -105,29 +104,12 @@ async function authenticateSuperAdminLogin(
   cleanEmail: string,
   cleanPasscode: string,
 ): Promise<PortalAuthResult> {
-  const user = await lookupStaffByEmail(cleanEmail);
-  if (user) {
-    if (!isSuperAdminCredential(user)) {
-      return { ok: false, error: 'This account is not authorized for Super Admin access.' };
-    }
-    if (user.status === 'Restricted') {
-      return {
-        ok: false,
-        error: 'This account has been restricted. Contact your hospital administrator.',
-      };
-    }
-    if (!passesSuperAdminPasscodeCheck(cleanPasscode, user.temporary_passcode)) {
-      return { ok: false, error: 'Invalid security passcode. Please verify your credentials.' };
-    }
-    return { ok: true, user };
-  }
-
-  const vaultOk = await verifySuperAdminVaultCredentials(cleanEmail, cleanPasscode);
-  if (vaultOk) {
+  const verified = await verifySuperAdminCredentials(cleanEmail, cleanPasscode);
+  if (verified) {
     return { ok: true, user: buildSuperAdminUser(cleanEmail, cleanPasscode) };
   }
 
-  return { ok: false, error: 'Invalid root credentials. Access denied.' };
+  return { ok: false, error: PROVISIONING_ACCESS_DENIED_MESSAGE };
 }
 
 export async function authenticatePortalCredential(params: {
@@ -153,7 +135,7 @@ export async function authenticatePortalCredential(params: {
 
   const user = await lookupStaffByEmail(cleanEmail);
   if (!user) {
-    return { ok: false, error: 'No account found with this email address.' };
+    return { ok: false, error: PROVISIONING_ACCESS_DENIED_MESSAGE };
   }
 
   if (!matchesScope(user, params.scope)) {
@@ -178,7 +160,7 @@ export async function authenticatePortalCredential(params: {
   }
 
   if (user.temporary_passcode !== cleanPasscode) {
-    return { ok: false, error: 'Invalid security passcode. Please verify your credentials.' };
+    return { ok: false, error: PROVISIONING_ACCESS_DENIED_MESSAGE };
   }
 
   return { ok: true, user };

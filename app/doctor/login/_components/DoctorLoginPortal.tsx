@@ -7,19 +7,15 @@ import {
   LOGIN_IDENTIFIER_INPUT_PROPS,
   LOGIN_PASSWORD_INPUT_PROPS,
 } from '@/lib/auth/login-form-security';
-import { supabase } from '@/lib/supabase';
-import {
-  resolveDoctorConsultationFeeFromSources,
-  saveDoctorSession,
-  type DoctorSession,
-} from '@/lib/doctor/session';
-import { resolveDoctorConsultationFee } from '@/lib/hospital/doctors';
+import { authenticateDoctorCredential } from '@/lib/auth/doctorAuth';
+import { saveDoctorSession } from '@/lib/doctor/session';
 import {
   recordRealStaffLogin,
   resolveCredentialHospitalId,
   resolveCredentialHospitalName,
 } from '@/lib/recordStaffLogin';
 import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
+import { supabase } from '@/lib/supabase';
 import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
 import {
   AlertCircle,
@@ -30,18 +26,6 @@ import {
   EyeOff,
   Lock,
 } from 'lucide-react';
-
-interface HospitalDoctorRow {
-  doctor_id: string;
-  doctor_name: string;
-  email?: string;
-  department?: string;
-  specialization?: string;
-  passcode?: string;
-  consultation_fee?: number | string | null;
-  fee?: number | string | null;
-  hospital_code?: string;
-}
 
 export default function DoctorLoginPortal() {
   const router = useRouter();
@@ -74,68 +58,24 @@ export default function DoctorLoginPortal() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('hospital_doctors')
-        .select('*')
-        .eq('is_active', true)
-        .or(`doctor_id.eq.${cleanInput},email.eq.${cleanInput}`)
-        .maybeSingle();
-
-      if (error || !data) {
-        setErrorMessage('Credentials not found in Regal Hospital registry. Contact IT admin.');
+      const result = await authenticateDoctorCredential(supabase, cleanInput, cleanPasscode);
+      if (!result.ok) {
+        setErrorMessage(result.error);
         return;
       }
 
-      if (String(data.passcode) !== cleanPasscode) {
-        setErrorMessage('Invalid security PIN. Each clinician has a unique hospital-issued passcode.');
-        return;
-      }
+      const { doctor } = result;
+      const hospitalId = resolveCredentialHospitalId(doctor.hospitalCode);
 
-      let configuredFee = resolveDoctorConsultationFeeFromSources([data as HospitalDoctorRow], 0);
-      if (!configuredFee) {
-        const registry = await supabase
-          .from('doctors')
-          .select('consultation_fee, fee, full_name, doctor_name')
-          .or(
-            [
-              `doctor_code.eq.${data.doctor_id}`,
-              `registration_number.eq.${data.doctor_id}`,
-              data.email ? `email.eq.${data.email}` : '',
-            ]
-              .filter(Boolean)
-              .join(','),
-          )
-          .limit(3);
-        configuredFee = resolveDoctorConsultationFeeFromSources(
-          (registry.data ?? []) as HospitalDoctorRow[],
-          0,
-        );
-      }
-
-      const session: DoctorSession = {
-        doctorId: data.doctor_id,
-        doctorName: data.doctor_name,
-        department: data.department,
-        specialization: data.specialization,
-        email: data.email,
-        hospitalCode: data.hospital_code,
-        consultationFee:
-          configuredFee ||
-          resolveDoctorConsultationFee(data as Record<string, unknown>, 0) ||
-          undefined,
-        fee: configuredFee || undefined,
-      };
-
-      const hospitalId = resolveCredentialHospitalId(data.hospital_code);
       try {
         await recordRealStaffLogin({
-          id: data.doctor_id,
+          id: doctor.doctorId,
           hospital_id: hospitalId,
           hospital_name: resolveCredentialHospitalName(hospitalId),
-          full_name: data.doctor_name,
+          full_name: doctor.doctorName,
           staff_type: 'Doctor',
-          department: data.department ?? 'General Medicine',
-          email: data.email ?? `${data.doctor_id.toLowerCase()}@regalhospital.com`,
+          department: doctor.department ?? 'General Medicine',
+          email: doctor.email ?? `${doctor.doctorId.toLowerCase()}@regalhospital.com`,
           temporary_passcode: cleanPasscode,
           portal_access: '/doctor/dashboard',
         });
@@ -143,7 +83,7 @@ export default function DoctorLoginPortal() {
         console.warn('Live credential vault sync skipped:', recordErr);
       }
 
-      saveDoctorSession(session, rememberMe);
+      saveDoctorSession(doctor, rememberMe);
       setLoginSuccess(true);
       router.refresh();
 
