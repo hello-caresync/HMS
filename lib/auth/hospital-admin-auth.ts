@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
+import { isHospitalCredentialAdmin, normalizeHospitalRole } from '@/lib/auth/hospital-rbac';
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
@@ -35,20 +37,11 @@ function readStoredPasscode(row: Record<string, unknown>): string {
 }
 
 function normalizeRole(role: unknown): string {
-  return String(role ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, '_');
+  return normalizeHospitalRole(String(role ?? '')).toLowerCase();
 }
 
 export function isHospitalAdminRole(role: unknown): boolean {
-  const normalized = normalizeRole(role);
-  return (
-    normalized === 'admin' ||
-    normalized === 'super_admin' ||
-    normalized === 'superadmin' ||
-    normalized === 'hospital_admin'
-  );
+  return isHospitalCredentialAdmin(String(role ?? ''));
 }
 
 function hospitalNodesCompatible(staffHospitalId: string, selectedHospitalId?: string): boolean {

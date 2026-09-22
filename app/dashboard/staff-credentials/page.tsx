@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { isHospitalAdminSession, isHospitalAppRole, readHospitalAppSession } from '@/lib/auth/ecosystem-sessions';
+import { isHospitalAppRole, readHospitalAppSession } from '@/lib/auth/ecosystem-sessions';
+import { canManageStaffCredentials } from '@/lib/auth/hospital-rbac';
 import { supabase } from '@/lib/supabase';
 import {
   formatVendorDirectoryCode,
@@ -324,7 +325,7 @@ export default function IdentityAccessGovernanceVault() {
       return;
     }
 
-    if (!isHospitalAdminSession(session)) {
+    if (!canManageStaffCredentials(session)) {
       setAccessState('denied');
       router.replace('/dashboard?unauthorized=staff-credentials');
       return;

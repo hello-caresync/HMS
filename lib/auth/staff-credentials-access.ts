@@ -1,13 +1,10 @@
 import { readHospitalAppSession } from '@/lib/auth/ecosystem-sessions';
 import { parseActiveSession, CURASYNC_ACTIVE_SESSION_KEY } from '@/lib/auth/active-session';
-import { isHospitalAdminRole } from '@/lib/auth/hospital-admin-auth';
-
-const ADMIN_STAFF_TYPES = new Set(['Admin', 'SuperAdmin', 'Super Admin', 'Hospital Admin']);
+import { canManageStaffCredentials, resolveHospitalSessionRole } from '@/lib/auth/hospital-rbac';
 
 /** Roles allowed to access staff credential provisioning consoles. */
 export function isStaffCredentialsAdmin(staffType?: string | null, role?: string | null): boolean {
-  if (staffType && ADMIN_STAFF_TYPES.has(staffType.trim())) return true;
-  return isHospitalAdminRole(role) || isHospitalAdminRole(staffType);
+  return canManageStaffCredentials({ staff_type: staffType, role: role ?? staffType });
 }
 
 export function readStaffCredentialsAccess(): {

@@ -107,17 +107,20 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         portal_access: '/dashboard',
       };
 
-      persistActiveSession(session);
-      persistStaffPortalSession({
-        id: session.id,
-        hospital_id: session.hospital_id,
-        hospital_name: session.hospital_name,
-        full_name: session.full_name,
-        staff_type: session.staff_type,
-        department: session.department,
-        email: session.email,
-        portal_access: session.portal_access,
-      });
+      if (user.role === 'admin') {
+        persistActiveSession(session);
+      } else {
+        persistStaffPortalSession({
+          id: session.id,
+          hospital_id: session.hospital_id,
+          hospital_name: session.hospital_name,
+          full_name: session.full_name,
+          staff_type: session.staff_type,
+          department: session.department,
+          email: session.email,
+          portal_access: session.portal_access,
+        });
+      }
 
       if (user.role === 'admin') {
         localStorage.setItem('curasync_admin_role', 'admin');

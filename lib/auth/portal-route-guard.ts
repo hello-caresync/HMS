@@ -1,5 +1,11 @@
 import type { NextRequest } from 'next/server';
 
+import {
+  isHospitalCredentialAdmin,
+  isStaffCredentialsAdminPath,
+  resolveHospitalSessionRole,
+} from '@/lib/auth/hospital-rbac';
+
 export const CURASYNC_DOCTOR_SESSION_COOKIE = 'curasync_doctor_session';
 
 export const PATIENT_PUBLIC_PATHS = ['/patient/login', '/patient/register'] as const;
@@ -74,6 +80,54 @@ function readRoleCookie(request: NextRequest): string {
     .trim()
     .toLowerCase();
 }
+
+function decodeCookieJson(raw: string | undefined): Record<string, unknown> | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(decodeURIComponent(raw)) as Record<string, unknown>;
+  } catch {
+    try {
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+}
+
+/** Resolve desk role from session cookies set at hospital login. */
+export function readHospitalDeskRoleFromRequest(request: NextRequest): string {
+  const roleCookie = request.cookies.get('curasync_session_role')?.value?.trim();
+  if (roleCookie) return roleCookie;
+
+  const active = decodeCookieJson(request.cookies.get('curasync_active_session')?.value);
+  if (active) {
+    return resolveHospitalSessionRole({
+      staff_type: typeof active.staff_type === 'string' ? active.staff_type : null,
+      role: typeof active.role === 'string' ? active.role : null,
+    });
+  }
+
+  const staff = decodeCookieJson(request.cookies.get('curasync_staff_session')?.value);
+  if (staff) {
+    return resolveHospitalSessionRole({
+      staff_type: typeof staff.staff_type === 'string' ? staff.staff_type : null,
+      role: typeof staff.role === 'string' ? staff.role : null,
+    });
+  }
+
+  const session = decodeCookieJson(request.cookies.get('curasync_session')?.value);
+  if (session && typeof session.role === 'string') {
+    return session.role;
+  }
+
+  return 'STAFF';
+}
+
+export function hasStaffCredentialsDeskAccess(request: NextRequest): boolean {
+  return isHospitalCredentialAdmin(readHospitalDeskRoleFromRequest(request));
+}
+
+export { isStaffCredentialsAdminPath };
 
 export function hasHospitalDeskSession(request: NextRequest): boolean {
   const cookies = request.cookies;

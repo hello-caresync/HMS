@@ -7,10 +7,12 @@ import {
   hasDoctorPortalSession,
   hasHospitalDeskSession,
   hasPatientPortalSession,
+  hasStaffCredentialsDeskAccess,
   isDoctorPublicPath,
   isGlobalPublicPath,
   isHospitalPublicPath,
   isPatientPublicPath,
+  isStaffCredentialsAdminPath,
   normalizePathname,
 } from '@/lib/auth/portal-route-guard';
 import { createMiddlewareSupabase } from '@/lib/supabase/middleware-client';
@@ -47,6 +49,23 @@ function redirectWithCookies(
 ): NextResponse {
   const url = new URL(destination, request.url);
   return applyCookies(NextResponse.redirect(url));
+}
+
+/** Block non-admin hospital desk users from credential vault routes. */
+function enforceStaffCredentialsRbac(
+  request: NextRequest,
+  path: string,
+  applyCookies: (response: NextResponse) => NextResponse,
+): NextResponse | null {
+  if (!isStaffCredentialsAdminPath(path)) return null;
+  if (isSuperAdminSession(request)) return null;
+  if (hasStaffCredentialsDeskAccess(request)) return null;
+
+  return redirectWithCookies(
+    request,
+    '/dashboard?unauthorized=staff-credentials',
+    applyCookies,
+  );
 }
 
 export async function middleware(request: NextRequest) {
@@ -170,6 +189,9 @@ export async function middleware(request: NextRequest) {
       );
     }
 
+    const credentialsDenied = enforceStaffCredentialsRbac(request, path, applyCookies);
+    if (credentialsDenied) return credentialsDenied;
+
     return applyCookies(NextResponse.next({ request }));
   }
 
@@ -181,6 +203,10 @@ export async function middleware(request: NextRequest) {
         applyCookies,
       );
     }
+
+    const credentialsDenied = enforceStaffCredentialsRbac(request, path, applyCookies);
+    if (credentialsDenied) return credentialsDenied;
+
     return applyCookies(NextResponse.next({ request }));
   }
 

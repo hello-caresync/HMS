@@ -1,3 +1,8 @@
+import {
+  canManageStaffCredentials,
+  isHospitalCredentialAdmin,
+  resolveHospitalSessionRole,
+} from '@/lib/auth/hospital-rbac';
 import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
 import { CACHE_KEYS, writeLocalJson } from '@/lib/persistence/local-cache';
 
@@ -90,14 +95,11 @@ export function isHospitalAppRole(role?: string | null): boolean {
 
 /** Hospital workspace administrators who may access the credentials vault. */
 export function isHospitalAdminRole(role?: string | null): boolean {
-  const normalized = String(role ?? '')
-    .trim()
-    .toLowerCase();
-  return normalized === 'admin' || normalized === 'superadmin';
+  return isHospitalCredentialAdmin(role);
 }
 
 export function isHospitalAdminSession(session?: StaffPortalSession | null): boolean {
-  return isHospitalAdminRole(session?.staff_type);
+  return canManageStaffCredentials(session);
 }
 
 export function readHospitalAppSession(): StaffPortalSession | null {
@@ -111,7 +113,7 @@ export function readHospitalAppSession(): StaffPortalSession | null {
     const hospitalId = parsed?.hospital_id || parsed?.hospitalId;
     if (!parsed || !hospitalId) continue;
 
-    const staffType = parsed.staff_type || parsed.role || 'Staff';
+    const staffType = resolveHospitalSessionRole(parsed);
     return {
       id: parsed.id || '',
       hospital_id: hospitalId,

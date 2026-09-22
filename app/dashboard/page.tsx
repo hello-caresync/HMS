@@ -36,11 +36,8 @@ import { createClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { isHospitalSetupCompleted } from '@/lib/auth/admin-setup';
 import { clearActiveSession } from '@/lib/auth/active-session';
-import {
-  isHospitalAdminRole,
-  isHospitalAppRole,
-  readHospitalAppSession,
-} from '@/lib/auth/ecosystem-sessions';
+import { isHospitalAppRole, readHospitalAppSession } from '@/lib/auth/ecosystem-sessions';
+import { canManageStaffCredentials } from '@/lib/auth/hospital-rbac';
 import {
   buildHospitalDirectoryOrFilter,
   hospitalDirectoryFilterIds,
@@ -1742,7 +1739,7 @@ function HospitalMasterDashboard() {
     }
 
     void (async () => {
-      if (staffType === 'Admin') {
+      if (canManageStaffCredentials(session)) {
         const completed = await isHospitalSetupCompleted(hospitalId);
         if (!completed) {
           router.replace(`/dashboard/staff-credentials?hospitalId=${encodeURIComponent(hospitalId)}`);
@@ -3000,7 +2997,7 @@ function HospitalMasterDashboard() {
       }));
     }
   }, [opdForm.doctorId, walkInDoctors]);
-  const canProvisionStaff = isHospitalAdminRole(currentUserRole);
+  const canProvisionStaff = canManageStaffCredentials({ staff_type: currentUserRole });
   const occupiedBeds = beds.filter((b) => /occup/i.test(b.status)).length;
   const occupancyRate = beds.length > 0 ? Math.round((occupiedBeds / beds.length) * 100) : 0;
   const pendingCheckout = pendingInvoices;
