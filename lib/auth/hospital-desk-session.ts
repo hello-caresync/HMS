@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 
 import { resolveHospitalSessionRole } from '@/lib/auth/hospital-rbac';
+import { HOSPITAL_TENANT_ID } from '@/lib/regal/constants';
 
 export const HOSPITAL_DESK_DASHBOARD_PATH = '/dashboard';
 export const HOSPITAL_DESK_LOGIN_PATH = '/hospital/login';
@@ -29,13 +30,15 @@ function parseDeskPayload(raw: string | undefined): VerifiedHospitalDeskSession 
   if (!parsed) return null;
 
   const email = String(parsed.email ?? '').trim().toLowerCase();
-  const hospitalId = String(parsed.hospital_id ?? parsed.hospitalId ?? '').trim();
+  const hospitalId =
+    String(parsed.hospital_id ?? parsed.hospitalId ?? HOSPITAL_TENANT_ID).trim() ||
+    HOSPITAL_TENANT_ID;
   const staffType = resolveHospitalSessionRole({
     staff_type: typeof parsed.staff_type === 'string' ? parsed.staff_type : null,
     role: typeof parsed.role === 'string' ? parsed.role : null,
   });
 
-  if (!email || !hospitalId) return null;
+  if (!email) return null;
   return { email, hospitalId, staffType };
 }
 
@@ -47,6 +50,7 @@ export function readVerifiedHospitalDeskSession(
     'curasync_active_session',
     'curasync_staff_session',
     'hospital_session',
+    'user_session',
   ] as const) {
     const verified = parseDeskPayload(request.cookies.get(key)?.value);
     if (verified) return verified;

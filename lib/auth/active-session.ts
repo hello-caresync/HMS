@@ -1,4 +1,5 @@
 import { HOSPITAL_DESK_DASHBOARD_PATH } from '@/lib/auth/hospital-desk-session';
+import { HOSPITAL_SESSION_COOKIE_ATTRS } from '@/lib/auth/hospital-staff-login';
 import { normalizeHospitalPostLoginRoute } from '@/lib/auth/hospitalAuth';
 
 import { clearNexoraRoleCookie, setNexoraRoleCookie } from './role-cookies';
@@ -48,17 +49,29 @@ export function resolveOperationalStaffRoute(portalAccess: string): string {
 export function persistActiveSession(session: ActiveStaffSession): void {
   if (typeof window === 'undefined') return;
 
-  const attrs = 'path=/; max-age=86400; SameSite=Lax';
   const sessionPayload = JSON.stringify(session);
+  const deskCookie = JSON.stringify({
+    id: session.id,
+    hospital_id: session.hospital_id,
+    hospitalId: session.hospital_id,
+    staff_id_code: session.staff_id_code ?? '',
+    full_name: session.full_name,
+    email: session.email,
+    role: session.staff_type,
+    department: session.department,
+    staff_type: session.staff_type,
+    portal_access: session.portal_access,
+  });
 
   localStorage.setItem(CURASYNC_ACTIVE_SESSION_KEY, sessionPayload);
   localStorage.setItem('curasync_admin_session', sessionPayload);
   setNexoraRoleCookie('admin');
 
-  document.cookie = `curasync_admin_session=${encodeURIComponent(session.hospital_id)}; ${attrs}`;
-  document.cookie = `curasync_active_session=${encodeURIComponent(sessionPayload)}; ${attrs}`;
-  document.cookie = `hospital_session=${encodeURIComponent(sessionPayload)}; ${attrs}`;
-  document.cookie = `curasync_session_role=${encodeURIComponent(session.staff_type)}; ${attrs}`;
+  document.cookie = `curasync_admin_session=${encodeURIComponent(session.hospital_id)}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+  document.cookie = `curasync_active_session=${encodeURIComponent(deskCookie)}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+  document.cookie = `hospital_session=${encodeURIComponent(deskCookie)}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+  document.cookie = `user_session=${encodeURIComponent(deskCookie)}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+  document.cookie = `curasync_session_role=${encodeURIComponent(session.staff_type)}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
 
   const cookiePayload = encodeURIComponent(
     JSON.stringify({
@@ -67,9 +80,9 @@ export function persistActiveSession(session: ActiveStaffSession): void {
       loggedInAt: new Date().toISOString(),
     }),
   );
-  document.cookie = `curasync_session=${cookiePayload}; ${attrs}`;
-  document.cookie = `auth-token=authenticated; ${attrs}`;
-  document.cookie = `sb-access-token=authenticated; ${attrs}`;
+  document.cookie = `curasync_session=${cookiePayload}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+  document.cookie = `auth-token=authenticated; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+  document.cookie = `sb-access-token=authenticated; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
 }
 
 export function clearStaleAuthArtifacts(): void {
@@ -140,4 +153,5 @@ export function clearHospitalOsSessionTokens(): void {
   document.cookie = `curasync_session=; ${attrs}`;
   document.cookie = `curasync_session_role=; ${attrs}`;
   document.cookie = `hospital_session=; ${attrs}`;
+  document.cookie = `user_session=; ${attrs}`;
 }

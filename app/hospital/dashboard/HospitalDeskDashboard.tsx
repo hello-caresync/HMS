@@ -17,6 +17,7 @@ import {
   ListOrdered,
   Loader2,
   LogOut,
+  Menu,
   PackageCheck,
   Phone,
   Plus,
@@ -35,6 +36,7 @@ import { createClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { isHospitalSetupCompleted } from '@/lib/auth/admin-setup';
 import { clearActiveSession } from '@/lib/auth/active-session';
+import { getDoctorSession } from '@/lib/doctor/session';
 import { HOSPITAL_DESK_DASHBOARD_PATH } from '@/lib/auth/hospital-desk-session';
 import {
   hydrateHospitalDeskSessionFromCookies,
@@ -92,6 +94,7 @@ import { IpdBedCensus } from '@/components/hospital/IpdBedCensus';
 import { SupplyOrdersCommandCenter } from '@/components/hospital/SupplyOrdersCommandCenter';
 import { BillingCheckoutCommandCenter } from '@/components/hospital/BillingCheckoutCommandCenter';
 import { HospitalOperationsHeaderBrand, HospitalOperationsHeaderTitle } from '@/components/hospital/HospitalOperationsHeaderBrand';
+import { HospitalOperationsSidebarBrand } from '@/components/hospital/HospitalOperationsSidebarBrand';
 import { DASHBOARD_TAB_STORAGE_KEY } from '@/components/hospital/DashboardTabRedirect';
 import { mapHospitalStaffMember, toDashboardStaffRow } from '@/lib/hospital/staff-directory';
 import {
@@ -1395,6 +1398,7 @@ function HospitalMasterDashboard() {
   const deskScopeRef = useRef<DeskScopeContext | null>(deskScope);
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<ModalKind>(null);
 
   const [hospitalInfo, setHospitalInfo] = useState<HospitalInfo>(() => readCachedHospitalInfo() ?? emptyHospitalInfo());
@@ -1777,6 +1781,11 @@ function HospitalMasterDashboard() {
   }, [loadPlatformData, loadEmergencyData, loadBillingInvoices, loadPharmacyData, loadVendors]);
 
   useEffect(() => {
+    if (getDoctorSession()) {
+      router.replace('/doctor/dashboard');
+      return;
+    }
+
     const session = readHospitalAppSession() ?? hydrateHospitalDeskSessionFromCookies();
     const hospitalId = session?.hospital_id;
     const staffType = session?.staff_type || 'Staff';
@@ -1813,10 +1822,18 @@ function HospitalMasterDashboard() {
   const navigateToTab = useCallback(
     (tab: NavModule) => {
       setActiveTab(tab);
+      setMobileNavOpen(false);
       router.replace(dashboardHrefForTab(tab), { scroll: false });
     },
     [router],
   );
+
+  const userInitials = useMemo(() => {
+    const parts = hospitalInfo.adminName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return 'RH';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0] ?? ''}${parts[parts.length - 1][0] ?? ''}`.toUpperCase();
+  }, [hospitalInfo.adminName]);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -3147,55 +3164,11 @@ function HospitalMasterDashboard() {
     vendorsList.length,
   ]);
 
-  if (isVerifying) {
-    return (
-      <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-700" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex w-full flex-col overflow-hidden bg-[#f1f5f9] font-sans text-slate-800 select-none">
-      <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white py-3 pl-4 pr-6 shadow-xs sm:px-6 sm:py-4">
-        <div className="flex min-w-0 items-center gap-4">
-          <HospitalOperationsHeaderBrand />
-          <HospitalOperationsHeaderTitle
-            title={`${navLinks.find((n) => n.id === activeTab)?.label ?? 'Dashboard'} Command Center`}
-            nodeId={hospitalInfo.id}
-            nodeName={hospitalInfo.name || 'Regal Multispeciality Hospital'}
-          />
-          {deskScope?.department ? (
-            <span className="hidden rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-cyan-800 lg:inline">
-              {deskScope.department}
-            </span>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={() => setActiveModal('opd')} className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500">
-            <Plus className="h-4 w-4" />
-            Issue OPD Token
-          </button>
-          {canProvisionStaff && (
-            <Link
-              href="/dashboard/staff-credentials"
-              className="flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-800"
-            >
-              <ShieldCheck className="h-4 w-4" />
-              Staff Credentials Vault
-            </Link>
-          )}
-          <button type="button" onClick={() => void loadPlatformData(hospitalInfo.id)} className="rounded-xl border border-slate-200 bg-white p-2 hover:bg-slate-50">
-            <RefreshCw className={`h-4 w-4 text-cyan-600 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-          <button type="button" onClick={handleLogout} className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-50 hover:text-rose-600" title="Log out">
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
-
-      <div className="shrink-0 overflow-x-auto border-b border-slate-200 bg-white px-4 py-2 sm:px-6">
-        <nav className="flex min-w-max gap-1">
+  const sidebar = (
+    <>
+      <HospitalOperationsSidebarBrand />
+      <div className="flex-1 overflow-y-auto p-5">
+        <nav className="space-y-1">
           {navLinks.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -3204,18 +3177,20 @@ function HospitalMasterDashboard() {
                 key={item.id}
                 type="button"
                 onClick={() => navigateToTab(item.id)}
-                className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-cyan-700 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-[#18537a] font-bold text-white shadow-md'
+                    : 'text-slate-300 hover:bg-[#0e3b5b]/60 hover:text-white'
                 }`}
               >
-                <Icon className={`h-4 w-4 ${isActive ? 'text-cyan-100' : 'text-slate-400'}`} />
-                <span>{item.label}</span>
+                <div className="flex items-center gap-3">
+                  <Icon className={`h-4 w-4 ${isActive ? 'text-cyan-300' : 'text-slate-400'}`} />
+                  <span>{item.label}</span>
+                </div>
                 {Boolean(item.badge) && (
                   <span
                     className={`rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                      isActive ? 'bg-cyan-400 text-slate-950' : 'bg-[#144466] text-cyan-200'
                     }`}
                   >
                     {item.badge}
@@ -3226,8 +3201,103 @@ function HospitalMasterDashboard() {
           })}
         </nav>
       </div>
+      <div className="flex items-center justify-between border-t border-[#124263] bg-[#07253a] p-4">
+        <div className="flex min-w-0 items-center gap-3 pr-2">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-xs font-black text-white">
+            {userInitials}
+          </div>
+          <div className="min-w-0 truncate">
+            <div className="truncate text-xs font-bold text-white">{hospitalInfo.adminName}</div>
+            <div className="truncate text-[10px] text-cyan-300/70">{hospitalInfo.adminEmail}</div>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="rounded-lg p-2 text-slate-400 hover:bg-[#0e3b5b] hover:text-rose-400"
+          title="Log Out"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+      </div>
+    </>
+  );
 
-      <div className="flex-1 space-y-6 overflow-y-auto p-6 sm:p-8">
+  if (isVerifying) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f1f5f9]">
+        <Loader2 className="h-8 w-8 animate-spin text-cyan-700" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen w-full overflow-hidden bg-[#f1f5f9] font-sans text-slate-800 select-none">
+      <aside className="z-30 hidden w-64 shrink-0 flex-col justify-between bg-[#0a2e47] text-slate-200 shadow-2xl md:flex">
+        {sidebar}
+      </aside>
+
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-950/50"
+            aria-label="Close navigation"
+            onClick={() => setMobileNavOpen(false)}
+          />
+          <aside className="relative z-50 flex h-full w-64 flex-col justify-between bg-[#0a2e47] text-slate-200">
+            {sidebar}
+          </aside>
+        </div>
+      )}
+
+      <main className="flex h-screen flex-1 flex-col overflow-hidden">
+        <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white py-3 pl-4 pr-6 shadow-xs sm:px-6 sm:py-4">
+          <div className="flex min-w-0 items-center gap-4">
+            <button
+              type="button"
+              className="rounded-xl border border-slate-200 p-2 md:hidden"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Open modules"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+            <HospitalOperationsHeaderBrand />
+            <HospitalOperationsHeaderTitle
+              title={`${navLinks.find((n) => n.id === activeTab)?.label ?? 'Dashboard'} Command Center`}
+              nodeId={hospitalInfo.id}
+              nodeName={hospitalInfo.name || 'Regal Multispeciality Hospital'}
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveModal('opd')}
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500"
+            >
+              <Plus className="h-4 w-4" />
+              Issue OPD Token
+            </button>
+            {canProvisionStaff && (
+              <Link
+                href="/dashboard/staff-credentials"
+                className="flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-800"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                Staff Credentials Vault
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => void loadPlatformData(hospitalInfo.id)}
+              className="rounded-xl border border-slate-200 bg-white p-2 hover:bg-slate-50"
+            >
+              <RefreshCw className={`h-4 w-4 text-cyan-600 ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </header>
+
+        <div className="flex-1 space-y-6 overflow-y-auto p-6 sm:p-8">
           {billingCheckoutAlert && (
             <div className="flex items-start justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 shadow-xs">
               <div className="flex items-start gap-3 min-w-0">
@@ -3916,6 +3986,7 @@ function HospitalMasterDashboard() {
             </div>
           )}
         </div>
+      </main>
 
       {activeModal === 'opd' && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">

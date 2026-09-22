@@ -356,17 +356,12 @@ export function getDoctorQueueIdentifiers(
     addDoctorCode(codes, session.doctorUuid);
     addDoctorCode(codes, session.doctorId);
     addDoctorCode(codes, session.employeeId);
-    addDoctorNameToken(nameTokens, session.doctorName);
-    addDoctorNameToken(nameTokens, session.fullName);
-    addDoctorNameToken(nameTokens, session.doctor_name);
   }
 
   if (portal) {
     addDoctorCode(codes, portal.doctorCode);
     addDoctorCode(codes, portal.employeeId);
     addDoctorCode(codes, portal.doctorId);
-    addDoctorNameToken(nameTokens, portal.doctorName);
-    addDoctorNameToken(nameTokens, portal.fullName);
   }
 
   return {
@@ -429,18 +424,14 @@ export function appointmentMatchesDoctorIdentifiers(
     item.doctor_employee_id,
     item.doctor_id,
     item.doctor_uuid,
+    item.assigned_doctor_id,
   ]
     .flatMap((value) => expandDoctorMatchCodes(value))
     .filter(Boolean);
 
-  if (identifiers.codes.some((code) => itemCodes.includes(code))) {
-    return true;
-  }
+  if (!identifiers.codes.length || !itemCodes.length) return false;
 
-  const itemName = normalizeDoctorName(String(item.doctor_name ?? ''));
-  if (!itemName) return false;
-
-  return identifiers.nameTokens.some((token) => itemName.includes(token));
+  return identifiers.codes.some((code) => itemCodes.includes(code));
 }
 
 /** Match the signed-in clinician by any stored code, UUID, or name token. */

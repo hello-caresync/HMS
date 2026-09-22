@@ -104,15 +104,20 @@ export async function middleware(request: NextRequest) {
 
   if (path === '/dashboard' || path.startsWith('/dashboard?')) {
     const verified = readVerifiedHospitalDeskSession(request);
+    const doctorSession = hasDoctorPortalSession(request);
+
+    if (doctorSession || (verified && resolveHospitalDeskHomePath(verified.staffType) === '/doctor/dashboard')) {
+      return redirectWithCookies(request, '/doctor/dashboard', applyCookies);
+    }
+
     if (verified) {
-      if (resolveHospitalDeskHomePath(verified.staffType) === '/doctor/dashboard') {
-        return redirectWithCookies(request, '/doctor/dashboard', applyCookies);
-      }
       return applyCookies(NextResponse.next({ request }));
     }
-    if (!hasHospitalDeskSession(request) && !hasDoctorPortalSession(request)) {
+
+    if (!hasHospitalDeskSession(request)) {
       return redirectWithCookies(request, hospitalDeskLoginUrl(path), applyCookies);
     }
+
     return applyCookies(NextResponse.next({ request }));
   }
 
@@ -176,7 +181,7 @@ export async function middleware(request: NextRequest) {
 
     if (isDoctorPublicPath(path)) {
       if (authenticated && path === '/doctor/login') {
-        return redirectWithCookies(request, '/doctor', applyCookies);
+        return redirectWithCookies(request, '/doctor/dashboard', applyCookies);
       }
       return applyCookies(NextResponse.next({ request }));
     }

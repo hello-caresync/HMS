@@ -10,19 +10,19 @@ import {
   LOGIN_IDENTIFIER_INPUT_PROPS,
   LOGIN_PASSWORD_INPUT_PROPS,
 } from '@/lib/auth/login-form-security';
-import {
-  ADMIN_PROVISIONING_PATH,
-  persistActiveSession,
-  type ActiveStaffSession,
-} from '@/lib/auth/active-session';
+import { persistActiveSession, type ActiveStaffSession } from '@/lib/auth/active-session';
 import { persistStaffPortalSession } from '@/lib/auth/ecosystem-sessions';
-import { authenticateHospitalUser } from '@/lib/auth/hospitalAuth';
-import { isHospitalSetupCompleted } from '@/lib/auth/admin-setup';
+import { HOSPITAL_DESK_DASHBOARD_PATH } from '@/lib/auth/hospital-desk-session';
+import { HOSPITAL_LOGIN_INVALID_MESSAGE } from '@/lib/auth/hospitalAuth';
+import {
+  buildHospitalStaffSessionCookie,
+  HOSPITAL_SESSION_COOKIE_ATTRS,
+} from '@/lib/auth/hospital-staff-login';
+import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
+import { getSupabaseConfigStatus } from '@/lib/supabase/client';
 import { recordRealStaffLogin, type AuthenticatedUserPayload } from '@/lib/recordStaffLogin';
 import { saveDoctorSession } from '@/lib/doctor/session';
-import { HOSPITAL_DESK_DASHBOARD_PATH } from '@/lib/auth/hospital-desk-session';
-import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
-import { supabase } from '@/lib/supabase';
+import type { HospitalAuthUser } from '@/lib/auth/hospitalAuth';
 
 type HospitalSignInFormProps = {
   onError?: (message: string) => void;
@@ -43,14 +43,35 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
     setLoading(true);
 
     try {
-      const result = await authenticateHospitalUser(supabase, identifier, passcode);
-      if (!result.ok) {
-        setErrorMessage(result.error);
-        onError?.(result.error);
+      const config = getSupabaseConfigStatus();
+      if (!config.ok) {
+        const message = 'Hospital authentication service is not configured.';
+        setErrorMessage(message);
+        onError?.(message);
         return;
       }
 
-      const user = result.user;
+      const loginResponse = await fetch('/api/hospital/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ identifier, passcode }),
+      });
+
+      const loginPayload = (await loginResponse.json()) as {
+        success?: boolean;
+        error?: string;
+        user?: HospitalAuthUser;
+      };
+
+      if (!loginResponse.ok || !loginPayload.success || !loginPayload.user) {
+        const message = loginPayload.error || HOSPITAL_LOGIN_INVALID_MESSAGE;
+        setErrorMessage(message);
+        onError?.(message);
+        return;
+      }
+
+      const user = loginPayload.user as HospitalAuthUser;
 
       void recordRealStaffLogin({
         id: user.id,
@@ -109,6 +130,12 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         portal_access: HOSPITAL_DESK_DASHBOARD_PATH,
       };
 
+      const deskCookie = buildHospitalStaffSessionCookie(user, HOSPITAL_DESK_DASHBOARD_PATH);
+      const encodedDeskCookie = encodeURIComponent(JSON.stringify(deskCookie));
+      document.cookie = `hospital_session=${encodedDeskCookie}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+      document.cookie = `user_session=${encodedDeskCookie}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+      document.cookie = `curasync_active_session=${encodedDeskCookie}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+
       if (user.role === 'admin') {
         persistActiveSession(session);
       } else {
@@ -131,38 +158,16 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         localStorage.setItem('hospital_id', user.hospital_id);
       }
 
-      document.cookie = `curasync_session_role=${encodeURIComponent(user.staff_type)}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `curasync_session_role=${encodeURIComponent(user.staff_type)}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
 
       toast.success(`Welcome back, ${user.full_name}!`);
-
-      const deskPrefixes = [
-        HOSPITAL_DESK_DASHBOARD_PATH,
-        '/hospital',
-        '/dashboard',
-        '/staff',
-      ] as const;
-
-      if (user.role === 'admin') {
-        const setupDone = await isHospitalSetupCompleted(user.hospital_id);
-        router.refresh();
-        router.replace(
-          setupDone
-            ? resolveLoginRedirect(
-                searchParams.get('redirect'),
-                HOSPITAL_DESK_DASHBOARD_PATH,
-                [...deskPrefixes],
-              )
-            : ADMIN_PROVISIONING_PATH,
-        );
-        return;
-      }
 
       router.refresh();
       router.replace(
         resolveLoginRedirect(
           searchParams.get('redirect'),
           HOSPITAL_DESK_DASHBOARD_PATH,
-          [...deskPrefixes],
+          [HOSPITAL_DESK_DASHBOARD_PATH, '/hospital', '/dashboard', '/staff'],
         ),
       );
     } catch (err: unknown) {

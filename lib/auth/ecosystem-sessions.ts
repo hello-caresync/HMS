@@ -3,6 +3,7 @@ import {
   isHospitalCredentialAdmin,
   resolveHospitalSessionRole,
 } from '@/lib/auth/hospital-rbac';
+import { HOSPITAL_SESSION_COOKIE_ATTRS } from '@/lib/auth/hospital-staff-login';
 import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
 import { CACHE_KEYS, writeLocalJson } from '@/lib/persistence/local-cache';
 
@@ -48,7 +49,7 @@ export function parseJsonSession<T>(raw: string | null): T | null {
   }
 }
 
-const COOKIE_ATTRS = 'path=/; max-age=86400; SameSite=Lax';
+const COOKIE_ATTRS = HOSPITAL_SESSION_COOKIE_ATTRS;
 
 function mirrorSessionCookie(name: string, payload: string): void {
   if (typeof document === 'undefined') return;
@@ -82,6 +83,7 @@ export function persistStaffPortalSession(session: StaffPortalSession): void {
   document.cookie = `${SESSION_KEYS.staff}=${encodeURIComponent(payload)}; ${COOKIE_ATTRS}`;
   document.cookie = `curasync_active_session=${encodeURIComponent(payload)}; ${COOKIE_ATTRS}`;
   document.cookie = `hospital_session=${encodeURIComponent(payload)}; ${COOKIE_ATTRS}`;
+  document.cookie = `user_session=${encodeURIComponent(payload)}; ${COOKIE_ATTRS}`;
   document.cookie = `curasync_session_role=${encodeURIComponent(session.staff_type)}; ${COOKIE_ATTRS}`;
   document.cookie = `auth-token=authenticated; ${COOKIE_ATTRS}`;
   document.cookie = `sb-access-token=authenticated; ${COOKIE_ATTRS}`;
@@ -123,7 +125,7 @@ function readCookieValue(name: string): string | null {
 export function hydrateHospitalDeskSessionFromCookies(): StaffPortalSession | null {
   if (typeof window === 'undefined') return null;
 
-  const cookieKeys = ['curasync_active_session', 'curasync_staff_session', 'hospital_session'];
+  const cookieKeys = ['curasync_active_session', 'curasync_staff_session', 'hospital_session', 'user_session'];
   for (const key of cookieKeys) {
     const parsed = parseJsonSession<
       StaffPortalSession & { role?: string; hospitalId?: string; hospitalName?: string }

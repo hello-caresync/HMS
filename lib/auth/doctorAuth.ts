@@ -1,11 +1,16 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { HOSPITAL_DESK_DASHBOARD_PATH } from '@/lib/auth/hospital-desk-session';
 import {
-  authenticateHospitalUser,
+  lookupActiveHospitalStaffByCredentials,
+  toAuthUser,
+} from '@/lib/auth/hospital-staff-login';
+import {
   HOSPITAL_LOGIN_INVALID_MESSAGE,
+  mapHospitalStaffAuthRow,
   normalizeCredentialRole,
+  type HospitalAuthUser,
 } from '@/lib/auth/hospitalAuth';
-import { PROVISIONING_ACCESS_DENIED_MESSAGE } from '@/lib/auth/provisioning-gate';
 import type { DoctorSession } from '@/lib/doctor/session';
 import { HOSPITAL_TENANT_ID } from '@/lib/regal/constants';
 
@@ -22,14 +27,14 @@ export type DoctorPortalSessionPayload = {
 };
 
 export type DoctorAuthResult =
-  | { ok: true; doctor: DoctorSession; portalSession: DoctorPortalSessionPayload }
+  | { ok: true; kind: 'doctor'; doctor: DoctorSession; portalSession: DoctorPortalSessionPayload }
+  | { ok: true; kind: 'admin'; user: HospitalAuthUser; redirectTo: string }
   | { ok: false; error: string };
 
-export const DOCTOR_NOT_FOUND_MESSAGE = PROVISIONING_ACCESS_DENIED_MESSAGE;
+export const DOCTOR_LOGIN_INVALID_MESSAGE = HOSPITAL_LOGIN_INVALID_MESSAGE;
 
-export const DOCTOR_INACTIVE_MESSAGE = PROVISIONING_ACCESS_DENIED_MESSAGE;
-
-export const DOCTOR_INVALID_PASSCODE_MESSAGE = PROVISIONING_ACCESS_DENIED_MESSAGE;
+export const DOCTOR_ADMIN_MISROUTED_MESSAGE =
+  'This is an Administrator account. Please sign in via the Hospital Portal at /hospital/login.';
 
 export const DOCTOR_REGISTRY_QUERY_ERROR_PREFIX = 'Clinician registry lookup failed:';
 
@@ -72,10 +77,18 @@ export function buildDoctorPortalSessionPayload(row: Record<string, unknown>): D
     email: session.email,
     department: session.department || 'General Medicine',
     hospitalId: session.hospitalCode || HOSPITAL_TENANT_ID,
-    doctorCode: String(row.employee_id ?? session.doctorId).trim().toUpperCase(),
+    doctorCode: String(row.staff_id_code ?? row.employee_id ?? session.doctorId).trim().toUpperCase(),
     employeeId: session.employeeId || session.doctorId,
     fullName: session.fullName ?? session.doctorName,
     portalRoute: session.portalRoute || '/doctor/dashboard',
+  };
+}
+
+export function buildDoctorSessionForCookie(session: DoctorSession): DoctorSession {
+  return {
+    ...session,
+    loggedInAt: session.loggedInAt ?? new Date().toISOString(),
+    portalRoute: session.portalRoute ?? '/doctor/dashboard',
   };
 }
 
@@ -95,28 +108,42 @@ export async function authenticateDoctorCredential(
     };
   }
 
-  const result = await authenticateHospitalUser(supabase, rawIdentifier, cleanPasscode);
-  if (!result.ok) {
-    return { ok: false, error: result.error };
+  const { row, error } = await lookupActiveHospitalStaffByCredentials(
+    supabase,
+    rawIdentifier,
+    cleanPasscode,
+  );
+
+  if (error || !row) {
+    return { ok: false, error: DOCTOR_LOGIN_INVALID_MESSAGE };
   }
 
-  if (normalizeCredentialRole(result.user.role) !== 'doctor') {
-    return { ok: false, error: HOSPITAL_LOGIN_INVALID_MESSAGE };
+  const credential = mapHospitalStaffAuthRow(row);
+  const user = toAuthUser(credential, cleanPasscode);
+  const role = normalizeCredentialRole(user.role);
+
+  if (role === 'admin') {
+    return {
+      ok: true,
+      kind: 'admin',
+      user,
+      redirectTo: HOSPITAL_DESK_DASHBOARD_PATH,
+    };
   }
 
-  const row = asRecord({
-    id: result.user.id,
-    staff_id_code: result.user.employee_id,
-    employee_id: result.user.employee_id,
-    email: result.user.email,
-    full_name: result.user.full_name,
-    department: result.user.department,
-    hospital_id: result.user.hospital_id,
-    is_active: result.user.is_active,
-  });
+  if (role !== 'doctor') {
+    return { ok: false, error: DOCTOR_LOGIN_INVALID_MESSAGE };
+  }
 
   const doctor = mapDoctorRowToSession(row);
-  return { ok: true, doctor, portalSession: buildDoctorPortalSessionPayload(row) };
+  doctor.doctorUuid = user.id;
+  doctor.employeeId = user.employee_id;
+  return {
+    ok: true,
+    kind: 'doctor',
+    doctor,
+    portalSession: buildDoctorPortalSessionPayload(row),
+  };
 }
 
 /** @deprecated Doctor portal auth uses hospital_user_credentials only. */

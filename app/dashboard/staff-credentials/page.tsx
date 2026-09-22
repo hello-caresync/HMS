@@ -576,7 +576,7 @@ export default function IdentityAccessGovernanceVault() {
               onClick={() => setIsStaffModalOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition"
             >
-              <UserPlus className="h-4 w-4"/> + Provision Staff
+              <UserPlus className="h-4 w-4"/> + Provision Staff Credential
             </button>
           </div>
         </div>
@@ -797,6 +797,7 @@ export default function IdentityAccessGovernanceVault() {
         onClose={() => setIsStaffModalOpen(false)}
         hospitalId={HOSPITAL_TENANT_ID}
         hospitalName={REGAL_HOSPITAL_NAME}
+        provisionScope="operational"
         onSuccess={async () => {
           await fetchData();
         }}

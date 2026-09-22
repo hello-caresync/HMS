@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -25,15 +25,21 @@ export type StaffProvisionResult = {
   passcode: string;
 };
 
+export type StaffProvisionScope = 'operational' | 'hospital-admin';
+
+export const HOSPITAL_ADMIN_DEPARTMENT = 'HOSPITAL ADMINISTRATION';
+
 type StaffProvisioningModalProps = {
   open: boolean;
   onClose: () => void;
   onSuccess?: (result: StaffProvisionResult) => void | Promise<void>;
   hospitalId?: string;
   hospitalName?: string;
+  /** Super Admin provisions hospital admins only; hospital admins provision operational staff. */
+  provisionScope?: StaffProvisionScope;
 };
 
-const ROLE_OPTIONS: Array<{ label: string; value: string; credentialRole: HospitalCredentialRole }> = [
+const ALL_ROLE_OPTIONS: Array<{ label: string; value: string; credentialRole: HospitalCredentialRole }> = [
   { label: 'Doctor', value: 'Doctor', credentialRole: 'doctor' },
   { label: 'Admin', value: 'Admin', credentialRole: 'admin' },
   { label: 'Nurse', value: 'Nurse', credentialRole: 'nurse' },
@@ -42,10 +48,45 @@ const ROLE_OPTIONS: Array<{ label: string; value: string; credentialRole: Hospit
   { label: 'Billing Desk', value: 'Billing Desk', credentialRole: 'staff' },
 ];
 
+const OPERATIONAL_ROLE_OPTIONS = ALL_ROLE_OPTIONS.filter((option) =>
+  ['Doctor', 'Nurse', 'Receptionist', 'Pharmacist'].includes(option.label),
+);
+
+function createInitialForm(scope: StaffProvisionScope) {
+  if (scope === 'hospital-admin') {
+    return {
+      staff_id_code: '',
+      full_name: '',
+      email: '',
+      phone: '',
+      passcode_key: '',
+      department: HOSPITAL_ADMIN_DEPARTMENT,
+      customDepartment: '',
+      role: 'Admin',
+      consultation_fee: null as number | null,
+    };
+  }
+
+  return {
+    staff_id_code: '',
+    full_name: '',
+    email: '',
+    phone: '',
+    passcode_key: '',
+    department: 'General Medicine',
+    customDepartment: '',
+    role: 'Doctor',
+    consultation_fee: DEFAULT_DOCTOR_FEE as number | null,
+  };
+}
+
 const DEFAULT_DOCTOR_FEE = 500;
 
-function isDoctorRoleSelection(roleLabel: string): boolean {
-  const option = ROLE_OPTIONS.find((entry) => entry.value === roleLabel);
+function isDoctorRoleSelection(
+  roleLabel: string,
+  roleOptions: Array<{ label: string; value: string; credentialRole: HospitalCredentialRole }>,
+): boolean {
+  const option = roleOptions.find((entry) => entry.value === roleLabel);
   const credentialRole = option?.credentialRole ?? normalizeCredentialRole(roleLabel);
   return credentialRole === 'doctor';
 }
@@ -56,25 +97,25 @@ export function StaffProvisioningModal({
   onSuccess,
   hospitalId = HOSPITAL_TENANT_ID,
   hospitalName = 'Regal Hospital',
+  provisionScope = 'operational',
 }: StaffProvisioningModalProps) {
-  const [form, setForm] = useState({
-    staff_id_code: '',
-    full_name: '',
-    email: '',
-    phone: '',
-    passcode_key: '',
-    department: 'General Medicine',
-    customDepartment: '',
-    role: 'Doctor',
-    consultation_fee: DEFAULT_DOCTOR_FEE as number | null,
-  });
+  const isHospitalAdminScope = provisionScope === 'hospital-admin';
+  const roleOptions = isHospitalAdminScope ? ALL_ROLE_OPTIONS.filter((option) => option.label === 'Admin') : OPERATIONAL_ROLE_OPTIONS;
+
+  const [form, setForm] = useState(() => createInitialForm(provisionScope));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isDoctorRole = isDoctorRoleSelection(form.role);
+  useEffect(() => {
+    if (!open) return;
+    setForm(createInitialForm(provisionScope));
+    setError(null);
+  }, [open, provisionScope]);
+
+  const isDoctorRole = isDoctorRoleSelection(form.role, roleOptions);
 
   const handleRoleChange = (nextRole: string) => {
-    const doctorSelected = isDoctorRoleSelection(nextRole);
+    const doctorSelected = isDoctorRoleSelection(nextRole, roleOptions);
     setForm((prev) => ({
       ...prev,
       role: nextRole,
@@ -96,16 +137,21 @@ export function StaffProvisioningModal({
     setSubmitting(true);
 
     try {
-      const department = resolveDepartmentValue(form.department, form.customDepartment);
-      if (!department) {
+      const lockedRole = isHospitalAdminScope ? 'Admin' : form.role;
+      const lockedDepartment = isHospitalAdminScope
+        ? HOSPITAL_ADMIN_DEPARTMENT
+        : resolveDepartmentValue(form.department, form.customDepartment);
+
+      if (!lockedDepartment) {
         setError('Please enter a custom department name.');
         return;
       }
 
-      const roleOption = ROLE_OPTIONS.find((option) => option.value === form.role);
-      const credentialRole = roleOption?.credentialRole ?? normalizeCredentialRole(form.role);
+      const roleOption = roleOptions.find((option) => option.value === lockedRole);
+      const credentialRole = roleOption?.credentialRole ?? normalizeCredentialRole(lockedRole);
       const passcode = form.passcode_key.trim();
-      const phoneCheck = validatePhoneField(form.phone, true);
+
+      const phoneCheck = validatePhoneField(form.phone, !isHospitalAdminScope);
       if (!phoneCheck.ok) {
         toast.error(phoneCheck.message);
         setError(phoneCheck.message);
@@ -125,7 +171,8 @@ export function StaffProvisioningModal({
         email: form.email.trim().toLowerCase(),
         passcode_key: passcode,
         role: staffRole,
-        department,
+        role_label: lockedRole,
+        department: lockedDepartment,
         qualification: credentialRole === 'doctor' ? 'MBBS, MD' : '',
         consultation_fee: consultationFee,
         is_active: true,
@@ -151,24 +198,16 @@ export function StaffProvisioningModal({
       });
 
       toast.success(
-        `${form.full_name.trim()} provisioned successfully with ID ${employeeId}!`,
+        isHospitalAdminScope
+          ? `${form.full_name.trim()} provisioned as Hospital Admin.`
+          : `${form.full_name.trim()} provisioned successfully with ID ${employeeId}!`,
       );
       if (onSuccess) {
         await Promise.resolve(
           onSuccess({ credential, passcode }),
         );
       }
-      setForm({
-        staff_id_code: '',
-        full_name: '',
-        email: '',
-        phone: '',
-        passcode_key: '',
-        department: 'General Medicine',
-        customDepartment: '',
-        role: 'Doctor',
-        consultation_fee: DEFAULT_DOCTOR_FEE,
-      });
+      setForm(createInitialForm(provisionScope));
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Could not provision staff member.');
@@ -180,12 +219,13 @@ export function StaffProvisioningModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
-        <h2 className="text-base font-bold text-slate-900">Onboard Staff Credential</h2>
+        <h2 className="text-base font-bold text-slate-900">
+          {isHospitalAdminScope ? 'Provision Hospital Admin' : 'Provision Staff Credential'}
+        </h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          Writes portal access to <code className="font-mono text-[10px]">public.hospital_staff</code>{' '}
-          using <code className="font-mono text-[10px]">staff_id_code</code>,{' '}
-          <code className="font-mono text-[10px]">passcode_key</code>, and{' '}
-          <code className="font-mono text-[10px]">is_active</code>.
+          {isHospitalAdminScope
+            ? 'Platform Root action — creates the single Hospital Admin credential for this tenant node.'
+            : 'Hospital Admin action — onboard operational staff scoped to your facility node.'}
         </p>
 
         {error && (
@@ -196,78 +236,94 @@ export function StaffProvisioningModal({
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           <div>
-            <label className="text-[11px] font-bold uppercase text-slate-500">Legal Full Name</label>
+            <label className="text-[11px] font-bold uppercase text-slate-500">Full Name</label>
             <input
               type="text"
               required
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
-              placeholder="e.g. Dr. Meera Nambiar"
+              placeholder={isHospitalAdminScope ? 'e.g. Kavya S' : 'e.g. Dr. Meera Nambiar'}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-[11px] font-bold uppercase text-slate-500">Role</label>
-              <select
-                value={form.role}
-                onChange={(e) => handleRoleChange(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
-              >
-                {ROLE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+          {isHospitalAdminScope ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2">
+                <p className="text-[10px] font-bold uppercase text-purple-700">Role</p>
+                <p className="mt-1 text-xs font-semibold text-slate-900">Admin</p>
+              </div>
+              <div className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2">
+                <p className="text-[10px] font-bold uppercase text-purple-700">Department</p>
+                <p className="mt-1 text-xs font-semibold text-slate-900">{HOSPITAL_ADMIN_DEPARTMENT}</p>
+              </div>
             </div>
-            <div>
-              <label className="text-[11px] font-bold uppercase text-slate-500">Department</label>
-              <select
-                value={form.department}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    department: e.target.value,
-                    customDepartment: isCustomDepartmentSelection(e.target.value)
-                      ? form.customDepartment
-                      : '',
-                  })
-                }
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
-              >
-                {HOSPITAL_DEPARTMENTS.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-              {isCustomDepartmentSelection(form.department) && (
-                <input
-                  type="text"
-                  required
-                  value={form.customDepartment}
-                  onChange={(e) => setForm({ ...form, customDepartment: e.target.value })}
-                  className="mt-2 w-full rounded-lg border border-teal-300 bg-teal-50/40 px-3 py-2 text-xs focus:border-teal-500 focus:outline-none"
-                  placeholder="Type custom department name…"
-                />
-              )}
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] font-bold uppercase text-slate-500">Role</label>
+                <select
+                  value={form.role}
+                  onChange={(e) => handleRoleChange(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
+                >
+                  {roleOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase text-slate-500">Department</label>
+                <select
+                  value={form.department}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      department: e.target.value,
+                      customDepartment: isCustomDepartmentSelection(e.target.value)
+                        ? form.customDepartment
+                        : '',
+                    })
+                  }
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
+                >
+                  {HOSPITAL_DEPARTMENTS.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+                {isCustomDepartmentSelection(form.department) && (
+                  <input
+                    type="text"
+                    required
+                    value={form.customDepartment}
+                    onChange={(e) => setForm({ ...form, customDepartment: e.target.value })}
+                    className="mt-2 w-full rounded-lg border border-teal-300 bg-teal-50/40 px-3 py-2 text-xs focus:border-teal-500 focus:outline-none"
+                    placeholder="Type custom department name…"
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className={`grid gap-2 ${isDoctorRole ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <div className={`grid gap-2 ${isDoctorRole && !isHospitalAdminScope ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <div>
-              <label className="text-[11px] font-bold uppercase text-slate-500">Email</label>
+              <label className="text-[11px] font-bold uppercase text-slate-500">
+                {isHospitalAdminScope ? 'Admin Email' : 'Email'}
+              </label>
               <input
                 type="email"
                 required
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
+                placeholder={isHospitalAdminScope ? 'kavyaregaladmin@gmail.com' : undefined}
               />
             </div>
-            {isDoctorRole ? (
+            {isDoctorRole && !isHospitalAdminScope ? (
               <div>
                 <label className="text-[11px] font-bold uppercase text-slate-500">Fee (₹)</label>
                 <input
@@ -284,34 +340,38 @@ export function StaffProvisioningModal({
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
                 />
               </div>
-            ) : (
+            ) : !isHospitalAdminScope ? (
               <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
                 Consultation fees apply to physician profiles only.
               </p>
-            )}
+            ) : null}
           </div>
 
-          <div>
-            <label className="text-[11px] font-bold uppercase text-slate-500">Phone</label>
-            <PhoneNumberInput
-              required
-              value={form.phone}
-              onChange={(phone) => setForm({ ...form, phone })}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
+          {!isHospitalAdminScope ? (
             <div>
-              <label className="text-[11px] font-bold uppercase text-slate-500">Staff ID (optional)</label>
-              <input
-                type="text"
-                value={form.staff_id_code}
-                onChange={(e) => setForm({ ...form, staff_id_code: e.target.value.toUpperCase() })}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs"
-                placeholder="RH-D42"
+              <label className="text-[11px] font-bold uppercase text-slate-500">Phone</label>
+              <PhoneNumberInput
+                required
+                value={form.phone}
+                onChange={(phone) => setForm({ ...form, phone })}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono"
               />
             </div>
+          ) : null}
+
+          <div className={isHospitalAdminScope ? 'space-y-2' : 'grid grid-cols-2 gap-2'}>
+            {!isHospitalAdminScope ? (
+              <div>
+                <label className="text-[11px] font-bold uppercase text-slate-500">Staff ID (optional)</label>
+                <input
+                  type="text"
+                  value={form.staff_id_code}
+                  onChange={(e) => setForm({ ...form, staff_id_code: e.target.value.toUpperCase() })}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs"
+                  placeholder="RH-D42"
+                />
+              </div>
+            ) : null}
             <div>
               <label className="text-[11px] font-bold uppercase text-slate-500">Security Passcode</label>
               <input
@@ -321,7 +381,7 @@ export function StaffProvisioningModal({
                 value={form.passcode_key}
                 onChange={(e) => setForm({ ...form, passcode_key: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
-                placeholder="Used at /hospital/login"
+                placeholder={isHospitalAdminScope ? 'REGAL#KAVYA@2026' : 'Used at /hospital/login'}
               />
             </div>
           </div>
@@ -339,7 +399,7 @@ export function StaffProvisioningModal({
               disabled={submitting}
               className="rounded-lg bg-teal-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-teal-700 disabled:opacity-60"
             >
-              {submitting ? 'Saving…' : 'Save & Authorize'}
+              {submitting ? 'Saving…' : isHospitalAdminScope ? 'Provision Admin Access' : 'Save & Authorize'}
             </button>
           </div>
         </form>

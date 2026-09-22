@@ -10,11 +10,14 @@ import {
 import {
   getStaffPortalSession,
   getVendorSession,
+  hydrateHospitalDeskSessionFromCookies,
   isHospitalAppRole,
   parseJsonSession,
   readHospitalAppSession,
   SESSION_KEYS,
 } from '@/lib/auth/ecosystem-sessions';
+import { hospitalDeskLoginUrl } from '@/lib/auth/hospital-desk-session';
+import { getDoctorSession } from '@/lib/doctor/session';
 import { parseSuperAdminSession, SUPER_ADMIN_SESSION_KEY } from '@/lib/auth/super-admin-session';
 
 type GuardRole = 'admin' | 'staff' | 'vendor' | 'patient' | 'superadmin' | 'doctor' | 'hospital';
@@ -67,9 +70,16 @@ export function EcosystemRouteGuard({ role, children, loginPath }: RouteGuardPro
           parseActiveSession(localStorage.getItem('curasync_admin_session'))?.staff_type === 'Admin';
         break;
       }
-      case 'hospital':
-        ok = isHospitalAppRole(readHospitalAppSession()?.staff_type);
+      case 'hospital': {
+        if (getDoctorSession()) {
+          router.replace('/doctor/dashboard');
+          return;
+        }
+        const session =
+          readHospitalAppSession() ?? hydrateHospitalDeskSessionFromCookies();
+        ok = isHospitalAppRole(session?.staff_type);
         break;
+      }
       case 'staff':
         ok = Boolean(getStaffPortalSession());
         break;
@@ -88,13 +98,11 @@ export function EcosystemRouteGuard({ role, children, loginPath }: RouteGuardPro
     }
 
     if (!ok) {
-      const next = pathname ? `?redirect=${encodeURIComponent(pathname)}` : '';
-      const hospitalSession = readHospitalAppSession();
-      const fallbackLogin =
-        role === 'hospital' && hospitalSession?.staff_type && hospitalSession.staff_type !== 'Admin'
-          ? '/hospital/login'
+      const destination =
+        role === 'hospital'
+          ? hospitalDeskLoginUrl(pathname ?? undefined)
           : loginPath;
-      router.replace(`${fallbackLogin}${next}`);
+      router.replace(destination);
       return;
     }
 

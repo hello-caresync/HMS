@@ -10,9 +10,12 @@ import {
   LOGIN_IDENTIFIER_INPUT_PROPS,
   LOGIN_PASSWORD_INPUT_PROPS,
 } from '@/lib/auth/login-form-security';
-import { authenticateDoctorCredential } from '@/lib/auth/doctorAuth';
+import {
+  DOCTOR_ADMIN_MISROUTED_MESSAGE,
+  DOCTOR_LOGIN_INVALID_MESSAGE,
+} from '@/lib/auth/doctorAuth';
+import { HOSPITAL_DESK_DASHBOARD_PATH } from '@/lib/auth/hospital-desk-session';
 import { saveDoctorSession } from '@/lib/doctor/session';
-import { supabase } from '@/lib/supabase';
 
 type DoctorLoginFormProps = {
   redirectTo?: string;
@@ -33,29 +36,57 @@ export function DoctorLoginForm({ redirectTo = '/doctor/dashboard' }: DoctorLogi
     setLoading(true);
 
     const rawIdentifier = identifier.trim();
-    const cleanPasscode = passcode.trim().toUpperCase();
+    const cleanPasscode = passcode.trim();
 
     try {
-      const result = await authenticateDoctorCredential(supabase, rawIdentifier, cleanPasscode);
+      const loginResponse = await fetch('/api/doctor/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ identifier: rawIdentifier, passcode: cleanPasscode }),
+      });
 
-      if (!result.ok) {
-        setErrorMessage(result.error);
-        toast.error(result.error);
+      const result = (await loginResponse.json()) as {
+        success?: boolean;
+        kind?: 'doctor' | 'admin';
+        error?: string;
+        redirectTo?: string;
+        doctor?: Parameters<typeof saveDoctorSession>[0];
+        portalSession?: Record<string, unknown>;
+      };
+
+      if (!loginResponse.ok || !result.success) {
+        const message = result.error || DOCTOR_LOGIN_INVALID_MESSAGE;
+        setErrorMessage(message);
+        toast.error(message);
+        return;
+      }
+
+      if (result.kind === 'admin') {
+        toast.info(DOCTOR_ADMIN_MISROUTED_MESSAGE);
+        router.push(result.redirectTo ?? HOSPITAL_DESK_DASHBOARD_PATH);
+        return;
+      }
+
+      if (!result.doctor) {
+        setErrorMessage(DOCTOR_LOGIN_INVALID_MESSAGE);
+        toast.error(DOCTOR_LOGIN_INVALID_MESSAGE);
         return;
       }
 
       saveDoctorSession(result.doctor);
 
-      localStorage.setItem('doctor_session', JSON.stringify(result.portalSession));
-      sessionStorage.setItem('current_doctor', JSON.stringify(result.portalSession));
-      document.cookie = 'curasync_session_role=doctor; path=/; max-age=86400; SameSite=Lax';
+      if (result.portalSession) {
+        localStorage.setItem('doctor_session', JSON.stringify(result.portalSession));
+        sessionStorage.setItem('current_doctor', JSON.stringify(result.portalSession));
+      }
 
       toast.success(`Welcome, ${result.doctor.doctorName}!`);
 
       const destination =
         searchParams.get('redirect')?.startsWith('/doctor') ?
           searchParams.get('redirect')!
-        : redirectTo;
+        : (result.redirectTo ?? redirectTo);
 
       router.push(destination);
     } catch (err: unknown) {

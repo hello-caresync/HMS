@@ -1,4 +1,5 @@
 import type { StaffPortalSession } from '@/lib/auth/ecosystem-sessions';
+import { canManageStaffCredentials, isHospitalCredentialAdmin } from '@/lib/auth/hospital-rbac';
 
 /** Tenant + department context injected at hospital login. */
 export type DeskScopeContext = {
@@ -29,17 +30,15 @@ export function departmentsMatch(
   return record.includes(user) || user.includes(record);
 }
 
+/** Hospital-wide desk visibility — Admin / Super Admin only (not generic "admin" substring). */
 export function isPlatformDeskAdmin(staffType: string | null | undefined): boolean {
-  const role = String(staffType ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, '_');
-  return (
-    role === 'admin' ||
-    role === 'super_admin' ||
-    role === 'hospital_admin' ||
-    role.includes('admin')
-  );
+  return isHospitalCredentialAdmin(staffType);
+}
+
+export function isDeskWideHospitalAdmin(
+  session?: { staff_type?: string | null; role?: string | null } | null,
+): boolean {
+  return canManageStaffCredentials(session);
 }
 
 export function buildDeskScopeFromSession(session: StaffPortalSession | null): DeskScopeContext | null {

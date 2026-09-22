@@ -7,7 +7,12 @@ import {
   fetchGovernancePersonnelCredentials,
 } from '@/lib/hospital/governance-directory';
 import { hospitalDirectoryFilterIds } from '@/lib/hospital/hospital-node';
-import { HOSPITAL_TENANT_ID } from '@/lib/regal/constants';
+import {
+  isHospitalCode,
+  isHospitalUuid,
+  resolveHospitalUuid,
+} from '@/lib/hospital/resolve-hospital-context';
+import { HOSPITAL_TENANT_ID, REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 
 export type StaffRole = 'doctor' | 'staff' | 'admin';
 
@@ -35,6 +40,8 @@ export type StaffDirectoryDraft = {
   email: string;
   passcode_key: string;
   role: StaffRole;
+  /** Display role persisted to hospital_staff.role (Admin, Doctor, Nurse, …). */
+  role_label?: string;
   department: string;
   qualification: string;
   consultation_fee: number | null;
@@ -206,7 +213,25 @@ function nextStaffCode(role: StaffRole): string {
   return `${prefix}${Date.now().toString().slice(-4)}`;
 }
 
-function staffPayload(hospitalId: string, draft: StaffDirectoryDraft): Record<string, unknown> {
+function resolveStoredRoleLabel(draft: StaffDirectoryDraft, internalRole: StaffRole): string {
+  const label = draft.role_label?.trim();
+  if (label) return label;
+  if (internalRole === 'admin') return 'Admin';
+  if (internalRole === 'doctor') return 'Doctor';
+  return 'Staff';
+}
+
+function resolveHospitalCodeForWrite(hospitalId: string): string {
+  const trimmed = hospitalId.trim();
+  if (isHospitalCode(trimmed)) return trimmed.toUpperCase();
+  return REGAL_HOSPITAL_CODE;
+}
+
+function staffPayload(
+  hospitalUuid: string,
+  hospitalCode: string,
+  draft: StaffDirectoryDraft,
+): Record<string, unknown> {
   const role = normalizeStaffRole(draft.role);
   const fee =
     role === 'doctor'
@@ -216,13 +241,14 @@ function staffPayload(hospitalId: string, draft: StaffDirectoryDraft): Record<st
 
   // Never send `id` — custom RH-D / RH-S codes belong in staff_id_code + employee_id only.
   return {
-    hospital_id: hospitalId,
+    hospital_id: hospitalUuid,
+    hospital_code: hospitalCode,
     staff_id_code: employeeCode,
     employee_id: employeeCode,
     full_name: draft.full_name.trim(),
     email: draft.email.trim() || null,
     passcode_key: draft.passcode_key.trim() || null,
-    role,
+    role: resolveStoredRoleLabel(draft, role),
     department: draft.department.trim() || (role === 'doctor' ? 'General Medicine' : 'Operations'),
     qualification: draft.qualification.trim() || null,
     consultation_fee: fee,
@@ -243,9 +269,19 @@ export async function createHospitalStaffMember(
     return { ok: false, error: 'Consultation fee cannot be negative' };
   }
 
+  const resolvedHospitalUuid =
+    (await resolveHospitalUuid(supabase, hospitalId)) ||
+    (isHospitalUuid(hospitalId) ? hospitalId.trim() : null);
+
+  if (!resolvedHospitalUuid) {
+    return { ok: false, error: 'Could not resolve hospital tenant for this credential.' };
+  }
+
+  const hospitalCode = resolveHospitalCodeForWrite(hospitalId);
+
   const { data, error } = await supabase
     .from('hospital_staff')
-    .insert([staffPayload(hospitalId, draft)])
+    .insert([staffPayload(resolvedHospitalUuid, hospitalCode, draft)])
     .select()
     .maybeSingle();
 
@@ -288,11 +324,21 @@ export async function updateHospitalStaffMember(
 ): Promise<{ ok: boolean; member?: HospitalStaffMember; error?: string }> {
   if (!draft.full_name.trim()) return { ok: false, error: 'Full name is required' };
 
+  const resolvedHospitalUuid =
+    (await resolveHospitalUuid(supabase, hospitalId)) ||
+    (isHospitalUuid(hospitalId) ? hospitalId.trim() : null);
+
+  if (!resolvedHospitalUuid) {
+    return { ok: false, error: 'Could not resolve hospital tenant for this credential.' };
+  }
+
+  const hospitalCode = resolveHospitalCodeForWrite(hospitalId);
+
   const { data, error } = await supabase
     .from('hospital_staff')
-    .update(staffPayload(hospitalId, draft))
+    .update(staffPayload(resolvedHospitalUuid, hospitalCode, draft))
     .eq('id', id)
-    .eq('hospital_id', hospitalId)
+    .eq('hospital_id', resolvedHospitalUuid)
     .select()
     .maybeSingle();
 

@@ -2,7 +2,9 @@ export const runtime = 'edge';
 
 import { NextResponse } from 'next/server';
 
-export const VAULT_SESSION_COOKIE = 'nexora_super_vault_session';
+import { SUPER_VAULT_SESSION_COOKIE } from '@/lib/super-admin/api-auth';
+
+export const VAULT_SESSION_COOKIE = SUPER_VAULT_SESSION_COOKIE;
 const VAULT_SESSION_TTL_SECONDS = 30 * 60;
 
 export async function POST(req: Request) {

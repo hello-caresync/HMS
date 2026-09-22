@@ -541,7 +541,7 @@ export default function DoctorWorkstation() {
           ? 'No upcoming advance bookings.'
           : queueDateMode === 'custom'
             ? `No patients scheduled for ${customQueueDate}.`
-            : 'No patients in waiting room.';
+            : 'No outpatient bookings assigned to your desk today.';
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#F8FAFC] text-slate-800 font-sans">

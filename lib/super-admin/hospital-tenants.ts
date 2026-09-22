@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import { isBlockedSuperAdminTenantId } from '@/lib/super-admin/tenant-directory';
 import { isUuidValue } from '@/lib/utils/formatters';
 
@@ -80,6 +81,77 @@ export function dedupeHospitalTenantsByCode(
   return Array.from(byCode.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** Match a loaded tenant by UUID, hospital_code, or either form of the identifier. */
+export function matchHospitalTenantByIdentifier(
+  tenants: SuperAdminHospitalTenant[],
+  identifier?: string | null,
+): SuperAdminHospitalTenant | null {
+  const target = String(identifier ?? '').trim();
+  if (!target) return null;
+
+  const code = target.toUpperCase();
+  return (
+    tenants.find(
+      (tenant) =>
+        tenant.id === target ||
+        tenant.id.toUpperCase() === code ||
+        tenant.hospital_code.trim().toUpperCase() === code,
+    ) ?? null
+  );
+}
+
+function isVisibleSuperAdminTenant(tenant: SuperAdminHospitalTenant): boolean {
+  if (!isBlockedSuperAdminTenantId(tenant.id)) return true;
+  return tenant.hospital_code.trim().toUpperCase() === REGAL_HOSPITAL_CODE;
+}
+
+/**
+ * Resolve one tenant by UUID or hospital_code (e.g. HOSP-01).
+ * Falls back to the first active hospital when the identifier is missing or stale.
+ */
+export async function fetchSuperAdminHospitalTenantByIdentifier(
+  supabase: SupabaseClient,
+  targetIdentifier?: string | null,
+): Promise<SuperAdminHospitalTenant | null> {
+  const target = String(targetIdentifier ?? REGAL_HOSPITAL_CODE).trim();
+  const codeCandidate = target.toUpperCase();
+
+  const { data: tenant, error } = await supabase
+    .from('hospitals')
+    .select('id, hospital_code, name, city, status, facility_code, is_active')
+    .or(`id.eq.${target},hospital_code.eq.${codeCandidate}`)
+    .maybeSingle();
+
+  if (!error && tenant) {
+    const normalized = normalizeHospitalTenantRow(asRecord(tenant));
+    if (normalized && isVisibleSuperAdminTenant(normalized)) {
+      return normalized;
+    }
+  }
+
+  const { data: fallbackTenant, error: fallbackError } = await supabase
+    .from('hospitals')
+    .select('id, hospital_code, name, city, status, facility_code, is_active')
+    .eq('is_active', true)
+    .order('name', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (fallbackError) {
+    console.warn('[super-admin] hospital tenant fallback failed:', fallbackError.message);
+    return null;
+  }
+
+  if (!fallbackTenant) return null;
+
+  const normalizedFallback = normalizeHospitalTenantRow(asRecord(fallbackTenant));
+  if (!normalizedFallback || !isVisibleSuperAdminTenant(normalizedFallback)) {
+    return null;
+  }
+
+  return normalizedFallback;
+}
+
 /** Load connected tenants strictly from `public.hospitals`. */
 export async function fetchSuperAdminHospitalTenants(
   supabase: SupabaseClient,
@@ -99,9 +171,7 @@ export async function fetchSuperAdminHospitalTenants(
     .filter((row): row is SuperAdminHospitalTenant => row !== null)
     .filter((row) => row.status.toLowerCase() !== 'inactive');
 
-  return dedupeHospitalTenantsByCode(normalized).filter(
-    (row) => !isBlockedSuperAdminTenantId(row.id),
-  );
+  return dedupeHospitalTenantsByCode(normalized).filter(isVisibleSuperAdminTenant);
 }
 
 /** Badge label for tenant cards — always `hospital_code`. */

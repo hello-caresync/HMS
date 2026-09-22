@@ -7,7 +7,11 @@ import {
   LOGIN_IDENTIFIER_INPUT_PROPS,
   LOGIN_PASSWORD_INPUT_PROPS,
 } from '@/lib/auth/login-form-security';
-import { authenticateDoctorCredential } from '@/lib/auth/doctorAuth';
+import { persistActiveSession, type ActiveStaffSession } from '@/lib/auth/active-session';
+import { DOCTOR_LOGIN_INVALID_MESSAGE } from '@/lib/auth/doctorAuth';
+import { buildHospitalStaffSessionCookie } from '@/lib/auth/hospital-staff-login';
+import { HOSPITAL_DESK_DASHBOARD_PATH } from '@/lib/auth/hospital-desk-session';
+import type { HospitalAuthUser } from '@/lib/auth/hospitalAuth';
 import { saveDoctorSession } from '@/lib/doctor/session';
 import {
   recordRealStaffLogin,
@@ -15,7 +19,7 @@ import {
   resolveCredentialHospitalName,
 } from '@/lib/recordStaffLogin';
 import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseConfigStatus } from '@/lib/supabase/client';
 import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
 import {
   AlertCircle,
@@ -58,18 +62,92 @@ export default function DoctorLoginPortal() {
         return;
       }
 
-      const result = await authenticateDoctorCredential(supabase, cleanInput, cleanPasscode);
-      if (!result.ok) {
-        setErrorMessage(result.error);
+      const config = getSupabaseConfigStatus();
+      if (!config.ok) {
+        setErrorMessage('Clinician authentication service is not configured.');
         return;
       }
 
-      const { doctor } = result;
+      const loginResponse = await fetch('/api/doctor/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ identifier: cleanInput, passcode: cleanPasscode }),
+      });
+
+      const loginPayload = (await loginResponse.json()) as {
+        success?: boolean;
+        kind?: 'doctor' | 'admin';
+        error?: string;
+        redirectTo?: string;
+        doctor?: {
+          doctorId: string;
+          doctorUuid?: string;
+          employeeId?: string;
+          doctorName: string;
+          fullName?: string;
+          email?: string;
+          department?: string;
+          hospitalCode?: string;
+          portalRoute?: string;
+        };
+        portalSession?: {
+          doctorId: string;
+          doctorName: string;
+          email?: string;
+          department: string;
+          hospitalId: string;
+          doctorCode: string;
+          employeeId: string;
+          fullName: string;
+          portalRoute: string;
+        };
+        user?: HospitalAuthUser;
+      };
+
+      if (!loginResponse.ok || !loginPayload.success) {
+        setErrorMessage(loginPayload.error || DOCTOR_LOGIN_INVALID_MESSAGE);
+        return;
+      }
+
+      if (loginPayload.kind === 'admin' && loginPayload.user) {
+        const user = loginPayload.user;
+        const session: ActiveStaffSession = {
+          id: user.id,
+          hospital_id: user.hospital_id,
+          hospital_name: user.hospital_name,
+          full_name: user.full_name,
+          staff_type: user.staff_type,
+          department: user.department,
+          staff_id_code: user.employee_id,
+          email: user.email,
+          portal_access: HOSPITAL_DESK_DASHBOARD_PATH,
+        };
+
+        const deskCookie = buildHospitalStaffSessionCookie(user, HOSPITAL_DESK_DASHBOARD_PATH);
+        const cookieAttrs = 'path=/; max-age=86400; SameSite=Lax';
+        document.cookie = `hospital_session=${encodeURIComponent(JSON.stringify(deskCookie))}; ${cookieAttrs}`;
+        document.cookie = `curasync_active_session=${encodeURIComponent(JSON.stringify(deskCookie))}; ${cookieAttrs}`;
+
+        persistActiveSession(session);
+        setLoginSuccess(true);
+        router.refresh();
+        router.replace(loginPayload.redirectTo ?? HOSPITAL_DESK_DASHBOARD_PATH);
+        return;
+      }
+
+      const doctor = loginPayload.doctor;
+      const portalSession = loginPayload.portalSession;
+      if (!doctor) {
+        setErrorMessage(DOCTOR_LOGIN_INVALID_MESSAGE);
+        return;
+      }
+
       const hospitalId = resolveCredentialHospitalId(doctor.hospitalCode);
 
       try {
         await recordRealStaffLogin({
-          id: doctor.doctorId,
+          id: doctor.doctorUuid || doctor.doctorId,
           hospital_id: hospitalId,
           hospital_name: resolveCredentialHospitalName(hospitalId),
           full_name: doctor.doctorName,
@@ -83,13 +161,47 @@ export default function DoctorLoginPortal() {
         console.warn('Live credential vault sync skipped:', recordErr);
       }
 
-      saveDoctorSession(doctor, rememberMe);
+      saveDoctorSession(
+        {
+          doctorId: doctor.doctorId,
+          doctorUuid: doctor.doctorUuid,
+          employeeId: doctor.employeeId || doctor.doctorId,
+          doctorName: doctor.doctorName,
+          fullName: doctor.fullName || doctor.doctorName,
+          email: doctor.email,
+          department: doctor.department,
+          hospitalCode: doctor.hospitalCode,
+          portalRoute: '/doctor/dashboard',
+        },
+        rememberMe,
+      );
+
+      localStorage.setItem(
+        'doctor_session',
+        JSON.stringify(
+          portalSession ?? {
+            doctorId: doctor.doctorUuid || doctor.doctorId,
+            doctorCode: doctor.employeeId || doctor.doctorId,
+            employeeId: doctor.employeeId || doctor.doctorId,
+            doctorName: doctor.doctorName,
+            fullName: doctor.fullName || doctor.doctorName,
+            email: doctor.email,
+            department: doctor.department,
+            hospitalId: doctor.hospitalCode,
+            portalRoute: '/doctor/dashboard',
+          },
+        ),
+      );
+
       setLoginSuccess(true);
       router.refresh();
-
-      setTimeout(() => {
-        router.push(postLoginPath);
-      }, 1200);
+      router.replace(
+        resolveLoginRedirect(
+          searchParams.get('redirect'),
+          loginPayload.redirectTo ?? postLoginPath,
+          ['/doctor'],
+        ),
+      );
     } catch (err) {
       console.error('Login error:', err);
       setErrorMessage('Authentication failed. Please try again.');

@@ -12,7 +12,10 @@ export const HOSPITAL_USER_CREDENTIALS_TABLE = 'hospital_user_credentials';
 /** Legacy Super Admin onboard table — provisioning helpers only. */
 export const HOSPITAL_STAFF_CREDENTIALS_TABLE = 'hospital_staff_credentials';
 
-export const HOSPITAL_LOGIN_INVALID_MESSAGE = 'Invalid email or passcode.';
+export const HOSPITAL_LOGIN_INVALID_MESSAGE = 'Invalid email or security passcode.';
+
+export const HOSPITAL_STAFF_AUTH_SELECT =
+  'id, hospital_id, staff_id_code, full_name, email, passcode_key, role, department, is_active';
 
 export type HospitalCredentialRole = 'admin' | 'doctor' | 'staff' | 'nurse';
 
@@ -160,40 +163,15 @@ function toAuthUser(credential: HospitalUserCredential, passcode: string): Hospi
 
 /**
  * Authenticate against `public.hospital_staff` using email (or staff_id_code) + passcode_key.
+ * Does not use Supabase Auth — credentials live in `public.hospital_staff` only.
  */
 export async function authenticateHospitalUser(
   supabase: SupabaseClient,
   identifier: string,
   passcode: string,
 ): Promise<HospitalAuthResult> {
-  const cleanIdentifier = identifier.trim();
-  const cleanPasscode = passcode.trim();
-
-  if (!cleanIdentifier || !cleanPasscode) {
-    return { ok: false, error: 'Enter your Employee ID or email and security passcode.' };
-  }
-
-  const isEmail = cleanIdentifier.includes('@');
-  let query = supabase
-    .from(HOSPITAL_STAFF_TABLE)
-    .select('*')
-    .eq('passcode_key', cleanPasscode)
-    .eq('is_active', true);
-
-  if (isEmail) {
-    query = query.eq('email', cleanIdentifier.toLowerCase());
-  } else {
-    query = query.eq('staff_id_code', cleanIdentifier.toUpperCase());
-  }
-
-  const { data, error } = await query.maybeSingle();
-
-  if (error || !data) {
-    return { ok: false, error: HOSPITAL_LOGIN_INVALID_MESSAGE };
-  }
-
-  const credential = mapHospitalStaffAuthRow(asRecord(data));
-  return { ok: true, user: toAuthUser(credential, cleanPasscode) };
+  const { verifyHospitalStaffCredentials } = await import('@/lib/auth/hospital-staff-login');
+  return verifyHospitalStaffCredentials(supabase, identifier, passcode);
 }
 
 export async function upsertHospitalUserCredential(

@@ -25,7 +25,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: result.error }, { status: 401 });
     }
 
-    return NextResponse.json({ ok: true, doctor: result.doctor });
+    if (result.kind === 'admin') {
+      return NextResponse.json(
+        {
+          ok: false,
+          kind: 'admin',
+          redirectTo: result.redirectTo,
+          error:
+            'This is an Administrator account. Please sign in via the Hospital Portal at /hospital/login.',
+        },
+        { status: 403 },
+      );
+    }
+
+    return NextResponse.json({ ok: true, kind: 'doctor', doctor: result.doctor });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Clinician registry lookup failed.';
     return NextResponse.json({ ok: false, error: message }, { status: 500 });

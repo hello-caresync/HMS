@@ -228,6 +228,7 @@ function isQueueWaitingStatus(rawStatus: unknown): boolean {
   return waitingStatuses.some((candidate) => status.includes(candidate));
 }
 
+/** Strict clinician scope — ID / staff code only (no name-based matching). */
 export function buildDoctorQueueOrFilter(session: DoctorSession): string {
   const identifiers = getDoctorQueueIdentifiers(session);
   const parts = new Set<string>();
@@ -237,10 +238,7 @@ export function buildDoctorQueueOrFilter(session: DoctorSession): string {
     parts.add(`doctor_code.eq.${code}`);
     parts.add(`doctor_employee_id.eq.${code}`);
     parts.add(`doctor_uuid.eq.${code}`);
-  }
-
-  for (const token of identifiers.nameTokens) {
-    parts.add(`doctor_name.ilike.%${token}%`);
+    parts.add(`assigned_doctor_id.eq.${code}`);
   }
 
   return Array.from(parts).join(',');
@@ -307,22 +305,8 @@ async function fetchDoctorAppointmentRows(
     return plainJoinRetry.data.map((row) => asRecord(row));
   }
 
-  console.warn('Doctor queue OR filter failed, using client-side doctor match:', plainJoinRetry.error ?? error);
-
-  const { data: fallbackRows, error: fallbackError } = await supabase
-    .from('appointments')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(500);
-
-  if (fallbackError || !Array.isArray(fallbackRows)) {
-    console.error('Error fetching doctor queue fallback:', fallbackError ?? error);
-    throw fallbackError ?? error;
-  }
-
-  return fallbackRows
-    .map((row) => asRecord(row))
-    .filter((row) => appointmentBelongsToDoctor(row, session));
+  console.warn('Doctor queue OR filter failed — returning empty scoped queue:', plainJoinRetry.error ?? error);
+  return [];
 }
 
 /** Primary appointments query — scoped to doctor identifiers and selected clinic date. */
@@ -442,14 +426,26 @@ function mapQueueRow(row: Record<string, unknown>, sourceTable: string): DoctorQ
   };
 }
 
-async function selectTable(
+async function selectDoctorScopedTable(
   supabase: SupabaseClient,
   table: string,
+  session: DoctorSession,
 ): Promise<Record<string, unknown>[]> {
+  const orFilter = buildDoctorQueueOrFilter(session);
+  if (!orFilter) return [];
+
   try {
-    const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from(table)
+      .select('*')
+      .or(orFilter)
+      .order('created_at', { ascending: false });
+
     if (error || !Array.isArray(data)) return [];
-    return data.map((row) => asRecord(row));
+
+    return data
+      .map((row) => asRecord(row))
+      .filter((row) => appointmentBelongsToDoctor(row, session));
   } catch {
     return [];
   }
@@ -491,7 +487,9 @@ export async function fetchDoctorQueueRows(
     'hospital_opd_queue',
   ] as const;
 
-  const results = await Promise.all(tables.map((table) => selectTable(supabase, table)));
+  const results = await Promise.all(
+    tables.map((table) => selectDoctorScopedTable(supabase, table, session)),
+  );
 
   const fallbackWaiting = results.flatMap((rows, index) =>
     rows

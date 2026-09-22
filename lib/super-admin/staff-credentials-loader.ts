@@ -54,6 +54,16 @@ export function mapSuperAdminStaffCredentialRow(
   };
 }
 
+function sanitizeTenantFilterValue(value: string): string {
+  return value.trim().replace(/[^0-9a-zA-Z-]/g, '');
+}
+
+function mapStaffCredentialRows(data: unknown[] | null): SuperAdminStaffCredentialRow[] {
+  return (data ?? [])
+    .map((row) => mapSuperAdminStaffCredentialRow(asRecord(row)))
+    .filter((row): row is SuperAdminStaffCredentialRow => row !== null);
+}
+
 /**
  * Super Admin vault directory — reads exclusively from `public.hospital_staff`.
  * Never merges mock arrays or credential shadow tables.
@@ -64,7 +74,6 @@ export async function fetchSuperAdminStaffCredentials(
   const { data, error } = await supabase
     .from('hospital_staff')
     .select(HOSPITAL_STAFF_DIRECTORY_COLUMNS)
-    .eq('is_active', true)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -72,9 +81,44 @@ export async function fetchSuperAdminStaffCredentials(
     return { rows: [], error: error.message };
   }
 
-  const rows = (data ?? [])
-    .map((row) => mapSuperAdminStaffCredentialRow(asRecord(row)))
-    .filter((row): row is SuperAdminStaffCredentialRow => row !== null);
+  return { rows: mapStaffCredentialRows(data), error: null };
+}
 
-  return { rows, error: null };
+/**
+ * Tenant-scoped audit roster — all credentials for one hospital node regardless of creator.
+ * Matches rows by canonical UUID and/or tenant code (HOSP-01).
+ */
+export async function fetchSuperAdminTenantStaffCredentials(
+  supabase: SupabaseClient,
+  activeHospitalId: string,
+  activeHospitalCode: string,
+): Promise<{ rows: SuperAdminStaffCredentialRow[]; error: string | null }> {
+  const hospitalUuid = sanitizeTenantFilterValue(activeHospitalId);
+  const hospitalCode = sanitizeTenantFilterValue(activeHospitalCode);
+
+  if (!hospitalUuid && !hospitalCode) {
+    return { rows: [], error: null };
+  }
+
+  const orFilters: string[] = [];
+  if (hospitalUuid) {
+    orFilters.push(`hospital_id.eq.${hospitalUuid}`);
+  }
+  if (hospitalCode && hospitalCode !== hospitalUuid) {
+    orFilters.push(`hospital_id.eq.${hospitalCode}`);
+    orFilters.push(`hospital_code.eq.${hospitalCode}`);
+  }
+
+  const { data, error } = await supabase
+    .from('hospital_staff')
+    .select(HOSPITAL_STAFF_DIRECTORY_COLUMNS)
+    .or(orFilters.join(','))
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[super-admin] tenant hospital_staff load failed:', error.message);
+    return { rows: [], error: error.message };
+  }
+
+  return { rows: mapStaffCredentialRows(data), error: null };
 }
