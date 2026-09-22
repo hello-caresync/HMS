@@ -1,3 +1,4 @@
+import { HOSPITAL_DESK_DASHBOARD_PATH } from '@/lib/auth/hospital-desk-session';
 import { normalizeHospitalPostLoginRoute } from '@/lib/auth/hospitalAuth';
 
 import { clearNexoraRoleCookie, setNexoraRoleCookie } from './role-cookies';
@@ -33,13 +34,13 @@ export function parseActiveSession(raw: string | null): ActiveStaffSession | nul
 /** Hospital Admins land on staff provisioning first; all other roles use the root dashboard. */
 export function resolvePostLoginRoute(staffType: string, portalAccess: string): string {
   if (staffType === 'Admin') return ADMIN_PROVISIONING_PATH;
-  return normalizeHospitalPostLoginRoute(portalAccess || '/dashboard');
+  return normalizeHospitalPostLoginRoute(portalAccess || HOSPITAL_DESK_DASHBOARD_PATH);
 }
 
 /** Operational staff never route to the admin credential provisioning screen. */
 export function resolveOperationalStaffRoute(portalAccess: string): string {
-  const route = normalizeHospitalPostLoginRoute(portalAccess || '/dashboard');
-  if (route === ADMIN_PROVISIONING_PATH) return '/dashboard';
+  const route = normalizeHospitalPostLoginRoute(portalAccess || HOSPITAL_DESK_DASHBOARD_PATH);
+  if (route === ADMIN_PROVISIONING_PATH) return HOSPITAL_DESK_DASHBOARD_PATH;
   return route;
 }
 
@@ -55,6 +56,8 @@ export function persistActiveSession(session: ActiveStaffSession): void {
 
   document.cookie = `curasync_admin_session=${encodeURIComponent(session.hospital_id)}; ${attrs}`;
   document.cookie = `curasync_active_session=${encodeURIComponent(sessionPayload)}; ${attrs}`;
+  document.cookie = `hospital_session=${encodeURIComponent(sessionPayload)}; ${attrs}`;
+  document.cookie = `curasync_session_role=${encodeURIComponent(session.staff_type)}; ${attrs}`;
 
   const cookiePayload = encodeURIComponent(
     JSON.stringify({
@@ -134,4 +137,6 @@ export function clearHospitalOsSessionTokens(): void {
   document.cookie = `curasync_active_session=; ${attrs}`;
   document.cookie = `curasync_staff_session=; ${attrs}`;
   document.cookie = `curasync_session=; ${attrs}`;
+  document.cookie = `curasync_session_role=; ${attrs}`;
+  document.cookie = `hospital_session=; ${attrs}`;
 }

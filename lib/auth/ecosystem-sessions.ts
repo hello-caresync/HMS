@@ -62,7 +62,7 @@ export function persistStaffPortalSession(session: StaffPortalSession): void {
     role: session.staff_type,
     hospitalId: session.hospital_id,
     hospitalName: session.hospital_name,
-    portal_access: session.portal_access || '/dashboard',
+    portal_access: session.portal_access || '/hospital/dashboard',
   };
   const payload = JSON.stringify(hospitalSession);
 
@@ -79,6 +79,11 @@ export function persistStaffPortalSession(session: StaffPortalSession): void {
   });
   setNexoraRoleCookie('staff');
   document.cookie = `${SESSION_KEYS.staff}=${encodeURIComponent(payload)}; ${COOKIE_ATTRS}`;
+  document.cookie = `curasync_active_session=${encodeURIComponent(payload)}; ${COOKIE_ATTRS}`;
+  document.cookie = `hospital_session=${encodeURIComponent(payload)}; ${COOKIE_ATTRS}`;
+  document.cookie = `curasync_session_role=${encodeURIComponent(session.staff_type)}; ${COOKIE_ATTRS}`;
+  document.cookie = `auth-token=authenticated; ${COOKIE_ATTRS}`;
+  document.cookie = `sb-access-token=authenticated; ${COOKIE_ATTRS}`;
 }
 
 export function getStaffPortalSession(): StaffPortalSession | null {
@@ -100,6 +105,49 @@ export function isHospitalAdminRole(role?: string | null): boolean {
 
 export function isHospitalAdminSession(session?: StaffPortalSession | null): boolean {
   return canManageStaffCredentials(session);
+}
+
+function readCookieValue(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const prefix = `${name}=`;
+  const match = document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix));
+  if (!match) return null;
+  return decodeURIComponent(match.slice(prefix.length));
+}
+
+/** Hydrate localStorage from verified desk cookies after edge navigation. */
+export function hydrateHospitalDeskSessionFromCookies(): StaffPortalSession | null {
+  if (typeof window === 'undefined') return null;
+
+  const cookieKeys = ['curasync_active_session', 'curasync_staff_session', 'hospital_session'];
+  for (const key of cookieKeys) {
+    const parsed = parseJsonSession<
+      StaffPortalSession & { role?: string; hospitalId?: string; hospitalName?: string }
+    >(readCookieValue(key));
+    const hospitalId = parsed?.hospital_id || parsed?.hospitalId;
+    if (!parsed || !hospitalId) continue;
+
+    const staffType = resolveHospitalSessionRole(parsed);
+    const session: StaffPortalSession = {
+      id: parsed.id || '',
+      hospital_id: hospitalId,
+      hospital_name: parsed.hospital_name || parsed.hospitalName || 'Hospital Node',
+      full_name: parsed.full_name || 'Hospital User',
+      staff_type: staffType,
+      department: parsed.department || '',
+      email: parsed.email || '',
+      portal_access: parsed.portal_access || '/hospital/dashboard',
+    };
+
+    localStorage.setItem(SESSION_KEYS.admin, JSON.stringify(session));
+    localStorage.setItem(SESSION_KEYS.staff, JSON.stringify(session));
+    return session;
+  }
+
+  return null;
 }
 
 export function readHospitalAppSession(): StaffPortalSession | null {

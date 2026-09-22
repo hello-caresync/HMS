@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { HOSPITAL_DESK_DASHBOARD_PATH } from '@/lib/auth/hospital-desk-session';
 import { isHospitalAdminRole } from '@/lib/auth/hospital-admin-auth';
 import { HOSPITAL_TENANT_ID, REGAL_HOSPITAL_NAME } from '@/lib/regal/constants';
 
@@ -86,18 +87,22 @@ const LEGACY_HOSPITAL_OPD_ROUTES = [
 /** Normalizes legacy desk routes to the main hospital ERP dashboard. */
 export function normalizeHospitalPostLoginRoute(route?: string | null): string {
   const trimmed = route?.trim() ?? '';
-  if (!trimmed || !trimmed.startsWith('/')) return '/dashboard';
+  if (!trimmed || !trimmed.startsWith('/')) return HOSPITAL_DESK_DASHBOARD_PATH;
 
   const lower = trimmed.toLowerCase();
+  if (lower === '/dashboard' || lower.startsWith('/dashboard?')) {
+    return HOSPITAL_DESK_DASHBOARD_PATH;
+  }
+
   if (
     LEGACY_HOSPITAL_OPD_ROUTES.some(
       (legacy) => lower === legacy || lower.startsWith(`${legacy}/`),
     )
   ) {
-    return '/dashboard';
+    return HOSPITAL_DESK_DASHBOARD_PATH;
   }
 
-  if (lower.startsWith('/hospital/')) return '/dashboard';
+  if (lower === '/hospital' || lower === '/hospital/') return HOSPITAL_DESK_DASHBOARD_PATH;
   return trimmed;
 }
 
@@ -105,7 +110,7 @@ export function resolveCredentialDashboardRoute(
   role: HospitalCredentialRole,
   portalAccess?: string | null,
 ): string {
-  if (role === 'admin') return '/dashboard';
+  if (role === 'admin') return HOSPITAL_DESK_DASHBOARD_PATH;
   if (role === 'doctor') return '/doctor/dashboard';
 
   const route = portalAccess?.trim();
@@ -113,7 +118,7 @@ export function resolveCredentialDashboardRoute(
     return normalizeHospitalPostLoginRoute(route);
   }
 
-  return '/dashboard';
+  return HOSPITAL_DESK_DASHBOARD_PATH;
 }
 
 function nextEmployeeId(role: HospitalCredentialRole): string {

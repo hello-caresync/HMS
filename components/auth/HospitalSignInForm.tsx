@@ -20,6 +20,7 @@ import { authenticateHospitalUser } from '@/lib/auth/hospitalAuth';
 import { isHospitalSetupCompleted } from '@/lib/auth/admin-setup';
 import { recordRealStaffLogin, type AuthenticatedUserPayload } from '@/lib/recordStaffLogin';
 import { saveDoctorSession } from '@/lib/doctor/session';
+import { HOSPITAL_DESK_DASHBOARD_PATH } from '@/lib/auth/hospital-desk-session';
 import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
 import { supabase } from '@/lib/supabase';
 
@@ -61,7 +62,7 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         email: user.email,
         temporary_passcode: passcode.trim(),
         phone: user.phone,
-        portal_access: '/dashboard',
+        portal_access: HOSPITAL_DESK_DASHBOARD_PATH,
       });
 
       localStorage.setItem(
@@ -90,7 +91,7 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         });
         toast.success(`Welcome back, ${user.full_name}!`);
         router.refresh();
-        router.push(
+        router.replace(
           resolveLoginRedirect(searchParams.get('redirect'), '/doctor/dashboard', ['/doctor']),
         );
         return;
@@ -104,7 +105,7 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         staff_type: user.staff_type,
         department: user.department,
         email: user.email,
-        portal_access: '/dashboard',
+        portal_access: HOSPITAL_DESK_DASHBOARD_PATH,
       };
 
       if (user.role === 'admin') {
@@ -132,26 +133,35 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
 
       toast.success(`Welcome back, ${user.full_name}!`);
 
+      const deskPrefixes = [
+        HOSPITAL_DESK_DASHBOARD_PATH,
+        '/hospital',
+        '/dashboard',
+        '/staff',
+      ] as const;
+
       if (user.role === 'admin') {
         const setupDone = await isHospitalSetupCompleted(user.hospital_id);
         router.refresh();
-        router.push(
-          resolveLoginRedirect(
-            searchParams.get('redirect'),
-            setupDone ? '/hospital' : ADMIN_PROVISIONING_PATH,
-            ['/hospital', '/dashboard', '/staff'],
-          ),
+        router.replace(
+          setupDone
+            ? resolveLoginRedirect(
+                searchParams.get('redirect'),
+                HOSPITAL_DESK_DASHBOARD_PATH,
+                [...deskPrefixes],
+              )
+            : ADMIN_PROVISIONING_PATH,
         );
         return;
       }
 
       router.refresh();
-      router.push(
-        resolveLoginRedirect(searchParams.get('redirect'), '/hospital', [
-          '/hospital',
-          '/dashboard',
-          '/staff',
-        ]),
+      router.replace(
+        resolveLoginRedirect(
+          searchParams.get('redirect'),
+          HOSPITAL_DESK_DASHBOARD_PATH,
+          [...deskPrefixes],
+        ),
       );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Authentication failed. Please contact your administrator.';

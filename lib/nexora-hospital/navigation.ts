@@ -39,7 +39,7 @@ export const HOSPITAL_NAV: HospitalNavItem[] = [
     id: 'dashboard',
     label: 'Dashboard',
     emoji: '🏠',
-    href: '/dashboard',
+    href: '/hospital/dashboard',
     icon: LayoutDashboard,
     description: 'Operational command center',
   },
@@ -79,7 +79,7 @@ export const HOSPITAL_NAV: HospitalNavItem[] = [
     id: 'billing',
     label: 'Billing',
     emoji: '💳',
-    href: '/dashboard?tab=billing',
+    href: '/hospital/dashboard?tab=billing',
     icon: Wallet,
     description: 'Revenue & payments',
   },
@@ -121,13 +121,13 @@ const ENTERPRISE_PREFIXES = HOSPITAL_NAV.map((n) => n.href);
 
 /** Legacy /dashboard/* routes still supported for bookmarks */
 const LEGACY_DASHBOARD_MAP: Record<string, string> = {
-  '/dashboard': '/dashboard',
-  '/hospital/dashboard': '/dashboard',
+  '/dashboard': '/hospital/dashboard',
+  '/hospital/dashboard': '/hospital/dashboard',
   '/dashboard/patients': '/hospital/patients',
   '/dashboard/appointments': '/hospital/appointments',
-  '/dashboard/opd': '/dashboard',
+  '/dashboard/opd': '/hospital/dashboard',
   '/dashboard/admissions': '/hospital/admissions',
-  '/dashboard/billing': '/dashboard?tab=billing',
+  '/dashboard/billing': '/hospital/dashboard?tab=billing',
   '/dashboard/inventory': '/hospital/inventory',
   '/dashboard/vendors': '/hospital/vendors',
   '/dashboard/notifications': '/hospital/notifications',
@@ -145,7 +145,7 @@ export function isHospitalShellRoute(pathname: string | null): boolean {
   if (pathname.startsWith('/dashboard/') && Object.keys(LEGACY_DASHBOARD_MAP).some((k) => pathname.startsWith(k))) {
     return true;
   }
-  return pathname === '/dashboard';
+  return pathname === '/dashboard' || pathname === '/hospital/dashboard';
 }
 
 export function hospitalModuleFromPath(pathname: string | null): HospitalModuleId {
@@ -164,5 +164,5 @@ export function hospitalModuleFromPath(pathname: string | null): HospitalModuleI
 }
 
 export function hospitalHref(moduleId: HospitalModuleId): string {
-  return HOSPITAL_NAV.find((n) => n.id === moduleId)?.href ?? '/dashboard';
+  return HOSPITAL_NAV.find((n) => n.id === moduleId)?.href ?? '/hospital/dashboard';
 }

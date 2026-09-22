@@ -4,6 +4,8 @@ import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
+import { hospitalDeskLoginUrl } from '@/lib/auth/hospital-desk-session';
+
 /**
  * Legacy `/login` shim — client redirect avoids Next.js dev Performance.measure
  * errors from instant server-side redirect() on this route.
@@ -14,10 +16,9 @@ function LegacyLoginRedirectInner() {
 
   useEffect(() => {
     const redirectParam = searchParams.get('redirect') ?? searchParams.get('next');
-    const destination =
-      redirectParam && redirectParam.startsWith('/')
-        ? `/hospital/login?redirect=${encodeURIComponent(redirectParam)}`
-        : '/hospital/login';
+    const destination = hospitalDeskLoginUrl(
+      redirectParam && redirectParam.startsWith('/') ? redirectParam : undefined,
+    );
     router.replace(destination);
   }, [router, searchParams]);
 

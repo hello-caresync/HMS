@@ -1,6 +1,10 @@
 import type { NextRequest } from 'next/server';
 
 import {
+  readVerifiedHospitalDeskSession,
+  resolveHospitalDeskHomePath,
+} from '@/lib/auth/hospital-desk-session';
+import {
   isHospitalCredentialAdmin,
   isStaffCredentialsAdminPath,
   resolveHospitalSessionRole,
@@ -130,14 +134,10 @@ export function hasStaffCredentialsDeskAccess(request: NextRequest): boolean {
 export { isStaffCredentialsAdminPath };
 
 export function hasHospitalDeskSession(request: NextRequest): boolean {
-  const cookies = request.cookies;
-  if (cookies.get('curasync_active_session')?.value) return true;
-  if (cookies.get('curasync_session')?.value) return true;
-  if (cookies.get('auth-token')?.value) return true;
-
-  const role = cookies.get('curasync_session_role')?.value ?? '';
-  return ['Admin', 'Staff', 'Nurse', 'Pharmacist', 'Doctor'].includes(role);
+  return readVerifiedHospitalDeskSession(request) !== null;
 }
+
+export { readVerifiedHospitalDeskSession, resolveHospitalDeskHomePath };
 
 export function hasDoctorPortalSession(request: NextRequest): boolean {
   const role = readRoleCookie(request);
