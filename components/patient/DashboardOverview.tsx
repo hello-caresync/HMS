@@ -4,15 +4,20 @@ import type { ElementType } from 'react';
 import Link from 'next/link';
 import {
   Calendar,
+  Clock,
   FileText,
   HeartPulse,
   IndianRupee,
+  MapPin,
   PlusCircle,
   RotateCw,
   Stethoscope,
   Ticket,
+  User,
   Users,
 } from 'lucide-react';
+
+import { MissedVisitAlertBanner } from '@/components/patient/MissedVisitAlertBanner';
 
 import type { ConsultationBill } from '@/lib/hospital/operations/consultation-billing-sync';
 import {
@@ -27,16 +32,23 @@ import { formatINR } from '@/lib/utils/currency';
 
 export type DashboardVisit = {
   id: string;
+  doctor_id?: string;
   doctor_name: string;
   department: string;
   appointment_date: string;
   appointment_time?: string;
   slot_time: string;
-  token_number: number;
+  token_number: number | string;
   queue_status: string;
   status?: string;
   booking_for?: string;
   reason?: string;
+  symptoms?: string;
+  patient_name?: string;
+  is_self?: boolean;
+  beneficiary_relation?: string;
+  hospital_name?: string;
+  fee?: string;
 };
 
 export type DashboardPrescription = {
@@ -50,7 +62,8 @@ export type DashboardOverviewProps = {
   patientName: string;
   loading: boolean;
   billsLoading: boolean;
-  activeVisit: DashboardVisit | null;
+  activeVisits: DashboardVisit[];
+  actionRequiredVisits: DashboardVisit[];
   activeVisitsCount: number;
   prescriptionCount: number;
   recentPrescriptions: DashboardPrescription[];
@@ -60,6 +73,7 @@ export type DashboardOverviewProps = {
   vitals: PatientClinicalRecord | null;
   onRefresh: () => void;
   onBookConsultation: () => void;
+  onReschedule: (visit: DashboardVisit) => void;
   profileComplete?: boolean;
   profileGateLoading?: boolean;
   profileMissingFields?: string[];
@@ -113,45 +127,88 @@ function formatVisitTime(value: string): string {
   return text;
 }
 
-function UpcomingVisitCard({ visit }: { visit: DashboardVisit }) {
+function patientIndicator(visit: DashboardVisit): string {
+  if (visit.is_self || visit.booking_for?.toUpperCase() === 'SELF') return 'Self';
+  const relation = visit.beneficiary_relation || visit.booking_for || 'Dependent';
+  return visit.patient_name ? `${visit.patient_name} (${relation})` : relation;
+}
+
+function ActiveVisitCard({ visit }: { visit: DashboardVisit }) {
   const displayStatus = (visit.status || visit.queue_status || 'CONFIRMED').replace(/_/g, ' ');
   const displayTime = formatVisitTime(visit.appointment_time || visit.slot_time);
   const displayDate = formatShortDate(visit.appointment_date);
+  const tokenLabel =
+    typeof visit.token_number === 'string' && visit.token_number.startsWith('T-')
+      ? visit.token_number
+      : `#${visit.token_number || '—'}`;
+  const mapsQuery = encodeURIComponent(
+    `${visit.hospital_name ?? 'Regal Hospital'} OPD Block Bengaluru`,
+  );
 
   return (
-    <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/50 p-4">
-      <div className="flex min-w-0 items-center gap-3">
-        <Calendar className="h-6 w-6 shrink-0 text-amber-700" aria-hidden />
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
-              Upcoming Visit
-            </span>
-            <span className="text-xs font-medium text-amber-900">
-              {displayDate} at {displayTime}
-            </span>
+    <article className="rounded-2xl border border-sky-100 bg-white/90 p-5 shadow-sm backdrop-blur-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-sky-50 pb-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sm font-bold text-sky-800">
+            {visit.doctor_name.replace(/^Dr\.?\s*/i, '').charAt(0) || 'D'}
           </div>
-          <h4 className="mt-1 text-sm font-bold text-stone-900">
-            {visit.doctor_name || 'Consulting Physician'}
-            <span className="text-xs font-normal text-stone-600">
-              {' '}
-              ({visit.department || 'General'})
-            </span>
-          </h4>
-          {visit.booking_for && visit.booking_for !== 'SELF' ? (
-            <p className="text-xs text-stone-500">For: {visit.booking_for}</p>
-          ) : null}
-          {visit.token_number ? (
-            <p className="mt-1 text-[11px] font-semibold text-[#8C5A3C]">
-              Queue token #{visit.token_number}
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-900">{visit.doctor_name}</p>
+            <p className="flex items-center gap-1 text-xs font-medium text-sky-700">
+              <Stethoscope className="h-3 w-3" aria-hidden />
+              {visit.department}
             </p>
-          ) : null}
+          </div>
         </div>
+        <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-bold uppercase text-sky-800">
+          {displayStatus}
+        </span>
       </div>
-      <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-        {displayStatus}
-      </span>
-    </div>
+
+      <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium text-slate-600">
+        <span className="inline-flex items-center gap-1">
+          <Calendar className="h-3.5 w-3.5 text-sky-600" aria-hidden />
+          {displayDate}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Clock className="h-3.5 w-3.5 text-sky-600" aria-hidden />
+          {displayTime}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Ticket className="h-3.5 w-3.5 text-sky-600" aria-hidden />
+          Token {tokenLabel}
+        </span>
+      </div>
+
+      <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-sky-100 bg-sky-50/80 px-2.5 py-1 text-[11px] font-semibold text-sky-900">
+        <User className="h-3 w-3" aria-hidden />
+        For: {patientIndicator(visit)}
+      </div>
+
+      {visit.reason ? (
+        <p className="mt-3 rounded-lg border border-amber-100 bg-amber-50/80 px-3 py-2 text-[11px] text-amber-950">
+          <span className="font-bold">Reason:</span> {visit.reason}
+        </p>
+      ) : null}
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link
+          href="/patient/appointments"
+          className="inline-flex items-center gap-1 rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-sky-800 transition hover:bg-sky-50"
+        >
+          View Details
+        </Link>
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 rounded-lg border border-sky-300 bg-sky-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-sky-700"
+        >
+          <MapPin className="h-3 w-3" aria-hidden />
+          Check-In / Directions
+        </a>
+      </div>
+    </article>
   );
 }
 
@@ -159,7 +216,8 @@ export function DashboardOverview({
   patientName,
   loading,
   billsLoading,
-  activeVisit,
+  activeVisits,
+  actionRequiredVisits,
   activeVisitsCount,
   prescriptionCount,
   recentPrescriptions,
@@ -169,15 +227,18 @@ export function DashboardOverview({
   vitals,
   onRefresh,
   onBookConsultation,
+  onReschedule,
   profileComplete = true,
   profileGateLoading = false,
   profileMissingFields = [],
 }: DashboardOverviewProps) {
   const bookingBlocked = !profileGateLoading && !profileComplete;
   const firstName = patientName.split(/\s+/)[0] || patientName;
-  const tokenLabel = activeVisit?.token_number
-    ? `#${activeVisit.token_number}`
+  const primaryVisit = activeVisits[0] ?? null;
+  const tokenLabel = primaryVisit?.token_number
+    ? `#${primaryVisit.token_number}`
     : 'No Active Token';
+  const latestMissed = actionRequiredVisits[0] ?? null;
   const outstandingBill = bills.find((bill) => bill.status !== 'paid');
   const outstandingLabel =
     billingSnapshot.totalOutstanding > 0
@@ -191,7 +252,11 @@ export function DashboardOverview({
     .slice(0, 3);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4 font-sans text-[#2B1810]">
+    <div className="mx-auto max-w-6xl space-y-4 px-4 py-6 font-sans text-slate-900 md:px-0">
+      {!loading && latestMissed ? (
+        <MissedVisitAlertBanner visit={latestMissed} onReschedule={onReschedule} />
+      ) : null}
+
       {/* Zone A — header + quick stats */}
       <section className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -262,19 +327,19 @@ export function DashboardOverview({
           <StatCard
             label="Active Visits"
             value={loading ? '…' : String(activeVisitsCount)}
-            hint="Scheduled today"
+            hint={activeVisitsCount === 1 ? 'Upcoming consultation' : 'Upcoming consultations'}
             icon={Calendar}
           />
           <StatCard
             label="OPD Queue"
             value={loading ? '…' : tokenLabel}
-            hint={activeVisit?.queue_status || 'Walk-in ready'}
+            hint={primaryVisit?.queue_status?.replace(/_/g, ' ') || 'Walk-in ready'}
             icon={Ticket}
           />
           <StatCard
             label="Prescriptions"
             value={loading ? '…' : String(prescriptionCount)}
-            hint="On file"
+            hint="On record"
             icon={FileText}
           />
           <StatCard
@@ -289,27 +354,27 @@ export function DashboardOverview({
       {/* Zone B — main split */}
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="space-y-4">
-          {/* Today's visit / queue */}
-          <div className="rounded-xl border border-[#EADBCE] bg-white p-4 shadow-xs">
-            <h2 className={sectionHeaderClass}>
-              <Ticket className="h-4 w-4 text-[#8C5A3C]" aria-hidden />
-              Today&apos;s Visit & Queue
+          {/* Active consultations */}
+          <div className="rounded-2xl border border-sky-100 bg-white/90 p-6 shadow-sm backdrop-blur-sm">
+            <h2 className="mb-4 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-sky-800">
+              <Ticket className="h-4 w-4" aria-hidden />
+              Active Consultations
             </h2>
 
             {loading ? (
-              <div className="animate-pulse space-y-2">
-                <div className="h-3.5 w-32 rounded bg-[#F3ECE4]" />
-                <div className="h-10 rounded-lg bg-[#F5EFE6]" />
+              <div className="animate-pulse space-y-3">
+                <div className="h-3.5 w-32 rounded bg-sky-100" />
+                <div className="h-24 rounded-2xl bg-sky-50" />
               </div>
-            ) : !activeVisit ? (
-              <div className="rounded-xl border border-[#EADBCE] bg-white px-4 py-8 text-center">
-                <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#FAF7F2] p-2.5 text-[#8C5A3C]">
+            ) : activeVisits.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/50 px-4 py-8 text-center">
+                <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 p-2.5 text-sky-700">
                   <Stethoscope className="h-5 w-5" aria-hidden />
                 </div>
-                <p className="text-sm font-bold text-stone-800">No appointments scheduled for today</p>
-                <p className="mx-auto mt-1 mb-3 max-w-sm text-xs text-stone-500">
+                <p className="text-sm font-bold text-slate-900">No active OPD bookings</p>
+                <p className="mx-auto mt-1 mb-3 max-w-sm text-xs text-slate-600">
                   {doctorsAvailable > 0
-                    ? `${doctorsAvailable} doctor${doctorsAvailable === 1 ? '' : 's'} available to book now.`
+                    ? `${doctorsAvailable} consultant${doctorsAvailable === 1 ? '' : 's'} available — book your next visit.`
                     : 'Book an OPD slot to receive your live queue token.'}
                 </p>
                 <button
@@ -323,12 +388,9 @@ export function DashboardOverview({
               </div>
             ) : (
               <div className="space-y-3">
-                <UpcomingVisitCard visit={activeVisit} />
-                {activeVisit.reason ? (
-                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
-                    <span className="font-bold">Reason:</span> {activeVisit.reason}
-                  </p>
-                ) : null}
+                {activeVisits.map((visit) => (
+                  <ActiveVisitCard key={visit.id} visit={visit} />
+                ))}
               </div>
             )}
           </div>
