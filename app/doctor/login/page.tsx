@@ -7,8 +7,8 @@ export default function DoctorLoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen w-full items-center justify-center bg-[#020617]">
-          <Loader2 className="h-6 w-6 animate-spin text-teal-400" />
+        <div className="flex min-h-screen w-full items-center justify-center bg-slate-900/95">
+          <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
         </div>
       }
     >
