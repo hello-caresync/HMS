@@ -36,7 +36,7 @@ const PORTAL_ROLES: PortalCard[] = [
     badge: 'LEVEL 0 ROOT',
     href: '/super-admin/login',
     badgeColor: 'bg-amber-100/70 text-amber-800 border-amber-300/60',
-    accentHover: 'hover:border-amber-400 hover:shadow-amber-500/10',
+    accentHover: 'hover:border-amber-300/60 hover:shadow-amber-500/10',
     iconBg: 'bg-amber-100',
     iconColor: 'text-amber-700',
     icon: ShieldCheck,
@@ -50,7 +50,7 @@ const PORTAL_ROLES: PortalCard[] = [
     badge: 'HOSPITAL OS',
     href: '/hospital/login',
     badgeColor: 'bg-blue-100/70 text-blue-800 border-blue-300/60',
-    accentHover: 'hover:border-blue-400 hover:shadow-blue-500/10',
+    accentHover: 'hover:border-sky-300/60 hover:shadow-blue-500/10',
     iconBg: 'bg-blue-100',
     iconColor: 'text-blue-700',
     icon: Building2,
@@ -64,7 +64,7 @@ const PORTAL_ROLES: PortalCard[] = [
     badge: 'CLINICIANS',
     href: '/doctor/login',
     badgeColor: 'bg-emerald-100/70 text-emerald-800 border-emerald-300/60',
-    accentHover: 'hover:border-emerald-400 hover:shadow-emerald-500/10',
+    accentHover: 'hover:border-emerald-300/60 hover:shadow-emerald-500/10',
     iconBg: 'bg-emerald-100',
     iconColor: 'text-emerald-700',
     icon: Stethoscope,
@@ -78,7 +78,7 @@ const PORTAL_ROLES: PortalCard[] = [
     badge: 'PUBLIC & PATIENTS',
     href: '/patient/login',
     badgeColor: 'bg-[#ede0d4]/90 text-[#7f5539] border-[#e6ccb2]/80',
-    accentHover: 'hover:border-[#b08968] hover:shadow-[#7f5539]/10',
+    accentHover: 'hover:border-[#d4b896]/80 hover:shadow-[#7f5539]/10',
     iconBg: 'bg-[#ede0d4]',
     iconColor: 'text-[#b08968]',
     icon: UserCheck,
@@ -92,7 +92,7 @@ const PORTAL_ROLES: PortalCard[] = [
     badge: 'PARTNERS',
     href: '/vendor/login',
     badgeColor: 'bg-[#dcc2f9]/70 text-[#3b1466] border-[#ceaef2]/60',
-    accentHover: 'hover:border-[#a36fdb] hover:shadow-[#6a38a0]/10',
+    accentHover: 'hover:border-[#ceaef2]/80 hover:shadow-[#6a38a0]/10',
     iconBg: 'bg-[#dcc2f9]/80',
     iconColor: 'text-[#6a38a0]',
     icon: Truck,
@@ -100,7 +100,7 @@ const PORTAL_ROLES: PortalCard[] = [
 ];
 
 const CARD_CLASS =
-  'group flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white/85 p-4 shadow-xs backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg';
+  'group flex flex-col justify-between rounded-2xl border border-white/60 bg-white/80 p-6 shadow-lg shadow-sky-900/5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-sky-300/60';
 
 function PortalCardLink({
   card,
@@ -117,7 +117,7 @@ function PortalCardLink({
       className={`${CARD_CLASS} ${card.accentHover} ${className}`}
     >
       <div>
-        <div className="mb-2.5 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between">
           <div
             className={`rounded-xl p-2.5 transition-transform group-hover:scale-105 ${card.iconBg} ${card.iconColor}`}
           >
@@ -130,73 +130,80 @@ function PortalCardLink({
           </span>
         </div>
 
-        <h2 className="text-base font-bold text-slate-900 transition-colors group-hover:text-emerald-700">
+        <h2 className="text-base font-bold text-slate-900 transition-colors group-hover:text-sky-800">
           {card.title}
         </h2>
-        <p className="mb-1 text-[11px] font-semibold text-slate-500">{card.subtitle}</p>
-        <p className="line-clamp-2 text-[11px] leading-relaxed text-slate-600">{card.description}</p>
+        <p className="mb-1 text-[11px] font-semibold text-slate-600">{card.subtitle}</p>
+        <p className="line-clamp-2 text-[11px] leading-relaxed text-slate-700">{card.description}</p>
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-[11px] font-semibold text-slate-700 group-hover:text-emerald-700">
+      <div className="mt-4 flex items-center justify-between border-t border-white/70 pt-3 text-[11px] font-semibold text-slate-800 group-hover:text-sky-800">
         <span>Access Workspace</span>
-        <ArrowRight className="h-3.5 w-3.5 transform text-emerald-600 transition-transform group-hover:translate-x-1" />
+        <ArrowRight className="h-3.5 w-3.5 transform text-sky-600 transition-transform group-hover:translate-x-1" />
       </div>
     </Link>
   );
 }
 
+const WATERCOLOR_MESH_FALLBACK =
+  'radial-gradient(ellipse 80% 60% at 15% 20%, rgba(186, 230, 253, 0.85) 0%, transparent 55%), radial-gradient(ellipse 70% 55% at 85% 15%, rgba(147, 197, 253, 0.75) 0%, transparent 50%), radial-gradient(ellipse 65% 50% at 50% 85%, rgba(125, 211, 252, 0.7) 0%, transparent 55%), radial-gradient(ellipse 55% 45% at 70% 55%, rgba(224, 242, 254, 0.9) 0%, transparent 45%), linear-gradient(165deg, #e0f2fe 0%, #bae6fd 35%, #f0f9ff 70%, #dbeafe 100%)';
+
 export default function WorkspacePortalSelector() {
   return (
-    <main className="relative flex h-screen max-h-screen w-full flex-col justify-between overflow-hidden overscroll-none bg-gradient-to-br from-slate-50 via-teal-50/30 to-emerald-50/40 p-4 font-sans select-none sm:p-6 lg:px-12">
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-teal-200/40 blur-[100px]" />
-        <div className="absolute top-1/4 -right-24 h-96 w-96 rounded-full bg-emerald-200/40 blur-[110px]" />
-        <div className="absolute -bottom-32 left-1/3 h-80 w-80 rounded-full bg-blue-100/50 blur-[100px]" />
+    <main
+      className="relative flex min-h-screen w-full flex-col justify-between overflow-x-hidden bg-cover bg-center bg-no-repeat font-sans select-none"
+      style={{
+        backgroundImage: `${WATERCOLOR_MESH_FALLBACK}, url('/images/bg-watercolor-blue.png')`,
+      }}
+    >
+      {/* Subtle translucent overlay for contrast and soft light bleed */}
+      <div className="pointer-events-none absolute inset-0 bg-white/40 backdrop-blur-[2px]" aria-hidden />
+
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-between px-4 py-8 sm:px-6 sm:py-12 lg:px-12">
+        <header className="mx-auto max-w-3xl shrink-0 pt-1 text-center">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/75 px-3 py-1 shadow-md shadow-sky-900/5 backdrop-blur-md">
+            <Activity className="h-3.5 w-3.5 animate-pulse text-sky-600" />
+            <span className="text-xs font-semibold tracking-wide text-slate-800">
+              Regal Healthcare • Unified Clinical Platform
+            </span>
+          </div>
+
+          <h1 className="mb-2 text-2xl font-extrabold tracking-tight text-stone-900 sm:text-4xl">
+            Select Your Workspace Portal
+          </h1>
+          <p className="mx-auto max-w-lg text-xs text-slate-700 sm:text-sm">
+            Sign in to your designated clinical role or access patient care services.
+          </p>
+        </header>
+
+        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center gap-4 py-4">
+          <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
+            {PORTAL_ROLES.slice(0, 3).map((card) => (
+              <PortalCardLink key={card.id} card={card} />
+            ))}
+          </div>
+
+          <div className="flex w-full justify-center gap-4">
+            {PORTAL_ROLES.slice(3, 5).map((card) => (
+              <PortalCardLink
+                key={card.id}
+                card={card}
+                className="w-full max-w-[360px] md:w-[calc(50%-8px)]"
+              />
+            ))}
+          </div>
+        </div>
+
+        <footer className="mx-auto flex w-full max-w-6xl shrink-0 flex-col items-center justify-between gap-2 rounded-xl border border-white/50 bg-white/50 px-4 py-2.5 text-[11px] text-slate-600 shadow-sm shadow-sky-900/5 backdrop-blur-sm sm:flex-row">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100/80" />
+            <span className="font-semibold text-slate-800">Node Status: Operational (HOSP-01)</span>
+          </div>
+          <div className="font-medium text-slate-600">
+            Regal Multispeciality Hospital Network • Multi-Tenant Architecture • 2026
+          </div>
+        </footer>
       </div>
-
-      <header className="mx-auto max-w-3xl shrink-0 pt-1 text-center">
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-white/80 px-3 py-1 shadow-xs backdrop-blur-md">
-          <Activity className="h-3.5 w-3.5 animate-pulse text-emerald-600" />
-          <span className="text-xs font-semibold tracking-wide text-slate-700">
-            Regal Healthcare • Unified Clinical Platform
-          </span>
-        </div>
-
-        <h1 className="mb-1 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-          Select Your Workspace Portal
-        </h1>
-        <p className="mx-auto max-w-lg text-xs text-slate-500 sm:text-sm">
-          Sign in to your designated clinical role or access patient care services.
-        </p>
-      </header>
-
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center gap-3 py-2">
-        <div className="grid w-full grid-cols-1 gap-3.5 md:grid-cols-3">
-          {PORTAL_ROLES.slice(0, 3).map((card) => (
-            <PortalCardLink key={card.id} card={card} />
-          ))}
-        </div>
-
-        <div className="flex w-full justify-center gap-3.5">
-          {PORTAL_ROLES.slice(3, 5).map((card) => (
-            <PortalCardLink
-              key={card.id}
-              card={card}
-              className="w-full max-w-[360px] md:w-[calc(50%-7px)]"
-            />
-          ))}
-        </div>
-      </div>
-
-      <footer className="mx-auto flex w-full max-w-6xl shrink-0 flex-col items-center justify-between gap-2 border-t border-slate-200/70 pt-2 pb-1 text-[11px] text-slate-500 sm:flex-row">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
-          <span className="font-semibold text-slate-600">Node Status: Operational (HOSP-01)</span>
-        </div>
-        <div className="font-medium text-slate-500">
-          Regal Multispeciality Hospital Network • Multi-Tenant Architecture • 2026
-        </div>
-      </footer>
     </main>
   );
 }
