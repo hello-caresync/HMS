@@ -1,6 +1,6 @@
 'use client';
 
-import { Download, Printer, RefreshCw, Stethoscope } from 'lucide-react';
+import { Download, Printer, Stethoscope } from 'lucide-react';
 
 import type { NormalizedPrescription } from '@/lib/patient/prescriptions-feed';
 import { formatHospitalBadge } from '@/lib/utils/formatters';
@@ -61,9 +61,7 @@ export function PrescriptionSheet({ rx }: PrescriptionSheetProps) {
         </time>
       </header>
 
-      {medicineList.length === 0 ? (
-        <p className="py-4 text-xs italic text-[#7C5C48]">No medicines listed on this prescription.</p>
-      ) : (
+      {medicineList.length > 0 ? (
         <div className="overflow-hidden rounded-xl border border-[#EADBCE]">
           <table className="w-full text-left text-xs">
             <thead className="bg-[#FAF6F0] text-[11px] font-bold uppercase tracking-wider text-[#7C5C48]">
@@ -97,10 +95,10 @@ export function PrescriptionSheet({ rx }: PrescriptionSheetProps) {
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
 
       {advice ? (
-        <div className="mt-4 rounded-xl border border-[#E6CCB2] bg-[#FAF6F0] p-4">
+        <div className={`rounded-xl border border-[#E6CCB2] bg-[#FAF6F0] p-4 ${medicineList.length > 0 ? 'mt-4' : ''}`}>
           <p className="text-[10px] font-bold uppercase tracking-wider text-[#8C5A3C]">
             Doctor&apos;s advice
           </p>
@@ -124,13 +122,6 @@ export function PrescriptionSheet({ rx }: PrescriptionSheetProps) {
         >
           <Download className="h-3.5 w-3.5" />
           Download PDF
-        </button>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[#8C5A3C] px-3 py-2 text-xs font-bold text-white hover:bg-[#6F4E37]"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Request Refill
         </button>
       </div>
     </article>

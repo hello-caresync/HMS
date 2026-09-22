@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Pill, Printer } from 'lucide-react';
+import { Pill } from 'lucide-react';
 
-import { PrescriptionCareRail } from '@/components/patient/PrescriptionCareRail';
 import { PrescriptionSheet } from '@/components/patient/PrescriptionSheet';
 import {
   readStoredPatientIdentity,
@@ -97,72 +96,47 @@ export default function PatientPrescriptionsPage() {
   const activeRx = prescriptions.find((rx) => rx.id === selectedRxId) ?? prescriptions[0] ?? null;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 md:px-8 print:max-w-none print:p-0">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#EADBCE] pb-4 print:hidden">
-        <div>
-          <h1 className="text-xl font-bold text-[#2B1810]">My Digital Prescriptions</h1>
-          <p className="mt-0.5 text-xs text-[#7C5C48]">
-            Facility:{' '}
-            <span className="font-semibold text-[#8C5A3C]">HOSP-01 (Bengaluru)</span>
-            {' · '}
-            Verified Patient:{' '}
-            <span className="font-semibold">{patientName || 'Patient'}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#EADBCE] bg-white px-3 py-2 text-xs font-semibold text-[#7F5539] hover:bg-[#FAF6F0]"
-          >
-            <Printer className="h-3.5 w-3.5" />
-            Print
-          </button>
-          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            Live Sync
-          </span>
-        </div>
+    <div className="mx-auto max-w-4xl px-4 py-6 md:px-8 print:max-w-none print:p-0">
+      <div className="mb-4 border-b border-[#EADBCE] pb-4 print:hidden">
+        <h1 className="text-xl font-bold text-[#2B1810]">My Digital Prescriptions</h1>
+        <p className="mt-0.5 text-xs text-[#7C5C48]">
+          Verified Patient:{' '}
+          <span className="font-semibold">{patientName || 'Patient'}</span>
+        </p>
       </div>
 
       {loading ? (
         <div className="py-12 text-center text-xs text-[#7C5C48]">Loading prescriptions...</div>
       ) : prescriptions.length === 0 ? (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="rounded-xl border border-[#EADBCE] bg-white py-12 text-center shadow-xs">
-            <Pill className="mx-auto mb-3 h-8 w-8 text-[#EADBCE]" />
-            <p className="text-sm font-semibold text-[#2B1810]">No prescriptions found yet</p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-[#7C5C48]">
-              When your doctor completes a consultation, your prescription will appear here instantly.
-            </p>
-          </div>
-          <PrescriptionCareRail prescriptions={[]} activeRx={null} />
+        <div className="rounded-xl border border-[#EADBCE] bg-white py-12 text-center shadow-xs">
+          <Pill className="mx-auto mb-3 h-8 w-8 text-[#EADBCE]" />
+          <p className="text-sm font-semibold text-[#2B1810]">No prescriptions found yet</p>
+          <p className="mx-auto mt-1 max-w-sm text-xs text-[#7C5C48]">
+            When your doctor completes a consultation, your prescription will appear here instantly.
+          </p>
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="space-y-3">
-            {prescriptions.length > 1 ? (
-              <div className="flex flex-wrap gap-2 print:hidden">
-                {prescriptions.map((rx) => (
-                  <button
-                    key={rx.id}
-                    type="button"
-                    onClick={() => setSelectedRxId(rx.id)}
-                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
-                      rx.id === activeRx?.id
-                        ? 'border-[#8C5A3C] bg-[#8C5A3C] text-white'
-                        : 'border-[#EADBCE] bg-white text-[#7C5C48] hover:border-[#8C5A3C]'
-                    }`}
-                  >
-                    {rx.doctor_name || 'Prescription'} ·{' '}
-                    {(rx.issued_at || rx.created_at || '').slice(0, 10)}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {activeRx ? <PrescriptionSheet rx={activeRx} /> : null}
-          </div>
-          <PrescriptionCareRail prescriptions={prescriptions} activeRx={activeRx} />
+        <div className="space-y-3">
+          {prescriptions.length > 1 ? (
+            <div className="flex flex-wrap gap-2 print:hidden">
+              {prescriptions.map((rx) => (
+                <button
+                  key={rx.id}
+                  type="button"
+                  onClick={() => setSelectedRxId(rx.id)}
+                  className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+                    rx.id === activeRx?.id
+                      ? 'border-[#8C5A3C] bg-[#8C5A3C] text-white'
+                      : 'border-[#EADBCE] bg-white text-[#7C5C48] hover:border-[#8C5A3C]'
+                  }`}
+                >
+                  {rx.doctor_name || 'Prescription'} ·{' '}
+                  {(rx.issued_at || rx.created_at || '').slice(0, 10)}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {activeRx ? <PrescriptionSheet rx={activeRx} /> : null}
         </div>
       )}
     </div>
