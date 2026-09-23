@@ -40,46 +40,51 @@ function SuperAdminLoginForm() {
     purgeLocalAdminSessions();
   }, []);
 
-  const handleSuperAdminLogin = async (event: React.FormEvent) => {
+  const unlockRootSuperAdminClientSide = (cleanEmail: string): void => {
+    const sessionData = {
+      id: 'SUPER-ADMIN-ROOT',
+      email: cleanEmail,
+      role: 'SUPER_ADMIN',
+      name: 'Platform Root Super Admin',
+      authenticated_at: new Date().toISOString(),
+    };
+
+    const serialized = JSON.stringify(sessionData);
+    document.cookie = 'platform_root=true; path=/; max-age=604800; SameSite=Lax';
+    document.cookie = `super_admin_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
+    document.cookie = `hospital_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
+
+    localStorage.setItem('platform_root_unlocked', 'true');
+    localStorage.setItem('super_admin_session', serialized);
+    setNexoraRoleCookie('super_admin');
+  };
+
+  const handleSuperAdminLogin = (event: React.FormEvent) => {
     event.preventDefault();
-    setLoading(true);
     setErrorMessage(null);
 
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPasscode = (passcode || '').trim();
 
+    // Client-side authentication — no fetch/API call (Cloudflare static-safe)
     if (
       cleanEmail === 'superadmin@regalhospital.com' &&
       (cleanPasscode === 'REGAL#2026@SUPER_ROOT' || cleanPasscode === 'REGAL@ROOT2026')
     ) {
-      const sessionPayload = {
-        id: 'SUPER-ADMIN-ROOT',
-        email: cleanEmail,
-        role: 'SUPER_ADMIN',
-        name: 'Platform Root Super Admin',
-        authenticated_at: new Date().toISOString(),
-      };
-
-      const serialized = JSON.stringify(sessionPayload);
-      document.cookie = 'platform_root=true; path=/; max-age=604800; SameSite=Lax';
-      document.cookie = `super_admin_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
-      document.cookie = `hospital_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('platform_root_unlocked', 'true');
-        localStorage.setItem('super_admin_session', serialized);
-      }
-
-      setNexoraRoleCookie('super_admin');
-      setErrorMessage(null);
+      unlockRootSuperAdminClientSide(cleanEmail);
       toast.success('Root Master Authentication Verified');
-      router.replace('/super-admin/dashboard');
-      setLoading(false);
+      router.replace('/super-vault-access');
       return;
     }
 
-    const masterEmail = cleanEmail;
-    const masterPasscode = cleanPasscode;
+    void authenticateDelegatedSuperAdmin(cleanEmail, cleanPasscode);
+  };
+
+  const authenticateDelegatedSuperAdmin = async (
+    masterEmail: string,
+    masterPasscode: string,
+  ) => {
+    setLoading(true);
 
     const { data: staff, error } = await supabase
       .from('hospital_staff')
@@ -100,7 +105,7 @@ function SuperAdminLoginForm() {
     setNexoraRoleCookie('super_admin');
 
     toast.success('Super Admin credentials verified');
-    router.replace('/super-admin/dashboard');
+    router.replace('/super-vault-access');
     setLoading(false);
   };
 

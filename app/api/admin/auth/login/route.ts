@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       const response = NextResponse.json({
         success: true,
         role: 'SUPER_ADMIN',
-        redirect: '/super-admin/dashboard',
+        redirect: '/super-vault-access',
       });
 
       // Set platform security cookies for middleware & dashboard access
