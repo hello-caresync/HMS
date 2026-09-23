@@ -40,38 +40,37 @@ function SuperAdminLoginForm() {
     purgeLocalAdminSessions();
   }, []);
 
-  const unlockRootSuperAdminClientSide = (cleanEmail: string): void => {
-    const sessionData = {
-      id: 'SUPER-ADMIN-ROOT',
-      email: cleanEmail,
-      role: 'SUPER_ADMIN',
-      name: 'Platform Root Super Admin',
-      authenticated_at: new Date().toISOString(),
-    };
-
-    const serialized = JSON.stringify(sessionData);
-    document.cookie = 'platform_root=true; path=/; max-age=604800; SameSite=Lax';
-    document.cookie = `super_admin_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
-    document.cookie = `hospital_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
-
-    localStorage.setItem('platform_root_unlocked', 'true');
-    localStorage.setItem('super_admin_session', serialized);
-    setNexoraRoleCookie('super_admin');
-  };
-
   const handleSuperAdminLogin = (event: React.FormEvent) => {
     event.preventDefault();
-    setErrorMessage(null);
 
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPasscode = (passcode || '').trim();
 
-    // Client-side authentication — no fetch/API call (Cloudflare static-safe)
+    // Master credential bypass — client-side only, no fetch (Cloudflare Pages safe)
     if (
       cleanEmail === 'superadmin@regalhospital.com' &&
       (cleanPasscode === 'REGAL#2026@SUPER_ROOT' || cleanPasscode === 'REGAL@ROOT2026')
     ) {
-      unlockRootSuperAdminClientSide(cleanEmail);
+      const sessionPayload = {
+        id: 'SUPER-ADMIN-ROOT',
+        email: cleanEmail,
+        role: 'SUPER_ADMIN',
+        name: 'Platform Root Super Admin',
+        authenticated_at: new Date().toISOString(),
+      };
+
+      document.cookie = 'platform_root=true; path=/; max-age=604800; SameSite=Lax';
+      document.cookie = `super_admin_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=604800; SameSite=Lax`;
+      document.cookie = `hospital_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=604800; SameSite=Lax`;
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('platform_root_unlocked', 'true');
+        localStorage.setItem('super_admin_session', JSON.stringify(sessionPayload));
+        localStorage.setItem('hospital_session', JSON.stringify(sessionPayload));
+      }
+
+      setNexoraRoleCookie('super_admin');
+      setErrorMessage(null);
       toast.success('Root Master Authentication Verified');
       router.replace('/super-vault-access');
       return;
@@ -84,6 +83,7 @@ function SuperAdminLoginForm() {
     masterEmail: string,
     masterPasscode: string,
   ) => {
+    setErrorMessage(null);
     setLoading(true);
 
     const { data: staff, error } = await supabase

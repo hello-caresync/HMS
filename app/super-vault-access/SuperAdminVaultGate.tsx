@@ -2,9 +2,33 @@
 
 import { useState } from 'react';
 
+import {
+  isRootMasterPasscode,
+  SUPER_ADMIN_ROOT_EMAIL,
+} from '@/lib/auth/superAdminAuth';
+
 type SuperAdminVaultGateProps = {
   onUnlock: () => void;
 };
+
+function unlockVaultClientSide(email = SUPER_ADMIN_ROOT_EMAIL): void {
+  const sessionPayload = {
+    id: 'SUPER-ADMIN-ROOT',
+    email,
+    role: 'SUPER_ADMIN',
+    name: 'Platform Root Super Admin',
+    authenticated_at: new Date().toISOString(),
+  };
+
+  const serialized = JSON.stringify(sessionPayload);
+  document.cookie = 'platform_root=true; path=/; max-age=604800; SameSite=Lax';
+  document.cookie = `super_admin_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
+  document.cookie = `hospital_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
+
+  localStorage.setItem('platform_root_unlocked', 'true');
+  localStorage.setItem('super_admin_session', serialized);
+  localStorage.setItem('hospital_session', serialized);
+}
 
 export function SuperAdminVaultGate({ onUnlock }: SuperAdminVaultGateProps) {
   const [passcode, setPasscode] = useState('');
@@ -16,11 +40,21 @@ export function SuperAdminVaultGate({ onUnlock }: SuperAdminVaultGateProps) {
     setIsSubmitting(true);
     setHasError(false);
 
+    const cleanPasscode = passcode.trim();
+
+    // Client-side master passcode bypass — no API call (Cloudflare Pages safe)
+    if (isRootMasterPasscode(cleanPasscode)) {
+      unlockVaultClientSide();
+      onUnlock();
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/super-vault/unlock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passcode }),
+        body: JSON.stringify({ passcode: cleanPasscode }),
       });
 
       if (res.ok) {
