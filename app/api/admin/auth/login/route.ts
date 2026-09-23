@@ -5,11 +5,10 @@ import { NextResponse } from 'next/server';
 import {
   buildSuperAdminSessionPayload,
   createSuperAdminSessionToken,
+  isRootMasterCredentials,
   normalizeSuperAdminEmail,
   normalizeSuperAdminPasscode,
   SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE,
-  SUPER_ADMIN_ROOT_EMAIL,
-  SUPER_ADMIN_ROOT_PASSCODE,
   verifySuperAdminCredentials,
 } from '@/lib/auth/superAdminAuth';
 
@@ -38,7 +37,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (email === SUPER_ADMIN_ROOT_EMAIL && passcode === SUPER_ADMIN_ROOT_PASSCODE) {
+  if (isRootMasterCredentials(email, passcode)) {
     const rootSession = {
       id: 'SUPER-ADMIN-ROOT',
       email,

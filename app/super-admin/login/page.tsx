@@ -22,11 +22,10 @@ import {
   LOGIN_PASSWORD_INPUT_PROPS,
 } from '@/lib/auth/login-form-security';
 import {
+  isRootMasterCredentials,
   persistDelegatedSuperAdminSession,
   persistRootMasterSuperAdminGatewaySession,
   SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE,
-  SUPER_ADMIN_ROOT_EMAIL,
-  SUPER_ADMIN_ROOT_PASSCODE,
 } from '@/lib/auth/superAdminAuth';
 import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
 import { supabase } from '@/lib/supabaseClient';
@@ -48,21 +47,18 @@ function SuperAdminLoginForm() {
     setLoading(true);
     setErrorMessage(null);
 
-    const cleanEmail = (email || '').trim().toLowerCase();
-    const cleanPasscode = (passcode || '').trim();
+    const inputEmail = (email || '').trim().toLowerCase();
+    const inputPasscode = (passcode || '').trim();
 
-    if (
-      cleanEmail === SUPER_ADMIN_ROOT_EMAIL &&
-      cleanPasscode === SUPER_ADMIN_ROOT_PASSCODE
-    ) {
-      persistRootMasterSuperAdminGatewaySession(cleanEmail);
+    if (isRootMasterCredentials(inputEmail, inputPasscode)) {
+      persistRootMasterSuperAdminGatewaySession(inputEmail);
       setNexoraRoleCookie('super_admin');
       setErrorMessage(null);
 
       void fetch('/api/admin/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, passcode: cleanPasscode }),
+        body: JSON.stringify({ email: inputEmail, passcode: inputPasscode }),
       }).catch(() => {
         // Root session already persisted client-side.
       });
@@ -73,8 +69,8 @@ function SuperAdminLoginForm() {
       return;
     }
 
-    const masterEmail = cleanEmail;
-    const masterPasscode = cleanPasscode;
+    const masterEmail = inputEmail;
+    const masterPasscode = inputPasscode;
 
     const { data: staff, error } = await supabase
       .from('hospital_staff')

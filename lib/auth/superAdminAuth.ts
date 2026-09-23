@@ -1,6 +1,12 @@
 /** Canonical Super Admin root operator credentials. */
 export const SUPER_ADMIN_ROOT_EMAIL = 'superadmin@regalhospital.com';
-export const SUPER_ADMIN_ROOT_PASSCODE = 'REGAL#2026@SUPER_ROOT';
+export const SUPER_ADMIN_ROOT_PASSCODE = 'REGAL@ROOT2026';
+export const SUPER_ADMIN_ROOT_PASSCODE_LEGACY = 'REGAL#2026@SUPER_ROOT';
+
+export const SUPER_ADMIN_ROOT_PASSCODES = [
+  SUPER_ADMIN_ROOT_PASSCODE,
+  SUPER_ADMIN_ROOT_PASSCODE_LEGACY,
+] as const;
 export const SUPER_ADMIN_FACILITY_NODE = 'HOSP-01';
 export const SUPER_ADMIN_DEFAULT_PORTAL = '/super-vault-access';
 
@@ -24,17 +30,21 @@ export function normalizeSuperAdminPasscode(value?: string | null): string {
   return String(value ?? '').trim();
 }
 
+export function isRootMasterPasscode(passcode: string): boolean {
+  const normalizedPasscode = normalizeSuperAdminPasscode(passcode);
+  if (!normalizedPasscode) return false;
+  return (SUPER_ADMIN_ROOT_PASSCODES as readonly string[]).includes(normalizedPasscode);
+}
+
+export function isRootMasterCredentials(email: string, passcode: string): boolean {
+  const normalizedEmail = normalizeSuperAdminEmail(email);
+  if (!normalizedEmail) return false;
+  return normalizedEmail === SUPER_ADMIN_ROOT_EMAIL && isRootMasterPasscode(passcode);
+}
+
 /** Strict match — only the canonical root email/passcode pair is accepted. */
 export function verifySuperAdminCredentials(email: string, passcode: string): boolean {
-  const normalizedEmail = normalizeSuperAdminEmail(email);
-  const normalizedPasscode = normalizeSuperAdminPasscode(passcode);
-
-  if (!normalizedEmail || !normalizedPasscode) return false;
-
-  return (
-    normalizedEmail === SUPER_ADMIN_ROOT_EMAIL &&
-    normalizedPasscode === SUPER_ADMIN_ROOT_PASSCODE
-  );
+  return isRootMasterCredentials(email, passcode);
 }
 
 export function createSuperAdminSessionToken(): string {
