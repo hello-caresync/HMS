@@ -29,16 +29,40 @@ export type OpdEvent =
 
 const CHANNEL = 'nexora-opd-realtime';
 
+type BrowserBroadcastChannel = {
+  postMessage: (message: OpdEvent) => void;
+  close: () => void;
+  onmessage: ((event: MessageEvent<OpdEvent>) => void) | null;
+};
+
+function openBrowserBroadcastChannel(): BrowserBroadcastChannel | null {
+  if (typeof window === 'undefined' || !('BroadcastChannel' in window)) {
+    return null;
+  }
+
+  try {
+    const ctor = window.BroadcastChannel as new (name: string) => BrowserBroadcastChannel;
+    return new ctor(CHANNEL);
+  } catch {
+    return null;
+  }
+}
+
 export function broadcastOpdEvent(event: Omit<OpdEvent, 'at'> & { at?: string }) {
   if (typeof window === 'undefined') return;
+
   const full: OpdEvent = { ...event, at: event.at ?? new Date().toISOString() } as OpdEvent;
-  try {
-    const bc = new BroadcastChannel(CHANNEL);
-    bc.postMessage(full);
-    bc.close();
-  } catch {
-    /* BroadcastChannel unavailable */
+
+  const bc = openBrowserBroadcastChannel();
+  if (bc) {
+    try {
+      bc.postMessage(full);
+      bc.close();
+    } catch {
+      /* BroadcastChannel unavailable */
+    }
   }
+
   window.dispatchEvent(new CustomEvent('nexora-opd', { detail: full }));
   try {
     localStorage.setItem('nexora-opd-last-event', JSON.stringify(full));
@@ -50,8 +74,11 @@ export function broadcastOpdEvent(event: Omit<OpdEvent, 'at'> & { at?: string })
 export function subscribeOpdEvents(handler: (event: OpdEvent) => void): () => void {
   if (typeof window === 'undefined') return () => undefined;
 
-  const bc = new BroadcastChannel(CHANNEL);
-  bc.onmessage = (msg) => handler(msg.data as OpdEvent);
+  const bc = openBrowserBroadcastChannel();
+
+  if (bc) {
+    bc.onmessage = (msg) => handler(msg.data as OpdEvent);
+  }
 
   const domHandler = (e: Event) => handler((e as CustomEvent<OpdEvent>).detail);
   window.addEventListener('nexora-opd', domHandler);
@@ -68,7 +95,7 @@ export function subscribeOpdEvents(handler: (event: OpdEvent) => void): () => vo
   window.addEventListener('storage', storageHandler);
 
   return () => {
-    bc.close();
+    bc?.close();
     window.removeEventListener('nexora-opd', domHandler);
     window.removeEventListener('storage', storageHandler);
   };
