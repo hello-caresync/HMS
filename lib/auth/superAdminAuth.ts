@@ -110,7 +110,7 @@ export function persistRootMasterSuperAdminGatewaySession(email: string): RootMa
     id: 'SUPER-ADMIN-ROOT',
     email: normalizeSuperAdminEmail(email),
     role: 'SUPER_ADMIN',
-    name: 'Root Platform Admin',
+    name: 'Platform Root Super Admin',
     authenticated_at: new Date().toISOString(),
   };
 

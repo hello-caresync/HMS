@@ -22,9 +22,7 @@ import {
   LOGIN_PASSWORD_INPUT_PROPS,
 } from '@/lib/auth/login-form-security';
 import {
-  isRootMasterCredentials,
   persistDelegatedSuperAdminSession,
-  persistRootMasterSuperAdminGatewaySession,
   SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE,
 } from '@/lib/auth/superAdminAuth';
 import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
@@ -47,30 +45,41 @@ function SuperAdminLoginForm() {
     setLoading(true);
     setErrorMessage(null);
 
-    const inputEmail = (email || '').trim().toLowerCase();
-    const inputPasscode = (passcode || '').trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPasscode = (passcode || '').trim();
 
-    if (isRootMasterCredentials(inputEmail, inputPasscode)) {
-      persistRootMasterSuperAdminGatewaySession(inputEmail);
+    if (
+      cleanEmail === 'superadmin@regalhospital.com' &&
+      (cleanPasscode === 'REGAL#2026@SUPER_ROOT' || cleanPasscode === 'REGAL@ROOT2026')
+    ) {
+      const sessionPayload = {
+        id: 'SUPER-ADMIN-ROOT',
+        email: cleanEmail,
+        role: 'SUPER_ADMIN',
+        name: 'Platform Root Super Admin',
+        authenticated_at: new Date().toISOString(),
+      };
+
+      const serialized = JSON.stringify(sessionPayload);
+      document.cookie = 'platform_root=true; path=/; max-age=604800; SameSite=Lax';
+      document.cookie = `super_admin_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
+      document.cookie = `hospital_session=${encodeURIComponent(serialized)}; path=/; max-age=604800; SameSite=Lax`;
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('platform_root_unlocked', 'true');
+        localStorage.setItem('super_admin_session', serialized);
+      }
+
       setNexoraRoleCookie('super_admin');
       setErrorMessage(null);
-
-      void fetch('/api/admin/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: inputEmail, passcode: inputPasscode }),
-      }).catch(() => {
-        // Root session already persisted client-side.
-      });
-
       toast.success('Root Master Authentication Verified');
       router.replace('/super-admin/dashboard');
       setLoading(false);
       return;
     }
 
-    const masterEmail = inputEmail;
-    const masterPasscode = inputPasscode;
+    const masterEmail = cleanEmail;
+    const masterPasscode = cleanPasscode;
 
     const { data: staff, error } = await supabase
       .from('hospital_staff')
