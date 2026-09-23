@@ -2,57 +2,83 @@
 
 import React, { useState } from 'react';
 
+import { verifySuperAdminVaultCredentials } from '@/lib/auth/super-admin-auth';
+import {
+  isRootMasterCredentials,
+  persistDelegatedSuperAdminSession,
+  persistRootMasterSuperAdminGatewaySession,
+  redirectToSuperAdminVault,
+  SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE,
+  SUPER_ADMIN_ROOT_EMAIL,
+} from '@/lib/auth/superAdminAuth';
+import { supabase } from '@/lib/supabase/client';
+
+function finalizeDelegatedSuperAdminSession(staff: Record<string, unknown>): void {
+  persistDelegatedSuperAdminSession(staff);
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('isAuthenticated', 'true');
+    localStorage.setItem('userRole', 'SUPER_ADMIN');
+  }
+}
+
 export default function SuperAdminGatewayPage() {
   const [email, setEmail] = useState('');
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
+    setLoading(true);
 
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPass = passcode.trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPasscode = (passcode || '').trim();
 
-    // Valid master credentials
-    const isMasterUser =
-      cleanEmail === 'platform.root@regalhealth.io' ||
-      cleanEmail === 'superadmin@regalhospital.com';
-
-    const isMasterPass =
-      cleanPass === 'CURA#2026@ROOT_VAULT' ||
-      cleanPass === 'REGAL#2026@SUPER_ROOT' ||
-      cleanPass === 'REGAL@ROOT2026';
-
-    if (isMasterUser && isMasterPass) {
-      const sessionPayload = {
-        id: 'SUPER-ADMIN-ROOT',
-        email: cleanEmail,
-        role: 'SUPER_ADMIN',
-        name: 'Platform Root Super Admin',
-        authenticated_at: new Date().toISOString(),
-      };
-
-      // Set cookies for root access
-      document.cookie = 'platform_root=true; path=/; max-age=604800; SameSite=Lax';
-      document.cookie = `super_admin_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=604800; SameSite=Lax`;
-      document.cookie = `hospital_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=604800; SameSite=Lax`;
-
-      // Set localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('platform_root_unlocked', 'true');
-        localStorage.setItem('super_admin_session', JSON.stringify(sessionPayload));
-        localStorage.setItem('hospital_session', JSON.stringify(sessionPayload));
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userRole', 'SUPER_ADMIN');
-      }
-
-      // Hard redirect to the vault page with trailing slash
-      window.location.href = '/super-vault-access/';
+    // 1. Master override — 100% client-side (no /api/admin/auth/login)
+    if (isRootMasterCredentials(cleanEmail, cleanPasscode)) {
+      persistRootMasterSuperAdminGatewaySession(SUPER_ADMIN_ROOT_EMAIL);
+      setLoading(false);
+      redirectToSuperAdminVault();
       return;
     }
 
-    setError('Invalid email or passcode.');
+    // 2. Supabase vault credentials (client SDK)
+    try {
+      const vaultVerified = await verifySuperAdminVaultCredentials(cleanEmail, cleanPasscode);
+      if (vaultVerified) {
+        persistRootMasterSuperAdminGatewaySession(cleanEmail);
+        setLoading(false);
+        redirectToSuperAdminVault();
+        return;
+      }
+
+      // 3. Delegated super-admin rows in hospital_staff (client SDK)
+      if (supabase) {
+        const { data: staff, error: staffError } = await supabase
+          .from('hospital_staff')
+          .select('*')
+          .ilike('email', cleanEmail)
+          .eq('passcode_key', cleanPasscode)
+          .or('role.ilike.%super%,role.ilike.%admin%')
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (!staffError && staff) {
+          finalizeDelegatedSuperAdminSession(staff as Record<string, unknown>);
+          setLoading(false);
+          redirectToSuperAdminVault();
+          return;
+        }
+      }
+    } catch {
+      setError('Unable to reach the authentication service.');
+      setLoading(false);
+      return;
+    }
+
+    setError(SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE);
+    setLoading(false);
   };
 
   return (
@@ -64,17 +90,17 @@ export default function SuperAdminGatewayPage() {
           </div>
           <h1 className="mt-1 text-2xl font-bold text-white">Super Admin Gateway</h1>
           <p className="mt-1 text-xs text-slate-400">
-            Multi-tenant isolation & hospital node orchestration
+            Multi-tenant isolation &amp; hospital node orchestration
           </p>
         </div>
 
-        {error && (
+        {error ? (
           <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-center text-xs text-red-400">
             {error}
           </div>
-        )}
+        ) : null}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
               Platform Master Email
@@ -105,9 +131,10 @@ export default function SuperAdminGatewayPage() {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-orange-500/20 hover:from-amber-400 hover:to-orange-500"
+            disabled={loading}
+            className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-orange-500/20 hover:from-amber-400 hover:to-orange-500 disabled:opacity-60"
           >
-            ENTER ROOT CONSOLE &rarr;
+            {loading ? 'Authenticating…' : 'ENTER ROOT CONSOLE →'}
           </button>
         </form>
       </div>

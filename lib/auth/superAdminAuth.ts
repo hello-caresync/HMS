@@ -126,9 +126,20 @@ export function persistRootMasterSuperAdminGatewaySession(email: string): RootMa
   document.cookie = `auth-token=root-token; ${attrs}`;
 
   localStorage.setItem('super_admin_session', serialized);
+  localStorage.setItem('hospital_session', serialized);
   localStorage.setItem('platform_root_unlocked', 'true');
+  localStorage.setItem('isAuthenticated', 'true');
+  localStorage.setItem('userRole', 'SUPER_ADMIN');
 
   return sessionObj;
+}
+
+/** Hard redirect target for root super-admin login on Cloudflare Pages. */
+export const SUPER_ADMIN_VAULT_LOGIN_REDIRECT = '/super-vault-access/';
+
+export function redirectToSuperAdminVault(): void {
+  if (typeof window === 'undefined') return;
+  window.location.href = SUPER_ADMIN_VAULT_LOGIN_REDIRECT;
 }
 
 export function persistSuperAdminClientSession(
