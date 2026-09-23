@@ -20,6 +20,7 @@ import {
   LOGIN_IDENTIFIER_INPUT_PROPS,
   LOGIN_PASSWORD_INPUT_PROPS,
 } from '@/lib/auth/login-form-security';
+import { isRootMasterCredentials } from '@/lib/auth/superAdminAuth';
 
 function SuperAdminLoginForm() {
   const router = useRouter();
@@ -42,10 +43,7 @@ function SuperAdminLoginForm() {
     const cleanPasscode = (passcode || '').trim();
 
     // MASTER OVERRIDE: Executes 100% on the client to avoid Cloudflare 405 errors
-    if (
-      cleanEmail === 'superadmin@regalhospital.com' &&
-      (cleanPasscode === 'REGAL#2026@SUPER_ROOT' || cleanPasscode === 'REGAL@ROOT2026')
-    ) {
+    if (isRootMasterCredentials(cleanEmail, cleanPasscode)) {
       const sessionData = {
         id: 'SUPER-ADMIN-ROOT',
         email: cleanEmail,

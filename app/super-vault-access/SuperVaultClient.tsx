@@ -3,6 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import {
+  isRootMasterPasscode,
+  SUPER_ADMIN_ROOT_EMAIL,
+  SUPER_ADMIN_ROOT_PASSCODE,
+  SUPER_ADMIN_ROOT_PASSCODE_LEGACY,
+} from '@/lib/auth/superAdminAuth';
+
 interface AdminSession {
   id?: string;
   email?: string;
@@ -25,7 +32,7 @@ export default function SuperVaultClient() {
   const establishMasterSession = () => {
     const sessionData: AdminSession = {
       id: 'SUPER-ADMIN-ROOT',
-      email: 'superadmin@regalhospital.com',
+      email: SUPER_ADMIN_ROOT_EMAIL,
       role: 'SUPER_ADMIN',
       name: 'Platform Root Super Admin',
       authenticated_at: new Date().toISOString(),
@@ -58,8 +65,8 @@ export default function SuperVaultClient() {
 
     if (
       rootParam === 'true' ||
-      unlockParam === 'REGAL#2026@SUPER_ROOT' ||
-      unlockParam === 'REGAL@ROOT2026'
+      unlockParam === SUPER_ADMIN_ROOT_PASSCODE ||
+      unlockParam === SUPER_ADMIN_ROOT_PASSCODE_LEGACY
     ) {
       establishMasterSession();
       setLoading(false);
@@ -80,14 +87,14 @@ export default function SuperVaultClient() {
           setSessionUser(JSON.parse(storedSession));
         } catch {
           setSessionUser({
-            email: 'superadmin@regalhospital.com',
+            email: SUPER_ADMIN_ROOT_EMAIL,
             role: 'SUPER_ADMIN',
             name: 'Platform Root Super Admin',
           });
         }
       } else {
         setSessionUser({
-          email: 'superadmin@regalhospital.com',
+          email: SUPER_ADMIN_ROOT_EMAIL,
           role: 'SUPER_ADMIN',
           name: 'Platform Root Super Admin',
         });
@@ -105,7 +112,7 @@ export default function SuperVaultClient() {
 
     const cleanPass = passcode.trim();
 
-    if (cleanPass === 'REGAL#2026@SUPER_ROOT' || cleanPass === 'REGAL@ROOT2026') {
+    if (isRootMasterPasscode(cleanPass)) {
       establishMasterSession();
     } else {
       setError('Invalid root master passcode. Access denied.');
@@ -251,7 +258,7 @@ export default function SuperVaultClient() {
                 {sessionUser?.name || 'Platform Root Super Admin'}
               </h2>
               <p className="text-sm text-slate-400 mt-0.5">
-                {sessionUser?.email || 'superadmin@regalhospital.com'}
+                {sessionUser?.email || SUPER_ADMIN_ROOT_EMAIL}
               </p>
             </div>
             <div className="text-left sm:text-right text-xs text-slate-500">

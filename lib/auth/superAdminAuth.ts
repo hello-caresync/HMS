@@ -1,7 +1,7 @@
 /** Canonical Super Admin root operator credentials. */
-export const SUPER_ADMIN_ROOT_EMAIL = 'superadmin@regalhospital.com';
-export const SUPER_ADMIN_ROOT_PASSCODE = 'REGAL@ROOT2026';
-export const SUPER_ADMIN_ROOT_PASSCODE_LEGACY = 'REGAL#2026@SUPER_ROOT';
+export const SUPER_ADMIN_ROOT_EMAIL = 'platform.root@regalhealth.io';
+export const SUPER_ADMIN_ROOT_PASSCODE = 'CURA#2026@ROOT_VAULT';
+export const SUPER_ADMIN_ROOT_PASSCODE_LEGACY = 'REGAL@ROOT2026';
 
 export const SUPER_ADMIN_ROOT_PASSCODES = [
   SUPER_ADMIN_ROOT_PASSCODE,

@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
 
+import {
+  isRootMasterCredentials,
+  SUPER_ADMIN_ROOT_EMAIL,
+} from '@/lib/auth/superAdminAuth';
+
 export const runtime = 'edge';
 
 export async function POST(request: Request) {
@@ -8,16 +13,10 @@ export async function POST(request: Request) {
     const email = (body.email || body.username || '').trim().toLowerCase();
     const passcode = (body.passcode || body.password || '').trim();
 
-    // Check Root Master Super Admin credentials
-    const isMasterEmail = email === 'superadmin@regalhospital.com';
-    const isMasterPasscode =
-      passcode === 'REGAL#2026@SUPER_ROOT' ||
-      passcode === 'REGAL@ROOT2026';
-
-    if (isMasterEmail && isMasterPasscode) {
+    if (isRootMasterCredentials(email, passcode)) {
       const sessionPayload = {
         id: 'SUPER-ADMIN-ROOT',
-        email,
+        email: email || SUPER_ADMIN_ROOT_EMAIL,
         role: 'SUPER_ADMIN',
         name: 'Platform Root Super Admin',
         authenticated_at: new Date().toISOString(),
