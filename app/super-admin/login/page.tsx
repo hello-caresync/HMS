@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 
 import { HospitalLogo } from '@/components/common/Logo';
-import { toast } from 'sonner';
 
 import { purgeLocalAdminSessions } from '@/lib/auth/active-session';
 import {
@@ -21,12 +20,6 @@ import {
   LOGIN_IDENTIFIER_INPUT_PROPS,
   LOGIN_PASSWORD_INPUT_PROPS,
 } from '@/lib/auth/login-form-security';
-import {
-  persistDelegatedSuperAdminSession,
-  SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE,
-} from '@/lib/auth/superAdminAuth';
-import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
-import { supabase } from '@/lib/supabaseClient';
 
 function SuperAdminLoginForm() {
   const router = useRouter();
@@ -40,18 +33,20 @@ function SuperAdminLoginForm() {
     purgeLocalAdminSessions();
   }, []);
 
-  const handleSuperAdminLogin = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setErrorMessage(null);
+    setLoading(true);
 
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPasscode = (passcode || '').trim();
 
-    // Master credential bypass — client-side only, no fetch (Cloudflare Pages safe)
+    // MASTER OVERRIDE: Executes 100% on the client to avoid Cloudflare 405 errors
     if (
       cleanEmail === 'superadmin@regalhospital.com' &&
       (cleanPasscode === 'REGAL#2026@SUPER_ROOT' || cleanPasscode === 'REGAL@ROOT2026')
     ) {
-      const sessionPayload = {
+      const sessionData = {
         id: 'SUPER-ADMIN-ROOT',
         email: cleanEmail,
         role: 'SUPER_ADMIN',
@@ -60,53 +55,41 @@ function SuperAdminLoginForm() {
       };
 
       document.cookie = 'platform_root=true; path=/; max-age=604800; SameSite=Lax';
-      document.cookie = `super_admin_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=604800; SameSite=Lax`;
-      document.cookie = `hospital_session=${encodeURIComponent(JSON.stringify(sessionPayload))}; path=/; max-age=604800; SameSite=Lax`;
+      document.cookie = `super_admin_session=${encodeURIComponent(JSON.stringify(sessionData))}; path=/; max-age=604800; SameSite=Lax`;
+      document.cookie = `hospital_session=${encodeURIComponent(JSON.stringify(sessionData))}; path=/; max-age=604800; SameSite=Lax`;
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('platform_root_unlocked', 'true');
-        localStorage.setItem('super_admin_session', JSON.stringify(sessionPayload));
-        localStorage.setItem('hospital_session', JSON.stringify(sessionPayload));
+        localStorage.setItem('super_admin_session', JSON.stringify(sessionData));
+        localStorage.setItem('hospital_session', JSON.stringify(sessionData));
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('userRole', 'SUPER_ADMIN');
       }
 
-      setNexoraRoleCookie('super_admin');
-      setErrorMessage(null);
-      toast.success('Root Master Authentication Verified');
-      router.replace('/super-vault-access');
-      return;
-    }
-
-    void authenticateDelegatedSuperAdmin(cleanEmail, cleanPasscode);
-  };
-
-  const authenticateDelegatedSuperAdmin = async (
-    masterEmail: string,
-    masterPasscode: string,
-  ) => {
-    setErrorMessage(null);
-    setLoading(true);
-
-    const { data: staff, error } = await supabase
-      .from('hospital_staff')
-      .select('*')
-      .ilike('email', masterEmail)
-      .eq('passcode_key', masterPasscode)
-      .or('role.ilike.%super%,role.ilike.%admin%')
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (error || !staff) {
-      setErrorMessage(SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE);
       setLoading(false);
+      window.location.href = '/super-vault-access';
       return;
     }
 
-    persistDelegatedSuperAdminSession(staff as Record<string, unknown>);
-    setNexoraRoleCookie('super_admin');
+    try {
+      const res = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, passcode: cleanPasscode }),
+      });
 
-    toast.success('Super Admin credentials verified');
-    router.replace('/super-vault-access');
-    setLoading(false);
+      if (res.ok) {
+        window.location.href = '/super-vault-access';
+        return;
+      }
+
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setErrorMessage(data.error || 'Invalid credentials.');
+    } catch {
+      setErrorMessage('Authentication server unavailable.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -156,7 +139,7 @@ function SuperAdminLoginForm() {
         ) : null}
 
         <form
-          onSubmit={(event) => void handleSuperAdminLogin(event)}
+          onSubmit={(event) => void handleSubmit(event)}
           autoComplete={LOGIN_FORM_AUTOCOMPLETE}
           className="space-y-4"
         >
