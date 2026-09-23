@@ -6,8 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "build:cloudflare": "npm run pages:build",
-    "postinstall": "node scripts/patch-next-on-pages-global-error.mjs",
-    "pages:build": "npx @cloudflare/next-on-pages --skip-validation",
+    "pages:build": "opennextjs-cloudflare build",
+    "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "start": "next start",
     "lint": "eslint"
   },
@@ -43,7 +43,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.13.16",
+    "@opennextjs/cloudflare": "^1.20.6",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.19.43",
@@ -51,11 +51,13 @@
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^4.1.10",
     "dotenv": "^17.4.2",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
     "tsx": "^4.20.5",
     "typescript": "^5",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "wrangler": "^4.137.0"
   }
 }

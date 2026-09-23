@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { NextResponse } from 'next/server';
 
 import { dispensePrescription } from '@/lib/hospital/operations/pharmacy';

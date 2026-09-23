@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { NextResponse } from 'next/server';
 
 import { checkInAppointment, transitionAppointmentStatus } from '@/lib/hospital/operations/opd';

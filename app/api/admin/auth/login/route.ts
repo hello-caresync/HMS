@@ -5,8 +5,6 @@ import {
   SUPER_ADMIN_ROOT_EMAIL,
 } from '@/lib/auth/superAdminAuth';
 
-export const runtime = 'edge';
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();

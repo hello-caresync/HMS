@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { NextResponse } from 'next/server';
 
 import { verifyAppointmentArrival } from '@/lib/queue/arrival-verification';
