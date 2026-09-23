@@ -22,24 +22,14 @@ import {
   LOGIN_PASSWORD_INPUT_PROPS,
 } from '@/lib/auth/login-form-security';
 import {
-  buildSuperAdminSessionPayload,
-  createSuperAdminSessionToken,
   persistDelegatedSuperAdminSession,
-  persistSuperAdminClientSession,
+  persistRootMasterSuperAdminGatewaySession,
   SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE,
   SUPER_ADMIN_ROOT_EMAIL,
   SUPER_ADMIN_ROOT_PASSCODE,
 } from '@/lib/auth/superAdminAuth';
 import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
 import { supabase } from '@/lib/supabaseClient';
-
-type AdminLoginResponse = {
-  success?: boolean;
-  role?: string;
-  facility_node?: string;
-  token?: string;
-  error?: string;
-};
 
 function SuperAdminLoginForm() {
   const router = useRouter();
@@ -58,43 +48,33 @@ function SuperAdminLoginForm() {
     setLoading(true);
     setErrorMessage(null);
 
-    const masterEmail = email.trim().toLowerCase();
-    const masterPasscode = passcode.trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPasscode = (passcode || '').trim();
 
-    const isMasterValid =
-      masterEmail === SUPER_ADMIN_ROOT_EMAIL && masterPasscode === SUPER_ADMIN_ROOT_PASSCODE;
-
-    if (isMasterValid) {
-      const redirectTarget = '/super-admin/dashboard';
-      let sessionToken = createSuperAdminSessionToken();
-
-      try {
-        const response = await fetch('/api/admin/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: masterEmail,
-            passcode: masterPasscode,
-          }),
-        });
-
-        const payload = (await response.json()) as AdminLoginResponse;
-        if (response.ok && payload.success && payload.role === 'super_admin' && payload.token) {
-          sessionToken = payload.token;
-        }
-      } catch {
-        // Local root credentials verified — continue with client session issuance.
-      }
-
-      const session = buildSuperAdminSessionPayload(masterEmail, sessionToken, redirectTarget);
-      persistSuperAdminClientSession(session);
+    if (
+      cleanEmail === SUPER_ADMIN_ROOT_EMAIL &&
+      cleanPasscode === SUPER_ADMIN_ROOT_PASSCODE
+    ) {
+      persistRootMasterSuperAdminGatewaySession(cleanEmail);
       setNexoraRoleCookie('super_admin');
+      setErrorMessage(null);
+
+      void fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, passcode: cleanPasscode }),
+      }).catch(() => {
+        // Root session already persisted client-side.
+      });
 
       toast.success('Root Master Authentication Verified');
-      router.replace(redirectTarget);
+      router.replace('/super-admin/dashboard');
       setLoading(false);
       return;
     }
+
+    const masterEmail = cleanEmail;
+    const masterPasscode = cleanPasscode;
 
     const { data: staff, error } = await supabase
       .from('hospital_staff')

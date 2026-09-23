@@ -86,6 +86,41 @@ export function buildSuperAdminGatewaySession(
   };
 }
 
+export type RootMasterGatewaySession = {
+  id: string;
+  email: string;
+  role: 'SUPER_ADMIN';
+  name: string;
+  authenticated_at: string;
+};
+
+/** Immediate client-side root gateway unlock — no API round-trip required. */
+export function persistRootMasterSuperAdminGatewaySession(email: string): RootMasterGatewaySession {
+  const sessionObj: RootMasterGatewaySession = {
+    id: 'SUPER-ADMIN-ROOT',
+    email: normalizeSuperAdminEmail(email),
+    role: 'SUPER_ADMIN',
+    name: 'Root Platform Admin',
+    authenticated_at: new Date().toISOString(),
+  };
+
+  if (typeof window === 'undefined') return sessionObj;
+
+  const serialized = JSON.stringify(sessionObj);
+  const attrs = `path=/; max-age=${SUPER_ADMIN_SESSION_MAX_AGE_SECONDS}; SameSite=Lax`;
+
+  document.cookie = `super_admin_session=${encodeURIComponent(serialized)}; ${attrs}`;
+  document.cookie = `platform_root=true; ${attrs}`;
+  document.cookie = `hospital_session=${encodeURIComponent(serialized)}; ${attrs}`;
+  document.cookie = `regal_role=super_admin; ${attrs}`;
+  document.cookie = `auth-token=root-token; ${attrs}`;
+
+  localStorage.setItem('super_admin_session', serialized);
+  localStorage.setItem('platform_root_unlocked', 'true');
+
+  return sessionObj;
+}
+
 export function persistSuperAdminClientSession(
   session: SuperAdminSessionPayload,
 ): void {

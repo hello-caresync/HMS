@@ -1,6 +1,8 @@
 export const SUPER_VAULT_SESSION_COOKIE = 'nexora_super_vault_session';
 
 const SUPER_ADMIN_COOKIE_MARKERS = [
+  'platform_root=true',
+  'super_admin_session=',
   `${SUPER_VAULT_SESSION_COOKIE}=unlocked`,
   'nexora_superadmin_session=',
   'curasync_superadmin_session=',
