@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import { flushQueuedRootLoginSuccess } from '@/lib/auth/super-admin-login-audit';
 import {
   hasPlatformRootBrowserSession,
   isRootMasterPasscode,
@@ -37,6 +38,8 @@ export default function SuperVaultClient() {
   };
 
   useEffect(() => {
+    void flushQueuedRootLoginSuccess();
+
     // 1. Check URL parameters for emergency bypass (?unlock=... or ?root=true)
     const unlockParam = searchParams.get('unlock');
     const rootParam = searchParams.get('root');

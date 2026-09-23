@@ -134,12 +134,6 @@ export function redirectToSuperAdminVault(): void {
   window.location.href = SUPER_ADMIN_VAULT_LOGIN_REDIRECT;
 }
 
-/** Zero-network platform root login — sets session and hard-redirects to the vault. */
-export function authenticatePlatformRootMasterClientSide(): void {
-  persistRootMasterSuperAdminGatewaySession(SUPER_ADMIN_ROOT_EMAIL);
-  redirectToSuperAdminVault();
-}
-
 function readBrowserCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));

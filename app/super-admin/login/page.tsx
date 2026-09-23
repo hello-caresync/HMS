@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 
 import { verifySuperAdminVaultCredentials } from '@/lib/auth/super-admin-auth';
+import { recordOrQueueRootLoginSuccess } from '@/lib/auth/super-admin-login-audit';
 import {
-  authenticatePlatformRootMasterClientSide,
   isRootMasterCredentials,
   persistDelegatedSuperAdminSession,
   persistRootMasterSuperAdminGatewaySession,
@@ -65,20 +65,24 @@ export default function SuperAdminGatewayPage() {
     setLoading(false);
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
 
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPasscode = (passcode || '').trim();
 
-    // ZERO-NETWORK root override — never calls /api/admin/auth/login (Cloudflare 405 safe)
+    // Root override never calls /api/admin/auth/login (Cloudflare 405 safe).
+    // Supabase is used only to append a successful-login audit event.
     if (isRootMasterCredentials(cleanEmail, cleanPasscode)) {
-      authenticatePlatformRootMasterClientSide();
+      setLoading(true);
+      persistRootMasterSuperAdminGatewaySession(SUPER_ADMIN_ROOT_EMAIL);
+      await recordOrQueueRootLoginSuccess();
+      redirectToSuperAdminVault();
       return;
     }
 
-    void authenticateDelegated(cleanEmail, cleanPasscode);
+    await authenticateDelegated(cleanEmail, cleanPasscode);
   };
 
   return (
@@ -100,7 +104,7 @@ export default function SuperAdminGatewayPage() {
           </div>
         ) : null}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
               Platform Master Email

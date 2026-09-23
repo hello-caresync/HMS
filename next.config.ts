@@ -10,6 +10,8 @@ import type { NextConfig } from 'next';
  * Supabase client SDK auth. Deploy with: npm run build:cloudflare
  */
 const nextConfig: NextConfig = {
+  // Allows verification builds to bypass Windows/OneDrive locks on `.next`.
+  distDir: process.env.NEXT_DIST_DIR?.trim() || '.next',
   trailingSlash: true,
   images: {
     unoptimized: true,
