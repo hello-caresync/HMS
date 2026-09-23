@@ -39,6 +39,7 @@ function isPublicAuthRoute(pathname: string): boolean {
     '/login',
     '/doctor/login',
     '/super-vault-access',
+    '/super-admin/login',
     '/auth',
     '/',
   ];
@@ -61,6 +62,11 @@ function isLegacyHospitalOpdPath(pathname: string): boolean {
 }
 
 function isSuperAdminSession(request: NextRequest): boolean {
+  if (request.cookies.get('platform_root')?.value === 'true') return true;
+
+  const gatewaySession = request.cookies.get('super_admin_session')?.value;
+  if (gatewaySession) return true;
+
   const roleCookie =
     request.cookies.get('regal_role')?.value ?? request.cookies.get('nexora_role')?.value;
   if (roleCookie === 'super_admin') return true;

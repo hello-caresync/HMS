@@ -60,19 +60,78 @@ export function buildSuperAdminSessionPayload(
   };
 }
 
+export const SUPER_ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+
+export type SuperAdminGatewaySession = {
+  email: string;
+  role: 'SUPER_ADMIN' | 'super_admin';
+  authenticated_at: string;
+  token?: string;
+  facility_node?: string;
+  portal_access?: string;
+};
+
+export function buildSuperAdminGatewaySession(
+  email: string,
+  token?: string,
+  portalAccess = '/super-admin/dashboard',
+): SuperAdminGatewaySession {
+  return {
+    email: normalizeSuperAdminEmail(email),
+    role: 'SUPER_ADMIN',
+    authenticated_at: new Date().toISOString(),
+    token,
+    facility_node: SUPER_ADMIN_FACILITY_NODE,
+    portal_access: portalAccess,
+  };
+}
+
 export function persistSuperAdminClientSession(
   session: SuperAdminSessionPayload,
 ): void {
   if (typeof window === 'undefined') return;
 
   const serialized = JSON.stringify(session);
-  localStorage.setItem('super_admin_session', serialized);
+  const gatewaySession = buildSuperAdminGatewaySession(
+    session.email,
+    session.token,
+    session.portal_access,
+  );
+  const gatewaySerialized = JSON.stringify(gatewaySession);
+
+  localStorage.setItem('super_admin_session', gatewaySerialized);
   localStorage.setItem('nexora_superadmin_session', serialized);
   localStorage.setItem('curasync_superadmin_session', serialized);
 
-  const attrs = 'path=/; max-age=86400; SameSite=Lax';
+  const attrs = `path=/; max-age=${SUPER_ADMIN_SESSION_MAX_AGE_SECONDS}; SameSite=Lax`;
   document.cookie = `regal_role=super_admin; ${attrs}`;
+  document.cookie = `platform_root=true; ${attrs}`;
+  document.cookie = `super_admin_session=${encodeURIComponent(gatewaySerialized)}; ${attrs}`;
   document.cookie = `nexora_superadmin_session=${encodeURIComponent(serialized)}; ${attrs}`;
   document.cookie = `curasync_superadmin_session=${encodeURIComponent(serialized)}; ${attrs}`;
   document.cookie = `auth-token=${encodeURIComponent(session.token)}; ${attrs}`;
+}
+
+/** Persist a delegated super-admin session from hospital_staff credential rows. */
+export function persistDelegatedSuperAdminSession(staff: Record<string, unknown>): void {
+  if (typeof window === 'undefined') return;
+
+  const email = normalizeSuperAdminEmail(String(staff.email ?? ''));
+  const token = createSuperAdminSessionToken();
+  const gatewaySession = {
+    ...staff,
+    email,
+    role: 'SUPER_ADMIN',
+    authenticated_at: new Date().toISOString(),
+    token,
+  };
+  const gatewaySerialized = JSON.stringify(gatewaySession);
+  const attrs = `path=/; max-age=${SUPER_ADMIN_SESSION_MAX_AGE_SECONDS}; SameSite=Lax`;
+
+  localStorage.setItem('super_admin_session', gatewaySerialized);
+  document.cookie = `platform_root=true; ${attrs}`;
+  document.cookie = `super_admin_session=${encodeURIComponent(gatewaySerialized)}; ${attrs}`;
+  document.cookie = `regal_role=super_admin; ${attrs}`;
+  document.cookie = `nexora_superadmin_session=${encodeURIComponent(token)}; ${attrs}`;
+  document.cookie = `auth-token=${encodeURIComponent(token)}; ${attrs}`;
 }

@@ -61,6 +61,25 @@ export async function POST(req: Request) {
     ...SESSION_COOKIE_OPTIONS,
     httpOnly: false,
   });
+  response.cookies.set('platform_root', 'true', {
+    ...SESSION_COOKIE_OPTIONS,
+    httpOnly: false,
+  });
+  response.cookies.set(
+    'super_admin_session',
+    JSON.stringify({
+      email: session.email,
+      role: 'SUPER_ADMIN',
+      authenticated_at: session.authenticatedAt,
+      token,
+      facility_node: session.facility_node,
+      portal_access: session.portal_access,
+    }),
+    {
+      ...SESSION_COOKIE_OPTIONS,
+      httpOnly: false,
+    },
+  );
   response.cookies.set('nexora_superadmin_session', token, SESSION_COOKIE_OPTIONS);
   response.cookies.set('auth-token', token, SESSION_COOKIE_OPTIONS);
 

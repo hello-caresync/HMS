@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
   Eye,
@@ -24,11 +24,14 @@ import {
 import {
   buildSuperAdminSessionPayload,
   createSuperAdminSessionToken,
+  persistDelegatedSuperAdminSession,
   persistSuperAdminClientSession,
   SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE,
-  verifySuperAdminCredentials,
+  SUPER_ADMIN_ROOT_EMAIL,
+  SUPER_ADMIN_ROOT_PASSCODE,
 } from '@/lib/auth/superAdminAuth';
 import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
+import { supabase } from '@/lib/supabaseClient';
 
 type AdminLoginResponse = {
   success?: boolean;
@@ -40,7 +43,6 @@ type AdminLoginResponse = {
 
 function SuperAdminLoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [passcode, setPasscode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -56,47 +58,64 @@ function SuperAdminLoginForm() {
     setLoading(true);
     setErrorMessage(null);
 
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPasscode = passcode.trim();
+    const masterEmail = email.trim().toLowerCase();
+    const masterPasscode = passcode.trim();
 
-    if (!verifySuperAdminCredentials(cleanEmail, cleanPasscode)) {
+    const isMasterValid =
+      masterEmail === SUPER_ADMIN_ROOT_EMAIL && masterPasscode === SUPER_ADMIN_ROOT_PASSCODE;
+
+    if (isMasterValid) {
+      const redirectTarget = '/super-admin/dashboard';
+      let sessionToken = createSuperAdminSessionToken();
+
+      try {
+        const response = await fetch('/api/admin/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: masterEmail,
+            passcode: masterPasscode,
+          }),
+        });
+
+        const payload = (await response.json()) as AdminLoginResponse;
+        if (response.ok && payload.success && payload.role === 'super_admin' && payload.token) {
+          sessionToken = payload.token;
+        }
+      } catch {
+        // Local root credentials verified — continue with client session issuance.
+      }
+
+      const session = buildSuperAdminSessionPayload(masterEmail, sessionToken, redirectTarget);
+      persistSuperAdminClientSession(session);
+      setNexoraRoleCookie('super_admin');
+
+      toast.success('Root Master Authentication Verified');
+      router.replace(redirectTarget);
+      setLoading(false);
+      return;
+    }
+
+    const { data: staff, error } = await supabase
+      .from('hospital_staff')
+      .select('*')
+      .ilike('email', masterEmail)
+      .eq('passcode_key', masterPasscode)
+      .or('role.ilike.%super%,role.ilike.%admin%')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error || !staff) {
       setErrorMessage(SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE);
       setLoading(false);
       return;
     }
 
-    const redirectTarget = searchParams.get('redirect')?.startsWith('/')
-      ? searchParams.get('redirect')!
-      : '/super-admin/dashboard';
-
-    let sessionToken = createSuperAdminSessionToken();
-
-    try {
-      const response = await fetch('/api/admin/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: cleanEmail,
-          passcode: cleanPasscode,
-        }),
-      });
-
-      const payload = (await response.json()) as AdminLoginResponse;
-      if (response.ok && payload.success && payload.role === 'super_admin' && payload.token) {
-        sessionToken = payload.token;
-      }
-    } catch {
-      // Credentials already verified locally — continue with client session issuance.
-    }
-
-    setErrorMessage(null);
-
-    const session = buildSuperAdminSessionPayload(cleanEmail, sessionToken, redirectTarget);
-    persistSuperAdminClientSession(session);
+    persistDelegatedSuperAdminSession(staff as Record<string, unknown>);
     setNexoraRoleCookie('super_admin');
 
-    toast.success('Root Master Authentication Verified');
-    router.push(redirectTarget);
+    toast.success('Super Admin credentials verified');
+    router.replace('/super-admin/dashboard');
     setLoading(false);
   };
 
