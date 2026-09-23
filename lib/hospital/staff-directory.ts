@@ -12,6 +12,7 @@ import {
   isHospitalUuid,
   resolveHospitalUuid,
 } from '@/lib/hospital/resolve-hospital-context';
+import { permanentlyDeleteStaffCredential } from '@/lib/hospital/permanent-staff-delete';
 import { HOSPITAL_TENANT_ID, REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 
 export type StaffRole = 'doctor' | 'staff' | 'admin';
@@ -373,14 +374,64 @@ export async function updateHospitalStaffMember(
   return { ok: true, member };
 }
 
+export function memberLooksLikeDoctor(
+  member: Pick<HospitalStaffMember, 'role' | 'department' | 'staff_id_code' | 'raw_role'>,
+): boolean {
+  const role = String(member.raw_role ?? member.role ?? '')
+    .trim()
+    .toLowerCase();
+  const department = String(member.department ?? '').trim().toLowerCase();
+  const staffCode = String(member.staff_id_code ?? '').trim().toUpperCase();
+
+  return (
+    member.role === 'doctor' ||
+    role.includes('doctor') ||
+    role.includes('clinician') ||
+    department.includes('medicine') ||
+    staffCode.startsWith('RH-D')
+  );
+}
+
+/** Permanently delete a hospital staff credential and all linked operational rows. */
+export async function deleteHospitalStaffCredential(
+  supabase: SupabaseClient,
+  hospitalId: string,
+  member: Pick<
+    HospitalStaffMember,
+    | 'id'
+    | 'staff_record_id'
+    | 'staff_id_code'
+    | 'email'
+    | 'full_name'
+    | 'role'
+    | 'department'
+    | 'raw_role'
+    | 'credential_id'
+  >,
+): Promise<{ ok: boolean; error?: string }> {
+  return permanentlyDeleteStaffCredential(supabase, hospitalId, member);
+}
+
 export async function deleteHospitalStaffMember(
   supabase: SupabaseClient,
   hospitalId: string,
   id: string,
+  member?: Pick<
+    HospitalStaffMember,
+    'role' | 'email' | 'staff_id_code' | 'department' | 'raw_role' | 'staff_record_id' | 'full_name' | 'credential_id'
+  >,
 ): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await supabase.from('hospital_staff').delete().eq('id', id).eq('hospital_id', hospitalId);
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
+  return deleteHospitalStaffCredential(supabase, hospitalId, {
+    id,
+    staff_record_id: member?.staff_record_id ?? id,
+    staff_id_code: member?.staff_id_code ?? '',
+    email: member?.email ?? '',
+    full_name: member?.full_name ?? '',
+    role: member?.role ?? 'staff',
+    department: member?.department ?? '',
+    raw_role: member?.raw_role,
+    credential_id: member?.credential_id,
+  });
 }
 
 export function toDashboardStaffRow(member: HospitalStaffMember) {

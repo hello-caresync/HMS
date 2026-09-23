@@ -3915,7 +3915,7 @@ function HospitalMasterDashboard() {
             <DoctorsStaffCommandCenter
               hospitalId={hospitalInfo.id}
               hospitalName={hospitalInfo.name || 'Regal Hospital'}
-              canManage={false}
+              canManage={canProvisionStaff}
               onRosterChanged={setStaffMembers}
             />
           )}

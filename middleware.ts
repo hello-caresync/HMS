@@ -19,9 +19,33 @@ import {
   isStaffCredentialsAdminPath,
   normalizePathname,
   readVerifiedHospitalDeskSession,
-  resolveHospitalDeskHomePath,
 } from '@/lib/auth/portal-route-guard';
 import { createMiddlewareSupabase } from '@/lib/supabase/middleware-client';
+
+function normalizeHospitalRole(role?: string | null): string {
+  if (!role) return '';
+  const normalized = role.trim().toUpperCase();
+  if (normalized.includes('DOCTOR') || normalized.includes('CLINICIAN')) return 'DOCTOR';
+  if (normalized.includes('ADMIN')) return 'ADMIN';
+  if (normalized.includes('NURSE')) return 'NURSE';
+  if (normalized.includes('RECEPTION')) return 'RECEPTIONIST';
+  if (normalized.includes('PHARMAC')) return 'PHARMACIST';
+  return normalized;
+}
+
+function isPublicAuthRoute(pathname: string): boolean {
+  const publicAuthPaths = [
+    '/hospital/login',
+    '/login',
+    '/doctor/login',
+    '/super-vault-access',
+    '/auth',
+    '/',
+  ];
+  return publicAuthPaths.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`) || pathname.startsWith('/auth'),
+  );
+}
 
 const LEGACY_HOSPITAL_OPD_PATHS = [
   '/dashboard/opd',
@@ -76,6 +100,12 @@ function enforceStaffCredentialsRbac(
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Public auth routes — always show login forms; never auto-skip on stale doctor cookies.
+  if (isPublicAuthRoute(pathname)) {
+    return NextResponse.next({ request });
+  }
+
   const path = normalizePathname(pathname);
 
   if (
@@ -102,22 +132,34 @@ export async function middleware(request: NextRequest) {
     return redirectWithCookies(request, `${HOSPITAL_DESK_DASHBOARD_PATH}${suffix}`, applyCookies);
   }
 
-  if (path === '/dashboard' || path.startsWith('/dashboard?')) {
-    const verified = readVerifiedHospitalDeskSession(request);
-    const doctorSession = hasDoctorPortalSession(request);
-
-    if (doctorSession || (verified && resolveHospitalDeskHomePath(verified.staffType) === '/doctor/dashboard')) {
-      return redirectWithCookies(request, '/doctor/dashboard', applyCookies);
-    }
-
-    if (verified) {
-      return applyCookies(NextResponse.next({ request }));
-    }
-
-    if (!hasHospitalDeskSession(request)) {
+  if (path === '/dashboard' || path.startsWith('/dashboard/')) {
+    const hospitalSession = request.cookies.get('hospital_session')?.value;
+    if (!hospitalSession) {
       return redirectWithCookies(request, hospitalDeskLoginUrl(path), applyCookies);
     }
 
+    const verified = readVerifiedHospitalDeskSession(request);
+    if (verified) {
+      const staffRole = normalizeHospitalRole(verified.staffType);
+      if (staffRole === 'DOCTOR') {
+        return redirectWithCookies(request, '/doctor/dashboard', applyCookies);
+      }
+    }
+
+    const credentialsDenied = enforceStaffCredentialsRbac(request, path, applyCookies);
+    if (credentialsDenied) return credentialsDenied;
+
+    return applyCookies(NextResponse.next({ request }));
+  }
+
+  if (path === '/doctor/dashboard' || path.startsWith('/doctor/dashboard/')) {
+    if (!hasDoctorPortalSession(request)) {
+      return redirectWithCookies(
+        request,
+        appendRedirectQuery('/doctor/login', path),
+        applyCookies,
+      );
+    }
     return applyCookies(NextResponse.next({ request }));
   }
 
@@ -177,16 +219,11 @@ export async function middleware(request: NextRequest) {
   }
 
   if (zone === 'doctor') {
-    const authenticated = hasDoctorPortalSession(request);
-
     if (isDoctorPublicPath(path)) {
-      if (authenticated && path === '/doctor/login') {
-        return redirectWithCookies(request, '/doctor/dashboard', applyCookies);
-      }
       return applyCookies(NextResponse.next({ request }));
     }
 
-    if (!authenticated) {
+    if (!hasDoctorPortalSession(request)) {
       return redirectWithCookies(
         request,
         appendRedirectQuery('/doctor/login', path),
@@ -199,23 +236,12 @@ export async function middleware(request: NextRequest) {
 
   if (zone === 'hospital') {
     const verifiedDesk = readVerifiedHospitalDeskSession(request);
-    const authenticated = Boolean(verifiedDesk) || hasDoctorPortalSession(request);
 
     if (isHospitalPublicPath(path)) {
-      if (path === '/hospital/login') {
-        if (verifiedDesk) {
-          return redirectWithCookies(
-            request,
-            resolveHospitalDeskHomePath(verifiedDesk.staffType),
-            applyCookies,
-          );
-        }
-        return applyCookies(NextResponse.next({ request }));
-      }
       return applyCookies(NextResponse.next({ request }));
     }
 
-    if (!authenticated) {
+    if (!verifiedDesk) {
       return redirectWithCookies(request, hospitalDeskLoginUrl(path), applyCookies);
     }
 
@@ -226,7 +252,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (zone === 'hospital_desk') {
-    if (!hasHospitalDeskSession(request) && !hasDoctorPortalSession(request)) {
+    const hospitalSession = request.cookies.get('hospital_session')?.value;
+    if (!hospitalSession) {
       return redirectWithCookies(request, hospitalDeskLoginUrl(path), applyCookies);
     }
 

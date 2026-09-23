@@ -30,10 +30,13 @@ export async function POST(req: Request) {
     identifier?: string;
     passcode?: string;
     password?: string;
+    node?: string;
+    tenant?: string;
   };
 
   const identifier = String(body.identifier ?? body.email ?? '').trim();
   const passcode = String(body.passcode ?? body.password ?? '').trim();
+  const targetNode = String(body.node ?? body.tenant ?? '').trim() || undefined;
 
   if (!identifier || !passcode) {
     return NextResponse.json(
@@ -58,6 +61,7 @@ export async function POST(req: Request) {
     supabase,
     identifier,
     passcode,
+    targetNode,
   );
 
   if (lookupError || !row) {

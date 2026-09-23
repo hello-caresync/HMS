@@ -17,7 +17,6 @@ import {
   SESSION_KEYS,
 } from '@/lib/auth/ecosystem-sessions';
 import { hospitalDeskLoginUrl } from '@/lib/auth/hospital-desk-session';
-import { getDoctorSession } from '@/lib/doctor/session';
 import { parseSuperAdminSession, SUPER_ADMIN_SESSION_KEY } from '@/lib/auth/super-admin-session';
 
 type GuardRole = 'admin' | 'staff' | 'vendor' | 'patient' | 'superadmin' | 'doctor' | 'hospital';
@@ -71,12 +70,13 @@ export function EcosystemRouteGuard({ role, children, loginPath }: RouteGuardPro
         break;
       }
       case 'hospital': {
-        if (getDoctorSession()) {
+        const session =
+          readHospitalAppSession() ?? hydrateHospitalDeskSessionFromCookies();
+        const staffType = session?.staff_type?.trim().toLowerCase() ?? '';
+        if (staffType === 'doctor') {
           router.replace('/doctor/dashboard');
           return;
         }
-        const session =
-          readHospitalAppSession() ?? hydrateHospitalDeskSessionFromCookies();
         ok = isHospitalAppRole(session?.staff_type);
         break;
       }

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Loader2, Lock, ShieldCheck } from 'lucide-react';
 
 import { clearStaleAuthArtifacts, purgeLocalAdminSessions } from '@/lib/auth/active-session';
+import { CURASYNC_DOCTOR_SESSION_COOKIE } from '@/lib/auth/portal-route-guard';
+import { clearDoctorSession } from '@/lib/doctor/session';
 import { HospitalSignInForm } from '@/components/auth/HospitalSignInForm';
 import { HOSPITAL_TENANT_ID, REGAL_HOSPITAL_NAME } from '@/lib/regal/constants';
 import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
@@ -15,6 +17,12 @@ function UnifiedHospitalLoginForm() {
   useEffect(() => {
     purgeLocalAdminSessions();
     clearStaleAuthArtifacts();
+    clearDoctorSession();
+
+    const cookieAttrs = 'path=/; max-age=0; SameSite=Lax';
+    document.cookie = `${CURASYNC_DOCTOR_SESSION_COOKIE}=; ${cookieAttrs}`;
+    document.cookie = `regal_role=; ${cookieAttrs}`;
+    document.cookie = `nexora_role=; ${cookieAttrs}`;
   }, []);
 
   return (

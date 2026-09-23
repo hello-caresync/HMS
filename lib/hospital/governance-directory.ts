@@ -6,6 +6,7 @@ import {
   type HospitalUserCredential,
 } from '@/lib/auth/hospitalAuth';
 import { isUuidValue } from '@/lib/hospital/doctors-directory';
+import { permanentlyDeleteStaffCredential } from '@/lib/hospital/permanent-staff-delete';
 import {
   buildHospitalDirectoryOrFilter,
   hospitalDirectoryFilterIds,
@@ -167,13 +168,9 @@ export type GovernanceRevokeTarget = {
   rawRole?: string;
   classification?: string;
   name?: string;
+  hospitalId?: string;
+  department?: string;
 };
-
-function isDoctorTarget(target: GovernanceRevokeTarget): boolean {
-  if (target.classification === 'Doctor') return true;
-  const blob = normalizeGovernanceLookup([target.rawRole, target.classification].join(' '));
-  return includesAnyTerm(blob, DOCTOR_ROLE_TERMS);
-}
 
 /** Delete credential, linked staff/doctor rows, or vendor supplier records. */
 export async function revokeGovernanceEntity(
@@ -214,46 +211,25 @@ export async function revokeGovernanceEntity(
     return { ok: false, error: lastError ?? 'Invalid vendor record identifier.' };
   }
 
-  if (target.credentialId && isUuidValue(target.credentialId)) {
-    const { error } = await supabase
-      .from(HOSPITAL_USER_CREDENTIALS_TABLE)
-      .delete()
-      .eq('id', target.credentialId);
-    if (error) lastError = error.message;
-  } else if (email) {
-    const { error } = await supabase.from(HOSPITAL_USER_CREDENTIALS_TABLE).delete().eq('email', email);
-    if (error) lastError = error.message;
-  }
+  const hospitalId = target.hospitalId?.trim() || HOSPITAL_TENANT_ID;
+  const role =
+    target.classification === 'Doctor'
+      ? 'doctor'
+      : target.classification === 'Administration'
+        ? 'admin'
+        : 'staff';
 
-  if (target.staffRecordId && isUuidValue(target.staffRecordId)) {
-    const { error } = await supabase.from('hospital_staff').delete().eq('id', target.staffRecordId);
-    if (error) lastError = error.message;
-  } else if (email) {
-    const { error } = await supabase.from('hospital_staff').delete().eq('email', email);
-    if (error) lastError = error.message;
-  } else if (employeeCode) {
-    const { error } = await supabase.from('hospital_staff').delete().eq('staff_id_code', employeeCode);
-    if (error) lastError = error.message;
-  }
-
-  if (isDoctorTarget(target)) {
-    if (email) {
-      const { error } = await supabase.from('doctors').delete().eq('email', email);
-      if (error) lastError = error.message;
-    }
-    if (employeeCode) {
-      const byCode = await supabase.from('doctors').delete().eq('doctor_code', employeeCode);
-      if (byCode.error) lastError = byCode.error.message;
-      const byReg = await supabase.from('doctors').delete().eq('registration_number', employeeCode);
-      if (byReg.error && !byCode.error) lastError = byReg.error.message;
-    }
-  }
-
-  if (lastError && !email && !target.credentialId && !target.staffRecordId && !employeeCode) {
-    return { ok: false, error: lastError };
-  }
-
-  return { ok: true };
+  return permanentlyDeleteStaffCredential(supabase, hospitalId, {
+    id: target.staffRecordId ?? target.id,
+    staff_record_id: target.staffRecordId,
+    staff_id_code: employeeCode ?? '',
+    email: email ?? '',
+    full_name: target.name ?? '',
+    credential_id: target.credentialId,
+    role,
+    department: target.department ?? '',
+    raw_role: target.rawRole,
+  });
 }
 
 /** Case-insensitive role bucket for governance vault tabs and stat cards. */

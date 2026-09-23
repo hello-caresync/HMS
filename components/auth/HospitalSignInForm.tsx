@@ -13,22 +13,31 @@ import {
 import { persistActiveSession, type ActiveStaffSession } from '@/lib/auth/active-session';
 import { persistStaffPortalSession } from '@/lib/auth/ecosystem-sessions';
 import { HOSPITAL_DESK_DASHBOARD_PATH } from '@/lib/auth/hospital-desk-session';
-import { HOSPITAL_LOGIN_INVALID_MESSAGE } from '@/lib/auth/hospitalAuth';
+import { mapHospitalStaffAuthRow, type HospitalAuthUser } from '@/lib/auth/hospitalAuth';
 import {
+  authenticateHospitalStaffLogin,
   buildHospitalStaffSessionCookie,
   HOSPITAL_SESSION_COOKIE_ATTRS,
+  resolveHospitalStaffLoginRoute,
+  toAuthUser,
 } from '@/lib/auth/hospital-staff-login';
+import { setRegalRoleCookie } from '@/lib/auth/role-cookies';
 import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
-import { getSupabaseConfigStatus } from '@/lib/supabase/client';
+import { HOSPITAL_TENANT_ID } from '@/lib/regal/constants';
+import { createClient, getSupabaseConfigStatus } from '@/lib/supabase/client';
 import { recordRealStaffLogin, type AuthenticatedUserPayload } from '@/lib/recordStaffLogin';
-import { saveDoctorSession } from '@/lib/doctor/session';
-import type { HospitalAuthUser } from '@/lib/auth/hospitalAuth';
+import { clearDoctorSession, saveDoctorSession } from '@/lib/doctor/session';
 
 type HospitalSignInFormProps = {
   onError?: (message: string) => void;
+  /** Pinned tenant node for this login portal (defaults to HOSP-01). */
+  targetNode?: string;
 };
 
-export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
+export function HospitalSignInForm({
+  onError,
+  targetNode = HOSPITAL_TENANT_ID,
+}: HospitalSignInFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [identifier, setIdentifier] = useState('');
@@ -51,27 +60,29 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         return;
       }
 
-      const loginResponse = await fetch('/api/hospital/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ identifier, passcode }),
-      });
+      const pinnedNode =
+        searchParams.get('node')?.trim() ||
+        searchParams.get('tenant')?.trim() ||
+        targetNode;
 
-      const loginPayload = (await loginResponse.json()) as {
-        success?: boolean;
-        error?: string;
-        user?: HospitalAuthUser;
-      };
+      const supabase = createClient();
+      const authResult = await authenticateHospitalStaffLogin(
+        supabase,
+        identifier,
+        passcode,
+        pinnedNode,
+      );
 
-      if (!loginResponse.ok || !loginPayload.success || !loginPayload.user) {
-        const message = loginPayload.error || HOSPITAL_LOGIN_INVALID_MESSAGE;
-        setErrorMessage(message);
-        onError?.(message);
+      if (!authResult.ok) {
+        setErrorMessage(authResult.error);
+        onError?.(authResult.error);
         return;
       }
 
-      const user = loginPayload.user as HospitalAuthUser;
+      const staff = authResult.staff;
+      const credential = mapHospitalStaffAuthRow(staff);
+      const user = toAuthUser(credential, passcode.trim()) as HospitalAuthUser;
+      const portalRoute = resolveHospitalStaffLoginRoute(String(staff.role ?? user.role));
 
       void recordRealStaffLogin({
         id: user.id,
@@ -83,7 +94,7 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         email: user.email,
         temporary_passcode: passcode.trim(),
         phone: user.phone,
-        portal_access: HOSPITAL_DESK_DASHBOARD_PATH,
+        portal_access: portalRoute,
       });
 
       localStorage.setItem(
@@ -97,6 +108,18 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
           employeeId: user.employee_id,
         }),
       );
+
+      const sessionPayload = buildHospitalStaffSessionCookie(staff, portalRoute);
+      const encodedSession = encodeURIComponent(JSON.stringify(sessionPayload));
+
+      if (user.role !== 'doctor') {
+        clearDoctorSession();
+      }
+
+      document.cookie = `hospital_session=${encodedSession}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+      document.cookie = `user_session=${encodedSession}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+      document.cookie = `curasync_active_session=${encodedSession}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
+      document.cookie = `curasync_session_role=${encodeURIComponent(user.staff_type)}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
 
       if (user.role === 'doctor') {
         saveDoctorSession({
@@ -127,18 +150,22 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         department: user.department,
         staff_id_code: user.employee_id,
         email: user.email,
-        portal_access: HOSPITAL_DESK_DASHBOARD_PATH,
+        portal_access: portalRoute,
       };
 
-      const deskCookie = buildHospitalStaffSessionCookie(user, HOSPITAL_DESK_DASHBOARD_PATH);
-      const encodedDeskCookie = encodeURIComponent(JSON.stringify(deskCookie));
-      document.cookie = `hospital_session=${encodedDeskCookie}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
-      document.cookie = `user_session=${encodedDeskCookie}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
-      document.cookie = `curasync_active_session=${encodedDeskCookie}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
-
       if (user.role === 'admin') {
+        setRegalRoleCookie('admin');
         persistActiveSession(session);
+        localStorage.setItem('curasync_admin_role', 'admin');
+        localStorage.setItem('admin_authenticated', 'true');
+        localStorage.setItem('hospital_id', user.hospital_id);
+
+        toast.success(`Welcome back, ${user.full_name}!`);
+        router.refresh();
+        router.replace('/dashboard');
+        return;
       } else {
+        setRegalRoleCookie('staff');
         persistStaffPortalSession({
           id: session.id,
           hospital_id: session.hospital_id,
@@ -152,14 +179,6 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         });
       }
 
-      if (user.role === 'admin') {
-        localStorage.setItem('curasync_admin_role', 'admin');
-        localStorage.setItem('admin_authenticated', 'true');
-        localStorage.setItem('hospital_id', user.hospital_id);
-      }
-
-      document.cookie = `curasync_session_role=${encodeURIComponent(user.staff_type)}; ${HOSPITAL_SESSION_COOKIE_ATTRS}`;
-
       toast.success(`Welcome back, ${user.full_name}!`);
 
       router.refresh();
@@ -171,7 +190,8 @@ export function HospitalSignInForm({ onError }: HospitalSignInFormProps) {
         ),
       );
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Authentication failed. Please contact your administrator.';
+      const message =
+        err instanceof Error ? err.message : 'Authentication failed. Please contact your administrator.';
       setErrorMessage(message);
       onError?.(message);
     } finally {

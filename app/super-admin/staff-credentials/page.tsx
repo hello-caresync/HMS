@@ -22,7 +22,11 @@ import { toast } from 'sonner';
 import { createClient } from '@supabase/supabase-js';
 
 import { OnboardHospitalModal, type OnboardHospitalResult } from '@/components/admin/OnboardHospitalModal';
-import { credentialRoleToStaffType, resolveCredentialDashboardRoute } from '@/lib/auth/hospitalAuth';
+import {
+  credentialRoleToStaffType,
+  normalizeCredentialRole,
+  resolveCredentialDashboardRoute,
+} from '@/lib/auth/hospitalAuth';
 import { isUuidValue } from '@/lib/utils/formatters';
 import {
   fetchSuperAdminStaffCredentials,
@@ -114,19 +118,27 @@ function enrichCredentialsWithHospitalNames(
 }
 
 function normalizeCredential(row: Record<string, unknown>): StaffCredential {
-  const badge_id = String(row.staff_id_code ?? '').trim().toUpperCase();
+  const badge_id = String(row.staff_id_code ?? row.employee_id ?? row.id ?? '')
+    .trim()
+    .toUpperCase();
+  const roleLabel = String(row.role ?? row.staff_type ?? '').trim();
 
   return {
     id: String(row.id ?? ''),
     hospital_id: String(row.hospital_id ?? ''),
     hospital_name: String(row.hospital_name ?? ''),
     full_name: String(row.full_name ?? ''),
-    staff_type: resolveDisplayStaffType(row),
+    staff_type: resolveDisplayStaffType({ ...row, role: roleLabel }),
     department: String(row.department ?? ''),
     email: String(row.email ?? ''),
-    temporary_passcode: String(row.passcode_key ?? ''),
+    temporary_passcode: String(row.passcode_key ?? row.temporary_passcode ?? ''),
     phone: row.phone ? String(row.phone) : undefined,
-    portal_access: String(row.portal_access ?? '/dashboard'),
+    portal_access: String(
+      row.portal_access ??
+        resolveCredentialDashboardRoute(
+          normalizeCredentialRole(String(row.role ?? 'staff')),
+        ),
+    ),
     status: row.is_active === false ? 'Restricted' : 'Active',
     created_at: row.created_at ? String(row.created_at) : undefined,
     badge_id: badge_id || String(row.id ?? ''),
@@ -175,19 +187,28 @@ export function SuperAdminHospitalBlocksDashboard({
         return;
       }
 
+      const targetHospitalId =
+        tenant.hospital_code ||
+        tenant.id ||
+        'HOSP-01';
+
       const staffResult = await fetchSuperAdminTenantStaffCredentials(
         supabase,
         tenant.id,
-        tenant.hospital_code,
+        targetHospitalId,
       );
 
       if (staffResult.error) {
-        console.warn('[super-admin] tenant hospital_staff load error:', staffResult.error);
+        console.error('Failed to fetch staff credentials:', staffResult.error);
       }
 
-      setTenantCredentials(
-        staffResult.rows.map((row) => normalizeCredential(row as Record<string, unknown>)),
+      console.log('Loaded credentials:', staffResult.raw ?? staffResult.rows);
+
+      const normalized = (staffResult.raw ?? staffResult.rows).map((row) =>
+        normalizeCredential(row as Record<string, unknown>),
       );
+
+      setTenantCredentials(normalized);
     },
     [],
   );
@@ -384,16 +405,22 @@ export function SuperAdminHospitalBlocksDashboard({
 
   const tenantRoster = useMemo(() => {
     if (!selectedHospitalData) return [];
-    if (tenantCredentials.length > 0) {
-      return enrichCredentialsWithHospitalNames(tenantCredentials, [selectedHospitalData]);
-    }
-    return credentials.filter((credential) => credentialBelongsToTenant(credential, selectedHospitalData));
+    const roster =
+      tenantCredentials.length > 0
+        ? tenantCredentials
+        : credentials.filter((credential) =>
+            credentialBelongsToTenant(credential, selectedHospitalData),
+          );
+    return enrichCredentialsWithHospitalNames(roster, [selectedHospitalData]);
   }, [credentials, selectedHospitalData, tenantCredentials]);
 
   const scopedCredentials = useMemo(() => {
     if (!selectedHospitalCode || !selectedHospitalData) return [];
+    const activeFilter = selectedRoleFilter.trim().toLowerCase();
     return tenantRoster.filter((c) => {
-      const matchesRole = selectedRoleFilter === 'All' || c.staff_type === selectedRoleFilter;
+      const matchesRole =
+        activeFilter === 'all' ||
+        c.staff_type.toLowerCase() === activeFilter;
       const badgeLabel = (c.badge_id ?? '').toLowerCase();
       const matchesSearch =
         c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||

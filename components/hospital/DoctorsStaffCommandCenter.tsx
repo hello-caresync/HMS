@@ -1,28 +1,13 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import {
-  HeartHandshake,
-  IndianRupee,
-  Loader2,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Search,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { HeartHandshake, Loader2, Plus, RefreshCw, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-import {
-  classifyGovernancePersonnelRole,
-  governanceRoleDisplayLabel,
-} from '@/lib/hospital/governance-directory';
-import { formatConsultationFee } from '@/lib/hospital/hospital-staff-roster';
+import { StaffDirectoryTable } from '@/components/admin/StaffDirectoryTable';
 import {
   createHospitalStaffMember,
-  deleteHospitalStaffMember,
   fetchCommandCenterPersonnel,
   toDashboardStaffRow,
   updateHospitalStaffMember,
@@ -56,18 +41,8 @@ function roleLabel(role: StaffRole): string {
   return 'Doctor';
 }
 
-function memberRoleLabel(member: HospitalStaffMember): string {
-  if (member.raw_role) {
-    return governanceRoleDisplayLabel(
-      classifyGovernancePersonnelRole(member.raw_role),
-      member.raw_role,
-    );
-  }
-  return roleLabel(member.role);
-}
-
 function staffRecordId(member: HospitalStaffMember): string | null {
-  return member.staff_record_id ?? null;
+  return member.staff_record_id ?? member.id ?? null;
 }
 
 function roleKey(member: HospitalStaffMember): string {
@@ -112,7 +87,15 @@ export function DoctorsStaffCommandCenter({
   const [editor, setEditor] = useState<HospitalStaffMember | 'create' | null>(null);
   const [draft, setDraft] = useState<StaffDirectoryDraft>(EMPTY_DRAFT);
   const [isSaving, setIsSaving] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<HospitalStaffMember | null>(null);
+  const onRosterChangedRef = useRef(onRosterChanged);
+
+  useEffect(() => {
+    onRosterChangedRef.current = onRosterChanged;
+  }, [onRosterChanged]);
+
+  useEffect(() => {
+    onRosterChangedRef.current?.(members.map(toDashboardStaffRow));
+  }, [members]);
 
   const fetchHospitalStaffDirectory = useCallback(
     async (silent = false) => {
@@ -121,7 +104,6 @@ export function DoctorsStaffCommandCenter({
       try {
         const rows = await fetchCommandCenterPersonnel(supabase, nodeId);
         setMembers(rows);
-        onRosterChanged?.(rows.map(toDashboardStaffRow));
       } catch (err: unknown) {
         toast.error(err instanceof Error ? err.message : 'Unable to load staff directory');
       } finally {
@@ -129,7 +111,7 @@ export function DoctorsStaffCommandCenter({
         setIsRefreshing(false);
       }
     },
-    [nodeId, onRosterChanged],
+    [nodeId],
   );
 
   useEffect(() => {
@@ -233,29 +215,6 @@ export function DoctorsStaffCommandCenter({
       }
       toast.success(editor === 'create' ? `${draft.full_name} added to the directory` : `${draft.full_name} updated`);
       setEditor(null);
-      await fetchHospitalStaffDirectory(true);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!supabase || !pendingDelete) return;
-    setIsSaving(true);
-    try {
-      const recordId = staffRecordId(pendingDelete);
-      if (!recordId) {
-        toast.error('No linked hospital_staff record — revoke this account from the Staff Credentials Vault.');
-        return;
-      }
-
-      const result = await deleteHospitalStaffMember(supabase, nodeId, recordId);
-      if (!result.ok) {
-        toast.error(result.error || 'Could not delete staff record');
-        return;
-      }
-      toast.success(`${pendingDelete.full_name} removed from the directory`);
-      setPendingDelete(null);
       await fetchHospitalStaffDirectory(true);
     } finally {
       setIsSaving(false);
@@ -378,96 +337,13 @@ export function DoctorsStaffCommandCenter({
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-[10px] font-black uppercase text-slate-500">
-                <tr>
-                  <th className="px-3 py-3">Staff Member &amp; ID</th>
-                  <th className="px-3 py-3">Role / Department</th>
-                  <th className="px-3 py-3">Email</th>
-                  <th className="px-3 py-3">Consultation Fee</th>
-                  {canManage && <th className="px-3 py-3">Passcode</th>}
-                  <th className="px-3 py-3">Status</th>
-                  {canManage && <th className="px-3 py-3 text-right">Actions</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {visible.map((member) => (
-                  <tr key={member.id}>
-                    <td className="px-3 py-3.5 font-bold">
-                      <span className="mr-2 rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] font-bold text-cyan-700">
-                        {member.staff_id_code || member.id.slice(0, 8)}
-                      </span>
-                      {member.full_name}
-                      {member.qualification ? (
-                        <div className="mt-0.5 text-[10px] font-medium text-slate-400">{member.qualification}</div>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-3.5">
-                      {member.department || '—'} ({memberRoleLabel(member)})
-                    </td>
-                    <td className="px-3 py-3.5 font-mono">{member.email || '—'}</td>
-                    <td className="px-3 py-3.5">
-                      {member.role === 'doctor' ? (
-                        <span className="inline-flex items-center gap-1 font-bold text-slate-800">
-                          <IndianRupee className="h-3 w-3 text-cyan-700" />
-                          {formatConsultationFee(member.consultation_fee ?? 500)}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
-                    </td>
-                    {canManage && (
-                      <td className="px-3 py-3.5 font-mono font-bold text-cyan-800">{member.passcode_key || '—'}</td>
-                    )}
-                    <td className="px-3 py-3.5">
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
-                          member.is_active
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                            : 'border-slate-200 bg-slate-50 text-slate-500'
-                        }`}
-                      >
-                        {member.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    {canManage && (
-                      <td className="px-3 py-3.5 text-right">
-                        <div className="inline-flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => openEdit(member)}
-                            disabled={!staffRecordId(member)}
-                            className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                            title={
-                              staffRecordId(member)
-                                ? 'Edit'
-                                : 'Edit via Staff Credentials Vault — no linked roster row'
-                            }
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPendingDelete(member)}
-                            disabled={!staffRecordId(member)}
-                            className="rounded-lg border border-rose-200 p-1.5 text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40"
-                            title={
-                              staffRecordId(member)
-                                ? 'Delete'
-                                : 'Revoke via Staff Credentials Vault — no linked roster row'
-                            }
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <StaffDirectoryTable
+            staffList={visible}
+            setStaffList={setMembers}
+            hospitalId={nodeId}
+            canManage={canManage}
+            onEdit={openEdit}
+          />
         )}
       </section>
 
@@ -593,35 +469,6 @@ export function DoctorsStaffCommandCenter({
         </div>
       )}
 
-      {pendingDelete && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
-            <h3 className="text-sm font-bold text-slate-900">Remove {pendingDelete.full_name}?</h3>
-            <p className="text-xs text-slate-500">
-              This deletes the {memberRoleLabel(pendingDelete).toLowerCase()} from the hospital staff table. Active
-              doctors will disappear from Patient Booking immediately.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={() => setPendingDelete(null)}
-                className="rounded-lg bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={() => void handleDelete()}
-                className="rounded-lg bg-rose-600 px-5 py-2 text-xs font-semibold text-white disabled:opacity-60"
-              >
-                {isSaving ? 'Removing…' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
