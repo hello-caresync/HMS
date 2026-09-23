@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "pages:build": "npx @cloudflare/next-on-pages",
+    "postinstall": "node scripts/patch-next-on-pages-global-error.mjs",
+    "pages:build": "node scripts/patch-next-on-pages-global-error.mjs && npx @cloudflare/next-on-pages",
     "start": "next start",
     "lint": "eslint"
   },
