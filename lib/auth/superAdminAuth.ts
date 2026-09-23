@@ -1,14 +1,8 @@
 /** Canonical Super Admin root operator credentials. */
 export const SUPER_ADMIN_ROOT_EMAIL = 'platform.root@regalhealth.io';
 export const SUPER_ADMIN_ROOT_PASSCODE = 'CURA#2026@ROOT_VAULT';
-export const SUPER_ADMIN_ROOT_PASSCODE_LEGACY = 'REGAL@ROOT2026';
-
-export const SUPER_ADMIN_ROOT_PASSCODES = [
-  SUPER_ADMIN_ROOT_PASSCODE,
-  SUPER_ADMIN_ROOT_PASSCODE_LEGACY,
-] as const;
 export const SUPER_ADMIN_FACILITY_NODE = 'HOSP-01';
-export const SUPER_ADMIN_DEFAULT_PORTAL = '/super-vault-access';
+export const SUPER_ADMIN_DEFAULT_PORTAL = '/super-vault-access/';
 
 export const SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE = 'Invalid email or passcode.';
 
@@ -31,9 +25,7 @@ export function normalizeSuperAdminPasscode(value?: string | null): string {
 }
 
 export function isRootMasterPasscode(passcode: string): boolean {
-  const normalizedPasscode = normalizeSuperAdminPasscode(passcode);
-  if (!normalizedPasscode) return false;
-  return (SUPER_ADMIN_ROOT_PASSCODES as readonly string[]).includes(normalizedPasscode);
+  return normalizeSuperAdminPasscode(passcode) === SUPER_ADMIN_ROOT_PASSCODE;
 }
 
 export function isRootMasterCredentials(email: string, passcode: string): boolean {
@@ -140,6 +132,38 @@ export const SUPER_ADMIN_VAULT_LOGIN_REDIRECT = '/super-vault-access/';
 export function redirectToSuperAdminVault(): void {
   if (typeof window === 'undefined') return;
   window.location.href = SUPER_ADMIN_VAULT_LOGIN_REDIRECT;
+}
+
+/** Zero-network platform root login — sets session and hard-redirects to the vault. */
+export function authenticatePlatformRootMasterClientSide(): void {
+  persistRootMasterSuperAdminGatewaySession(SUPER_ADMIN_ROOT_EMAIL);
+  redirectToSuperAdminVault();
+}
+
+function readBrowserCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+/** Detect an active platform root session from cookies or localStorage. */
+export function hasPlatformRootBrowserSession(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  if (localStorage.getItem('platform_root_unlocked') === 'true') return true;
+  if (readBrowserCookie('platform_root') === 'true') return true;
+
+  const rawSession =
+    localStorage.getItem('super_admin_session') ?? readBrowserCookie('super_admin_session');
+
+  if (!rawSession) return false;
+
+  try {
+    const parsed = JSON.parse(rawSession) as { email?: string };
+    return normalizeSuperAdminEmail(parsed.email) === SUPER_ADMIN_ROOT_EMAIL;
+  } catch {
+    return rawSession.toLowerCase().includes(SUPER_ADMIN_ROOT_EMAIL);
+  }
 }
 
 export function persistSuperAdminClientSession(

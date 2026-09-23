@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
+  hasPlatformRootBrowserSession,
   isRootMasterPasscode,
+  persistRootMasterSuperAdminGatewaySession,
   SUPER_ADMIN_ROOT_EMAIL,
   SUPER_ADMIN_ROOT_PASSCODE,
-  SUPER_ADMIN_ROOT_PASSCODE_LEGACY,
 } from '@/lib/auth/superAdminAuth';
 
 interface AdminSession {
@@ -28,31 +29,8 @@ export default function SuperVaultClient() {
   const [loading, setLoading] = useState<boolean>(true);
   const [sessionUser, setSessionUser] = useState<AdminSession | null>(null);
 
-  // Helper to establish root platform session
   const establishMasterSession = () => {
-    const sessionData: AdminSession = {
-      id: 'SUPER-ADMIN-ROOT',
-      email: SUPER_ADMIN_ROOT_EMAIL,
-      role: 'SUPER_ADMIN',
-      name: 'Platform Root Super Admin',
-      authenticated_at: new Date().toISOString(),
-    };
-
-    // Save tokens across cookies and localStorage
-    document.cookie = 'platform_root=true; path=/; max-age=604800; SameSite=Lax';
-    document.cookie = `super_admin_session=${encodeURIComponent(
-      JSON.stringify(sessionData)
-    )}; path=/; max-age=604800; SameSite=Lax`;
-    document.cookie = `hospital_session=${encodeURIComponent(
-      JSON.stringify(sessionData)
-    )}; path=/; max-age=604800; SameSite=Lax`;
-
-    localStorage.setItem('platform_root_unlocked', 'true');
-    localStorage.setItem('super_admin_session', JSON.stringify(sessionData));
-    localStorage.setItem('hospital_session', JSON.stringify(sessionData));
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('userRole', 'SUPER_ADMIN');
-
+    const sessionData = persistRootMasterSuperAdminGatewaySession(SUPER_ADMIN_ROOT_EMAIL);
     setSessionUser(sessionData);
     setIsUnlocked(true);
     setError(null);
@@ -63,25 +41,14 @@ export default function SuperVaultClient() {
     const unlockParam = searchParams.get('unlock');
     const rootParam = searchParams.get('root');
 
-    if (
-      rootParam === 'true' ||
-      unlockParam === SUPER_ADMIN_ROOT_PASSCODE ||
-      unlockParam === SUPER_ADMIN_ROOT_PASSCODE_LEGACY
-    ) {
+    if (rootParam === 'true' || unlockParam === SUPER_ADMIN_ROOT_PASSCODE) {
       establishMasterSession();
       setLoading(false);
       return;
     }
 
-    // 2. Check LocalStorage
-    const isUnlockedStorage = localStorage.getItem('platform_root_unlocked') === 'true';
-    const storedSession = localStorage.getItem('super_admin_session');
-
-    // 3. Check Cookies
-    const hasRootCookie = document.cookie.includes('platform_root=true');
-    const hasAdminSessionCookie = document.cookie.includes('super_admin_session');
-
-    if (isUnlockedStorage || hasRootCookie || hasAdminSessionCookie) {
+    if (hasPlatformRootBrowserSession()) {
+      const storedSession = localStorage.getItem('super_admin_session');
       if (storedSession) {
         try {
           setSessionUser(JSON.parse(storedSession));
@@ -134,7 +101,7 @@ export default function SuperVaultClient() {
 
     setIsUnlocked(false);
     setSessionUser(null);
-    router.replace('/super-admin/login');
+    router.replace('/super-admin/login/');
   };
 
   if (loading) {
@@ -203,7 +170,7 @@ export default function SuperVaultClient() {
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => router.push('/super-admin/login')}
+              onClick={() => router.push('/super-admin/login/')}
               className="text-xs text-slate-500 transition hover:text-slate-300"
             >
               &larr; Return to Super Admin Login

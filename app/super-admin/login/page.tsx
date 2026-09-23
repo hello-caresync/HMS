@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 
 import { verifySuperAdminVaultCredentials } from '@/lib/auth/super-admin-auth';
 import {
+  authenticatePlatformRootMasterClientSide,
   isRootMasterCredentials,
   persistDelegatedSuperAdminSession,
   persistRootMasterSuperAdminGatewaySession,
@@ -27,33 +28,17 @@ export default function SuperAdminGatewayPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setError(null);
+  const authenticateDelegated = async (cleanEmail: string, cleanPasscode: string) => {
     setLoading(true);
 
-    const cleanEmail = (email || '').trim().toLowerCase();
-    const cleanPasscode = (passcode || '').trim();
-
-    // 1. Master override — 100% client-side (no /api/admin/auth/login)
-    if (isRootMasterCredentials(cleanEmail, cleanPasscode)) {
-      persistRootMasterSuperAdminGatewaySession(SUPER_ADMIN_ROOT_EMAIL);
-      setLoading(false);
-      redirectToSuperAdminVault();
-      return;
-    }
-
-    // 2. Supabase vault credentials (client SDK)
     try {
       const vaultVerified = await verifySuperAdminVaultCredentials(cleanEmail, cleanPasscode);
       if (vaultVerified) {
         persistRootMasterSuperAdminGatewaySession(cleanEmail);
-        setLoading(false);
         redirectToSuperAdminVault();
         return;
       }
 
-      // 3. Delegated super-admin rows in hospital_staff (client SDK)
       if (supabase) {
         const { data: staff, error: staffError } = await supabase
           .from('hospital_staff')
@@ -66,7 +51,6 @@ export default function SuperAdminGatewayPage() {
 
         if (!staffError && staff) {
           finalizeDelegatedSuperAdminSession(staff as Record<string, unknown>);
-          setLoading(false);
           redirectToSuperAdminVault();
           return;
         }
@@ -79,6 +63,22 @@ export default function SuperAdminGatewayPage() {
 
     setError(SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE);
     setLoading(false);
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPasscode = (passcode || '').trim();
+
+    // ZERO-NETWORK root override — never calls /api/admin/auth/login (Cloudflare 405 safe)
+    if (isRootMasterCredentials(cleanEmail, cleanPasscode)) {
+      authenticatePlatformRootMasterClientSide();
+      return;
+    }
+
+    void authenticateDelegated(cleanEmail, cleanPasscode);
   };
 
   return (
@@ -100,7 +100,7 @@ export default function SuperAdminGatewayPage() {
           </div>
         ) : null}
 
-        <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
               Platform Master Email
@@ -110,7 +110,7 @@ export default function SuperAdminGatewayPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="platform.root@regalhealth.io"
+              placeholder={SUPER_ADMIN_ROOT_EMAIL}
               className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-amber-500"
             />
           </div>

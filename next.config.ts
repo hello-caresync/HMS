@@ -3,10 +3,11 @@ import type { NextConfig } from 'next';
 /**
  * Cloudflare Pages (@cloudflare/next-on-pages)
  *
- * - `trailingSlash: true` emits `/super-vault-access/index.html` so direct
- *   deep links resolve on static asset hosts.
- * - Do NOT set `output: 'export'` — this app uses edge runtime, middleware,
- *   and API routes; use `npm run build:cloudflare` for Pages deployment.
+ * trailingSlash: true  → emits /super-vault-access/index.html for direct deep links
+ * images.unoptimized   → required for static asset hosts
+ *
+ * Do NOT set output: 'export' — this app relies on edge runtime, middleware, and
+ * Supabase client SDK auth. Deploy with: npm run build:cloudflare
  */
 const nextConfig: NextConfig = {
   trailingSlash: true,
