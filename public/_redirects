@@ -1,2 +1,7 @@
-/doctor/consultations/*  /doctor/consultations/index.html  200
-/*                       /index.html                       200
+# Cloudflare Pages — direct deep links without trailing slash
+/super-vault-access /super-vault-access/index.html 200
+/super-vault-access/ /super-vault-access/index.html 200
+/super-admin/login /super-admin/login/index.html 200
+/super-admin/login/ /super-admin/login/index.html 200
+/super-admin/dashboard /super-admin/dashboard/index.html 200
+/super-admin/dashboard/ /super-admin/dashboard/index.html 200
