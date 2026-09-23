@@ -1,28 +1,7 @@
-'use client';
+export const runtime = 'edge';
 
-import { Suspense } from 'react';
-import { useParams } from 'next/navigation';
-
-import { SuperAdminHospitalBlocksDashboard } from '@/app/super-admin/staff-credentials/page';
-
-function SuperAdminTenantDetailPageInner() {
-  const params = useParams<{ id?: string }>();
-  const tenantId =
-    typeof params?.id === 'string' ? decodeURIComponent(params.id).trim() : undefined;
-
-  return <SuperAdminHospitalBlocksDashboard initialTenantIdentifier={tenantId} />;
-}
+import SuperAdminTenantDetailPageClient from './SuperAdminTenantDetailPageClient';
 
 export default function SuperAdminTenantDetailPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm font-semibold text-slate-500">
-          Loading hospital tenant vault…
-        </div>
-      }
-    >
-      <SuperAdminTenantDetailPageInner />
-    </Suspense>
-  );
+  return <SuperAdminTenantDetailPageClient />;
 }

@@ -5,6 +5,8 @@ import { AppProviders } from './providers';
 
 import './globals.css';
 
+export const runtime = 'edge';
+
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
