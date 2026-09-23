@@ -1,129 +1,53 @@
-export const runtime = 'edge';
-
 import { NextResponse } from 'next/server';
 
-import {
-  buildSuperAdminSessionPayload,
-  createSuperAdminSessionToken,
-  isRootMasterCredentials,
-  normalizeSuperAdminEmail,
-  normalizeSuperAdminPasscode,
-  SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE,
-  verifySuperAdminCredentials,
-} from '@/lib/auth/superAdminAuth';
+export const runtime = 'edge';
 
-const SESSION_COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  path: '/',
-  maxAge: 60 * 60 * 24,
-};
+const ROOT_EMAIL = 'superadmin@regalhospital.com';
+const ROOT_PASSCODES = ['REGAL#2026@SUPER_ROOT', 'REGAL@ROOT2026'] as const;
 
-export async function POST(req: Request) {
-  const body = (await req.json()) as {
-    email?: string;
-    password?: string;
-    passcode?: string;
-  };
+function isAuthorizedSuperAdmin(email: string, passcode: string): boolean {
+  return email === ROOT_EMAIL && ROOT_PASSCODES.includes(passcode as (typeof ROOT_PASSCODES)[number]);
+}
 
-  const email = normalizeSuperAdminEmail(body.email);
-  const passcode = normalizeSuperAdminPasscode(body.passcode ?? body.password);
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as { email?: string; passcode?: string; password?: string };
+    const email = (body.email || '').trim().toLowerCase();
+    const passcode = (body.passcode || body.password || '').trim();
 
-  if (!email || !passcode) {
-    return NextResponse.json(
-      { success: false, error: SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE },
-      { status: 400 },
-    );
-  }
+    if (!isAuthorizedSuperAdmin(email, passcode)) {
+      return NextResponse.json({ error: 'Invalid email or passcode.' }, { status: 401 });
+    }
 
-  if (isRootMasterCredentials(email, passcode)) {
-    const rootSession = {
+    const sessionPayload = {
       id: 'SUPER-ADMIN-ROOT',
       email,
       role: 'SUPER_ADMIN',
-      name: 'Root Platform Admin',
+      name: 'Platform Root Super Admin',
       authenticated_at: new Date().toISOString(),
     };
 
     const response = NextResponse.json({
       success: true,
       role: 'SUPER_ADMIN',
-      token: 'root-token',
       redirect: '/super-admin/dashboard',
     });
 
-    response.cookies.set('platform_root', 'true', {
-      ...SESSION_COOKIE_OPTIONS,
+    const cookieOptions = {
+      path: '/',
+      maxAge: 604800,
+      sameSite: 'lax' as const,
+      secure: process.env.NODE_ENV === 'production',
       httpOnly: false,
-      maxAge: 60 * 60 * 24 * 7,
-    });
-    response.cookies.set('regal_role', 'super_admin', {
-      ...SESSION_COOKIE_OPTIONS,
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 * 7,
-    });
-    response.cookies.set('super_admin_session', JSON.stringify(rootSession), {
-      ...SESSION_COOKIE_OPTIONS,
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 * 7,
-    });
-    response.cookies.set('hospital_session', JSON.stringify(rootSession), {
-      ...SESSION_COOKIE_OPTIONS,
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 * 7,
-    });
-    response.cookies.set('auth-token', 'root-token', SESSION_COOKIE_OPTIONS);
+    };
+
+    response.cookies.set('platform_root', 'true', cookieOptions);
+    response.cookies.set('super_admin_session', JSON.stringify(sessionPayload), cookieOptions);
+    response.cookies.set('hospital_session', JSON.stringify(sessionPayload), cookieOptions);
+    response.cookies.set('regal_role', 'super_admin', cookieOptions);
 
     return response;
+  } catch {
+    return NextResponse.json({ error: 'Authentication processing failed.' }, { status: 500 });
   }
-
-  if (!verifySuperAdminCredentials(email, passcode)) {
-    return NextResponse.json(
-      { success: false, error: SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE },
-      { status: 401 },
-    );
-  }
-
-  const token = createSuperAdminSessionToken();
-  const session = buildSuperAdminSessionPayload(email, token);
-
-  const response = NextResponse.json({
-    success: true,
-    role: 'super_admin',
-    facility_node: session.facility_node,
-    token,
-    user: {
-      email: session.email,
-      role: 'super_admin',
-    },
-  });
-
-  response.cookies.set('regal_role', 'super_admin', {
-    ...SESSION_COOKIE_OPTIONS,
-    httpOnly: false,
-  });
-  response.cookies.set('platform_root', 'true', {
-    ...SESSION_COOKIE_OPTIONS,
-    httpOnly: false,
-  });
-  response.cookies.set(
-    'super_admin_session',
-    JSON.stringify({
-      email: session.email,
-      role: 'SUPER_ADMIN',
-      authenticated_at: session.authenticatedAt,
-      token,
-      facility_node: session.facility_node,
-      portal_access: session.portal_access,
-    }),
-    {
-      ...SESSION_COOKIE_OPTIONS,
-      httpOnly: false,
-    },
-  );
-  response.cookies.set('nexora_superadmin_session', token, SESSION_COOKIE_OPTIONS);
-  response.cookies.set('auth-token', token, SESSION_COOKIE_OPTIONS);
-
-  return response;
 }
