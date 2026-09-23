@@ -77,7 +77,8 @@ export default function SuperAdminGatewayPage() {
     if (isRootMasterCredentials(cleanEmail, cleanPasscode)) {
       setLoading(true);
       persistRootMasterSuperAdminGatewaySession(SUPER_ADMIN_ROOT_EMAIL);
-      await recordOrQueueRootLoginSuccess();
+      // Never block redirect on Supabase audit I/O (missing env/table can hang or slow login).
+      void recordOrQueueRootLoginSuccess();
       redirectToSuperAdminVault();
       return;
     }
