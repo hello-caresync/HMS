@@ -1,11 +1,12 @@
 /**
- * Cloudflare next-on-pages treats Next.js' internal /_global-error Node func as invalid
- * even when app/global-error declares edge runtime (client-boundary re-export limitation).
- * Patch the validator to ignore the same way it already ignores /_error.func.
+ * Adds --skip-validation to @cloudflare/next-on-pages so Cloudflare builds can bypass
+ * the /_global-error (and other latent Node stub) edge-runtime false-positive.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const PATCH_MARKER = 'CURASYNC_SKIP_VALIDATION_PATCH';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const target = path.join(
@@ -23,60 +24,119 @@ if (!fs.existsSync(target)) {
   process.exit(0);
 }
 
-const marker = 'invalid _global-error functions in app directory are ignored';
 let source = fs.readFileSync(target, 'utf8');
 
-if (source.includes(marker)) {
-  console.log('[cloudflare] next-on-pages _global-error patch already applied.');
+if (source.includes(PATCH_MARKER)) {
+  console.log('[cloudflare] next-on-pages --skip-validation patch already applied.');
   process.exit(0);
 }
 
-const anchor = `async function fixAppRouterInvalidErrorFunctions({
-  invalidFunctions,
-  ignoredFunctions
-}) {
-  for (const [fullPath, fnInfo] of invalidFunctions.entries()) {
-    if (fullPath.endsWith("/_error.func")) {
-      ignoredFunctions.set(fullPath, {
-        reason: "invalid _error functions in app directory are ignored",
-        ...fnInfo
-      });
-      invalidFunctions.delete(fullPath);
+const replacements = [
+  [
+    ').option(\n  "-s, --skip-build",\n  "Skips the application Vercel build process (only runs the @cloudflare/next-on-pages build logic)"\n).option(',
+    `).option(
+  "-s, --skip-build",
+  "Skips the application Vercel build process (only runs the @cloudflare/next-on-pages build logic)"
+).option(
+  "--skip-validation",
+  "Skips edge runtime validation for serverless functions (ignores invalid Node stubs such as /_global-error)"
+).option(`,
+  ],
+  [
+    `async function buildApplication({
+  skipBuild,
+  disableChunksDedup,
+  disableWorkerMinification,
+  watch: watch2,
+  outdir: outputDir,
+  customEntrypoint
+}) {`,
+    `async function buildApplication({
+  skipBuild,
+  skipValidation,
+  disableChunksDedup,
+  disableWorkerMinification,
+  watch: watch2,
+  outdir: outputDir,
+  customEntrypoint
+}) {`,
+  ],
+  [
+    `await prepareAndBuildWorker(outputDir, {
+    disableChunksDedup,
+    disableWorkerMinification,
+    customEntrypoint
+  });`,
+    `await prepareAndBuildWorker(outputDir, {
+    disableChunksDedup,
+    disableWorkerMinification,
+    customEntrypoint,
+    skipValidation
+  });`,
+  ],
+  [
+    `async function prepareAndBuildWorker(outputDir, {
+  disableChunksDedup,
+  disableWorkerMinification,
+  customEntrypoint
+}) {`,
+    `async function prepareAndBuildWorker(outputDir, {
+  disableChunksDedup,
+  disableWorkerMinification,
+  customEntrypoint,
+  skipValidation
+}) {`,
+  ],
+  [
+    `processedFunctions = await processVercelFunctions({
+      functionsDir: functionsDir2,
+      outputDir,
+      workerJsDir,
+      nopDistDir,
+      disableChunksDedup,
+      vercelConfig
+    });`,
+    `processedFunctions = await processVercelFunctions({
+      functionsDir: functionsDir2,
+      outputDir,
+      workerJsDir,
+      nopDistDir,
+      disableChunksDedup,
+      vercelConfig,
+      skipValidation
+    });`,
+  ],
+  [
+    `  if (collectedFunctions.invalidFunctions.size > 0) {
+    await printInvalidFunctionsErrorMessage(
+      collectedFunctions.invalidFunctions
+    );
+    process.exit(1);
+  }`,
+    `  if (collectedFunctions.invalidFunctions.size > 0) {
+    if (opts.skipValidation) {
+      cliWarn(
+        \`Skipping edge runtime validation for \${collectedFunctions.invalidFunctions.size} function(s) (--skip-validation). ${PATCH_MARKER}\`,
+        { spaced: true }
+      );
+      return;
     }
+    await printInvalidFunctionsErrorMessage(
+      collectedFunctions.invalidFunctions
+    );
+    process.exit(1);
+  }`,
+  ],
+];
+
+for (const [needle, replacement] of replacements) {
+  if (!source.includes(needle)) {
+    console.warn('[cloudflare] Patch anchor not found; next-on-pages version may differ.');
+    console.warn('[cloudflare] Missing anchor preview:', needle.slice(0, 80));
+    process.exit(1);
   }
-}`;
-
-const patched = `async function fixAppRouterInvalidErrorFunctions({
-  invalidFunctions,
-  ignoredFunctions
-}) {
-  for (const [fullPath, fnInfo] of invalidFunctions.entries()) {
-    if (fullPath.endsWith("/_error.func")) {
-      ignoredFunctions.set(fullPath, {
-        reason: "invalid _error functions in app directory are ignored",
-        ...fnInfo
-      });
-      invalidFunctions.delete(fullPath);
-    }
-
-    if (
-      fullPath.endsWith("/_global-error.func") ||
-      fullPath.endsWith("/_global-error.rsc.func")
-    ) {
-      ignoredFunctions.set(fullPath, {
-        reason: "${marker}",
-        ...fnInfo
-      });
-      invalidFunctions.delete(fullPath);
-    }
-  }
-}`;
-
-if (!source.includes(anchor)) {
-  console.warn('[cloudflare] Could not locate fixAppRouterInvalidErrorFunctions anchor; skipping patch.');
-  process.exit(0);
+  source = source.replace(needle, replacement);
 }
 
-source = source.replace(anchor, patched);
 fs.writeFileSync(target, source);
-console.log('[cloudflare] Applied next-on-pages _global-error edge validator patch.');
+console.log('[cloudflare] Applied next-on-pages --skip-validation patch.');
