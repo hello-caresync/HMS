@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import { flushQueuedRootLoginSuccess } from '@/lib/auth/super-admin-login-audit';
 import {
+  consumeSuperAdminGatewayFlag,
   hasPlatformRootBrowserSession,
   isRootMasterPasscode,
   persistRootMasterSuperAdminGatewaySession,
@@ -39,6 +40,13 @@ export default function SuperVaultClient() {
 
   useEffect(() => {
     void flushQueuedRootLoginSuccess();
+
+    // 0. Just authenticated on /super-admin/login — auto-unlock vault
+    if (consumeSuperAdminGatewayFlag()) {
+      establishMasterSession();
+      setLoading(false);
+      return;
+    }
 
     // 1. Check URL parameters for emergency bypass (?unlock=... or ?root=true)
     const unlockParam = searchParams.get('unlock');

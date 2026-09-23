@@ -5,7 +5,9 @@ import React, { useState } from 'react';
 import { verifySuperAdminVaultCredentials } from '@/lib/auth/super-admin-auth';
 import { recordOrQueueRootLoginSuccess } from '@/lib/auth/super-admin-login-audit';
 import {
+  completeRootSuperAdminGatewayLogin,
   isRootMasterCredentials,
+  markSuperAdminGatewayComplete,
   persistDelegatedSuperAdminSession,
   persistRootMasterSuperAdminGatewaySession,
   redirectToSuperAdminVault,
@@ -35,6 +37,7 @@ export default function SuperAdminGatewayPage() {
       const vaultVerified = await verifySuperAdminVaultCredentials(cleanEmail, cleanPasscode);
       if (vaultVerified) {
         persistRootMasterSuperAdminGatewaySession(cleanEmail);
+        markSuperAdminGatewayComplete();
         redirectToSuperAdminVault();
         return;
       }
@@ -51,6 +54,7 @@ export default function SuperAdminGatewayPage() {
 
         if (!staffError && staff) {
           finalizeDelegatedSuperAdminSession(staff as Record<string, unknown>);
+          markSuperAdminGatewayComplete();
           redirectToSuperAdminVault();
           return;
         }
@@ -76,10 +80,8 @@ export default function SuperAdminGatewayPage() {
     // Supabase is used only to append a successful-login audit event.
     if (isRootMasterCredentials(cleanEmail, cleanPasscode)) {
       setLoading(true);
-      persistRootMasterSuperAdminGatewaySession(SUPER_ADMIN_ROOT_EMAIL);
-      // Never block redirect on Supabase audit I/O (missing env/table can hang or slow login).
       void recordOrQueueRootLoginSuccess();
-      redirectToSuperAdminVault();
+      completeRootSuperAdminGatewayLogin(SUPER_ADMIN_ROOT_EMAIL);
       return;
     }
 

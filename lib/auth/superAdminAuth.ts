@@ -64,6 +64,34 @@ export function buildSuperAdminSessionPayload(
 
 export const SUPER_ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
+/** sessionStorage bridge: login page → vault auto-unlock after full-page redirect */
+export const SUPER_ADMIN_GATEWAY_FLAG = 'curasync_super_admin_gateway_ok';
+
+export function buildSuperAdminCookieAttributes(): string {
+  const secure =
+    typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
+  return `path=/; max-age=${SUPER_ADMIN_SESSION_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
+}
+
+export function markSuperAdminGatewayComplete(): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(SUPER_ADMIN_GATEWAY_FLAG, '1');
+}
+
+export function consumeSuperAdminGatewayFlag(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (sessionStorage.getItem(SUPER_ADMIN_GATEWAY_FLAG) !== '1') return false;
+  sessionStorage.removeItem(SUPER_ADMIN_GATEWAY_FLAG);
+  return true;
+}
+
+/** Persist root session, mark gateway complete, redirect to vault. */
+export function completeRootSuperAdminGatewayLogin(email = SUPER_ADMIN_ROOT_EMAIL): void {
+  persistRootMasterSuperAdminGatewaySession(email);
+  markSuperAdminGatewayComplete();
+  redirectToSuperAdminVault();
+}
+
 export type SuperAdminGatewaySession = {
   email: string;
   role: 'SUPER_ADMIN' | 'super_admin';
@@ -109,7 +137,7 @@ export function persistRootMasterSuperAdminGatewaySession(email: string): RootMa
   if (typeof window === 'undefined') return sessionObj;
 
   const serialized = JSON.stringify(sessionObj);
-  const attrs = `path=/; max-age=${SUPER_ADMIN_SESSION_MAX_AGE_SECONDS}; SameSite=Lax`;
+  const attrs = buildSuperAdminCookieAttributes();
 
   document.cookie = `super_admin_session=${encodeURIComponent(serialized)}; ${attrs}`;
   document.cookie = `platform_root=true; ${attrs}`;
@@ -177,7 +205,7 @@ export function persistSuperAdminClientSession(
   localStorage.setItem('nexora_superadmin_session', serialized);
   localStorage.setItem('curasync_superadmin_session', serialized);
 
-  const attrs = `path=/; max-age=${SUPER_ADMIN_SESSION_MAX_AGE_SECONDS}; SameSite=Lax`;
+  const attrs = buildSuperAdminCookieAttributes();
   document.cookie = `regal_role=super_admin; ${attrs}`;
   document.cookie = `platform_root=true; ${attrs}`;
   document.cookie = `super_admin_session=${encodeURIComponent(gatewaySerialized)}; ${attrs}`;
@@ -200,7 +228,7 @@ export function persistDelegatedSuperAdminSession(staff: Record<string, unknown>
     token,
   };
   const gatewaySerialized = JSON.stringify(gatewaySession);
-  const attrs = `path=/; max-age=${SUPER_ADMIN_SESSION_MAX_AGE_SECONDS}; SameSite=Lax`;
+  const attrs = buildSuperAdminCookieAttributes();
 
   localStorage.setItem('super_admin_session', gatewaySerialized);
   document.cookie = `platform_root=true; ${attrs}`;
