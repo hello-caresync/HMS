@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cloudflare": "next build && npm run pages:build",
     "postinstall": "node scripts/patch-next-on-pages-global-error.mjs",
     "pages:build": "npx @cloudflare/next-on-pages --skip-validation",
     "start": "next start",

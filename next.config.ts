@@ -1,7 +1,14 @@
 import type { NextConfig } from 'next';
 
+/**
+ * Cloudflare Pages (@cloudflare/next-on-pages)
+ *
+ * - `trailingSlash: true` emits `/super-vault-access/index.html` so direct
+ *   deep links resolve on static asset hosts.
+ * - Do NOT set `output: 'export'` — this app uses edge runtime, middleware,
+ *   and API routes; use `npm run build:cloudflare` for Pages deployment.
+ */
 const nextConfig: NextConfig = {
-  // Cloudflare Pages: emit /super-vault-access/index.html for direct URL hits
   trailingSlash: true,
   images: {
     unoptimized: true,

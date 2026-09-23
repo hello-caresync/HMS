@@ -1,7 +1,9 @@
-# Cloudflare Pages — direct deep links without trailing slash
-/super-vault-access /super-vault-access/index.html 200
-/super-vault-access/ /super-vault-access/index.html 200
-/super-admin/login /super-admin/login/index.html 200
-/super-admin/login/ /super-admin/login/index.html 200
-/super-admin/dashboard /super-admin/dashboard/index.html 200
-/super-admin/dashboard/ /super-admin/dashboard/index.html 200
+# Cloudflare Pages — rewrite bare deep links to trailing-slash index.html
+/super-admin/login       /super-admin/login/index.html       200
+/super-admin/login/      /super-admin/login/index.html       200
+/super-admin/dashboard   /super-admin/dashboard/index.html   200
+/super-admin/dashboard/  /super-admin/dashboard/index.html   200
+/super-vault-access      /super-vault-access/index.html      200
+/super-vault-access/     /super-vault-access/index.html      200
+/ops/platform-root       /ops/platform-root/index.html       200
+/ops/platform-root/      /ops/platform-root/index.html       200
