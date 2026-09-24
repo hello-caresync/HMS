@@ -1,0 +1,6 @@
+/superadmin/login       /superadmin/login/      301
+/superadmin/login/*     /superadmin/login/      200
+/super-vault-access     /super-vault-access/    301
+/super-vault-access/*   /super-vault-access/    200
+/super-admin/*          /superadmin/login/      301
+/*                      /index.html             200
