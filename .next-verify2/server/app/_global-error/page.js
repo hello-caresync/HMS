@@ -1,0 +1,10 @@
+var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/_global-error/page.js")
+R.c("server/chunks/ssr/[root-of-the-server]__0rocs6r._.js")
+R.c("server/chunks/ssr/0yz0_next_dist_1a-4c9q._.js")
+R.c("server/chunks/ssr/0yz0_next_dist_esm_build_templates_app-page_09bhwtk.js")
+R.c("server/chunks/ssr/[root-of-the-server]__14g52h1._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__03qfu_z._.js")
+R.c("server/chunks/ssr/OneDrive_Desktop_caresync_curasync_app_global-error_tsx_1n68bqr._.js")
+R.c("server/chunks/ssr/1fmp_caresync_curasync__next-internal_server_app__global-error_page_actions_150lx29.js")
+R.m(563274)
+module.exports=R.m(563274).exports

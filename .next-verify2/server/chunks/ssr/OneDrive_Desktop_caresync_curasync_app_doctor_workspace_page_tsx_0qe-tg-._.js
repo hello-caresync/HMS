@@ -1,0 +1,3 @@
+module.exports=[315,a=>{"use strict";var b=a.i(463629),c=a.i(61734),d=a.i(374521);a.s(["default",0,function(){let a=(0,d.useRouter)();return(0,c.useEffect)(()=>{a.replace("/doctor/dashboard")},[a]),(0,b.jsx)("div",{className:"h-screen w-screen flex items-center justify-center bg-[#F8FAFC]",children:(0,b.jsx)("div",{className:"h-8 w-8 animate-spin rounded-full border-2 border-[#00A896] border-t-transparent"})})}])}];
+
+//# sourceMappingURL=OneDrive_Desktop_caresync_curasync_app_doctor_workspace_page_tsx_0qe-tg-._.js.map

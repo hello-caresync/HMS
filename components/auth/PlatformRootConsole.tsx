@@ -17,8 +17,9 @@ import { toast } from 'sonner';
 import { purgeLocalAdminSessions } from '@/lib/auth/active-session';
 import { setNexoraRoleCookie } from '@/lib/auth/role-cookies';
 import { authenticatePortalCredential } from '@/lib/auth/staff-credential-auth';
+import { hardNavigateSuperAdminRoute } from '@/lib/auth/superAdminAuth';
 
-const SUPER_ADMIN_VAULT_ROUTE = '/super-vault-access';
+const SUPER_ADMIN_VAULT_ROUTE = '/super-vault-access/';
 
 function PlatformRootConsoleForm() {
   const router = useRouter();
@@ -74,7 +75,7 @@ function PlatformRootConsoleForm() {
     setNexoraRoleCookie('super_admin');
 
     toast.success('Root Master Authentication Verified');
-    router.push(postAuthRoute || SUPER_ADMIN_VAULT_ROUTE);
+    hardNavigateSuperAdminRoute(postAuthRoute || SUPER_ADMIN_VAULT_ROUTE);
     setLoading(false);
   };
 

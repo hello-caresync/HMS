@@ -1,0 +1,18 @@
+{
+  "status": 307,
+  "headers": {
+    "location": "/hospital",
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/vendor/layout,_N_T_/vendor/hospital/layout,_N_T_/vendor/hospital/page,_N_T_/vendor/hospital"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/vendor/hospital/__PAGE__",
+    "/vendor/hospital",
+    "/vendor",
+    "/_index",
+    "/_head"
+  ]
+}

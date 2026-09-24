@@ -1,15 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-export default function LegacyPlatformOpsRedirect() {
-  const router = useRouter();
+import { SUPER_ADMIN_LOGIN_PATH } from '@/lib/auth/superAdminAuth';
 
+export default function LegacyPlatformOpsRedirect() {
   useEffect(() => {
-    router.replace('/ops/platform-root');
-  }, [router]);
+    window.location.replace(`${SUPER_ADMIN_LOGIN_PATH}/`);
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50">

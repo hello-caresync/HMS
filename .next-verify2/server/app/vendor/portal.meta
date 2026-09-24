@@ -1,0 +1,18 @@
+{
+  "status": 307,
+  "headers": {
+    "location": "/vendor/portal/dashboard",
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/vendor/layout,_N_T_/vendor/portal/layout,_N_T_/vendor/portal/page,_N_T_/vendor/portal"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/vendor/portal/__PAGE__",
+    "/vendor/portal",
+    "/vendor",
+    "/_index",
+    "/_head"
+  ]
+}

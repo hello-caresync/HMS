@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/vendor/layout,_N_T_/vendor/secure-hub/layout,_N_T_/vendor/secure-hub/po-inbox/layout,_N_T_/vendor/secure-hub/po-inbox/page,_N_T_/vendor/secure-hub/po-inbox"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/vendor/secure-hub/po-inbox/__PAGE__",
+    "/vendor/secure-hub/po-inbox",
+    "/vendor/secure-hub",
+    "/vendor",
+    "/_index",
+    "/_head"
+  ]
+}

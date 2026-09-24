@@ -1,0 +1,17 @@
+{
+  "status": 307,
+  "headers": {
+    "location": "/doctor/dashboard",
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/doctor/layout,_N_T_/doctor/page,_N_T_/doctor"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/doctor/__PAGE__",
+    "/doctor",
+    "/_index",
+    "/_head"
+  ]
+}

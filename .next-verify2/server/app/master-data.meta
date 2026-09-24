@@ -1,0 +1,17 @@
+{
+  "status": 307,
+  "headers": {
+    "location": "/admin/master-data",
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/master-data/layout,_N_T_/master-data/page,_N_T_/master-data"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/master-data/__PAGE__",
+    "/master-data",
+    "/_index",
+    "/_head"
+  ]
+}

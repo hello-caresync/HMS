@@ -1,0 +1,1490 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:file((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/]+\\.\\w+)/",
+      "destination": "/:file",
+      "internal": true,
+      "priority": true,
+      "missing": [
+        {
+          "type": "header",
+          "key": "x-nextjs-data"
+        }
+      ],
+      "statusCode": 308,
+      "regex": "^(?:/((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/]+\\.\\w+))/$"
+    },
+    {
+      "source": "/:notfile((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/\\.]+)",
+      "destination": "/:notfile/",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/\\.]+))$"
+    }
+  ],
+  "headers": [],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/api/super-admin/staff/[staffId]",
+      "regex": "^/api/super\\-admin/staff/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPstaffId": "nxtPstaffId"
+      },
+      "namedRegex": "^/api/super\\-admin/staff/(?<nxtPstaffId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/super-admin/tenants/[hospitalId]",
+      "regex": "^/api/super\\-admin/tenants/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPhospitalId": "nxtPhospitalId"
+      },
+      "namedRegex": "^/api/super\\-admin/tenants/(?<nxtPhospitalId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/doctor/consultation/[appointmentId]",
+      "regex": "^/doctor/consultation/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPappointmentId": "nxtPappointmentId"
+      },
+      "namedRegex": "^/doctor/consultation/(?<nxtPappointmentId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/doctor/consultations/[appointmentId]",
+      "regex": "^/doctor/consultations/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPappointmentId": "nxtPappointmentId"
+      },
+      "namedRegex": "^/doctor/consultations/(?<nxtPappointmentId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/doctor/patients/[id]",
+      "regex": "^/doctor/patients/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/doctor/patients/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/super-admin/tenants/[id]",
+      "regex": "^/super\\-admin/tenants/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/super\\-admin/tenants/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/super-vault-access/[id]",
+      "regex": "^/super\\-vault\\-access/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/super\\-vault\\-access/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/admin/audit",
+      "regex": "^/admin/audit(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/audit(?:/)?$"
+    },
+    {
+      "page": "/admin/dashboard",
+      "regex": "^/admin/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/dashboard(?:/)?$"
+    },
+    {
+      "page": "/admin/login",
+      "regex": "^/admin/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/login(?:/)?$"
+    },
+    {
+      "page": "/admin/onboarding",
+      "regex": "^/admin/onboarding(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/onboarding(?:/)?$"
+    },
+    {
+      "page": "/admin/settings",
+      "regex": "^/admin/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/settings(?:/)?$"
+    },
+    {
+      "page": "/admissions/allocate",
+      "regex": "^/admissions/allocate(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admissions/allocate(?:/)?$"
+    },
+    {
+      "page": "/analytics",
+      "regex": "^/analytics(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/analytics(?:/)?$"
+    },
+    {
+      "page": "/api/admin/auth/login",
+      "regex": "^/api/admin/auth/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/auth/login(?:/)?$"
+    },
+    {
+      "page": "/api/appointments/check-in",
+      "regex": "^/api/appointments/check\\-in(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/appointments/check\\-in(?:/)?$"
+    },
+    {
+      "page": "/api/doctor/auth/clinician-login",
+      "regex": "^/api/doctor/auth/clinician\\-login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/doctor/auth/clinician\\-login(?:/)?$"
+    },
+    {
+      "page": "/api/doctor/auth/login",
+      "regex": "^/api/doctor/auth/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/doctor/auth/login(?:/)?$"
+    },
+    {
+      "page": "/api/emergency/triage",
+      "regex": "^/api/emergency/triage(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/emergency/triage(?:/)?$"
+    },
+    {
+      "page": "/api/hospital/auth/login",
+      "regex": "^/api/hospital/auth/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/hospital/auth/login(?:/)?$"
+    },
+    {
+      "page": "/api/ipd/admit-transfer",
+      "regex": "^/api/ipd/admit\\-transfer(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/ipd/admit\\-transfer(?:/)?$"
+    },
+    {
+      "page": "/api/patient/auth/login",
+      "regex": "^/api/patient/auth/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/patient/auth/login(?:/)?$"
+    },
+    {
+      "page": "/api/pharmacy/dispense",
+      "regex": "^/api/pharmacy/dispense(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/pharmacy/dispense(?:/)?$"
+    },
+    {
+      "page": "/api/procurement/create-po",
+      "regex": "^/api/procurement/create\\-po(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/procurement/create\\-po(?:/)?$"
+    },
+    {
+      "page": "/api/queue/arrive",
+      "regex": "^/api/queue/arrive(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/queue/arrive(?:/)?$"
+    },
+    {
+      "page": "/api/queue/next",
+      "regex": "^/api/queue/next(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/queue/next(?:/)?$"
+    },
+    {
+      "page": "/api/super-vault/unlock",
+      "regex": "^/api/super\\-vault/unlock(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/super\\-vault/unlock(?:/)?$"
+    },
+    {
+      "page": "/appointments",
+      "regex": "^/appointments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/appointments(?:/)?$"
+    },
+    {
+      "page": "/assets",
+      "regex": "^/assets(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/assets(?:/)?$"
+    },
+    {
+      "page": "/billing",
+      "regex": "^/billing(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/billing(?:/)?$"
+    },
+    {
+      "page": "/clinical-suite",
+      "regex": "^/clinical\\-suite(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/clinical\\-suite(?:/)?$"
+    },
+    {
+      "page": "/compliance-contracts",
+      "regex": "^/compliance\\-contracts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/compliance\\-contracts(?:/)?$"
+    },
+    {
+      "page": "/consultation",
+      "regex": "^/consultation(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/consultation(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/dashboard/admissions",
+      "regex": "^/dashboard/admissions(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/admissions(?:/)?$"
+    },
+    {
+      "page": "/dashboard/appointments",
+      "regex": "^/dashboard/appointments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/appointments(?:/)?$"
+    },
+    {
+      "page": "/dashboard/billing",
+      "regex": "^/dashboard/billing(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/billing(?:/)?$"
+    },
+    {
+      "page": "/dashboard/clinical-suite",
+      "regex": "^/dashboard/clinical\\-suite(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/clinical\\-suite(?:/)?$"
+    },
+    {
+      "page": "/dashboard/consultation",
+      "regex": "^/dashboard/consultation(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/consultation(?:/)?$"
+    },
+    {
+      "page": "/dashboard/credentials",
+      "regex": "^/dashboard/credentials(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/credentials(?:/)?$"
+    },
+    {
+      "page": "/dashboard/documents",
+      "regex": "^/dashboard/documents(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/documents(?:/)?$"
+    },
+    {
+      "page": "/dashboard/emr",
+      "regex": "^/dashboard/emr(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/emr(?:/)?$"
+    },
+    {
+      "page": "/dashboard/hospital/finance",
+      "regex": "^/dashboard/hospital/finance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/hospital/finance(?:/)?$"
+    },
+    {
+      "page": "/dashboard/hospital/procurement",
+      "regex": "^/dashboard/hospital/procurement(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/hospital/procurement(?:/)?$"
+    },
+    {
+      "page": "/dashboard/inventory",
+      "regex": "^/dashboard/inventory(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/inventory(?:/)?$"
+    },
+    {
+      "page": "/dashboard/ipd",
+      "regex": "^/dashboard/ipd(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/ipd(?:/)?$"
+    },
+    {
+      "page": "/dashboard/laboratory",
+      "regex": "^/dashboard/laboratory(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/laboratory(?:/)?$"
+    },
+    {
+      "page": "/dashboard/messaging",
+      "regex": "^/dashboard/messaging(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/messaging(?:/)?$"
+    },
+    {
+      "page": "/dashboard/notifications",
+      "regex": "^/dashboard/notifications(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/notifications(?:/)?$"
+    },
+    {
+      "page": "/dashboard/opd",
+      "regex": "^/dashboard/opd(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/opd(?:/)?$"
+    },
+    {
+      "page": "/dashboard/patients",
+      "regex": "^/dashboard/patients(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/patients(?:/)?$"
+    },
+    {
+      "page": "/dashboard/practice-hub",
+      "regex": "^/dashboard/practice\\-hub(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/practice\\-hub(?:/)?$"
+    },
+    {
+      "page": "/dashboard/prescription",
+      "regex": "^/dashboard/prescription(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/prescription(?:/)?$"
+    },
+    {
+      "page": "/dashboard/radiology",
+      "regex": "^/dashboard/radiology(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/radiology(?:/)?$"
+    },
+    {
+      "page": "/dashboard/records",
+      "regex": "^/dashboard/records(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/records(?:/)?$"
+    },
+    {
+      "page": "/dashboard/settings",
+      "regex": "^/dashboard/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/settings(?:/)?$"
+    },
+    {
+      "page": "/dashboard/smartq",
+      "regex": "^/dashboard/smartq(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/smartq(?:/)?$"
+    },
+    {
+      "page": "/dashboard/staff-credentials",
+      "regex": "^/dashboard/staff\\-credentials(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/staff\\-credentials(?:/)?$"
+    },
+    {
+      "page": "/dashboard/supply",
+      "regex": "^/dashboard/supply(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/supply(?:/)?$"
+    },
+    {
+      "page": "/dashboard/surgery",
+      "regex": "^/dashboard/surgery(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/surgery(?:/)?$"
+    },
+    {
+      "page": "/dashboard/telemedicine",
+      "regex": "^/dashboard/telemedicine(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/telemedicine(?:/)?$"
+    },
+    {
+      "page": "/dashboard/vendors",
+      "regex": "^/dashboard/vendors(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/vendors(?:/)?$"
+    },
+    {
+      "page": "/display-board",
+      "regex": "^/display\\-board(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/display\\-board(?:/)?$"
+    },
+    {
+      "page": "/doctor",
+      "regex": "^/doctor(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor(?:/)?$"
+    },
+    {
+      "page": "/doctor/availability",
+      "regex": "^/doctor/availability(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/availability(?:/)?$"
+    },
+    {
+      "page": "/doctor/consultations",
+      "regex": "^/doctor/consultations(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/consultations(?:/)?$"
+    },
+    {
+      "page": "/doctor/dashboard",
+      "regex": "^/doctor/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/dashboard(?:/)?$"
+    },
+    {
+      "page": "/doctor/emergency",
+      "regex": "^/doctor/emergency(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/emergency(?:/)?$"
+    },
+    {
+      "page": "/doctor/login",
+      "regex": "^/doctor/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/login(?:/)?$"
+    },
+    {
+      "page": "/doctor/messages",
+      "regex": "^/doctor/messages(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/messages(?:/)?$"
+    },
+    {
+      "page": "/doctor/patients",
+      "regex": "^/doctor/patients(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/patients(?:/)?$"
+    },
+    {
+      "page": "/doctor/profile",
+      "regex": "^/doctor/profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/profile(?:/)?$"
+    },
+    {
+      "page": "/doctor/queue",
+      "regex": "^/doctor/queue(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/queue(?:/)?$"
+    },
+    {
+      "page": "/doctor/records",
+      "regex": "^/doctor/records(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/records(?:/)?$"
+    },
+    {
+      "page": "/doctor/schedule",
+      "regex": "^/doctor/schedule(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/schedule(?:/)?$"
+    },
+    {
+      "page": "/doctor/workspace",
+      "regex": "^/doctor/workspace(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/doctor/workspace(?:/)?$"
+    },
+    {
+      "page": "/documents",
+      "regex": "^/documents(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/documents(?:/)?$"
+    },
+    {
+      "page": "/emergency",
+      "regex": "^/emergency(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/emergency(?:/)?$"
+    },
+    {
+      "page": "/emr",
+      "regex": "^/emr(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/emr(?:/)?$"
+    },
+    {
+      "page": "/entrepreneur/dashboard",
+      "regex": "^/entrepreneur/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/entrepreneur/dashboard(?:/)?$"
+    },
+    {
+      "page": "/entrepreneur/opd-analytics",
+      "regex": "^/entrepreneur/opd\\-analytics(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/entrepreneur/opd\\-analytics(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/finance",
+      "regex": "^/finance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/finance(?:/)?$"
+    },
+    {
+      "page": "/hospital",
+      "regex": "^/hospital(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital(?:/)?$"
+    },
+    {
+      "page": "/hospital/admissions",
+      "regex": "^/hospital/admissions(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/admissions(?:/)?$"
+    },
+    {
+      "page": "/hospital/appointments",
+      "regex": "^/hospital/appointments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/appointments(?:/)?$"
+    },
+    {
+      "page": "/hospital/billing",
+      "regex": "^/hospital/billing(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/billing(?:/)?$"
+    },
+    {
+      "page": "/hospital/billing/admission-charges",
+      "regex": "^/hospital/billing/admission\\-charges(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/billing/admission\\-charges(?:/)?$"
+    },
+    {
+      "page": "/hospital/billing/invoices",
+      "regex": "^/hospital/billing/invoices(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/billing/invoices(?:/)?$"
+    },
+    {
+      "page": "/hospital/billing/lab-charges",
+      "regex": "^/hospital/billing/lab\\-charges(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/billing/lab\\-charges(?:/)?$"
+    },
+    {
+      "page": "/hospital/billing/medicine-charges",
+      "regex": "^/hospital/billing/medicine\\-charges(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/billing/medicine\\-charges(?:/)?$"
+    },
+    {
+      "page": "/hospital/billing/opd-charges",
+      "regex": "^/hospital/billing/opd\\-charges(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/billing/opd\\-charges(?:/)?$"
+    },
+    {
+      "page": "/hospital/billing/ot-charges",
+      "regex": "^/hospital/billing/ot\\-charges(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/billing/ot\\-charges(?:/)?$"
+    },
+    {
+      "page": "/hospital/billing/radiology-charges",
+      "regex": "^/hospital/billing/radiology\\-charges(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/billing/radiology\\-charges(?:/)?$"
+    },
+    {
+      "page": "/hospital/billing/receipts",
+      "regex": "^/hospital/billing/receipts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/billing/receipts(?:/)?$"
+    },
+    {
+      "page": "/hospital/core-operations",
+      "regex": "^/hospital/core\\-operations(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/core\\-operations(?:/)?$"
+    },
+    {
+      "page": "/hospital/dashboard",
+      "regex": "^/hospital/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/dashboard(?:/)?$"
+    },
+    {
+      "page": "/hospital/departments/emr-vault",
+      "regex": "^/hospital/departments/emr\\-vault(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/departments/emr\\-vault(?:/)?$"
+    },
+    {
+      "page": "/hospital/departments/laboratory",
+      "regex": "^/hospital/departments/laboratory(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/departments/laboratory(?:/)?$"
+    },
+    {
+      "page": "/hospital/departments/opd",
+      "regex": "^/hospital/departments/opd(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/departments/opd(?:/)?$"
+    },
+    {
+      "page": "/hospital/departments/pharmacy",
+      "regex": "^/hospital/departments/pharmacy(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/departments/pharmacy(?:/)?$"
+    },
+    {
+      "page": "/hospital/departments/radiology",
+      "regex": "^/hospital/departments/radiology(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/departments/radiology(?:/)?$"
+    },
+    {
+      "page": "/hospital/discharge",
+      "regex": "^/hospital/discharge(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/discharge(?:/)?$"
+    },
+    {
+      "page": "/hospital/emergency",
+      "regex": "^/hospital/emergency(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/emergency(?:/)?$"
+    },
+    {
+      "page": "/hospital/emr",
+      "regex": "^/hospital/emr(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/emr(?:/)?$"
+    },
+    {
+      "page": "/hospital/insurance",
+      "regex": "^/hospital/insurance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/insurance(?:/)?$"
+    },
+    {
+      "page": "/hospital/inventory",
+      "regex": "^/hospital/inventory(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/inventory(?:/)?$"
+    },
+    {
+      "page": "/hospital/ipd",
+      "regex": "^/hospital/ipd(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/ipd(?:/)?$"
+    },
+    {
+      "page": "/hospital/laboratory",
+      "regex": "^/hospital/laboratory(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/laboratory(?:/)?$"
+    },
+    {
+      "page": "/hospital/login",
+      "regex": "^/hospital/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/login(?:/)?$"
+    },
+    {
+      "page": "/hospital/notifications",
+      "regex": "^/hospital/notifications(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/notifications(?:/)?$"
+    },
+    {
+      "page": "/hospital/opd",
+      "regex": "^/hospital/opd(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/opd(?:/)?$"
+    },
+    {
+      "page": "/hospital/opd-queue",
+      "regex": "^/hospital/opd\\-queue(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/opd\\-queue(?:/)?$"
+    },
+    {
+      "page": "/hospital/opd-reception",
+      "regex": "^/hospital/opd\\-reception(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/opd\\-reception(?:/)?$"
+    },
+    {
+      "page": "/hospital/operations",
+      "regex": "^/hospital/operations(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/operations(?:/)?$"
+    },
+    {
+      "page": "/hospital/ot",
+      "regex": "^/hospital/ot(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/ot(?:/)?$"
+    },
+    {
+      "page": "/hospital/patients",
+      "regex": "^/hospital/patients(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/patients(?:/)?$"
+    },
+    {
+      "page": "/hospital/patients/register",
+      "regex": "^/hospital/patients/register(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/patients/register(?:/)?$"
+    },
+    {
+      "page": "/hospital/payments",
+      "regex": "^/hospital/payments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/payments(?:/)?$"
+    },
+    {
+      "page": "/hospital/pharmacy",
+      "regex": "^/hospital/pharmacy(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/pharmacy(?:/)?$"
+    },
+    {
+      "page": "/hospital/radiology",
+      "regex": "^/hospital/radiology(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/radiology(?:/)?$"
+    },
+    {
+      "page": "/hospital/reception",
+      "regex": "^/hospital/reception(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/reception(?:/)?$"
+    },
+    {
+      "page": "/hospital/security",
+      "regex": "^/hospital/security(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/security(?:/)?$"
+    },
+    {
+      "page": "/hospital/settings",
+      "regex": "^/hospital/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/settings(?:/)?$"
+    },
+    {
+      "page": "/hospital/setup",
+      "regex": "^/hospital/setup(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/setup(?:/)?$"
+    },
+    {
+      "page": "/hospital/staff",
+      "regex": "^/hospital/staff(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/staff(?:/)?$"
+    },
+    {
+      "page": "/hospital/staff/attendance",
+      "regex": "^/hospital/staff/attendance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/staff/attendance(?:/)?$"
+    },
+    {
+      "page": "/hospital/staff/departments",
+      "regex": "^/hospital/staff/departments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/staff/departments(?:/)?$"
+    },
+    {
+      "page": "/hospital/staff/employees",
+      "regex": "^/hospital/staff/employees(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/staff/employees(?:/)?$"
+    },
+    {
+      "page": "/hospital/staff/roles",
+      "regex": "^/hospital/staff/roles(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/staff/roles(?:/)?$"
+    },
+    {
+      "page": "/hospital/staff/shifts",
+      "regex": "^/hospital/staff/shifts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/staff/shifts(?:/)?$"
+    },
+    {
+      "page": "/hospital/staff-credentials",
+      "regex": "^/hospital/staff\\-credentials(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/staff\\-credentials(?:/)?$"
+    },
+    {
+      "page": "/hospital/vendors",
+      "regex": "^/hospital/vendors(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hospital/vendors(?:/)?$"
+    },
+    {
+      "page": "/hr",
+      "regex": "^/hr(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hr(?:/)?$"
+    },
+    {
+      "page": "/insurance-tpa",
+      "regex": "^/insurance\\-tpa(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/insurance\\-tpa(?:/)?$"
+    },
+    {
+      "page": "/inventory",
+      "regex": "^/inventory(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/inventory(?:/)?$"
+    },
+    {
+      "page": "/ipd",
+      "regex": "^/ipd(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/ipd(?:/)?$"
+    },
+    {
+      "page": "/ipd-management",
+      "regex": "^/ipd\\-management(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/ipd\\-management(?:/)?$"
+    },
+    {
+      "page": "/lab",
+      "regex": "^/lab(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/lab(?:/)?$"
+    },
+    {
+      "page": "/laboratory",
+      "regex": "^/laboratory(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/laboratory(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/login/forgot-password",
+      "regex": "^/login/forgot\\-password(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login/forgot\\-password(?:/)?$"
+    },
+    {
+      "page": "/login/reset-password",
+      "regex": "^/login/reset\\-password(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login/reset\\-password(?:/)?$"
+    },
+    {
+      "page": "/master-data",
+      "regex": "^/master\\-data(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/master\\-data(?:/)?$"
+    },
+    {
+      "page": "/master-data/pharmacy",
+      "regex": "^/master\\-data/pharmacy(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/master\\-data/pharmacy(?:/)?$"
+    },
+    {
+      "page": "/messaging",
+      "regex": "^/messaging(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/messaging(?:/)?$"
+    },
+    {
+      "page": "/opd",
+      "regex": "^/opd(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/opd(?:/)?$"
+    },
+    {
+      "page": "/ops/platform-root",
+      "regex": "^/ops/platform\\-root(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/ops/platform\\-root(?:/)?$"
+    },
+    {
+      "page": "/ot-coordination",
+      "regex": "^/ot\\-coordination(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/ot\\-coordination(?:/)?$"
+    },
+    {
+      "page": "/patient",
+      "regex": "^/patient(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient(?:/)?$"
+    },
+    {
+      "page": "/patient/appointments",
+      "regex": "^/patient/appointments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/appointments(?:/)?$"
+    },
+    {
+      "page": "/patient/appointments/book",
+      "regex": "^/patient/appointments/book(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/appointments/book(?:/)?$"
+    },
+    {
+      "page": "/patient/auth/login",
+      "regex": "^/patient/auth/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/auth/login(?:/)?$"
+    },
+    {
+      "page": "/patient/billing",
+      "regex": "^/patient/billing(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/billing(?:/)?$"
+    },
+    {
+      "page": "/patient/book",
+      "regex": "^/patient/book(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/book(?:/)?$"
+    },
+    {
+      "page": "/patient/care-plan",
+      "regex": "^/patient/care\\-plan(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/care\\-plan(?:/)?$"
+    },
+    {
+      "page": "/patient/communication",
+      "regex": "^/patient/communication(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/communication(?:/)?$"
+    },
+    {
+      "page": "/patient/dashboard",
+      "regex": "^/patient/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/dashboard(?:/)?$"
+    },
+    {
+      "page": "/patient/diagnostics",
+      "regex": "^/patient/diagnostics(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/diagnostics(?:/)?$"
+    },
+    {
+      "page": "/patient/doctors",
+      "regex": "^/patient/doctors(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/doctors(?:/)?$"
+    },
+    {
+      "page": "/patient/emergency",
+      "regex": "^/patient/emergency(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/emergency(?:/)?$"
+    },
+    {
+      "page": "/patient/health",
+      "regex": "^/patient/health(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/health(?:/)?$"
+    },
+    {
+      "page": "/patient/insurance",
+      "regex": "^/patient/insurance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/insurance(?:/)?$"
+    },
+    {
+      "page": "/patient/login",
+      "regex": "^/patient/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/login(?:/)?$"
+    },
+    {
+      "page": "/patient/medical-records",
+      "regex": "^/patient/medical\\-records(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/medical\\-records(?:/)?$"
+    },
+    {
+      "page": "/patient/medications",
+      "regex": "^/patient/medications(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/medications(?:/)?$"
+    },
+    {
+      "page": "/patient/messages",
+      "regex": "^/patient/messages(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/messages(?:/)?$"
+    },
+    {
+      "page": "/patient/notifications",
+      "regex": "^/patient/notifications(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/notifications(?:/)?$"
+    },
+    {
+      "page": "/patient/portal",
+      "regex": "^/patient/portal(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/portal(?:/)?$"
+    },
+    {
+      "page": "/patient/prescriptions",
+      "regex": "^/patient/prescriptions(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/prescriptions(?:/)?$"
+    },
+    {
+      "page": "/patient/profile",
+      "regex": "^/patient/profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/profile(?:/)?$"
+    },
+    {
+      "page": "/patient/queue",
+      "regex": "^/patient/queue(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/queue(?:/)?$"
+    },
+    {
+      "page": "/patient/records",
+      "regex": "^/patient/records(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/records(?:/)?$"
+    },
+    {
+      "page": "/patient/register",
+      "regex": "^/patient/register(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/register(?:/)?$"
+    },
+    {
+      "page": "/patient/settings",
+      "regex": "^/patient/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/settings(?:/)?$"
+    },
+    {
+      "page": "/patient/teleconsult",
+      "regex": "^/patient/teleconsult(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/teleconsult(?:/)?$"
+    },
+    {
+      "page": "/patient/telemedicine",
+      "regex": "^/patient/telemedicine(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/telemedicine(?:/)?$"
+    },
+    {
+      "page": "/patients",
+      "regex": "^/patients(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patients(?:/)?$"
+    },
+    {
+      "page": "/patients/register",
+      "regex": "^/patients/register(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patients/register(?:/)?$"
+    },
+    {
+      "page": "/payments",
+      "regex": "^/payments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/payments(?:/)?$"
+    },
+    {
+      "page": "/pharmacy",
+      "regex": "^/pharmacy(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/pharmacy(?:/)?$"
+    },
+    {
+      "page": "/platform-ops-x92/auth",
+      "regex": "^/platform\\-ops\\-x92/auth(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/platform\\-ops\\-x92/auth(?:/)?$"
+    },
+    {
+      "page": "/practice-hub",
+      "regex": "^/practice\\-hub(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/practice\\-hub(?:/)?$"
+    },
+    {
+      "page": "/prescription",
+      "regex": "^/prescription(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/prescription(?:/)?$"
+    },
+    {
+      "page": "/procurement",
+      "regex": "^/procurement(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/procurement(?:/)?$"
+    },
+    {
+      "page": "/products",
+      "regex": "^/products(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/products(?:/)?$"
+    },
+    {
+      "page": "/purchase-orders",
+      "regex": "^/purchase\\-orders(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/purchase\\-orders(?:/)?$"
+    },
+    {
+      "page": "/radiology",
+      "regex": "^/radiology(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/radiology(?:/)?$"
+    },
+    {
+      "page": "/reports",
+      "regex": "^/reports(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/reports(?:/)?$"
+    },
+    {
+      "page": "/robots.txt",
+      "regex": "^/robots\\.txt(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/robots\\.txt(?:/)?$"
+    },
+    {
+      "page": "/service-requests",
+      "regex": "^/service\\-requests(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/service\\-requests(?:/)?$"
+    },
+    {
+      "page": "/settings",
+      "regex": "^/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/settings(?:/)?$"
+    },
+    {
+      "page": "/staff",
+      "regex": "^/staff(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/staff(?:/)?$"
+    },
+    {
+      "page": "/staff/login",
+      "regex": "^/staff/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/staff/login(?:/)?$"
+    },
+    {
+      "page": "/staff/nursing",
+      "regex": "^/staff/nursing(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/staff/nursing(?:/)?$"
+    },
+    {
+      "page": "/staff/pharmacy",
+      "regex": "^/staff/pharmacy(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/staff/pharmacy(?:/)?$"
+    },
+    {
+      "page": "/staff/reception",
+      "regex": "^/staff/reception(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/staff/reception(?:/)?$"
+    },
+    {
+      "page": "/staff/roles",
+      "regex": "^/staff/roles(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/staff/roles(?:/)?$"
+    },
+    {
+      "page": "/super-admin/dashboard",
+      "regex": "^/super\\-admin/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/super\\-admin/dashboard(?:/)?$"
+    },
+    {
+      "page": "/super-admin/staff-credentials",
+      "regex": "^/super\\-admin/staff\\-credentials(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/super\\-admin/staff\\-credentials(?:/)?$"
+    },
+    {
+      "page": "/super-admin/tenants",
+      "regex": "^/super\\-admin/tenants(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/super\\-admin/tenants(?:/)?$"
+    },
+    {
+      "page": "/super-vault-access",
+      "regex": "^/super\\-vault\\-access(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/super\\-vault\\-access(?:/)?$"
+    },
+    {
+      "page": "/superadmin/login",
+      "regex": "^/superadmin/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/superadmin/login(?:/)?$"
+    },
+    {
+      "page": "/surgery",
+      "regex": "^/surgery(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/surgery(?:/)?$"
+    },
+    {
+      "page": "/telemedicine",
+      "regex": "^/telemedicine(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/telemedicine(?:/)?$"
+    },
+    {
+      "page": "/vendor",
+      "regex": "^/vendor(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor(?:/)?$"
+    },
+    {
+      "page": "/vendor/hospital",
+      "regex": "^/vendor/hospital(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/hospital(?:/)?$"
+    },
+    {
+      "page": "/vendor/login",
+      "regex": "^/vendor/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/login(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal",
+      "regex": "^/vendor/portal(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/analytics",
+      "regex": "^/vendor/portal/analytics(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/analytics(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/billing",
+      "regex": "^/vendor/portal/billing(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/billing(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/catalog",
+      "regex": "^/vendor/portal/catalog(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/catalog(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/communication",
+      "regex": "^/vendor/portal/communication(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/communication(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/compliance",
+      "regex": "^/vendor/portal/compliance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/compliance(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/contracts",
+      "regex": "^/vendor/portal/contracts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/contracts(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/dashboard",
+      "regex": "^/vendor/portal/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/dashboard(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/deliveries",
+      "regex": "^/vendor/portal/deliveries(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/deliveries(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/inventory",
+      "regex": "^/vendor/portal/inventory(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/inventory(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/invoices",
+      "regex": "^/vendor/portal/invoices(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/invoices(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/login",
+      "regex": "^/vendor/portal/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/login(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/notifications",
+      "regex": "^/vendor/portal/notifications(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/notifications(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/orders",
+      "regex": "^/vendor/portal/orders(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/orders(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/organization",
+      "regex": "^/vendor/portal/organization(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/organization(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/purchase-orders",
+      "regex": "^/vendor/portal/purchase\\-orders(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/purchase\\-orders(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/quotations",
+      "regex": "^/vendor/portal/quotations(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/quotations(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/service-requests",
+      "regex": "^/vendor/portal/service\\-requests(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/service\\-requests(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/settings",
+      "regex": "^/vendor/portal/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/settings(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/support",
+      "regex": "^/vendor/portal/support(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/support(?:/)?$"
+    },
+    {
+      "page": "/vendor/portal/warehouse",
+      "regex": "^/vendor/portal/warehouse(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/portal/warehouse(?:/)?$"
+    },
+    {
+      "page": "/vendor/secure-hub",
+      "regex": "^/vendor/secure\\-hub(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/secure\\-hub(?:/)?$"
+    },
+    {
+      "page": "/vendor/secure-hub/po-inbox",
+      "regex": "^/vendor/secure\\-hub/po\\-inbox(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/secure\\-hub/po\\-inbox(?:/)?$"
+    },
+    {
+      "page": "/vendor/workspace",
+      "regex": "^/vendor/workspace(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor/workspace(?:/)?$"
+    },
+    {
+      "page": "/vendor-coordination",
+      "regex": "^/vendor\\-coordination(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/vendor\\-coordination(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

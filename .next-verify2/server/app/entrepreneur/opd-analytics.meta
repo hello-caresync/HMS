@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/entrepreneur/layout,_N_T_/entrepreneur/opd-analytics/layout,_N_T_/entrepreneur/opd-analytics/page,_N_T_/entrepreneur/opd-analytics"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/entrepreneur/opd-analytics/__PAGE__",
+    "/entrepreneur/opd-analytics",
+    "/entrepreneur",
+    "/_index",
+    "/_head"
+  ]
+}

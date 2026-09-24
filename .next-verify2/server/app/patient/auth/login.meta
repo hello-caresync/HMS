@@ -1,0 +1,19 @@
+{
+  "status": 307,
+  "headers": {
+    "location": "/patient/login",
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/patient/layout,_N_T_/patient/auth/layout,_N_T_/patient/auth/login/layout,_N_T_/patient/auth/login/page,_N_T_/patient/auth/login"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/patient/auth/login/__PAGE__",
+    "/patient/auth/login",
+    "/patient/auth",
+    "/patient",
+    "/_index",
+    "/_head"
+  ]
+}

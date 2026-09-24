@@ -94,7 +94,8 @@ const PUBLIC_AUTH_PATHS = [
   '/patient/auth/login',
   '/vendor/login',
   '/ops/platform-root',
-  '/super-admin/login',
+  '/superadmin/login',
+  '/super-vault-access',
 ];
 
 function isPublicAuthPath(pathname: string): boolean {

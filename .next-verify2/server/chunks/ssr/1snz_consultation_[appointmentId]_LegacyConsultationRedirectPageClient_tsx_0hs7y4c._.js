@@ -1,0 +1,3 @@
+module.exports=[578443,a=>{"use strict";var b=a.i(463629),c=a.i(61734),d=a.i(374521);function e({appointmentId:a}){let b=(0,d.useRouter)();return(0,c.useEffect)(()=>{b.replace(`/doctor/consultations?appointmentId=${a}`)},[a,b]),null}function f(){let a=(0,d.useParams)().appointmentId??"";return(0,b.jsx)(e,{appointmentId:a})}a.s(["default",0,function(){return(0,b.jsx)(c.Suspense,{fallback:(0,b.jsx)("div",{className:"flex min-h-screen items-center justify-center text-sm text-stone-500",children:"Loading consultation…"}),children:(0,b.jsx)(f,{})})}],578443)}];
+
+//# sourceMappingURL=1snz_consultation_%5BappointmentId%5D_LegacyConsultationRedirectPageClient_tsx_0hs7y4c._.js.map

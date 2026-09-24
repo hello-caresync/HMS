@@ -1,0 +1,3 @@
+module.exports=[221935,a=>{"use strict";function b(a){}a.s(["getHospitalQueue",0,function(){return[]},"pushToHospitalQueue",0,function(a){let c={id:a.id,token:a.token,patient_name:a.patientName,department:a.department,provider:a.doctorName,scheduled_time:`${a.date} ${a.time}`,location:a.location,status:a.status,channels:{sms:!0,email:!0,whatsapp:!1},created_at:a.createdAt},d=[],e=d.findIndex(b=>b.id===a.id);e>=0?d[e]=c:d.unshift(c),b(d)},"updateHospitalQueueStatus",0,function(a,c){b([].map(b=>b.id===a?{...b,status:c}:b))}])}];
+
+//# sourceMappingURL=OneDrive_Desktop_caresync_curasync_lib_ecosystem_hospital-sync_ts_11g5bxp._.js.map

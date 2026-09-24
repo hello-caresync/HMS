@@ -1,12 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { EcosystemRouteGuard } from '@/components/auth/EcosystemRouteGuard';
 
+/** Vault is root-gated in-app; middleware treats /super-vault-access as a public auth route. */
 export default function SuperVaultAccessLayout({ children }: { children: ReactNode }) {
-  return (
-    <EcosystemRouteGuard role="superadmin" loginPath="/super-admin/login">
-      {children}
-    </EcosystemRouteGuard>
-  );
+  return <>{children}</>;
 }

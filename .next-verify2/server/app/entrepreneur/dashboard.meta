@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/entrepreneur/layout,_N_T_/entrepreneur/dashboard/layout,_N_T_/entrepreneur/dashboard/page,_N_T_/entrepreneur/dashboard"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/entrepreneur/dashboard/__PAGE__",
+    "/entrepreneur/dashboard",
+    "/entrepreneur",
+    "/_index",
+    "/_head"
+  ]
+}

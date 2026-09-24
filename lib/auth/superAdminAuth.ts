@@ -3,8 +3,56 @@ export const SUPER_ADMIN_ROOT_EMAIL = 'platform.root@regalhealth.io';
 export const SUPER_ADMIN_ROOT_PASSCODE = 'CURA#2026@ROOT_VAULT';
 export const SUPER_ADMIN_FACILITY_NODE = 'HOSP-01';
 export const SUPER_ADMIN_DEFAULT_PORTAL = '/super-vault-access/';
+export const SUPER_ADMIN_LOGIN_PATH = '/superadmin/login';
+
+export function normalizeSuperAdminRoutePath(path: string): string {
+  const withoutQuery = path.split('?')[0] ?? path;
+  if (withoutQuery.length > 1 && withoutQuery.endsWith('/')) {
+    return withoutQuery.slice(0, -1);
+  }
+  return withoutQuery || '/';
+}
+
+/** Disable Next.js RSC prefetch for routes that fail Turbopack background fetch. */
+export function shouldDisableSuperAdminLinkPrefetch(href: string): boolean {
+  const path = normalizeSuperAdminRoutePath(href);
+  return (
+    path === SUPER_ADMIN_LOGIN_PATH ||
+    path.startsWith(`${SUPER_ADMIN_LOGIN_PATH}/`) ||
+    path === '/super-vault-access' ||
+    path.startsWith('/super-vault-access/')
+  );
+}
+
+/** Full-page navigation — avoids fetchServerResponse / navigateToUnknownRoute prefetch errors. */
+export function hardNavigateSuperAdminRoute(path: string): void {
+  if (typeof window === 'undefined') return;
+  window.location.href = path.startsWith('/') ? path : `/${path}`;
+}
 
 export const SUPER_ADMIN_INVALID_CREDENTIALS_MESSAGE = 'Invalid email or passcode.';
+
+/** True when a `hospital_staff` row represents the global platform root — not local hospital staff. */
+export function isGlobalSuperAdminStaffRecord(row: {
+  email?: string | null;
+  role?: string | null;
+  staff_type?: string | null;
+}): boolean {
+  const email = normalizeSuperAdminEmail(row.email);
+  if (email === SUPER_ADMIN_ROOT_EMAIL) return true;
+
+  const role = String(row.role ?? row.staff_type ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '_');
+
+  return (
+    role === 'SUPER_ADMIN' ||
+    role === 'SUPERADMIN' ||
+    role.includes('SUPER_ADMIN') ||
+    role.includes('SUPERADMIN')
+  );
+}
 
 export type SuperAdminSessionPayload = {
   email: string;

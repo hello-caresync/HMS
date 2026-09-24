@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Building2, Crown, Hospital, Users } from 'lucide-react';
 
 import { clearHospitalOsSessionTokens } from '@/lib/auth/active-session';
+import { SUPER_ADMIN_VAULT_LOGIN_REDIRECT } from '@/lib/auth/superAdminAuth';
 import { fetchHospitalStaffCounts, type HospitalStaffRoleCount } from '@/lib/hospital/hospital-staff-roster';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -21,8 +22,8 @@ export default function SuperAdminDashboardPage() {
   });
 
   useEffect(() => {
-    router.replace('/super-vault-access');
-  }, [router]);
+    window.location.replace(SUPER_ADMIN_VAULT_LOGIN_REDIRECT);
+  }, []);
 
   useEffect(() => {
     void fetchHospitalStaffCounts(supabase).then(setTenantStats);

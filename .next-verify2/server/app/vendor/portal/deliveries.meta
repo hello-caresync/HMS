@@ -1,0 +1,18 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/vendor/layout,_N_T_/vendor/portal/layout,_N_T_/vendor/portal/(shell)/layout,_N_T_/vendor/portal/(shell)/deliveries/layout,_N_T_/vendor/portal/(shell)/deliveries/page,_N_T_/vendor/portal/deliveries"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/vendor/portal/!KHNoZWxsKQ/deliveries/__PAGE__",
+    "/vendor/portal/!KHNoZWxsKQ/deliveries",
+    "/vendor/portal/!KHNoZWxsKQ",
+    "/vendor/portal",
+    "/vendor",
+    "/_index",
+    "/_head"
+  ]
+}

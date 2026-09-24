@@ -9,6 +9,7 @@ import {
   isStaffCredentialsAdminPath,
   resolveHospitalSessionRole,
 } from '@/lib/auth/hospital-rbac';
+import { SUPER_ADMIN_LOGIN_PATH } from '@/lib/auth/superAdminAuth';
 
 export const CURASYNC_DOCTOR_SESSION_COOKIE = 'curasync_doctor_session';
 
@@ -21,7 +22,7 @@ export const GLOBAL_PUBLIC_PATHS = [
   '/',
   '/login',
   '/ops/platform-root',
-  '/super-admin/login',
+  SUPER_ADMIN_LOGIN_PATH,
   '/admin/login',
   '/staff/login',
   '/vendor/login',

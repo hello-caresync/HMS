@@ -1,0 +1,5 @@
+User-Agent: *
+Allow: /
+Disallow: /super-vault-access
+Disallow: /super-vault-access/
+

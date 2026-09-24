@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/hospital/layout,_N_T_/hospital/staff/layout,_N_T_/hospital/staff/roles/layout,_N_T_/hospital/staff/roles/page,_N_T_/hospital/staff/roles"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/hospital/staff/roles/__PAGE__",
+    "/hospital/staff/roles",
+    "/hospital/staff",
+    "/hospital",
+    "/_index",
+    "/_head"
+  ]
+}

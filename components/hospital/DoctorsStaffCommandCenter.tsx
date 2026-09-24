@@ -7,6 +7,11 @@ import { toast } from 'sonner';
 
 import { StaffDirectoryTable } from '@/components/admin/StaffDirectoryTable';
 import {
+  ensureStaffPasscodeKey,
+  generateSecurePasscode,
+  passcodePrefixForStaffRole,
+} from '@/lib/hospital/generate-secure-passcode';
+import {
   createHospitalStaffMember,
   fetchCommandCenterPersonnel,
   toDashboardStaffRow,
@@ -175,7 +180,12 @@ export function DoctorsStaffCommandCenter({
   }, [members, query, roleFilter]);
 
   const openCreate = () => {
-    setDraft({ ...EMPTY_DRAFT, consultation_fee: 500, role: 'doctor' });
+    setDraft({
+      ...EMPTY_DRAFT,
+      consultation_fee: 500,
+      role: 'doctor',
+      passcode_key: generateSecurePasscode('DOC'),
+    });
     setEditor('create');
   };
 
@@ -184,7 +194,7 @@ export function DoctorsStaffCommandCenter({
       staff_id_code: member.staff_id_code,
       full_name: member.full_name,
       email: member.email,
-      passcode_key: member.passcode_key,
+      passcode_key: ensureStaffPasscodeKey(member.role, member.passcode_key),
       role: member.role,
       department: member.department,
       qualification: member.qualification,
@@ -193,6 +203,17 @@ export function DoctorsStaffCommandCenter({
     });
     setEditor(member);
   };
+
+  useEffect(() => {
+    if (!editor) return;
+    setDraft((prev) => {
+      if (prev.passcode_key?.trim()) return prev;
+      return {
+        ...prev,
+        passcode_key: generateSecurePasscode(passcodePrefixForStaffRole(prev.role)),
+      };
+    });
+  }, [editor]);
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -402,13 +423,31 @@ export function DoctorsStaffCommandCenter({
                 placeholder="Email"
                 className="rounded-xl border border-slate-200 px-3 py-2.5"
               />
-              <input
-                disabled={isSaving}
-                value={draft.passcode_key}
-                onChange={(e) => setDraft((prev) => ({ ...prev, passcode_key: e.target.value }))}
-                placeholder="Passcode key"
-                className="rounded-xl border border-slate-200 px-3 py-2.5 font-mono"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="passcode_key"
+                  disabled={isSaving}
+                  value={draft.passcode_key || ''}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, passcode_key: e.target.value }))}
+                  placeholder="Auto-generated passcode"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-10 pl-3 font-mono text-sm font-bold text-slate-800 focus:border-cyan-500 focus:outline-none disabled:opacity-60"
+                />
+                <button
+                  type="button"
+                  title="Generate New Passcode"
+                  disabled={isSaving}
+                  onClick={() =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      passcode_key: generateSecurePasscode(passcodePrefixForStaffRole(prev.role)),
+                    }))
+                  }
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-cyan-600 disabled:opacity-50"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              </div>
               <input
                 disabled={isSaving}
                 value={draft.department}

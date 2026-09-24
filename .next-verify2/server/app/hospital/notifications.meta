@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/hospital/layout,_N_T_/hospital/notifications/layout,_N_T_/hospital/notifications/page,_N_T_/hospital/notifications"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/hospital/notifications/__PAGE__",
+    "/hospital/notifications",
+    "/hospital",
+    "/_index",
+    "/_head"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(dashboard)/layout,_N_T_/(dashboard)/master-data/layout,_N_T_/(dashboard)/master-data/pharmacy/layout,_N_T_/(dashboard)/master-data/pharmacy/page,_N_T_/master-data/pharmacy"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGRhc2hib2FyZCk/master-data/pharmacy/__PAGE__",
+    "/!KGRhc2hib2FyZCk/master-data/pharmacy",
+    "/!KGRhc2hib2FyZCk/master-data",
+    "/!KGRhc2hib2FyZCk",
+    "/_index",
+    "/_head"
+  ]
+}

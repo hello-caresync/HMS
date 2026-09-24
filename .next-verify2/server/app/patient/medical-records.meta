@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/patient/layout,_N_T_/patient/medical-records/layout,_N_T_/patient/medical-records/page,_N_T_/patient/medical-records"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/patient/medical-records/__PAGE__",
+    "/patient/medical-records",
+    "/patient",
+    "/_index",
+    "/_head"
+  ]
+}

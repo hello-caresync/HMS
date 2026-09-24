@@ -1,0 +1,661 @@
+{
+  "app": {
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/admin/audit/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/admin/settings/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/admissions/allocate/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/assets/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/billing/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/emergency/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/finance/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/hr/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/insurance-tpa/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/inventory/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/ipd-management/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/ipd/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/lab/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/master-data/pharmacy/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/opd/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/ot-coordination/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/patients/register/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/payments/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/pharmacy/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/procurement/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/reports/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/staff/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/staff/roles/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/(dashboard)/vendor-coordination/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/_not-found/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/admin/dashboard/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/admin/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/admin/onboarding/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/analytics/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/appointments/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/clinical-suite/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/compliance-contracts/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/consultation/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/admissions/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/appointments/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/billing/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/clinical-suite/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/consultation/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/credentials/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/documents/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/emr/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/hospital/finance/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/hospital/procurement/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/inventory/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/ipd/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/laboratory/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/messaging/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/notifications/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/opd/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/patients/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/practice-hub/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/prescription/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/radiology/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/records/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/settings/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/smartq/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/staff-credentials/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/supply/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/surgery/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/telemedicine/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/dashboard/vendors/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/display-board/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/availability/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/consultation/[appointmentId]/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/consultations/[appointmentId]/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/consultations/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/dashboard/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/emergency/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/messages/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/patients/[id]/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/patients/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/profile/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/queue/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/records/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/schedule/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/doctor/workspace/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/documents/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/emr/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/entrepreneur/dashboard/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/entrepreneur/opd-analytics/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/admissions/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/appointments/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/billing/admission-charges/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/billing/invoices/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/billing/lab-charges/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/billing/medicine-charges/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/billing/opd-charges/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/billing/ot-charges/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/billing/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/billing/radiology-charges/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/billing/receipts/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/core-operations/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/dashboard/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/departments/emr-vault/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/departments/laboratory/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/departments/opd/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/departments/pharmacy/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/departments/radiology/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/discharge/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/emergency/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/emr/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/insurance/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/inventory/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/ipd/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/laboratory/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/notifications/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/opd-queue/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/opd-reception/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/opd/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/operations/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/ot/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/patients/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/patients/register/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/payments/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/pharmacy/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/radiology/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/reception/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/security/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/settings/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/setup/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/staff-credentials/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/staff/attendance/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/staff/departments/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/staff/employees/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/staff/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/staff/roles/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/staff/shifts/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/hospital/vendors/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/laboratory/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/login/forgot-password/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/login/reset-password/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/master-data/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/messaging/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/ops/platform-root/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/appointments/book/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/appointments/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/auth/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/billing/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/book/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/care-plan/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/communication/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/dashboard/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/diagnostics/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/doctors/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/emergency/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/health/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/insurance/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/medical-records/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/medications/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/messages/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/notifications/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/portal/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/prescriptions/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/profile/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/queue/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/records/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/register/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/settings/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/teleconsult/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patient/telemedicine/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/patients/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/platform-ops-x92/auth/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/practice-hub/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/prescription/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/products/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/purchase-orders/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/radiology/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/service-requests/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/settings/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/staff/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/staff/nursing/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/staff/pharmacy/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/staff/reception/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/super-admin/dashboard/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/super-admin/staff-credentials/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/super-admin/tenants/[id]/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/super-admin/tenants/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/super-vault-access/[id]/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/super-vault-access/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/superadmin/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/surgery/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/telemedicine/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/hospital/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/analytics/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/billing/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/catalog/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/communication/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/compliance/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/contracts/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/dashboard/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/deliveries/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/inventory/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/invoices/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/notifications/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/orders/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/organization/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/purchase-orders/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/quotations/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/service-requests/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/settings/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/support/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/(shell)/warehouse/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/portal/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/secure-hub/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/secure-hub/po-inbox/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ],
+    "[project]/OneDrive/Desktop/caresync/curasync/app/vendor/workspace/page": [
+      "static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/hospital/layout,_N_T_/hospital/departments/layout,_N_T_/hospital/departments/emr-vault/layout,_N_T_/hospital/departments/emr-vault/page,_N_T_/hospital/departments/emr-vault"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/hospital/departments/emr-vault/__PAGE__",
+    "/hospital/departments/emr-vault",
+    "/hospital/departments",
+    "/hospital",
+    "/_index",
+    "/_head"
+  ]
+}

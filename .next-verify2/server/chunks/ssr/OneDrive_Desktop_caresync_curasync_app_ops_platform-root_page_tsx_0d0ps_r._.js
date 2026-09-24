@@ -1,0 +1,3 @@
+module.exports=[2065,a=>{"use strict";var b=a.i(463629),c=a.i(61734);a.s(["default",0,function(){return(0,c.useEffect)(()=>{window.location.replace("/superadmin/login/")},[]),(0,b.jsx)("div",{className:"flex min-h-screen items-center justify-center bg-[#1e2433] text-sm font-semibold text-slate-300",children:"Redirecting to Super Admin Gateway..."})}])}];
+
+//# sourceMappingURL=OneDrive_Desktop_caresync_curasync_app_ops_platform-root_page_tsx_0d0ps_r._.js.map

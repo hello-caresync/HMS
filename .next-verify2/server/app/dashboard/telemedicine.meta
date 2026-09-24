@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/dashboard/layout,_N_T_/dashboard/telemedicine/layout,_N_T_/dashboard/telemedicine/page,_N_T_/dashboard/telemedicine"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/dashboard/telemedicine/__PAGE__",
+    "/dashboard/telemedicine",
+    "/dashboard",
+    "/_index",
+    "/_head"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/hospital/layout,_N_T_/hospital/radiology/layout,_N_T_/hospital/radiology/page,_N_T_/hospital/radiology"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/hospital/radiology/__PAGE__",
+    "/hospital/radiology",
+    "/hospital",
+    "/_index",
+    "/_head"
+  ]
+}

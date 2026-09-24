@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/dashboard/layout,_N_T_/dashboard/hospital/layout,_N_T_/dashboard/hospital/procurement/layout,_N_T_/dashboard/hospital/procurement/page,_N_T_/dashboard/hospital/procurement"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/dashboard/hospital/procurement/__PAGE__",
+    "/dashboard/hospital/procurement",
+    "/dashboard/hospital",
+    "/dashboard",
+    "/_index",
+    "/_head"
+  ]
+}

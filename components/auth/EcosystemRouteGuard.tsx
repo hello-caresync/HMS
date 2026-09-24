@@ -18,6 +18,12 @@ import {
 } from '@/lib/auth/ecosystem-sessions';
 import { hospitalDeskLoginUrl } from '@/lib/auth/hospital-desk-session';
 import { parseSuperAdminSession, SUPER_ADMIN_SESSION_KEY } from '@/lib/auth/super-admin-session';
+import {
+  hardNavigateSuperAdminRoute,
+  normalizeSuperAdminRoutePath,
+  shouldDisableSuperAdminLinkPrefetch,
+  SUPER_ADMIN_LOGIN_PATH,
+} from '@/lib/auth/superAdminAuth';
 
 type GuardRole = 'admin' | 'staff' | 'vendor' | 'patient' | 'superadmin' | 'doctor' | 'hospital';
 
@@ -113,6 +119,16 @@ export function EcosystemRouteGuard({ role, children, loginPath }: RouteGuardPro
         role === 'hospital'
           ? hospitalDeskLoginUrl(pathname ?? undefined)
           : loginPath;
+
+      if (shouldDisableSuperAdminLinkPrefetch(destination)) {
+        hardNavigateSuperAdminRoute(
+          normalizeSuperAdminRoutePath(destination) === SUPER_ADMIN_LOGIN_PATH
+            ? `${SUPER_ADMIN_LOGIN_PATH}/`
+            : destination,
+        );
+        return;
+      }
+
       router.replace(destination);
       return;
     }

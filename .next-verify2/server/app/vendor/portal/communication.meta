@@ -1,0 +1,18 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/vendor/layout,_N_T_/vendor/portal/layout,_N_T_/vendor/portal/(shell)/layout,_N_T_/vendor/portal/(shell)/communication/layout,_N_T_/vendor/portal/(shell)/communication/page,_N_T_/vendor/portal/communication"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/vendor/portal/!KHNoZWxsKQ/communication/__PAGE__",
+    "/vendor/portal/!KHNoZWxsKQ/communication",
+    "/vendor/portal/!KHNoZWxsKQ",
+    "/vendor/portal",
+    "/vendor",
+    "/_index",
+    "/_head"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/practice-hub/layout,_N_T_/practice-hub/page,_N_T_/practice-hub"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/practice-hub/__PAGE__",
+    "/practice-hub",
+    "/_index",
+    "/_head"
+  ]
+}

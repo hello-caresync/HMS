@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/hospital/layout,_N_T_/hospital/departments/layout,_N_T_/hospital/departments/pharmacy/layout,_N_T_/hospital/departments/pharmacy/page,_N_T_/hospital/departments/pharmacy"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/hospital/departments/pharmacy/__PAGE__",
+    "/hospital/departments/pharmacy",
+    "/hospital/departments",
+    "/hospital",
+    "/_index",
+    "/_head"
+  ]
+}

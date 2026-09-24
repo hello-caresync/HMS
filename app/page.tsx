@@ -12,6 +12,10 @@ import {
 } from 'lucide-react';
 
 import { HospitalLogo } from '@/components/common/Logo';
+import {
+  shouldDisableSuperAdminLinkPrefetch,
+  SUPER_ADMIN_LOGIN_PATH,
+} from '@/lib/auth/superAdminAuth';
 
 interface PortalCard {
   id: string;
@@ -35,7 +39,7 @@ const PORTAL_ROLES: PortalCard[] = [
     description:
       'Master platform orchestration, hospital node provisioning, and multi-tenant security.',
     badge: 'LEVEL 0 ROOT',
-    href: '/super-admin/login',
+    href: SUPER_ADMIN_LOGIN_PATH,
     badgeColor: 'bg-amber-100/70 text-amber-800 border-amber-300/60',
     accentHover: 'hover:border-amber-300/60 hover:shadow-amber-500/10',
     iconBg: 'bg-amber-100',
@@ -112,9 +116,12 @@ function PortalCardLink({
 }) {
   const Icon = card.icon;
 
+  const disablePrefetch = shouldDisableSuperAdminLinkPrefetch(card.href);
+
   return (
     <Link
       href={card.href}
+      prefetch={disablePrefetch ? false : undefined}
       className={`${CARD_CLASS} ${card.accentHover} ${className}`}
     >
       <div>

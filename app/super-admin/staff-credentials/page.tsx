@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import {
   Crown,
   Building2,
@@ -22,16 +22,17 @@ import { toast } from 'sonner';
 import { createClient } from '@supabase/supabase-js';
 
 import { OnboardHospitalModal, type OnboardHospitalResult } from '@/components/admin/OnboardHospitalModal';
+import { StaffProvisioningModal } from '@/components/hospital/StaffProvisioningModal';
+import { isGlobalSuperAdminStaffRecord } from '@/lib/auth/superAdminAuth';
 import {
   credentialRoleToStaffType,
   normalizeCredentialRole,
   resolveCredentialDashboardRoute,
 } from '@/lib/auth/hospitalAuth';
 import { isUuidValue } from '@/lib/utils/formatters';
-import {
-  fetchSuperAdminStaffCredentials,
-  fetchSuperAdminTenantStaffCredentials,
-} from '@/lib/super-admin/staff-credentials-loader';
+import { fetchSuperAdminStaffCredentials } from '@/lib/super-admin/staff-credentials-loader';
+import { isBlockedSuperAdminTenantId } from '@/lib/super-admin/tenant-directory';
+import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import {
   credentialBelongsToTenant,
   formatTenantCredentialScopeLabel,
@@ -39,15 +40,32 @@ import {
 import {
   dedupeHospitalTenantsByCode,
   fetchSuperAdminHospitalTenantByIdentifier,
-  fetchSuperAdminHospitalTenants,
   formatHospitalTenantBadge,
   matchHospitalTenantByIdentifier,
+  normalizeHospitalTenantRow,
   type SuperAdminHospitalTenant,
 } from '@/lib/super-admin/hospital-tenants';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
+
+const FALLBACK_HOSPITAL: SuperAdminHospitalTenant = {
+  id: 'HOSP-01',
+  hospital_code: 'HOSP-01',
+  name: 'REGAL MULTISPECIALITY HOSPITAL',
+  city: 'Bengaluru, India',
+  status: 'Active Node',
+};
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+}
+
+function isVisibleSuperAdminTenant(tenant: SuperAdminHospitalTenant): boolean {
+  if (!isBlockedSuperAdminTenantId(tenant.id)) return true;
+  return tenant.hospital_code.trim().toUpperCase() === REGAL_HOSPITAL_CODE;
+}
 
 interface StaffCredential {
   id: string;
@@ -151,17 +169,27 @@ function normalizeCredential(row: Record<string, unknown>): StaffCredential {
 type SuperAdminHospitalBlocksDashboardProps = {
   /** Route param or deep-link identifier — UUID or hospital_code such as HOSP-01. */
   initialTenantIdentifier?: string;
+  /** Super Vault: hide platform root identity from local hospital staff rosters. */
+  excludeGlobalSuperAdminFromRoster?: boolean;
 };
+
+function excludePlatformRootFromRoster(
+  creds: StaffCredential[],
+  enabled: boolean,
+): StaffCredential[] {
+  if (!enabled) return creds;
+  return creds.filter((cred) => !isGlobalSuperAdminStaffRecord(cred));
+}
 
 export function SuperAdminHospitalBlocksDashboard({
   initialTenantIdentifier,
+  excludeGlobalSuperAdminFromRoster = false,
 }: SuperAdminHospitalBlocksDashboardProps = {}) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [hospitals, setHospitals] = useState<SuperAdminHospitalTenant[]>([]);
   const [credentials, setCredentials] = useState<StaffCredential[]>([]);
   const [tenantCredentials, setTenantCredentials] = useState<StaffCredential[]>([]);
-  const [selectedHospitalCode, setSelectedHospitalCode] = useState<string | null>(null);
+  const [selectedHospital, setSelectedHospital] = useState<SuperAdminHospitalTenant | null>(null);
   const [missingTenantIdentifier, setMissingTenantIdentifier] = useState<string | null>(null);
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,6 +200,7 @@ export function SuperAdminHospitalBlocksDashboard({
   const [deletingStaffId, setDeletingStaffId] = useState<string | null>(null);
 
   const [showOnboardModal, setShowOnboardModal] = useState(false);
+  const [showAddHospitalAdminModal, setShowAddHospitalAdminModal] = useState(false);
   const [createdPacket, setCreatedPacket] = useState<StaffCredential | null>(null);
 
   const requestedTenantIdentifier =
@@ -180,60 +209,75 @@ export function SuperAdminHospitalBlocksDashboard({
     searchParams.get('id')?.trim() ||
     null;
 
-  const loadTenantStaffDirectory = useCallback(
-    async (tenant: SuperAdminHospitalTenant | undefined) => {
-      if (!supabase || !tenant) {
-        setTenantCredentials([]);
-        return;
+  const loadTenantStaffDirectory = useCallback(async (tenant: SuperAdminHospitalTenant) => {
+    if (!supabase) {
+      setTenantCredentials([]);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('hospital_staff')
+      .select('*')
+      .eq('hospital_id', tenant.id);
+
+    let rows = data ?? [];
+
+    if ((error || rows.length === 0) && tenant.hospital_code !== tenant.id) {
+      const secondary = await supabase
+        .from('hospital_staff')
+        .select('*')
+        .eq('hospital_id', tenant.hospital_code);
+      if (!secondary.error && secondary.data?.length) {
+        rows = secondary.data;
       }
+    }
 
-      const targetHospitalId =
-        tenant.hospital_code ||
-        tenant.id ||
-        'HOSP-01';
+    if (error && rows.length === 0) {
+      console.error('Failed to fetch staff credentials:', error.message);
+    }
 
-      const staffResult = await fetchSuperAdminTenantStaffCredentials(
-        supabase,
-        tenant.id,
-        targetHospitalId,
-      );
+    const localStaffRows = excludeGlobalSuperAdminFromRoster
+      ? rows.filter((row) => !isGlobalSuperAdminStaffRecord(row as Record<string, unknown>))
+      : rows;
 
-      if (staffResult.error) {
-        console.error('Failed to fetch staff credentials:', staffResult.error);
-      }
-
-      console.log('Loaded credentials:', staffResult.raw ?? staffResult.rows);
-
-      const normalized = (staffResult.raw ?? staffResult.rows).map((row) =>
-        normalizeCredential(row as Record<string, unknown>),
-      );
-
-      setTenantCredentials(normalized);
-    },
-    [],
-  );
+    setTenantCredentials(
+      localStaffRows.map((row) => normalizeCredential(row as Record<string, unknown>)),
+    );
+  }, [excludeGlobalSuperAdminFromRoster]);
 
   // Load all hospitals and credentials
   const loadPlatformData = useCallback(async () => {
     setIsLoading(true);
     if (supabase) {
       try {
-        const [loadedTenants, staffResult] = await Promise.all([
-          fetchSuperAdminHospitalTenants(supabase),
+        const [{ data: hospitalRows, error: hospitalsError }, staffResult] = await Promise.all([
+          supabase.from('hospitals').select('*').order('created_at', { ascending: true }),
           fetchSuperAdminStaffCredentials(supabase),
         ]);
+
+        if (hospitalsError) {
+          console.warn('[super-admin] hospitals load error:', hospitalsError.message);
+        }
 
         if (staffResult.error) {
           console.warn('[super-admin] hospital_staff load error:', staffResult.error);
         }
 
-        let tenantRows = loadedTenants;
+        let tenantRows = dedupeHospitalTenantsByCode(
+          (hospitalRows ?? [])
+            .map((row) => normalizeHospitalTenantRow(asRecord(row)))
+            .filter((row): row is SuperAdminHospitalTenant => row !== null)
+            .filter((row) => row.status.toLowerCase() !== 'inactive'),
+        ).filter(isVisibleSuperAdminTenant);
+
+        if (tenantRows.length === 0) {
+          tenantRows = [FALLBACK_HOSPITAL];
+        }
+
+        let matchedTenant: SuperAdminHospitalTenant | null = null;
 
         if (requestedTenantIdentifier) {
-          let matchedTenant = matchHospitalTenantByIdentifier(
-            tenantRows,
-            requestedTenantIdentifier,
-          );
+          matchedTenant = matchHospitalTenantByIdentifier(tenantRows, requestedTenantIdentifier);
 
           if (!matchedTenant) {
             matchedTenant = await fetchSuperAdminHospitalTenantByIdentifier(
@@ -244,30 +288,50 @@ export function SuperAdminHospitalBlocksDashboard({
 
           if (matchedTenant) {
             tenantRows = dedupeHospitalTenantsByCode([...tenantRows, matchedTenant]);
-            setSelectedHospitalCode(matchedTenant.hospital_code);
             setMissingTenantIdentifier(null);
           } else {
-            setSelectedHospitalCode(null);
             setMissingTenantIdentifier(requestedTenantIdentifier);
           }
         } else {
           setMissingTenantIdentifier(null);
-          setSelectedHospitalCode(null);
         }
 
-        const creds = enrichCredentialsWithHospitalNames(
-          staffResult.rows.map((row) => normalizeCredential(row as Record<string, unknown>)),
-          tenantRows,
+        setSelectedHospital((previous) => {
+          if (matchedTenant) return matchedTenant;
+          if (!previous) return null;
+          return (
+            tenantRows.find(
+              (tenant) =>
+                tenant.id === previous.id || tenant.hospital_code === previous.hospital_code,
+            ) ?? previous
+          );
+        });
+
+        const creds = excludePlatformRootFromRoster(
+          enrichCredentialsWithHospitalNames(
+            staffResult.rows
+              .filter(
+                (row) =>
+                  !excludeGlobalSuperAdminFromRoster ||
+                  !isGlobalSuperAdminStaffRecord(row as Record<string, unknown>),
+              )
+              .map((row) => normalizeCredential(row as Record<string, unknown>)),
+            tenantRows,
+          ),
+          excludeGlobalSuperAdminFromRoster,
         );
 
         setCredentials(creds);
         setHospitals(tenantRows);
       } catch (err) {
         console.error('Error fetching data from Supabase:', err);
+        setHospitals([FALLBACK_HOSPITAL]);
       }
+    } else {
+      setHospitals([FALLBACK_HOSPITAL]);
     }
     setIsLoading(false);
-  }, [requestedTenantIdentifier]);
+  }, [requestedTenantIdentifier, excludeGlobalSuperAdminFromRoster]);
 
   useEffect(() => {
     loadPlatformData();
@@ -289,20 +353,16 @@ export function SuperAdminHospitalBlocksDashboard({
     }
   }, [loadPlatformData]);
 
-  const selectedHospitalData = hospitals.find(
-    (h) => h.hospital_code === selectedHospitalCode,
-  );
-
   useEffect(() => {
-    if (!selectedHospitalData) {
+    if (!selectedHospital) {
       setTenantCredentials([]);
       return;
     }
-    void loadTenantStaffDirectory(selectedHospitalData);
-  }, [selectedHospitalData, loadTenantStaffDirectory, credentials]);
+    void loadTenantStaffDirectory(selectedHospital);
+  }, [selectedHospital, loadTenantStaffDirectory]);
 
   const handleOnboardSuccess = (result: OnboardHospitalResult) => {
-    setSelectedHospitalCode(null);
+    setSelectedHospital(null);
     setCreatedPacket(
       normalizeCredential({
         id: result.staffRecordId,
@@ -404,18 +464,18 @@ export function SuperAdminHospitalBlocksDashboard({
   };
 
   const tenantRoster = useMemo(() => {
-    if (!selectedHospitalData) return [];
+    if (!selectedHospital) return [];
     const roster =
       tenantCredentials.length > 0
         ? tenantCredentials
         : credentials.filter((credential) =>
-            credentialBelongsToTenant(credential, selectedHospitalData),
+            credentialBelongsToTenant(credential, selectedHospital),
           );
-    return enrichCredentialsWithHospitalNames(roster, [selectedHospitalData]);
-  }, [credentials, selectedHospitalData, tenantCredentials]);
+    return enrichCredentialsWithHospitalNames(roster, [selectedHospital]);
+  }, [credentials, selectedHospital, tenantCredentials]);
 
   const scopedCredentials = useMemo(() => {
-    if (!selectedHospitalCode || !selectedHospitalData) return [];
+    if (!selectedHospital) return [];
     const activeFilter = selectedRoleFilter.trim().toLowerCase();
     return tenantRoster.filter((c) => {
       const matchesRole =
@@ -430,21 +490,25 @@ export function SuperAdminHospitalBlocksDashboard({
 
       return matchesRole && matchesSearch;
     });
-  }, [tenantRoster, selectedHospitalCode, selectedHospitalData, selectedRoleFilter, searchQuery]);
+  }, [tenantRoster, selectedHospital, selectedRoleFilter, searchQuery]);
 
-  const tenantScopeLabel = formatTenantCredentialScopeLabel(selectedHospitalData);
-  const tenantVaultMissing = Boolean(selectedHospitalCode && !selectedHospitalData);
+  const tenantScopeLabel = formatTenantCredentialScopeLabel(selectedHospital);
+  const tenantVaultMissing = Boolean(
+    selectedHospital &&
+      !hospitals.some(
+        (tenant) =>
+          tenant.id === selectedHospital.id ||
+          tenant.hospital_code === selectedHospital.hospital_code,
+      ),
+  );
   const tenantRosterCount = tenantRoster.length;
-  const isDetailView = Boolean(selectedHospitalCode || requestedTenantIdentifier);
-
-  const openTenantVault = (hospitalCode: string) => {
-    router.push(`/super-vault-access/${encodeURIComponent(hospitalCode)}`);
-  };
+  const isDetailView = selectedHospital !== null;
 
   const returnToTenantDirectory = () => {
-    setSelectedHospitalCode(null);
+    setSelectedHospital(null);
     setMissingTenantIdentifier(null);
-    router.push('/super-vault-access');
+    setSearchQuery('');
+    setSelectedRoleFilter('All');
   };
 
   return (
@@ -487,7 +551,7 @@ export function SuperAdminHospitalBlocksDashboard({
         </div>
 
         {/* VIEW 1: HOSPITAL BLOCKS (GRID VIEW) */}
-        {!selectedHospitalCode ? (
+        {selectedHospital === null ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
@@ -530,7 +594,11 @@ export function SuperAdminHospitalBlocksDashboard({
             ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {hospitals.map((hosp) => {
-                const hospCreds = credentials.filter((c) => credentialBelongsToTenant(c, hosp));
+                const hospCreds = credentials.filter(
+                  (c) =>
+                    credentialBelongsToTenant(c, hosp) &&
+                    (!excludeGlobalSuperAdminFromRoster || !isGlobalSuperAdminStaffRecord(c)),
+                );
                 const docCount = hospCreds.filter((c) => c.staff_type === 'Doctor').length;
                 const staffCount = hospCreds.length - docCount;
 
@@ -540,7 +608,7 @@ export function SuperAdminHospitalBlocksDashboard({
                     onClick={() => {
                       setSearchQuery('');
                       setSelectedRoleFilter('All');
-                      openTenantVault(hosp.hospital_code);
+                      setSelectedHospital(hosp);
                     }}
                     className="group relative bg-white rounded-2xl border border-slate-200 hover:border-purple-500 p-6 shadow-xs hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-5"
                   >
@@ -559,7 +627,7 @@ export function SuperAdminHospitalBlocksDashboard({
                         <h3 className="text-lg font-black text-slate-900 group-hover:text-purple-700 transition">
                           {hosp.name}
                         </h3>
-                        <p className="text-xs text-slate-400">{hosp.city}, Karnataka</p>
+                        <p className="text-xs text-slate-400">{hosp.city}</p>
                       </div>
                     </div>
 
@@ -579,7 +647,7 @@ export function SuperAdminHospitalBlocksDashboard({
                     </div>
 
                     <div className="flex items-center gap-1 pt-2 text-xs font-bold text-purple-700">
-                      <span>View Hospital Vault</span>
+                      <span>Inspect Credentials / Manage Node</span>
                       <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition"/>
                     </div>
                   </div>
@@ -596,20 +664,21 @@ export function SuperAdminHospitalBlocksDashboard({
               <button
                 type="button"
                 onClick={returnToTenantDirectory}
-                className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-slate-900 text-xs font-bold flex items-center gap-2 cursor-pointer shadow-2xs hover:bg-slate-50 transition"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
               >
-                <ArrowLeft className="w-4 h-4"/>
-                <span>Back to All Hospital Blocks</span>
+                ← Back to All Hospital Blocks
               </button>
 
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold text-slate-500">Credential Audit —</span>
                 <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-black">
-                  {selectedHospitalData?.name ?? selectedHospitalCode ?? 'Unknown'} (
-                  {selectedHospitalData ? formatHospitalTenantBadge(selectedHospitalData) : selectedHospitalCode ?? '—'})
+                  {selectedHospital?.name ?? 'Unknown'} (
+                  {selectedHospital ? formatHospitalTenantBadge(selectedHospital) : '—'})
                 </span>
                 <span className="text-[11px] font-medium text-slate-500">
-                  Read-only roster · staff created from Hospital App syncs here
+                  {excludeGlobalSuperAdminFromRoster
+                    ? 'Local hospital staff only · platform root identity excluded'
+                    : 'Read-only roster · staff created from Hospital App syncs here'}
                 </span>
               </div>
             </div>
@@ -622,12 +691,14 @@ export function SuperAdminHospitalBlocksDashboard({
                 <h3 className="text-lg font-black text-slate-900">No Active Hospital Tenant Found</h3>
                 <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
                   Please onboard a new hospital facility from the directory.
-                  {selectedHospitalCode ? (
+                  {selectedHospital ? (
                     <>
                       {' '}
                       Tenant{' '}
-                      <span className="font-semibold text-purple-700">{selectedHospitalCode}</span> is no
-                      longer available — it may have been purged or never existed.
+                      <span className="font-semibold text-purple-700">
+                        {formatHospitalTenantBadge(selectedHospital)}
+                      </span>{' '}
+                      is no longer available — it may have been purged or never existed.
                     </>
                   ) : null}
                 </p>
@@ -649,12 +720,22 @@ export function SuperAdminHospitalBlocksDashboard({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={`Search within ${selectedHospitalData?.name ?? 'this facility'}...`}
+                    placeholder={`Search within ${selectedHospital?.name ?? 'this facility'}...`}
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:border-purple-600 focus:outline-none"
                   />
                 </div>
 
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                  {excludeGlobalSuperAdminFromRoster ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddHospitalAdminModal(true)}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-[11px] font-bold text-purple-800 transition hover:bg-purple-100"
+                    >
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      + Add Hospital Admin
+                    </button>
+                  ) : null}
                   {['All', 'Admin', 'Doctor', 'Nurse', 'Receptionist', 'Pharmacist'].map((role) => (
                     <button
                       key={role}
@@ -809,6 +890,35 @@ export function SuperAdminHospitalBlocksDashboard({
           onClose={() => setShowOnboardModal(false)}
           onSuccess={handleOnboardSuccess}
         />
+
+        {excludeGlobalSuperAdminFromRoster && selectedHospital ? (
+          <StaffProvisioningModal
+            open={showAddHospitalAdminModal}
+            onClose={() => setShowAddHospitalAdminModal(false)}
+            hospitalId={selectedHospital.id || selectedHospital.hospital_code}
+            hospitalName={selectedHospital.name}
+            provisionScope="hospital-admin"
+            onSuccess={({ credential, passcode }) => {
+              setCreatedPacket(
+                normalizeCredential({
+                  id: credential.id,
+                  hospital_id: credential.hospital_id,
+                  hospital_name: selectedHospital.name,
+                  full_name: credential.full_name,
+                  email: credential.email,
+                  passcode_key: passcode,
+                  role: 'Admin',
+                  department: credential.department || 'Hospital Administration',
+                  staff_id_code: credential.employee_id,
+                  portal_access: resolveCredentialDashboardRoute('admin'),
+                  is_active: true,
+                }),
+              );
+              void loadTenantStaffDirectory(selectedHospital);
+              void loadPlatformData();
+            }}
+          />
+        ) : null}
 
         {/* Modal: Handover Pass */}
         {createdPacket && (

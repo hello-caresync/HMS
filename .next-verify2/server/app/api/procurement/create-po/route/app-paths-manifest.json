@@ -1,0 +1,3 @@
+{
+  "/api/procurement/create-po/route": "app/api/procurement/create-po/route.js"
+}

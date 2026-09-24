@@ -20,6 +20,7 @@ import {
   normalizePathname,
   readVerifiedHospitalDeskSession,
 } from '@/lib/auth/portal-route-guard';
+import { SUPER_ADMIN_LOGIN_PATH } from '@/lib/auth/superAdminAuth';
 import { createMiddlewareSupabase } from '@/lib/supabase/middleware-client';
 
 function normalizeHospitalRole(role?: string | null): string {
@@ -39,7 +40,7 @@ function isPublicAuthRoute(pathname: string): boolean {
     '/login',
     '/doctor/login',
     '/super-vault-access',
-    '/super-admin/login',
+    SUPER_ADMIN_LOGIN_PATH,
     '/auth',
     '/',
   ];
@@ -106,13 +107,18 @@ function enforceStaffCredentialsRbac(
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const path = normalizePathname(pathname);
+
+  if (path === '/super-admin/login' || path.startsWith('/super-admin/login/')) {
+    const url = request.nextUrl.clone();
+    url.pathname = `${SUPER_ADMIN_LOGIN_PATH}/`;
+    return NextResponse.redirect(url, 308);
+  }
 
   // Public auth routes — always show login forms; never auto-skip on stale doctor cookies.
   if (isPublicAuthRoute(pathname)) {
     return NextResponse.next({ request });
   }
-
-  const path = normalizePathname(pathname);
 
   if (
     path.startsWith('/api') ||
@@ -175,7 +181,7 @@ export async function middleware(request: NextRequest) {
     }
     return redirectWithCookies(
       request,
-      appendRedirectQuery('/super-admin/login', '/super-vault-access'),
+      appendRedirectQuery(SUPER_ADMIN_LOGIN_PATH, '/super-vault-access'),
       applyCookies,
     );
   }
@@ -194,7 +200,7 @@ export async function middleware(request: NextRequest) {
     if (!isSuperAdminSession(request)) {
       return redirectWithCookies(
         request,
-        appendRedirectQuery('/super-admin/login', path),
+        appendRedirectQuery(SUPER_ADMIN_LOGIN_PATH, path),
         applyCookies,
       );
     }

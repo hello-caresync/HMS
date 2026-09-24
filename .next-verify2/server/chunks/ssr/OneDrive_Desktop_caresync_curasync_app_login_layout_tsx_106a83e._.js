@@ -1,0 +1,3 @@
+module.exports=[734748,a=>{"use strict";var b=a.i(330387);a.s(["default",0,function({children:a}){return(0,b.jsx)("div",{className:"min-h-screen w-full bg-[#030712]",children:a})},"metadata",0,{title:"Administrator Login | Regal Health HMS",description:"Hospital Management & Patient Care Portal"}])},910639,a=>{a.n(a.i(734748))}];
+
+//# sourceMappingURL=OneDrive_Desktop_caresync_curasync_app_login_layout_tsx_106a83e._.js.map

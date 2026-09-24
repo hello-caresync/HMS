@@ -1,0 +1,6 @@
+1:"$Sreact.fragment"
+2:"$Sreact.suspense"
+3:I[720608,["/_next/static/chunks/3yzo5imj6l4-b.js","/_next/static/chunks/2j5fb6jd6p3xy.js","/_next/static/chunks/1l_n0vwsmpo62.js","/_next/static/chunks/18pwf_zhtp42t.js","/_next/static/chunks/0c60hteluqbb6.js","/_next/static/chunks/3plbtm7vdj9ci.js","/_next/static/chunks/3pq1e4qhzw-xl.js","/_next/static/chunks/2be8_8klpfath.js"],"default"]
+4:I[404907,["/_next/static/chunks/3yzo5imj6l4-b.js","/_next/static/chunks/2j5fb6jd6p3xy.js","/_next/static/chunks/1l_n0vwsmpo62.js"],"OutletBoundary"]
+0:{"rsc":["$","$1","c",{"children":[["$","$2",null,{"fallback":["$","div",null,{"className":"flex min-h-screen items-center justify-center bg-slate-50 text-sm font-semibold text-slate-500","children":"Loading hospital credential vault…"}],"children":["$","$L3",null,{}]}],[["$","script","script-0",{"src":"/_next/static/chunks/0c60hteluqbb6.js","async":true}],["$","script","script-1",{"src":"/_next/static/chunks/3plbtm7vdj9ci.js","async":true}],["$","script","script-2",{"src":"/_next/static/chunks/3pq1e4qhzw-xl.js","async":true}],["$","script","script-3",{"src":"/_next/static/chunks/2be8_8klpfath.js","async":true}]],["$","$L4",null,{"children":["$","$2",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"cBvDVnq0nZyP5X7sZ__oT"}
+5:null

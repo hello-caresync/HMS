@@ -1,0 +1,3 @@
+module.exports=[415930,a=>{"use strict";var b=a.i(463629),c=a.i(61734),d=a.i(374521);let e="regal_dashboard_tab";a.s(["DASHBOARD_TAB_STORAGE_KEY",0,e,"DashboardTabRedirect",0,function({tab:a}){let f=(0,d.useRouter)();return(0,c.useEffect)(()=>{sessionStorage.setItem(e,a),f.replace("/dashboard")},[f,a]),(0,b.jsxs)("div",{className:"flex min-h-[40vh] items-center justify-center text-xs font-bold text-slate-500",children:["Opening ",a," workspace…"]})}])},463664,a=>{"use strict";var b=a.i(463629),c=a.i(415930);a.s(["default",0,function(){return(0,b.jsx)(c.DashboardTabRedirect,{tab:"billing"})}])}];
+
+//# sourceMappingURL=OneDrive_Desktop_caresync_curasync_0iy0rnu._.js.map

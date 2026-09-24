@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/hospital/layout,_N_T_/hospital/billing/layout,_N_T_/hospital/billing/opd-charges/layout,_N_T_/hospital/billing/opd-charges/page,_N_T_/hospital/billing/opd-charges"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/hospital/billing/opd-charges/__PAGE__",
+    "/hospital/billing/opd-charges",
+    "/hospital/billing",
+    "/hospital",
+    "/_index",
+    "/_head"
+  ]
+}

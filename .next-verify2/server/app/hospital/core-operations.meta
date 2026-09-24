@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/hospital/layout,_N_T_/hospital/core-operations/layout,_N_T_/hospital/core-operations/page,_N_T_/hospital/core-operations"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/hospital/core-operations/__PAGE__",
+    "/hospital/core-operations",
+    "/hospital",
+    "/_index",
+    "/_head"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/hospital/layout,_N_T_/hospital/billing/layout,_N_T_/hospital/billing/admission-charges/layout,_N_T_/hospital/billing/admission-charges/page,_N_T_/hospital/billing/admission-charges"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/hospital/billing/admission-charges/__PAGE__",
+    "/hospital/billing/admission-charges",
+    "/hospital/billing",
+    "/hospital",
+    "/_index",
+    "/_head"
+  ]
+}

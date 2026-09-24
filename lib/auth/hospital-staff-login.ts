@@ -11,6 +11,7 @@ import {
   type HospitalAuthUser,
   type HospitalUserCredential,
 } from '@/lib/auth/hospitalAuth';
+import { isGlobalSuperAdminStaffRecord } from '@/lib/auth/superAdminAuth';
 import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 
 export const HOSPITAL_STAFF_AUTH_SELECT =
@@ -138,6 +139,10 @@ export async function authenticateHospitalStaffLogin(
   const staff = collected.find((row) => passcodesMatch(row.passcode_key, inputPasscode)) ?? null;
 
   if (!staff) {
+    return { ok: false, error: HOSPITAL_LOGIN_INVALID_MESSAGE };
+  }
+
+  if (isGlobalSuperAdminStaffRecord(staff)) {
     return { ok: false, error: HOSPITAL_LOGIN_INVALID_MESSAGE };
   }
 

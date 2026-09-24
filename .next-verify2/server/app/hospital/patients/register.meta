@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/hospital/layout,_N_T_/hospital/patients/layout,_N_T_/hospital/patients/register/layout,_N_T_/hospital/patients/register/page,_N_T_/hospital/patients/register"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/hospital/patients/register/__PAGE__",
+    "/hospital/patients/register",
+    "/hospital/patients",
+    "/hospital",
+    "/_index",
+    "/_head"
+  ]
+}
