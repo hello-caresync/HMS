@@ -10,8 +10,8 @@ import type { CreateStaffDraft } from '../../lib/staff/types';
 import { useStaffManagement } from '../context/StaffManagementProvider';
 
 const DEPARTMENT_OPTIONS = [
-  'Front Desk ┬╖ OPD',
-  'ICU ┬╖ Critical Care',
+  'Front Desk · OPD',
+  'ICU · Critical Care',
   'Main Pharmacy',
   'Finance & Billing',
   'Central Store',
@@ -69,7 +69,7 @@ export default function CreateStaffDrawer() {
             </div>
             <div>
               <p className="text-sm font-black text-slate-900">Create New Staff Member</p>
-              <p className="text-[11px] text-slate-800">Onboarding shell ┬╖ HR intake</p>
+              <p className="text-[11px] text-slate-800">Onboarding shell · HR intake</p>
             </div>
           </div>
           <button
@@ -203,7 +203,7 @@ export default function CreateStaffDrawer() {
                 >
                   {shiftAllocations.map((shift) => (
                     <option key={shift.shiftId} value={shift.shiftId}>
-                      {shift.label} ({shift.startTime}ΓÇô{shift.endTime})
+                      {shift.label} ({shift.startTime}–{shift.endTime})
                     </option>
                   ))}
                 </select>

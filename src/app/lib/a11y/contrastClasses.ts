@@ -1,5 +1,5 @@
 ﻿/**
- * ERP accessibility contrast tokens ΓÇö enforce high-contrast, test-ready UI.
+ * ERP accessibility contrast tokens — enforce high-contrast, test-ready UI.
  * Use these constants instead of faint slate-300/400/500 on light canvases.
  */
 
@@ -11,7 +11,7 @@ export const ERP_TABLE_HEAD_ROW =
 export const ERP_TABLE_HEAD_CELL =
   'px-3 py-2 text-left text-[10px] font-black uppercase tracking-wider text-slate-950';
 
-/** Core data cell ΓÇö IDs, slots, locations, item names */
+/** Core data cell — IDs, slots, locations, item names */
 export const ERP_TABLE_DATA_PRIMARY =
   'text-sm font-bold text-slate-950';
 
@@ -35,7 +35,7 @@ export const ERP_INPUT =
 
 export const ERP_SELECT = ERP_INPUT;
 
-/** Status badge base ΓÇö pair with color-specific bg/text/border */
+/** Status badge base — pair with color-specific bg/text/border */
 export const ERP_BADGE_BASE =
   'inline-flex rounded-md border px-2 py-0.5 text-[10px] font-black uppercase';
 

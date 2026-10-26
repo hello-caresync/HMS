@@ -141,7 +141,7 @@ export const INITIAL_SAMPLE_ORDERS: SampleOrder[] = [
     barcodeStatus: 'Printed',
     collectionStatus: 'Collected',
     pipelineStatus: 'In Process',
-    orderedBy: 'Dr. B. Joseph ΓÇö ER',
+    orderedBy: 'Dr. B. Joseph — ER',
     orderedAt: '2026-07-18T11:05:00',
     criticalResult: true,
     identityVerified: true,
@@ -152,12 +152,12 @@ export const INITIAL_SAMPLE_ORDERS: SampleOrder[] = [
     patientName: 'Sanjay Rao',
     uhid: 'NX-2026-000365',
     testType: 'Microbiology',
-    testPanel: 'Blood Culture ├ù 2',
+    testPanel: 'Blood Culture × 2',
     priority: 'STAT Emergency',
     barcodeStatus: 'Pending',
     collectionStatus: 'Pending Collection',
     pipelineStatus: 'Pending Collection',
-    orderedBy: 'Dr. Anita Roy ΓÇö ICU',
+    orderedBy: 'Dr. Anita Roy — ICU',
     orderedAt: '2026-07-18T11:20:00',
     criticalResult: false,
     identityVerified: true,
@@ -189,7 +189,7 @@ export const INITIAL_SAMPLE_ORDERS: SampleOrder[] = [
     barcodeStatus: 'Scanned',
     collectionStatus: 'Collected',
     pipelineStatus: 'Completed',
-    orderedBy: 'Dr. Meera Iyer ΓÇö ER',
+    orderedBy: 'Dr. Meera Iyer — ER',
     orderedAt: '2026-07-18T10:45:00',
     criticalResult: true,
     identityVerified: true,
@@ -205,7 +205,7 @@ export const INITIAL_SAMPLE_ORDERS: SampleOrder[] = [
     barcodeStatus: 'Printed',
     collectionStatus: 'Recollection Requested',
     pipelineStatus: 'Delayed',
-    orderedBy: 'Dr. Kapoor ΓÇö Pre-op',
+    orderedBy: 'Dr. Kapoor — Pre-op',
     orderedAt: '2026-07-17T16:00:00',
     criticalResult: false,
     identityVerified: true,
@@ -213,9 +213,9 @@ export const INITIAL_SAMPLE_ORDERS: SampleOrder[] = [
 ];
 
 export const MOCK_PROCESSING_LOGS: ProcessingLog[] = [
-  { id: 'pl1', sampleId: 'LAB-2026-8841', patientName: 'Rahul Sharma', barcode: 'BC-LAB-8841-A', status: 'In Process', transportLeg: 'Phlebotomy ΓåÆ Hematology Bench', analyzer: 'Sysmex XN-1000', resultEntry: 'Auto-interfaced ΓÇö pending validation', tech: 'Tech Anita R.', timestamp: '2026-07-18 09:12' },
-  { id: 'pl2', sampleId: 'LAB-2026-8842', patientName: 'Meera Krishnan', barcode: 'BC-LAB-8842-STAT', status: 'In Process', transportLeg: 'ER ΓåÆ Blood Gas Analyzer', analyzer: 'Radiometer ABL90', resultEntry: 'Lactate 4.8 mmol/L Γåæ CRITICAL', tech: 'Tech Joseph M.', timestamp: '2026-07-18 11:18' },
-  { id: 'pl3', sampleId: 'LAB-2026-8840', patientName: 'Priya Patel', barcode: 'BC-LAB-8840-STAT', status: 'Completed', transportLeg: 'ER ΓåÆ Immunoassay', analyzer: 'Architect i2000SR', resultEntry: 'Troponin-I 0.82 ng/mL Γåæ', tech: 'Tech Lakshmi N.', timestamp: '2026-07-18 11:35' },
+  { id: 'pl1', sampleId: 'LAB-2026-8841', patientName: 'Rahul Sharma', barcode: 'BC-LAB-8841-A', status: 'In Process', transportLeg: 'Phlebotomy → Hematology Bench', analyzer: 'Sysmex XN-1000', resultEntry: 'Auto-interfaced — pending validation', tech: 'Tech Anita R.', timestamp: '2026-07-18 09:12' },
+  { id: 'pl2', sampleId: 'LAB-2026-8842', patientName: 'Meera Krishnan', barcode: 'BC-LAB-8842-STAT', status: 'In Process', transportLeg: 'ER → Blood Gas Analyzer', analyzer: 'Radiometer ABL90', resultEntry: 'Lactate 4.8 mmol/L ↑ CRITICAL', tech: 'Tech Joseph M.', timestamp: '2026-07-18 11:18' },
+  { id: 'pl3', sampleId: 'LAB-2026-8840', patientName: 'Priya Patel', barcode: 'BC-LAB-8840-STAT', status: 'Completed', transportLeg: 'ER → Immunoassay', analyzer: 'Architect i2000SR', resultEntry: 'Troponin-I 0.82 ng/mL ↑', tech: 'Tech Lakshmi N.', timestamp: '2026-07-18 11:35' },
 ];
 
 export const MOCK_ANALYZERS: AnalyzerAssignment[] = [
@@ -227,9 +227,9 @@ export const MOCK_ANALYZERS: AnalyzerAssignment[] = [
 ];
 
 export const MOCK_QC_CHECKS: QcCheck[] = [
-  { id: 'qc1', instrument: 'Sysmex XN-1000', checkType: 'Daily IQC ΓÇö Level 1', level: 'Normal', status: 'Pass', performedAt: '2026-07-18 06:00', operator: 'Tech Anita R.' },
-  { id: 'qc2', instrument: 'Cobas c702', checkType: 'Daily IQC ΓÇö Level 2', level: 'Abnormal', status: 'Pass', performedAt: '2026-07-18 06:15', operator: 'Tech Joseph M.' },
-  { id: 'qc3', instrument: 'Architect i2000SR', checkType: 'Daily IQC ΓÇö Troponin', level: 'Low', status: 'Review', performedAt: '2026-07-18 06:30', operator: 'Tech Lakshmi N.' },
+  { id: 'qc1', instrument: 'Sysmex XN-1000', checkType: 'Daily IQC — Level 1', level: 'Normal', status: 'Pass', performedAt: '2026-07-18 06:00', operator: 'Tech Anita R.' },
+  { id: 'qc2', instrument: 'Cobas c702', checkType: 'Daily IQC — Level 2', level: 'Abnormal', status: 'Pass', performedAt: '2026-07-18 06:15', operator: 'Tech Joseph M.' },
+  { id: 'qc3', instrument: 'Architect i2000SR', checkType: 'Daily IQC — Troponin', level: 'Low', status: 'Review', performedAt: '2026-07-18 06:30', operator: 'Tech Lakshmi N.' },
 ];
 
 export const MOCK_CALIBRATION: CalibrationSchedule[] = [
@@ -249,10 +249,10 @@ export const QC_TREND = [
 ];
 
 export const INITIAL_VERIFICATIONS: VerificationRecord[] = [
-  { id: 'vr1', orderNumber: 'LAB-2026-8842', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', testName: 'Lactate', result: '4.8 mmol/L', referenceRange: '0.5ΓÇô2.2', deltaCheck: '+142% vs prior (2.0)', stage: 'Pathologist Review', critical: true, techSignature: 'Tech Joseph M. ΓÇö 11:20' },
-  { id: 'vr2', orderNumber: 'LAB-2026-8840', patientName: 'Priya Patel', uhid: 'NX-2026-000413', testName: 'Troponin-I', result: '0.82 ng/mL', referenceRange: '<0.04', deltaCheck: 'New elevation ΓÇö no prior', stage: 'Tech Verified', critical: true, techSignature: 'Tech Lakshmi N. ΓÇö 11:36' },
-  { id: 'vr3', orderNumber: 'LAB-2026-8841', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', testName: 'CBC ΓÇö WBC', result: '11.2 ├ù10┬│/┬╡L', referenceRange: '4.0ΓÇô11.0', deltaCheck: '+8% vs 2026-07-14', stage: 'Pending Tech', critical: false },
-  { id: 'vr4', orderNumber: 'LAB-2026-8839', patientName: 'Vikram Patel', uhid: 'NX-2026-000388', testName: 'Lipid Panel', result: 'Within limits', referenceRange: 'ΓÇö', deltaCheck: 'Stable trend', stage: 'Released', critical: false, techSignature: 'Tech Anita R.', pathologistSignature: 'Dr. Sanjay Mehta ΓÇö 09:45' },
+  { id: 'vr1', orderNumber: 'LAB-2026-8842', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', testName: 'Lactate', result: '4.8 mmol/L', referenceRange: '0.5–2.2', deltaCheck: '+142% vs prior (2.0)', stage: 'Pathologist Review', critical: true, techSignature: 'Tech Joseph M. — 11:20' },
+  { id: 'vr2', orderNumber: 'LAB-2026-8840', patientName: 'Priya Patel', uhid: 'NX-2026-000413', testName: 'Troponin-I', result: '0.82 ng/mL', referenceRange: '<0.04', deltaCheck: 'New elevation — no prior', stage: 'Tech Verified', critical: true, techSignature: 'Tech Lakshmi N. — 11:36' },
+  { id: 'vr3', orderNumber: 'LAB-2026-8841', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', testName: 'CBC — WBC', result: '11.2 ×10³/µL', referenceRange: '4.0–11.0', deltaCheck: '+8% vs 2026-07-14', stage: 'Pending Tech', critical: false },
+  { id: 'vr4', orderNumber: 'LAB-2026-8839', patientName: 'Vikram Patel', uhid: 'NX-2026-000388', testName: 'Lipid Panel', result: 'Within limits', referenceRange: '—', deltaCheck: 'Stable trend', stage: 'Released', critical: false, techSignature: 'Tech Anita R.', pathologistSignature: 'Dr. Sanjay Mehta — 09:45' },
 ];
 
 export const MOCK_REAGENTS: ReagentStock[] = [

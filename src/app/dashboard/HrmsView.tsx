@@ -54,8 +54,8 @@ export default function HrmsView() {
           <DataTable
             columns={['Employee', 'Clock In', 'Clock Out', 'Status']}
             rows={[
-              ['Anitha Raj', '07:58', 'ΓÇö', 'Present'],
-              ['Rajesh Misra', '08:42', 'ΓÇö', 'Late'],
+              ['Anitha Raj', '07:58', '—', 'Present'],
+              ['Rajesh Misra', '08:42', '—', 'Late'],
             ]}
           />
         </Panel>
@@ -72,7 +72,7 @@ export default function HrmsView() {
         <Panel title="Payroll Processing Board">
           <div className="flex items-center gap-2 text-xs text-slate-300">
             <Wallet className="h-4 w-4 text-emerald-400" />
-            July payroll cycle ΓÇö 72% processed | Net disbursement: Γé╣42.8L
+            July payroll cycle — 72% processed | Net disbursement: ₹42.8L
           </div>
         </Panel>
       )}

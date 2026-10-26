@@ -15,7 +15,7 @@ export default function OtModuleHeader({ lookupValue, onLookupChange, resultCoun
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-base font-bold text-[#0F172A]">OT Coordination</h1>
-          <p className="text-[9px] text-slate-500">Surgical command ┬╖ theatre logistics ┬╖ post-op routing ┬╖ analytics</p>
+          <p className="text-[9px] text-slate-500">Surgical command · theatre logistics · post-op routing · analytics</p>
         </div>
         <button
           type="button"
@@ -32,7 +32,7 @@ export default function OtModuleHeader({ lookupValue, onLookupChange, resultCoun
           type="search"
           value={lookupValue}
           onChange={(e) => onLookupChange(e.target.value)}
-          placeholder="Search OT ΓÇö case #, UHID, patient, procedure, or surgeon"
+          placeholder="Search OT — case #, UHID, patient, procedure, or surgeon"
           aria-label="Search OT"
           className="w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] py-1.5 pl-8 pr-3 text-[10px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
         />

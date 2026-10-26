@@ -63,16 +63,16 @@ export function GenerateTokenModal({ onClose }: { onClose: () => void }) {
 export function AssignDoctorModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Assign Doctor" onClose={onClose} wide>
-      <input className={`${inputClass} mb-2`} placeholder="Token / UHID" defaultValue="G-042 ┬╖ NX-2026-000412" />
+      <input className={`${inputClass} mb-2`} placeholder="Token / UHID" defaultValue="G-042 · NX-2026-000412" />
       <select className={inputClass}>
         {OPD_DOCTORS.map((d) => (
           <option key={d}>{d}</option>
         ))}
       </select>
       <select className={`${inputClass} mt-2`}>
-        <option>Room 3 ΓÇö General Medicine</option>
-        <option>Room 4 ΓÇö Pulmonology</option>
-        <option>Room 5 ΓÇö VIP Suite</option>
+        <option>Room 3 — General Medicine</option>
+        <option>Room 4 — Pulmonology</option>
+        <option>Room 5 — VIP Suite</option>
       </select>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[11px] font-bold text-white">
         Assign & Notify
@@ -85,9 +85,9 @@ export function ReferPatientModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Refer Patient" onClose={onClose} wide>
       <select className={`${inputClass} mb-2`}>
-        <option>Internal Referral ΓÇö Gastroenterology</option>
-        <option>Internal Referral ΓÇö Cardiology</option>
-        <option>External Referral ΓÇö City Neurology Centre</option>
+        <option>Internal Referral — Gastroenterology</option>
+        <option>Internal Referral — Cardiology</option>
+        <option>External Referral — City Neurology Centre</option>
       </select>
       <textarea className={`${inputClass} min-h-[60px]`} placeholder="Clinical reason for referral" />
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[11px] font-bold text-white">
@@ -108,7 +108,7 @@ export function RecommendAdmissionModal({ onClose }: { onClose: () => void }) {
           <option>ICU</option>
           <option>Orthopedics IPD</option>
         </select>
-        <textarea className={`${inputClass} min-h-[60px]`} placeholder="Admission justification" defaultValue="Hypertensive crisis ΓÇö step-up monitoring required" />
+        <textarea className={`${inputClass} min-h-[60px]`} placeholder="Admission justification" defaultValue="Hypertensive crisis — step-up monitoring required" />
       </div>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[11px] font-bold text-white">
         Route to Admissions Module
@@ -121,11 +121,11 @@ export function PrintOpdSlipModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="OPD Slip Preview" onClose={onClose}>
       <div className="rounded-lg border-2 border-[#0F172A] p-4 text-center">
-        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS ΓÇö OPD Visit</p>
+        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS — OPD Visit</p>
         <p className="mt-2 text-2xl font-bold text-[#2563EB]">G-042</p>
         <p className="text-sm font-bold text-[#0F172A]">Rahul Sharma</p>
         <p className="font-mono text-[10px] text-slate-500">NX-2026-000412</p>
-        <p className="mt-2 text-[10px] text-slate-600">Dr. Rajesh Kumar ┬╖ Room 3</p>
+        <p className="mt-2 text-[10px] text-slate-600">Dr. Rajesh Kumar · Room 3</p>
         <p className="text-[9px] text-slate-400">Check-in: 09:12 AM</p>
       </div>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[11px] font-bold text-white">

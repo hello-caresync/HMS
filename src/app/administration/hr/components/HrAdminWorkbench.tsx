@@ -14,7 +14,7 @@ export default function HrAdminWorkbench() {
             <div>
               <h1 className="text-lg font-black text-slate-900">HR Workforce Administration</h1>
               <p className="text-xs text-slate-800">
-                Phase 7 ┬╖ Module 20 ┬╖ Employee roster &amp; shift assignments
+                Phase 7 · Module 20 · Employee roster &amp; shift assignments
               </p>
             </div>
           </div>

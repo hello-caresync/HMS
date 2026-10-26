@@ -75,7 +75,7 @@ export default function OtView() {
         <Panel title="Pre-Op & Post-Op Checklists">
           <label className="flex items-center gap-2 text-xs text-slate-300">
             <input type="checkbox" checked={preOpDone} onChange={(e) => setPreOpDone(e.target.checked)} />
-            WHO Surgical Safety Checklist ΓÇö sign-in complete
+            WHO Surgical Safety Checklist — sign-in complete
           </label>
           <ul className="mt-3 space-y-1 text-xs text-slate-400">
             <li className="flex items-center gap-2">

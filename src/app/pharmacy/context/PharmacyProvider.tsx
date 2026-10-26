@@ -186,7 +186,7 @@ export function PharmacyProvider({ children }: { children: React.ReactNode }) {
         setToasts((prev) => pushToast(prev, LOW_STOCK_TOAST, 'alert'));
       } else {
         setToasts((prev) =>
-          pushToast(prev, `Prescription dispensed ┬╖ ${order.patientName} ┬╖ EMR updated`, 'success'),
+          pushToast(prev, `Prescription dispensed · ${order.patientName} · EMR updated`, 'success'),
         );
       }
 

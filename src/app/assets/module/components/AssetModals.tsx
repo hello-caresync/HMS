@@ -18,8 +18,8 @@ export function AssignAssetModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Assign Asset" onClose={onClose} wide>
       <input className={inputClass} placeholder="Asset tag" defaultValue="NX-AST-002156" />
-      <input className={`${inputClass} mt-2`} placeholder="Building / Floor" defaultValue="Critical Care Tower ┬╖ 3rd Floor" />
-      <input className={`${inputClass} mt-2`} placeholder="Department / Room / Bed" defaultValue="ICU ┬╖ Room ICU-3 ┬╖ Bed 4" />
+      <input className={`${inputClass} mt-2`} placeholder="Building / Floor" defaultValue="Critical Care Tower · 3rd Floor" />
+      <input className={`${inputClass} mt-2`} placeholder="Department / Room / Bed" defaultValue="ICU · Room ICU-3 · Bed 4" />
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">Confirm Assignment</button>
     </ModalOverlay>
   );
@@ -29,7 +29,7 @@ export function LogBreakdownModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Log Breakdown" onClose={onClose} wide critical>
       <input className={inputClass} placeholder="Asset tag" defaultValue="NX-AST-005118" />
-      <textarea className={`${inputClass} mt-2`} rows={2} placeholder="Issue description" defaultValue="SpO2 module intermittent failure ΓÇö monitoring compromised" />
+      <textarea className={`${inputClass} mt-2`} rows={2} placeholder="Issue description" defaultValue="SpO2 module intermittent failure — monitoring compromised" />
       <select className={`${inputClass} mt-2`}><option>Emergency</option><option>Critical</option><option>Normal</option></select>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-red-600 py-2 text-[10px] font-bold text-white">Create Breakdown Ticket</button>
     </ModalOverlay>

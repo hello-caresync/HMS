@@ -86,7 +86,7 @@ export default function OrdersPrescriptionPanel() {
                   setSelectedMedId('');
                 }}
                 onFocus={() => setShowDropdown(true)}
-                placeholder="Drug name searchΓÇª"
+                placeholder="Drug name search…"
                 className="w-full rounded-lg border py-2 pl-8 pr-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#5ebda8]/40"
                 style={{ borderColor: CLINICAL.border, color: CLINICAL.charcoal }}
               />

@@ -50,7 +50,7 @@ export default function PatientIntakePanel() {
               {encounter.patientName}
             </h2>
             <p className="text-xs font-medium" style={{ color: CLINICAL.textMuted }}>
-              {encounter.age}y ┬╖ {encounter.gender} ┬╖ {demographics.bloodGroup}
+              {encounter.age}y · {encounter.gender} · {demographics.bloodGroup}
             </p>
           </div>
           <span
@@ -73,7 +73,7 @@ export default function PatientIntakePanel() {
         </dl>
 
         <p className="mt-2 text-[10px]" style={{ color: CLINICAL.textSubtle }}>
-          {encounter.doctorName} ┬╖ {encounter.department}
+          {encounter.doctorName} · {encounter.department}
         </p>
       </section>
 
@@ -111,7 +111,7 @@ export default function PatientIntakePanel() {
                   {alert.label}
                 </p>
                 <p className="text-[9px] font-bold uppercase tracking-wide text-rose-600">
-                  {alert.severity} ┬╖ {alert.type}
+                  {alert.severity} · {alert.type}
                 </p>
               </div>
             </li>
@@ -152,7 +152,7 @@ export default function PatientIntakePanel() {
           {nurseAssessment.notes}
         </p>
         <p className="mb-2 text-[9px]" style={{ color: CLINICAL.textSubtle }}>
-          {nurseAssessment.assessedBy} ┬╖ {assessedTime} ┬╖ Pain {nurseAssessment.painScore}/10
+          {nurseAssessment.assessedBy} · {assessedTime} · Pain {nurseAssessment.painScore}/10
         </p>
 
         {/* Vitals grid */}
@@ -170,8 +170,8 @@ export default function PatientIntakePanel() {
           <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
             <VitalCell icon={Heart} label="BP" value={vitals.bp} unit="mmHg" highlight />
             <VitalCell icon={Activity} label="Pulse" value={String(vitals.pulse)} unit="bpm" />
-            <VitalCell icon={Wind} label="SpOΓéé" value={String(vitals.spO2)} unit="%" alert={vitals.spO2 < 92} />
-            <VitalCell icon={Thermometer} label="Temp" value={String(vitals.temp)} unit="┬░F" />
+            <VitalCell icon={Wind} label="SpO₂" value={String(vitals.spO2)} unit="%" alert={vitals.spO2 < 92} />
+            <VitalCell icon={Thermometer} label="Temp" value={String(vitals.temp)} unit="°F" />
             <VitalCell icon={Scale} label="Weight" value={String(vitals.weight)} unit={vitals.weightUnit} />
           </div>
         </div>

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node --use-system-ca ./node_modules/next/dist/bin/next dev",
     "build": "next build",
     "build:cloudflare": "npm run pages:build",
     "pages:build": "opennextjs-cloudflare build && node -e \"const fs=require('fs');const dest='.open-next/assets';if(!fs.existsSync(dest))fs.mkdirSync(dest,{recursive:true});if(fs.existsSync('public/_redirects'))fs.copyFileSync('public/_redirects',dest+'/_redirects');if(fs.existsSync('public/404.html'))fs.copyFileSync('public/404.html',dest+'/404.html');\"",

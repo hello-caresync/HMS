@@ -39,7 +39,7 @@ export default function SplitPaymentPanel({
       <div className="border-b-2 border-slate-200 bg-slate-50 px-4 py-2.5">
         <h2 className="text-sm font-black text-slate-900">Split-Payment Configuration</h2>
         <p className="text-[10px] text-slate-800">
-          Distribute Γé╣ {grandTotal.toLocaleString('en-IN')} across active methods
+          Distribute ₹ {grandTotal.toLocaleString('en-IN')} across active methods
         </p>
       </div>
 
@@ -47,7 +47,7 @@ export default function SplitPaymentPanel({
         {METHODS.map(({ key, label }) => (
           <label key={key} className="block space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-800">
-              {label} (Γé╣)
+              {label} (₹)
             </span>
             <input
               type="number"
@@ -64,7 +64,7 @@ export default function SplitPaymentPanel({
       <dl className="space-y-1 border-t border-slate-200 bg-slate-50 px-4 py-3 text-xs">
         <div className="flex justify-between">
           <dt className="text-slate-800">Allocated</dt>
-          <dd className="font-mono font-bold tabular-nums">Γé╣ {splitTotal.toLocaleString('en-IN')}</dd>
+          <dd className="font-mono font-bold tabular-nums">₹ {splitTotal.toLocaleString('en-IN')}</dd>
         </div>
         <div className="flex justify-between">
           <dt className="font-bold text-slate-900">Balance Due</dt>
@@ -73,7 +73,7 @@ export default function SplitPaymentPanel({
               isBalanced ? 'text-emerald-700' : 'text-rose-600'
             }`}
           >
-            Γé╣ {balanceDue.toLocaleString('en-IN')}
+            ₹ {balanceDue.toLocaleString('en-IN')}
           </dd>
         </div>
       </dl>

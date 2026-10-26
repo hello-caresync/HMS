@@ -7,7 +7,7 @@ export const WARDS: Ward[] = [
     id: 'icu',
     name: 'ICU',
     floorId: 'floor-3',
-    floorLabel: '3rd Floor ┬╖ Critical Care',
+    floorLabel: '3rd Floor · Critical Care',
     dailyRate: 8500,
     roomTypeLabel: 'ICU',
   },
@@ -15,7 +15,7 @@ export const WARDS: Ward[] = [
     id: 'ccu',
     name: 'CCU',
     floorId: 'floor-2',
-    floorLabel: '2nd Floor ┬╖ Cardiac Care',
+    floorLabel: '2nd Floor · Cardiac Care',
     dailyRate: 7200,
     roomTypeLabel: 'CCU',
   },
@@ -23,7 +23,7 @@ export const WARDS: Ward[] = [
     id: 'general-ward',
     name: 'General Ward',
     floorId: 'floor-2',
-    floorLabel: '2nd Floor ┬╖ East Wing',
+    floorLabel: '2nd Floor · East Wing',
     dailyRate: 2500,
     roomTypeLabel: 'General',
   },
@@ -31,7 +31,7 @@ export const WARDS: Ward[] = [
     id: 'private-suite',
     name: 'Private Suite',
     floorId: 'floor-1',
-    floorLabel: '1st Floor ┬╖ Premium',
+    floorLabel: '1st Floor · Premium',
     dailyRate: 12000,
     roomTypeLabel: 'Private',
   },
@@ -99,7 +99,7 @@ function buildClinical(overrides?: Partial<ClinicalChart>): ClinicalChart {
         id: 'pn-2',
         timestamp: '2026-07-09T18:00:00Z',
         author: 'Dr. Priya Menon',
-        note: 'Post-admission review complete. Chest X-ray ordered. Monitor SpOΓéé q4h.',
+        note: 'Post-admission review complete. Chest X-ray ordered. Monitor SpO₂ q4h.',
       },
       {
         id: 'pn-3',
@@ -113,7 +113,7 @@ function buildClinical(overrides?: Partial<ClinicalChart>): ClinicalChart {
         id: 'cp-1',
         title: 'Sepsis Bundle Protocol',
         status: 'Active',
-        details: 'Blood cultures ├ù 2, IV fluids 30ml/kg, broad-spectrum antibiotics within 1hr',
+        details: 'Blood cultures × 2, IV fluids 30ml/kg, broad-spectrum antibiotics within 1hr',
       },
       {
         id: 'cp-2',
@@ -125,8 +125,8 @@ function buildClinical(overrides?: Partial<ClinicalChart>): ClinicalChart {
     dietOrders: overrides?.dietOrders ?? [
       {
         id: 'diet-1',
-        order: 'Liquid Diet ΓÇö Low Sodium',
-        restrictions: 'No added salt ┬╖ Max 2g Na/day',
+        order: 'Liquid Diet — Low Sodium',
+        restrictions: 'No added salt · Max 2g Na/day',
         status: 'Active',
       },
     ],
@@ -172,7 +172,7 @@ const ADM_RAJESH: IPDAdmission = {
       },
     ],
     dietOrders: [
-      { id: 'diet-r1', order: 'Regular Diet ΓÇö High Protein', status: 'Active' },
+      { id: 'diet-r1', order: 'Regular Diet — High Protein', status: 'Active' },
     ],
     marEntries: [
       {
@@ -206,7 +206,7 @@ const ADM_ANANYA: IPDAdmission = {
   status: 'Active',
   clinical: buildClinical({
     dietOrders: [
-      { id: 'diet-a1', order: 'Diabetic Diet ΓÇö 1800 kcal', restrictions: 'Low CHO', status: 'Active' },
+      { id: 'diet-a1', order: 'Diabetic Diet — 1800 kcal', restrictions: 'Low CHO', status: 'Active' },
     ],
   }),
   recordLocked: false,
@@ -251,26 +251,26 @@ export const SEED_ADMISSIONS: Record<string, IPDAdmission> = {
 };
 
 export const SEED_BEDS: IPDBed[] = [
-  // ICU ΓÇö Floor 3
+  // ICU — Floor 3
   { id: 'bed-icu-01', wardId: 'icu', bedLabel: 'ICU-01', status: 'Occupied', admissionId: ADM_VIKRAM.id },
   { id: 'bed-icu-02', wardId: 'icu', bedLabel: 'ICU-02', status: 'Available' },
   { id: 'bed-icu-03', wardId: 'icu', bedLabel: 'ICU-03', status: 'Housekeeping' },
   { id: 'bed-icu-04', wardId: 'icu', bedLabel: 'ICU-04', status: 'Available' },
   { id: 'bed-icu-05', wardId: 'icu', bedLabel: 'ICU-05', status: 'Available' },
   { id: 'bed-icu-06', wardId: 'icu', bedLabel: 'ICU-06', status: 'Available' },
-  // CCU ΓÇö Floor 2
+  // CCU — Floor 2
   { id: 'bed-ccu-01', wardId: 'ccu', bedLabel: 'CCU-01', status: 'Occupied', admissionId: ADM_HARISH.id },
   { id: 'bed-ccu-02', wardId: 'ccu', bedLabel: 'CCU-02', status: 'Available' },
   { id: 'bed-ccu-03', wardId: 'ccu', bedLabel: 'CCU-03', status: 'Housekeeping' },
   { id: 'bed-ccu-04', wardId: 'ccu', bedLabel: 'CCU-04', status: 'Available' },
-  // General Ward ΓÇö Floor 2
+  // General Ward — Floor 2
   { id: 'bed-gw-01', wardId: 'general-ward', bedLabel: 'GW-101', status: 'Occupied', admissionId: ADM_RAJESH.id },
   { id: 'bed-gw-02', wardId: 'general-ward', bedLabel: 'GW-102', status: 'Available' },
   { id: 'bed-gw-03', wardId: 'general-ward', bedLabel: 'GW-103', status: 'Available' },
   { id: 'bed-gw-04', wardId: 'general-ward', bedLabel: 'GW-104', status: 'Housekeeping' },
   { id: 'bed-gw-05', wardId: 'general-ward', bedLabel: 'GW-105', status: 'Available' },
   { id: 'bed-gw-06', wardId: 'general-ward', bedLabel: 'GW-106', status: 'Available' },
-  // Private Suite ΓÇö Floor 1
+  // Private Suite — Floor 1
   { id: 'bed-ps-01', wardId: 'private-suite', bedLabel: 'PS-401', status: 'Occupied', admissionId: ADM_ANANYA.id },
   { id: 'bed-ps-02', wardId: 'private-suite', bedLabel: 'PS-402', status: 'Available' },
   { id: 'bed-ps-03', wardId: 'private-suite', bedLabel: 'PS-403', status: 'Available' },

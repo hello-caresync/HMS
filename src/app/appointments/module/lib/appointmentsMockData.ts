@@ -172,9 +172,9 @@ export const MOCK_QUEUE: QueueEntry[] = [
 ];
 
 export const MOCK_WAITING_ROOMS: WaitingRoomEntry[] = [
-  { id: 'wr1', patientName: 'Block C ΓÇö Cardiology', token: 'ΓÇö', waitingArea: 'OPD Block C Lounge', seatsOccupied: 14, seatsTotal: 24, avgWaitMinutes: 18 },
-  { id: 'wr2', patientName: 'Block P ΓÇö Pulmonology', token: 'ΓÇö', waitingArea: 'OPD Block P Waiting', seatsOccupied: 8, seatsTotal: 16, avgWaitMinutes: 24 },
-  { id: 'wr3', patientName: 'ER Fast-Track', token: 'ΓÇö', waitingArea: 'Emergency Waiting Zone', seatsOccupied: 6, seatsTotal: 10, avgWaitMinutes: 8 },
+  { id: 'wr1', patientName: 'Block C — Cardiology', token: '—', waitingArea: 'OPD Block C Lounge', seatsOccupied: 14, seatsTotal: 24, avgWaitMinutes: 18 },
+  { id: 'wr2', patientName: 'Block P — Pulmonology', token: '—', waitingArea: 'OPD Block P Waiting', seatsOccupied: 8, seatsTotal: 16, avgWaitMinutes: 24 },
+  { id: 'wr3', patientName: 'ER Fast-Track', token: '—', waitingArea: 'Emergency Waiting Zone', seatsOccupied: 6, seatsTotal: 10, avgWaitMinutes: 8 },
 ];
 
 export const MOCK_ONLINE_REQUESTS: OnlineRequest[] = [
@@ -185,9 +185,9 @@ export const MOCK_ONLINE_REQUESTS: OnlineRequest[] = [
 ];
 
 export const MOCK_DOCTORS = [
-  { id: 'd1', name: 'Dr. Anita Roy', department: 'Cardiology', room: 'C-04', hours: '09:00ΓÇô13:00', slotsAvailable: 6 },
-  { id: 'd2', name: 'Dr. Meera Iyer', department: 'Pulmonology', room: 'P-02', hours: '10:00ΓÇô16:00', slotsAvailable: 4 },
-  { id: 'd3', name: 'Dr. Rajesh Kumar', department: 'General Medicine', room: 'G-01', hours: '08:00ΓÇô14:00', slotsAvailable: 8 },
+  { id: 'd1', name: 'Dr. Anita Roy', department: 'Cardiology', room: 'C-04', hours: '09:00–13:00', slotsAvailable: 6 },
+  { id: 'd2', name: 'Dr. Meera Iyer', department: 'Pulmonology', room: 'P-02', hours: '10:00–16:00', slotsAvailable: 4 },
+  { id: 'd3', name: 'Dr. Rajesh Kumar', department: 'General Medicine', room: 'G-01', hours: '08:00–14:00', slotsAvailable: 8 },
   { id: 'd4', name: 'Dr. B. Joseph', department: 'Emergency Medicine', room: 'ER-3', hours: '24x7', slotsAvailable: 12 },
 ];
 
@@ -204,14 +204,14 @@ export const MOCK_CALENDAR_SLOTS: CalendarSlot[] = [
 export const MOCK_CANCELLATIONS: CancellationRecord[] = [
   { id: 'CAN-441', patientName: 'Karan Malhotra', doctorName: 'Dr. Anita Roy', originalSlot: '2026-07-17 11:00', reason: 'Patient travel conflict', refundStatus: 'Processed', suggestedReschedule: '2026-07-19 10:30' },
   { id: 'CAN-438', patientName: 'Deepa Singh', doctorName: 'Dr. Meera Iyer', originalSlot: '2026-07-16 15:00', reason: 'Doctor emergency leave', refundStatus: 'Pending', suggestedReschedule: '2026-07-18 14:00' },
-  { id: 'CAN-435', patientName: 'Ravi Menon', doctorName: 'Dr. Rajesh Kumar', originalSlot: '2026-07-15 09:30', reason: 'No-show ΓÇö auto-cancelled', refundStatus: 'Not Applicable' },
+  { id: 'CAN-435', patientName: 'Ravi Menon', doctorName: 'Dr. Rajesh Kumar', originalSlot: '2026-07-15 09:30', reason: 'No-show — auto-cancelled', refundStatus: 'Not Applicable' },
 ];
 
 export const MOCK_REMINDER_LOGS: CommReminderLog[] = [
-  { id: 'r1', channel: 'SMS', patientName: 'Rahul Sharma', subject: 'Appointment reminder ΓÇö Cardiology 09:30 today', sentAt: '2026-07-17T07:00:00', deliveryStatus: 'Delivered' },
-  { id: 'r2', channel: 'WhatsApp', patientName: 'Priya Patel', subject: 'Queue update ΓÇö estimated wait 15 min', sentAt: '2026-07-17T09:55:00', deliveryStatus: 'Delivered' },
-  { id: 'r3', channel: 'Email', patientName: 'Vikram Patel', subject: 'Online booking request received ΓÇö pending approval', sentAt: '2026-07-17T08:15:00', deliveryStatus: 'Delivered' },
-  { id: 'r4', channel: 'SMS', patientName: 'Karan Malhotra', subject: 'Cancellation confirmation ΓÇö refund initiated', sentAt: '2026-07-17T06:30:00', deliveryStatus: 'Queued' },
+  { id: 'r1', channel: 'SMS', patientName: 'Rahul Sharma', subject: 'Appointment reminder — Cardiology 09:30 today', sentAt: '2026-07-17T07:00:00', deliveryStatus: 'Delivered' },
+  { id: 'r2', channel: 'WhatsApp', patientName: 'Priya Patel', subject: 'Queue update — estimated wait 15 min', sentAt: '2026-07-17T09:55:00', deliveryStatus: 'Delivered' },
+  { id: 'r3', channel: 'Email', patientName: 'Vikram Patel', subject: 'Online booking request received — pending approval', sentAt: '2026-07-17T08:15:00', deliveryStatus: 'Delivered' },
+  { id: 'r4', channel: 'SMS', patientName: 'Karan Malhotra', subject: 'Cancellation confirmation — refund initiated', sentAt: '2026-07-17T06:30:00', deliveryStatus: 'Queued' },
 ];
 
 export const MOCK_REFERRALS: ReferralRecord[] = [

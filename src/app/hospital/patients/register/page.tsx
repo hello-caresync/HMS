@@ -96,7 +96,7 @@ export default function PatientRegisterPage() {
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#00758C] py-2.5 text-sm font-semibold uppercase tracking-wide text-white disabled:opacity-60"
         >
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-          {isPending ? 'SavingΓÇª' : 'Register patient'}
+          {isPending ? 'Saving…' : 'Register patient'}
         </button>
       </form>
     </div>

@@ -39,7 +39,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Internal back-office ERP routes ΓÇö external portals (patient/vendor) excluded */
+/** Internal back-office ERP routes — external portals (patient/vendor) excluded */
 const PROTECTED_PREFIXES = [
   '/admin',
   '/dashboard',
@@ -146,7 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSessionState(null);
 
       if (reason === 'inactivity') {
-        logUserActivity(userId ?? 'anonymous', 'Session timeout ΓÇö inactivity', 'Hospital IAM');
+        logUserActivity(userId ?? 'anonymous', 'Session timeout — inactivity', 'Hospital IAM');
       }
 
       router.push(`${APP_ROUTES.login}?reason=${reason}`);
@@ -292,7 +292,7 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0f172a] text-slate-900">
-        <p className="font-mono text-xs uppercase tracking-wider">Securing Regal staff sessionΓÇª</p>
+        <p className="font-mono text-xs uppercase tracking-wider">Securing Regal staff session…</p>
       </div>
     );
   }

@@ -23,7 +23,7 @@ export default function ActiveQueueTable() {
             Active Queue Status
           </h2>
           <p className="text-[11px] text-slate-800">
-            {doctor?.name} ┬╖ {dept?.name} ┬╖ {queue.length} in queue
+            {doctor?.name} · {dept?.name} · {queue.length} in queue
           </p>
         </div>
         <button

@@ -34,7 +34,9 @@ import {
   resolveAutoSelectedSlot,
 } from '@/lib/scheduling/doctor-slot-service';
 import type { DynamicSlot } from '@/lib/scheduling/dynamic-slots';
-import { consultationDurationMinutes, classifyConditionTier } from '@/lib/scheduling/dynamic-slots';
+import { acceptClinicalDraft, sanitizeClinicalInput } from '@/lib/clinical/clinical-text';
+import { consultationDurationMinutes, classifyConditionTier, slotTimesMatch } from '@/lib/scheduling/dynamic-slots';
+import { todayIsoDate } from '@/lib/hospital/smartq-wait';
 import { parsePatientAge, validatePhoneField } from '@/lib/hospital/indian-patient';
 import { ProfileCompletionGate } from '@/components/patient/ProfileCompletionGate';
 import { assertProfileCompleteForBooking } from '@/lib/patient/profile-completeness';
@@ -161,7 +163,7 @@ interface FullyAliasedBookingInput {
   gender?: string;
 }
 
-/** Canonical Supabase insert ΓÇö every column alias variation in one object. */
+/** Canonical Supabase insert — every column alias variation in one object. */
 function buildFullyAliasedBookingPayload(input: FullyAliasedBookingInput): Record<string, unknown> {
   const tokenString = formatBookingTokenLabel(input.tokenNumber);
   const patientName = input.patientName.trim();
@@ -177,7 +179,7 @@ function buildFullyAliasedBookingPayload(input: FullyAliasedBookingInput): Recor
   const doctorUuid = doctorIdentity.doctorUuid;
   const doctorName = doctorIdentity.doctorName || input.doctorName.trim();
   const department = doctorIdentity.department || input.department.trim();
-  const clinicalReason = input.reason.trim();
+  const clinicalReason = sanitizeClinicalInput(input.reason) || 'General consultation';
   const slotTime = input.slotTime;
   const feeDisplay = input.consultationFee;
   const seq = Number.isFinite(input.tokenNumber) && input.tokenNumber > 0 ? input.tokenNumber : 1;
@@ -202,8 +204,8 @@ function buildFullyAliasedBookingPayload(input: FullyAliasedBookingInput): Recor
     slot_time: slotTime,
     appointment_time: slotTime,
     time_slot: slotTime,
-    slot_duration_minutes: consultationDurationMinutes(classifyConditionTier(input.reason)),
-    consultation_duration_minutes: consultationDurationMinutes(classifyConditionTier(input.reason)),
+    slot_duration_minutes: consultationDurationMinutes(classifyConditionTier(clinicalReason)),
+    consultation_duration_minutes: consultationDurationMinutes(classifyConditionTier(clinicalReason)),
     fee: feeDisplay,
     consultation_fee: feeDisplay,
     reason: clinicalReason,
@@ -236,7 +238,7 @@ function buildFullyAliasedBookingPayload(input: FullyAliasedBookingInput): Recor
   return payload;
 }
 
-/** Token column aliases ΓÇö token_number, queue_number, token_label. */
+/** Token column aliases — token_number, queue_number, token_label. */
 function buildPatientAppointmentPayload(input: FullyAliasedBookingInput): Record<string, unknown> {
   return buildFullyAliasedBookingPayload(input);
 }
@@ -348,13 +350,12 @@ function BookAppointmentPageContent() {
   const [gender, setGender] = useState('');
 
   // SCHEDULING DETAILS
-  const [appointmentDate, setAppointmentDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [appointmentDate, setAppointmentDate] = useState<string>(todayIsoDate());
   const [slotTime, setSlotTime] = useState<string>('');
   const [dynamicSlots, setDynamicSlots] = useState<DynamicSlot[]>([]);
   const [selectedSlotId, setSelectedSlotId] = useState<string>('');
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotVersion, setSlotVersion] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -463,7 +464,12 @@ function BookAppointmentPageContent() {
 
     let cancelled = false;
     setLoadingSlots(true);
-    void loadDynamicDoctorSchedule(supabase, doctorCode, appointmentDate, reason).then(({ slots }) => {
+    const tier = classifyConditionTier(reason);
+    const tierReason = tier === 'acute' ? 'acute' : tier === 'complex' ? 'fracture' : '';
+    void loadDynamicDoctorSchedule(supabase, doctorCode, appointmentDate, tierReason, {
+      ids: [selectedDoctor?.id, selectedDoctor?.doctor_id, doctorCode],
+      name: selectedDoctor?.full_name || selectedDoctorName,
+    }).then(({ slots }) => {
       if (cancelled) return;
       setDynamicSlots(slots);
       const auto = resolveAutoSelectedSlot(slots, slotTime);
@@ -475,12 +481,18 @@ function BookAppointmentPageContent() {
         setSelectedSlotId('');
       }
       setLoadingSlots(false);
+    }).catch(() => {
+      if (cancelled) return;
+      setDynamicSlots([]);
+      setSlotTime('');
+      setSelectedSlotId('');
+      setLoadingSlots(false);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [appointmentDate, selectedDoctor?.id, selectedDoctorCode, reason]);
+  }, [appointmentDate, selectedDoctor?.id, selectedDoctor?.doctor_id, selectedDoctor?.full_name, selectedDoctorCode, selectedDoctorName, classifyConditionTier(reason), slotVersion]);
 
   const loadPatientAndFamilyOptions = async () => {
     const sessionIdentity = resolveActivePatientFormIdentity();
@@ -530,6 +542,9 @@ function BookAppointmentPageContent() {
   const doctorsInDepartment = useMemo(
     () => doctorsForDepartment(doctorList, selectedDept || DEFAULT_HOSPITAL_DEPARTMENT),
     [doctorList, selectedDept],
+  );
+  const selectedSlotOpen = dynamicSlots.some(
+    (slot) => slot.isSelectable && slotTimesMatch(slot.time, slotTime),
   );
 
   const handleDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -627,10 +642,37 @@ function BookAppointmentPageContent() {
       });
       const bookingDoctorKey = doctorIdentity.doctorUuid || doctorIdentity.doctorCode || rawDoctorCode;
 
+      if (loadingSlots) {
+        setErrorMessage('Wait for the time slots to finish loading.');
+        toast.error('Wait for the time slots to finish loading.');
+        return;
+      }
+      const chosenSlot = dynamicSlots.find((slot) => slotTimesMatch(slot.time, selectedTime));
+      if (!chosenSlot) {
+        setErrorMessage('Select an open time slot.');
+        toast.error('Select an open time slot.');
+        return;
+      }
+      if (!chosenSlot.isSelectable) {
+        setErrorMessage('That time is already booked. Choose an open slot.');
+        toast.error('That time is already booked. Choose an open slot.');
+        setSlotTime('');
+        setSlotVersion((value) => value + 1);
+        return;
+      }
+
       await assertSlotAvailableForBooking(supabase, {
         doctorId: bookingDoctorKey,
         appointmentDate: resolvedDate,
         slotTime: selectedTime,
+        doctorIds: [
+          selectedDoctor.id,
+          selectedDoctor.doctor_id,
+          selectedDoctorCode,
+          doctorIdentity.doctorUuid,
+          doctorIdentity.doctorCode,
+        ],
+        doctorName: rawDoctorName,
       });
 
       const calculatedToken = await calculateNextTokenNumber(
@@ -731,7 +773,7 @@ function BookAppointmentPageContent() {
       });
       setSuccess(true);
       toast.success(
-        `Appointment confirmed with ${rawDoctorName} ┬╖ ${formatConsultationFee(selectedDoctor.consultation_fee)}`,
+        `Appointment confirmed with ${rawDoctorName} · ${formatConsultationFee(selectedDoctor.consultation_fee)}`,
       );
 
       setTimeout(() => {
@@ -742,6 +784,11 @@ function BookAppointmentPageContent() {
       console.error('Unexpected booking error:', err);
       toast.error(message);
       setErrorMessage(message);
+      if (/booked/i.test(message)) {
+        setSlotTime('');
+        setSelectedSlotId('');
+        setSlotVersion((value) => value + 1);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -753,7 +800,7 @@ function BookAppointmentPageContent() {
       <div className="border-b border-[#e6ccb2] pb-4">
         <h1 className="text-2xl font-black text-[#0E2924]">Confirm Consultation Booking</h1>
         <p className="text-xs font-bold text-[#b08968]">
-          Facility: <span className="text-[#7f5539] font-black">{REGAL_HOSPITAL}</span> ΓÇó OPD Consultation
+          Facility: <span className="text-[#7f5539] font-black">{REGAL_HOSPITAL}</span> • OPD Consultation
         </p>
       </div>
 
@@ -766,7 +813,7 @@ function BookAppointmentPageContent() {
             </div>
             <div className="min-w-0 space-y-2">
               <p className="text-sm font-black text-[#0E2924]">
-                SmartQ Token Confirmed ΓÇö {REGAL_HOSPITAL}
+                SmartQ Token Confirmed — {REGAL_HOSPITAL}
               </p>
               <div className="grid gap-1.5 text-xs font-semibold text-[#7f5539] sm:grid-cols-2">
                 <p>
@@ -804,7 +851,7 @@ function BookAppointmentPageContent() {
 
       {profileGateLoading ? (
         <div className="rounded-2xl border border-[#e6ccb2] bg-white p-6 text-xs font-bold text-[#b08968]">
-          Verifying profile completeness before SmartQ token generationΓÇª
+          Verifying profile completeness before SmartQ token generation…
         </div>
       ) : !profileComplete ? (
         <ProfileCompletionGate missingFields={profileMissingFields} />
@@ -848,7 +895,9 @@ function BookAppointmentPageContent() {
               min={1}
               max={120}
               value={age}
-              onChange={(e) => setAge(e.target.value)}
+              onChange={(e) => setAge(e.target.value.replace(/\D/g, '').slice(0, 3))}
+              inputMode="numeric"
+              maxLength={3}
               placeholder="Enter age"
               className="mt-1.5 w-full rounded-2xl border border-[#e6ccb2] bg-white p-4 text-xs font-bold text-[#0E2924] focus:border-[#7f5539] focus:outline-none"
             />
@@ -898,7 +947,7 @@ function BookAppointmentPageContent() {
             className="w-full rounded-2xl border border-[#e6ccb2] bg-white p-4 text-xs font-black text-[#7f5539] focus:border-[#7f5539] focus:outline-none shadow-sm cursor-pointer disabled:opacity-60"
           >
             {isLoadingDoctors ? (
-              <option value="">Loading specialistsΓÇª</option>
+              <option value="">Loading specialists…</option>
             ) : doctorsInDepartment.length === 0 ? (
               <option value="" disabled>
                 No doctors assigned to {selectedDept}
@@ -953,16 +1002,20 @@ function BookAppointmentPageContent() {
           </label>
           <textarea
             rows={3}
-            placeholder="Describe symptoms or clinical concern (e.g., Fever, Routine checkup, Knee pain, Chronic cough)..."
+            maxLength={180}
+            placeholder="e.g. Fever, cough, routine checkup"
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(e) => setReason((current) => acceptClinicalDraft(e.target.value, current))}
             className="w-full rounded-2xl border border-[#e6ccb2] bg-[#F4F8F7] p-4 text-xs font-bold text-[#0E2924] focus:border-[#7f5539] focus:outline-none"
           />
+          <p className="mt-1 text-[10px] font-semibold text-[#b08968]">
+            Short clinical note only. Letters, numbers, and basic punctuation.
+          </p>
         </div>
 
         {/* DATE & TIME SLOTS */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <div>
+        <div className="space-y-4">
+          <div className="max-w-xs">
             <label className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#b08968] mb-1.5">
               <Calendar className="h-3.5 w-3.5 text-[#b08968]" /> APPOINTMENT DATE *
             </label>
@@ -986,6 +1039,7 @@ function BookAppointmentPageContent() {
               loading={loadingSlots}
               clinicalReason={reason}
               onSelect={(slot) => {
+                if (!slot.isSelectable) return;
                 setSlotTime(slot.time);
                 setSelectedSlotId(
                   `dynamic-${selectedDoctorCode || selectedDoctor?.id}-${appointmentDate}-${slot.time.replace(/\s/g, '')}`,
@@ -1011,7 +1065,7 @@ function BookAppointmentPageContent() {
             !selectedDoctor ||
             doctorsInDepartment.length === 0 ||
             !slotTime ||
-            !dynamicSlots.some((slot) => slot.isSelectable)
+            !selectedSlotOpen
           }
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#7f5539] py-4 text-xs font-black text-white shadow-lg hover:bg-[#b08968] transition disabled:opacity-50"
         >
@@ -1035,7 +1089,7 @@ function BookAppointmentFallback() {
   return (
     <div className="mx-auto max-w-xl p-6">
       <div className="flex h-64 animate-pulse items-center justify-center rounded-3xl border border-[#E2D2C8] bg-white/80">
-        <p className="text-sm font-bold text-[#8E7692]">Loading booking formΓÇª</p>
+        <p className="text-sm font-bold text-[#8E7692]">Loading booking form…</p>
       </div>
     </div>
   );

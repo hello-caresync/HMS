@@ -66,7 +66,7 @@ export default function AdminSettingsView() {
             rows={[
               ['Departments', 'Cardiology', 'Active'],
               ['Specializations', 'Interventional Cardiology', 'Active'],
-              ['Tariffs', 'OPD Consultation', 'Γé╣800'],
+              ['Tariffs', 'OPD Consultation', '₹800'],
             ]}
           />
         </Panel>

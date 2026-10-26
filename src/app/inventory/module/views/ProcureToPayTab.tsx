@@ -59,7 +59,7 @@ export default function ProcureToPayTab({
       </div>
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <InvPanel title="Active Purchase Requests & Orders Queue" subtitle="Department requisitions ┬╖ priority ┬╖ approval workflow" icon={ShoppingCart}>
+        <InvPanel title="Active Purchase Requests & Orders Queue" subtitle="Department requisitions · priority · approval workflow" icon={ShoppingCart}>
           <table className="w-full min-w-[520px] text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -82,14 +82,14 @@ export default function ProcureToPayTab({
                   </td>
                   <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums">{formatInr(o.value)}</td>
                   <td className="px-1.5 py-1 text-[8px] text-slate-500">{formatTime(o.requestedAt)}</td>
-                  <td className="px-1.5 py-1 text-[7px] text-slate-400">{o.vendor ?? 'ΓÇö'}</td>
+                  <td className="px-1.5 py-1 text-[7px] text-slate-400">{o.vendor ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </InvPanel>
 
-        <InvPanel title="GRN & Inward Intake Console" subtitle="Quantity ┬╖ batch ┬╖ expiry ┬╖ QC validation" icon={Truck}>
+        <InvPanel title="GRN & Inward Intake Console" subtitle="Quantity · batch · expiry · QC validation" icon={Truck}>
           <SecureIdentityPlaceholder verified />
           <table className="mt-2 w-full min-w-[520px] text-left">
             <thead>
@@ -116,7 +116,7 @@ export default function ProcureToPayTab({
         </InvPanel>
       </div>
 
-      <InvPanel title="Quick Actions" icon={Zap} subtitle="Register ┬╖ procure ┬╖ GRN ┬╖ issue ┬╖ transfer">
+      <InvPanel title="Quick Actions" icon={Zap} subtitle="Register · procure · GRN · issue · transfer">
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-6">
           {[
             { id: 'register-item' as const, label: 'Register Item', icon: Package },

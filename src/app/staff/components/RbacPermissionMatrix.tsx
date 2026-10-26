@@ -68,7 +68,7 @@ export default function RbacPermissionMatrix() {
             Interactive RBAC Matrix
           </p>
           <p className="text-sm font-bold text-slate-800">
-            Role-permission intersections ┬╖ grouped by operational category
+            Role-permission intersections · grouped by operational category
           </p>
         </div>
 

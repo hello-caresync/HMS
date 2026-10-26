@@ -21,7 +21,7 @@ type NotificationItem = {
 type BarPoint = { label: string; value: number };
 
 const HUB_SUMMARY =
-  'Standalone practice console ┬╖ profile management ┬╖ live alerts ┬╖ analytics ledger ┬╖ 13 Jul 2026';
+  'Standalone practice console · profile management · live alerts · analytics ledger · 13 Jul 2026';
 
 const HUB_TABS: { key: HubTab; label: string }[] = [
   { key: 'profile', label: 'Doctor Profile' },
@@ -43,31 +43,31 @@ const NOTIFICATIONS: NotificationItem[] = [
   {
     id: 'n-1',
     tag: 'Emergency Case Assignment',
-    message: 'Trauma bay activation ┬╖ sandbox triage ┬╖ respond within 5 min',
+    message: 'Trauma bay activation · sandbox triage · respond within 5 min',
     timestamp: '10:12',
   },
   {
     id: 'n-2',
     tag: 'Lab Report Ready',
-    message: 'HbA1c result uploaded for P.N. ┬╖ review in laboratory module',
+    message: 'HbA1c result uploaded for P.N. · review in laboratory module',
     timestamp: '09:45',
   },
   {
     id: 'n-3',
     tag: 'OT Reminder',
-    message: 'OT-03 laparoscopic case ┬╖ timeout in 15 minutes',
+    message: 'OT-03 laparoscopic case · timeout in 15 minutes',
     timestamp: '08:15',
   },
   {
     id: 'n-4',
     tag: 'Lab Report Ready',
-    message: 'Lipid profile finalized ┬╖ R.S. ┬╖ flag borderline LDL',
+    message: 'Lipid profile finalized · R.S. · flag borderline LDL',
     timestamp: 'Yesterday 16:30',
   },
   {
     id: 'n-5',
     tag: 'OT Reminder',
-    message: 'Pre-op checklist pending ┬╖ K.V. ┬╖ TKR 11:00',
+    message: 'Pre-op checklist pending · K.V. · TKR 11:00',
     timestamp: 'Yesterday 10:00',
   },
 ];
@@ -117,7 +117,7 @@ function BarChart({ title, unit, points, max }: { title: string; unit: string; p
   return (
     <div className="rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
       <p className="text-sm font-black text-slate-950">{title}</p>
-      <p className="text-xs font-bold text-slate-800">Unit ┬╖ {unit}</p>
+      <p className="text-xs font-bold text-slate-800">Unit · {unit}</p>
       <div className="mt-4 flex h-40 items-end justify-between gap-2 border-b-2 border-slate-300 px-1 pb-2">
         {points.map((point) => (
           <div key={point.label} className="flex flex-1 flex-col items-center gap-1">
@@ -139,7 +139,7 @@ export default function PracticeHubPage() {
   const [activeTab, setActiveTab] = useState<HubTab>('profile');
   const [leaveFrom, setLeaveFrom] = useState('2026-07-20');
   const [leaveTo, setLeaveTo] = useState('2026-07-22');
-  const [leaveReason, setLeaveReason] = useState('Conference ┬╖ sandbox CME');
+  const [leaveReason, setLeaveReason] = useState('Conference · sandbox CME');
   const [actionNote, setActionNote] = useState<string | null>(null);
 
   const showNotice = useCallback((message: string) => {
@@ -150,7 +150,7 @@ export default function PracticeHubPage() {
   const revenueMax = useMemo(() => Math.max(...REVENUE_STATS.map((p) => p.value)), []);
 
   const handleLeaveSubmit = () => {
-    showNotice(`Leave request submitted ┬╖ ${leaveFrom} ΓåÆ ${leaveTo} ┬╖ sandbox routing only`);
+    showNotice(`Leave request submitted · ${leaveFrom} → ${leaveTo} · sandbox routing only`);
   };
 
   return (
@@ -213,7 +213,7 @@ export default function PracticeHubPage() {
                   </div>
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <dt className="font-bold text-slate-800">Department</dt>
-                    <dd className="font-black text-slate-950">OPD ┬╖ General Medicine</dd>
+                    <dd className="font-black text-slate-950">OPD · General Medicine</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="font-bold text-slate-800">Contact</dt>
@@ -228,9 +228,9 @@ export default function PracticeHubPage() {
                   Qualifications
                 </h2>
                 <ul className="mt-3 space-y-2 text-xs font-bold text-slate-950">
-                  <li>MBBS ┬╖ State Medical University ┬╖ 2010</li>
-                  <li>MD (Internal Medicine) ┬╖ 2014</li>
-                  <li>Fellowship ┬╖ Clinical Cardiology ┬╖ 2017</li>
+                  <li>MBBS · State Medical University · 2010</li>
+                  <li>MD (Internal Medicine) · 2014</li>
+                  <li>Fellowship · Clinical Cardiology · 2017</li>
                 </ul>
                 <p className="mt-4 text-[10px] font-black uppercase text-slate-800">Registration Number</p>
                 <p className="font-mono text-sm font-black text-slate-950">NX-MD-REG-00421</p>
@@ -243,9 +243,9 @@ export default function PracticeHubPage() {
                 </h2>
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {[
-                    { day: 'Mon ΓÇô Wed', slot: '09:00 ΓÇô 13:00 ┬╖ OPD Block A' },
-                    { day: 'Thu ΓÇô Fri', slot: '14:00 ΓÇô 18:00 ┬╖ OPD Block B' },
-                    { day: 'Sat', slot: '09:00 ΓÇô 12:00 ┬╖ Half day' },
+                    { day: 'Mon – Wed', slot: '09:00 – 13:00 · OPD Block A' },
+                    { day: 'Thu – Fri', slot: '14:00 – 18:00 · OPD Block B' },
+                    { day: 'Sat', slot: '09:00 – 12:00 · Half day' },
                   ].map((row) => (
                     <div key={row.day} className="rounded-lg border-2 border-slate-200 bg-white p-3">
                       <p className="text-xs font-black text-slate-950">{row.day}</p>
@@ -301,7 +301,7 @@ export default function PracticeHubPage() {
               ))}
               <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800">
                 <Bell className="h-4 w-4 text-slate-950" aria-hidden />
-                Live feed sandbox ┬╖ {NOTIFICATIONS.length} recent events
+                Live feed sandbox · {NOTIFICATIONS.length} recent events
               </div>
             </div>
           )}
@@ -313,7 +313,7 @@ export default function PracticeHubPage() {
                   { label: 'Daily Consultations', value: METRICS.dailyConsultations, unit: 'today' },
                   { label: 'Monthly Consultations', value: METRICS.monthlyConsultations, unit: 'Jul 2026' },
                   { label: 'Patient Satisfaction', value: METRICS.satisfactionPct, unit: '%' },
-                  { label: 'Revenue Generated', value: `Γé╣${(METRICS.revenueMonthly / 1000).toFixed(0)}K`, unit: 'monthly' },
+                  { label: 'Revenue Generated', value: `₹${(METRICS.revenueMonthly / 1000).toFixed(0)}K`, unit: 'monthly' },
                 ].map((m) => (
                   <div key={m.label} className="rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
                     <p className="text-[10px] font-black uppercase text-slate-800">{m.label}</p>
@@ -325,7 +325,7 @@ export default function PracticeHubPage() {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[10px] font-black uppercase text-slate-800">OPD Statistics ┬╖ Today</p>
+                  <p className="text-[10px] font-black uppercase text-slate-800">OPD Statistics · Today</p>
                   <div className="mt-3 flex gap-4">
                     <div>
                       <p className="text-2xl font-black text-slate-950">{METRICS.opdWaiting}</p>
@@ -336,22 +336,22 @@ export default function PracticeHubPage() {
                       <p className="text-[10px] font-bold text-slate-800">Completed</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-black text-slate-950">Γé╣{(METRICS.revenueDaily / 1000).toFixed(1)}K</p>
+                      <p className="text-2xl font-black text-slate-950">₹{(METRICS.revenueDaily / 1000).toFixed(1)}K</p>
                       <p className="text-[10px] font-bold text-slate-800">Revenue today</p>
                     </div>
                   </div>
                 </div>
                 <div className="rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
                   <p className="text-[10px] font-black uppercase text-slate-800">Monthly Growth Snapshot</p>
-                  <p className="mt-2 text-sm font-black text-emerald-900">+8.2% consult volume ┬╖ sandbox metric</p>
-                  <p className="text-xs font-bold text-slate-800">Prescriptions +6.1% ┬╖ Revenue +5.4%</p>
+                  <p className="mt-2 text-sm font-black text-emerald-900">+8.2% consult volume · sandbox metric</p>
+                  <p className="text-xs font-bold text-slate-800">Prescriptions +6.1% · Revenue +5.4%</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <BarChart title="Monthly Consultations" unit="visits" points={CONSULTATION_GROWTH} max={450} />
                 <BarChart title="Prescription Statistics" unit="Rx count" points={PRESCRIPTION_STATS} max={1100} />
-                <BarChart title="Revenue Counts" unit="Γé╣ thousands" points={REVENUE_STATS} max={revenueMax} />
+                <BarChart title="Revenue Counts" unit="₹ thousands" points={REVENUE_STATS} max={revenueMax} />
               </div>
             </div>
           )}

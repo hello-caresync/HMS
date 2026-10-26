@@ -32,7 +32,7 @@ export default function InvoiceAuditingView({
       <PageHeader
         overline="Finance verification"
         title="3-Way Verification Ledger Matrix"
-        description="PO manifest ┬╖ goods receipt ┬╖ tax invoice settlement cross-check."
+        description="PO manifest · goods receipt · tax invoice settlement cross-check."
       />
 
       {!permissions.canApprovePayment && (
@@ -58,11 +58,11 @@ export default function InvoiceAuditingView({
               <p className={bodyTextClassName}>
                 Gross total:{' '}
                 <span className="font-mono font-bold text-[#A65E53]">
-                  Γé╣{invoice.totalAmount.toLocaleString('en-IN')}
+                  ₹{invoice.totalAmount.toLocaleString('en-IN')}
                 </span>
               </p>
               <p className={`text-xs ${monoDataClassName} text-slate-800`}>
-                PO {invoice.poReferenceId} ┬╖ Match {invoice.matchingStatus}
+                PO {invoice.poReferenceId} · Match {invoice.matchingStatus}
               </p>
             </div>
 

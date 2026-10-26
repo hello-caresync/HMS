@@ -12,7 +12,7 @@ export type ErpNavSection = {
   items: ErpNavItem[];
 };
 
-/** ERP navigation registry ΓÇö Phases 1ΓÇô7 */
+/** ERP navigation registry — Phases 1–7 */
 export const ERP_NAV_SECTIONS: ErpNavSection[] = [
   {
     id: 'core',
@@ -62,7 +62,7 @@ export const ERP_NAV_SECTIONS: ErpNavSection[] = [
       { label: 'Reports', href: APP_ROUTES.reportsHub, description: 'Executive analytics cockpit' },
       { label: 'Security Audit', href: APP_ROUTES.adminAudit, description: 'Immutable audit trail' },
       { label: 'System Settings', href: APP_ROUTES.adminSettings, description: 'IT security controls' },
-      { label: 'Hospital Settings', href: APP_ROUTES.settingsHub, description: 'RBAC ┬╖ backup ┬╖ API sandbox' },
+      { label: 'Hospital Settings', href: APP_ROUTES.settingsHub, description: 'RBAC · backup · API sandbox' },
     ],
   },
 ];

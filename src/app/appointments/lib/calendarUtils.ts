@@ -1,4 +1,4 @@
-﻿/** Calendar helpers ΓÇö 15-minute slot grid for day-at-a-glance scheduling */
+﻿/** Calendar helpers — 15-minute slot grid for day-at-a-glance scheduling */
 
 import type { Appointment, BlockedSlot, SlotState } from '../types';
 import { SLOT_INTERVAL_MINUTES } from '../types';

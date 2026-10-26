@@ -34,7 +34,7 @@ const SEED_FACILITIES: FacilityRow[] = [
     bedType: 'Manual',
     ward: 'Ward-3A',
     bedLabel: 'B-301',
-    dailyTariff: 'Γé╣2,200',
+    dailyTariff: '₹2,200',
     maintenance: 'Operational',
   },
   {
@@ -43,7 +43,7 @@ const SEED_FACILITIES: FacilityRow[] = [
     bedType: 'Semi-Fowler',
     ward: 'Block-B',
     bedLabel: 'P-112',
-    dailyTariff: 'Γé╣4,800',
+    dailyTariff: '₹4,800',
     maintenance: 'Operational',
   },
   {
@@ -52,7 +52,7 @@ const SEED_FACILITIES: FacilityRow[] = [
     bedType: 'Motorized',
     ward: 'Tower-1',
     bedLabel: 'D-204',
-    dailyTariff: 'Γé╣8,500',
+    dailyTariff: '₹8,500',
     maintenance: 'Reserved',
   },
   {
@@ -61,7 +61,7 @@ const SEED_FACILITIES: FacilityRow[] = [
     bedType: 'Motorized',
     ward: 'ICU-A',
     bedLabel: 'ICU-07',
-    dailyTariff: 'Γé╣12,000',
+    dailyTariff: '₹12,000',
     maintenance: 'Operational',
   },
   {
@@ -70,7 +70,7 @@ const SEED_FACILITIES: FacilityRow[] = [
     bedType: 'Manual',
     ward: 'Ward-2C',
     bedLabel: 'B-218',
-    dailyTariff: 'Γé╣2,200',
+    dailyTariff: '₹2,200',
     maintenance: 'Maintenance',
   },
 ];
@@ -81,7 +81,7 @@ export default function MasterRoomsBedsView() {
   const [facilities] = useState(SEED_FACILITIES);
   const [search, setSearch] = useState('');
   const [roomTab, setRoomTab] = useState<RoomType>('General');
-  const [layoutNote, setLayoutNote] = useState('Block A ┬╖ Floors 2ΓÇô4 ┬╖ 48 beds indexed');
+  const [layoutNote, setLayoutNote] = useState('Block A · Floors 2–4 · 48 beds indexed');
 
   const filtered = useMemo(
     () =>
@@ -115,7 +115,7 @@ export default function MasterRoomsBedsView() {
         icon={BedDouble}
       />
 
-      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search ward, bed labelΓÇª" />
+      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search ward, bed label…" />
 
       <MasterTabBar
         tabs={ROOM_TABS.map((r) => ({ id: r, label: r }))}
@@ -146,7 +146,7 @@ export default function MasterRoomsBedsView() {
                 className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
               >
                 <span className="text-xs font-medium text-slate-800">
-                  {f.bedLabel} ┬╖ {f.bedType}
+                  {f.bedLabel} · {f.bedType}
                 </span>
                 <span className="text-xs font-bold tabular-nums text-blue-600">{f.dailyTariff}/day</span>
               </li>

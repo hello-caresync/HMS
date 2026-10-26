@@ -190,7 +190,7 @@ export default function HospitalOnboardingPage() {
         } else {
           setSelectedDepartments((prev) => Array.from(new Set([...prev, ...REGAL_DEPARTMENTS])));
           toast.success(`Successfully loaded ${REGAL_DOCTOR_COUNT} Regal Hospital Doctors!`, {
-            description: 'Local seed roster applied ΓÇö save in Step 4 to persist to Supabase.',
+            description: 'Local seed roster applied — save in Step 4 to persist to Supabase.',
           });
         }
       } catch {
@@ -199,7 +199,7 @@ export default function HospitalOnboardingPage() {
             setMembers(REGAL_HOSPITAL_DOCTORS);
             setMemberSource('seed');
             setSelectedDepartments((prev) => Array.from(new Set([...prev, ...REGAL_DEPARTMENTS])));
-            toast.error('Could not reach Supabase ΓÇö using local Regal seed roster.');
+            toast.error('Could not reach Supabase — using local Regal seed roster.');
           } else {
             setMembers([]);
             setMemberSource(null);
@@ -350,7 +350,7 @@ export default function HospitalOnboardingPage() {
     setShowSummary(true);
 
     toast.success('Onboarding complete! Redirecting to Hospital Dashboard...', {
-      description: `${result.membersSaved} members saved ┬╖ Hospital ID ${result.hospitalId.slice(0, 8)}ΓÇª`,
+      description: `${result.membersSaved} members saved · Hospital ID ${result.hospitalId.slice(0, 8)}…`,
     });
 
     window.setTimeout(() => {
@@ -593,7 +593,7 @@ export default function HospitalOnboardingPage() {
                       onClick={() => toggleDepartment(dept)}
                       className="rounded-full bg-teal-700 px-4 py-2 text-sm font-bold uppercase tracking-wider text-white"
                     >
-                      {dept} ├ù
+                      {dept} ×
                     </button>
                   ))}
               </div>
@@ -621,7 +621,7 @@ export default function HospitalOnboardingPage() {
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl bg-white/80 backdrop-blur-sm">
                   <Loader2 className="h-8 w-8 animate-spin text-teal-700" aria-hidden />
                   <p className="text-sm font-bold uppercase tracking-wider text-slate-700">
-                    Loading Regal Hospital rosterΓÇª
+                    Loading Regal Hospital roster…
                   </p>
                 </div>
               )}
@@ -632,7 +632,7 @@ export default function HospitalOnboardingPage() {
                     Add hospital members. Doctor-specific fields appear when role is Doctor.
                     {memberSource === 'database' && activeHospitalId && (
                       <span className="mt-1 block text-sm font-bold uppercase tracking-wider text-teal-700">
-                        Synced from Supabase ┬╖ Hospital ID {activeHospitalId.slice(0, 8)}ΓÇª
+                        Synced from Supabase · Hospital ID {activeHospitalId.slice(0, 8)}…
                       </span>
                     )}
                   </p>
@@ -643,7 +643,7 @@ export default function HospitalOnboardingPage() {
                     onClick={handlePreloadRegalDoctors}
                     className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-bold uppercase tracking-wider text-amber-950 transition hover:bg-amber-100"
                   >
-                    ΓÜí Preload {REGAL_DOCTOR_COUNT} Regal Hospital Doctors
+                    ⚡ Preload {REGAL_DOCTOR_COUNT} Regal Hospital Doctors
                   </button>
                   <button
                     type="button"
@@ -657,7 +657,7 @@ export default function HospitalOnboardingPage() {
 
               {members.length > 0 && (
                 <p className="text-base font-medium text-slate-600">
-                  {members.length} member{members.length === 1 ? '' : 's'} in roster ΓÇö including any
+                  {members.length} member{members.length === 1 ? '' : 's'} in roster — including any
                   manually added staff.
                 </p>
               )}
@@ -798,7 +798,7 @@ export default function HospitalOnboardingPage() {
                           />
                         </div>
                         <div>
-                          <Label>Consultation Fee (Γé╣)</Label>
+                          <Label>Consultation Fee (₹)</Label>
                           <NumberInput
                             id={`fee-${member.key}`}
                             value={member.consultationFee ?? 0}
@@ -835,7 +835,7 @@ export default function HospitalOnboardingPage() {
                     Hospital
                   </p>
                   <p className="mt-1 text-base font-medium text-slate-800">
-                    {hospital.hospitalName || 'ΓÇö'}
+                    {hospital.hospitalName || '—'}
                   </p>
                 </div>
                 <div className="rounded-xl border border-slate-200 p-4">
@@ -905,7 +905,7 @@ export default function HospitalOnboardingPage() {
               >
                 {saving ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Completing onboardingΓÇª
+                    <Loader2 className="h-4 w-4 animate-spin" /> Completing onboarding…
                   </>
                 ) : (
                   <>

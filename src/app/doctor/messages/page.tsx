@@ -39,7 +39,7 @@ function MessageBubble({ message }: { message: DoctorSecureMessage }) {
       <div className="flex flex-col items-end">
         <div className="mb-1 flex items-center gap-1.5 px-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">You</span>
-          <span className="text-[10px] text-slate-400">ΓÇó {formatThreadTime(message.created_at)}</span>
+          <span className="text-[10px] text-slate-400">• {formatThreadTime(message.created_at)}</span>
         </div>
         <div className="max-w-[75%] rounded-2xl rounded-br-none bg-teal-700 px-4 py-2.5 text-xs leading-relaxed text-white shadow-sm">
           {message.content}
@@ -52,8 +52,8 @@ function MessageBubble({ message }: { message: DoctorSecureMessage }) {
     return (
       <div className="flex flex-col items-start">
         <div className="mb-1 px-1 text-[10px] font-bold text-slate-600">
-          ≡ƒÅó Hospital Admin ΓÇó Operations Desk
-          <span className="ml-1.5 font-normal text-slate-400">ΓÇó {formatThreadTime(message.created_at)}</span>
+          🏢 Hospital Admin • Operations Desk
+          <span className="ml-1.5 font-normal text-slate-400">• {formatThreadTime(message.created_at)}</span>
         </div>
         <div className="max-w-[75%] rounded-2xl rounded-bl-none border border-slate-200 bg-slate-100 px-4 py-2.5 text-xs leading-relaxed text-slate-900 shadow-sm">
           {message.content}
@@ -66,8 +66,8 @@ function MessageBubble({ message }: { message: DoctorSecureMessage }) {
   return (
     <div className="flex flex-col items-start">
       <div className="mb-1 px-1 text-[10px] font-bold text-slate-600">
-        ≡ƒæñ {patientLabel}
-        <span className="ml-1.5 font-normal text-slate-400">ΓÇó {formatThreadTime(message.created_at)}</span>
+        👤 {patientLabel}
+        <span className="ml-1.5 font-normal text-slate-400">• {formatThreadTime(message.created_at)}</span>
       </div>
       <div className="max-w-[75%] rounded-2xl rounded-bl-none border border-slate-200 bg-white px-4 py-2.5 text-xs leading-relaxed text-slate-800 shadow-sm">
         {message.content}
@@ -76,7 +76,7 @@ function MessageBubble({ message }: { message: DoctorSecureMessage }) {
   );
 }
 
-/** Doctor Command Center ┬╖ unified Hospital Desk + Patient Threads secure messaging. */
+/** Doctor Command Center · unified Hospital Desk + Patient Threads secure messaging. */
 export default function DoctorSecureMessagesPage() {
   const supabase = useMemo(() => createClient(), []);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -208,7 +208,7 @@ export default function DoctorSecureMessagesPage() {
           <p className={msgClasses.label}>Clinical Command Center</p>
           <h1 className="text-xl font-black text-slate-900">Secure Messages</h1>
           <p className="mt-0.5 text-xs font-medium text-slate-500">
-            {activeDoctor.full_name} ┬╖ {activeDoctor.employee_id} ┬╖ {activeDoctor.department}
+            {activeDoctor.full_name} · {activeDoctor.employee_id} · {activeDoctor.department}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -252,7 +252,7 @@ export default function DoctorSecureMessagesPage() {
       <div
         className={`grid min-h-[calc(100vh-220px)] grid-cols-1 overflow-hidden ${msgClasses.card} lg:grid-cols-[300px_1fr]`}
       >
-        {/* Left sidebar ΓÇö thread list */}
+        {/* Left sidebar — thread list */}
         <aside className="flex flex-col border-b border-slate-200 lg:border-b-0 lg:border-r">
           <div className="border-b border-slate-200 px-4 py-3">
             <h2 className="text-xs font-black text-slate-900">
@@ -268,7 +268,7 @@ export default function DoctorSecureMessagesPage() {
           <div className="custom-scrollbar flex-1 overflow-y-auto">
             {loading ? (
               <p className="flex items-center gap-2 p-4 text-xs text-slate-500">
-                <Loader2 className="h-4 w-4 animate-spin" /> Loading threadsΓÇª
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading threads…
               </p>
             ) : threads.length === 0 ? (
               <p className="p-6 text-center text-xs text-slate-500">
@@ -291,7 +291,7 @@ export default function DoctorSecureMessagesPage() {
                     <div className="flex items-start gap-2">
                       {thread.isHospitalDesk ? (
                         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0F3E5D]/10 text-sm">
-                          ≡ƒÅó
+                          🏢
                         </span>
                       ) : (
                         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
@@ -301,7 +301,7 @@ export default function DoctorSecureMessagesPage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-bold text-slate-900">{thread.label}</p>
                         <p className="mt-0.5 truncate text-[10px] text-slate-500">
-                          {thread.latestPreview || 'ΓÇö'}
+                          {thread.latestPreview || '—'}
                         </p>
                         {thread.latestAt ? (
                           <p className="mt-1 text-[10px] text-slate-400">
@@ -317,7 +317,7 @@ export default function DoctorSecureMessagesPage() {
           </div>
         </aside>
 
-        {/* Right panel ΓÇö chat */}
+        {/* Right panel — chat */}
         <div className="flex min-h-0 flex-col">
           {!activeThread ? (
             <div className="flex flex-1 flex-col items-center justify-center p-8 text-slate-500">
@@ -332,8 +332,8 @@ export default function DoctorSecureMessagesPage() {
                 </h3>
                 <p className="text-[11px] text-slate-500">
                   {activeTab === 'hospital_desk'
-                    ? `channel_type doctor ┬╖ RH-ADMIN ┬╖ ${activeDoctor.employee_id}`
-                    : `channel_type patient_direct ┬╖ ${activeThread.patient_id ?? 'ΓÇö'}`}
+                    ? `channel_type doctor · RH-ADMIN · ${activeDoctor.employee_id}`
+                    : `channel_type patient_direct · ${activeThread.patient_id ?? '—'}`}
                 </p>
               </div>
 
@@ -346,7 +346,7 @@ export default function DoctorSecureMessagesPage() {
               <div ref={feedRef} className="custom-scrollbar flex-1 space-y-4 overflow-y-auto bg-[#F8FAFC] p-5">
                 {loading ? (
                   <div className="flex h-full items-center justify-center gap-2 text-xs text-slate-400">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Loading messagesΓÇª
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading messages…
                   </div>
                 ) : activeThread.messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center text-xs text-slate-400">
@@ -377,8 +377,8 @@ export default function DoctorSecureMessagesPage() {
                     onKeyDown={handleKeyDown}
                     placeholder={
                       activeTab === 'hospital_desk'
-                        ? 'Message hospital operations regarding OPD, beds, or urgent queriesΓÇª'
-                        : `Reply to ${activeThread.patient_name ?? activeThread.label}ΓÇª`
+                        ? 'Message hospital operations regarding OPD, beds, or urgent queries…'
+                        : `Reply to ${activeThread.patient_name ?? activeThread.label}…`
                     }
                     className="flex-1 resize-none rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"
                   />

@@ -15,7 +15,7 @@ export default function OpdModuleHeader({ lookupValue, onLookupChange, resultCou
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-base font-bold text-[#0F172A]">OPD Management</h1>
-          <p className="text-[10px] text-slate-500">Outpatient queue ┬╖ clinical orders ┬╖ billing ┬╖ follow-up analytics</p>
+          <p className="text-[10px] text-slate-500">Outpatient queue · clinical orders · billing · follow-up analytics</p>
         </div>
         <button
           type="button"
@@ -32,7 +32,7 @@ export default function OpdModuleHeader({ lookupValue, onLookupChange, resultCou
           type="search"
           value={lookupValue}
           onChange={(e) => onLookupChange(e.target.value)}
-          placeholder="Search OPD ΓÇö token, UHID, patient name, or doctor"
+          placeholder="Search OPD — token, UHID, patient name, or doctor"
           aria-label="Search OPD"
           className="w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] py-2 pl-8 pr-3 text-[11px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
         />

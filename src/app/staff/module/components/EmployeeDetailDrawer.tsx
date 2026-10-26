@@ -16,7 +16,7 @@ export default function EmployeeDetailDrawer({ employee, onClose }: EmployeeDeta
   return (
     <DrawerOverlay
       title={employee.name}
-      subtitle={`${employee.employeeCode} ┬╖ ${employee.department} ┬╖ ${employee.designation}`}
+      subtitle={`${employee.employeeCode} · ${employee.department} · ${employee.designation}`}
       onClose={onClose}
     >
       <div className="mb-3 flex gap-0.5 rounded-md border border-[#E2E8F0] bg-slate-50 p-0.5">
@@ -77,7 +77,7 @@ export default function EmployeeDetailDrawer({ employee, onClose }: EmployeeDeta
           {employee.nursingRegistration && (
             <StaffPanel title="Nursing Registration">
               <SecureDocPlaceholder label="INC Nursing Registration" verified={employee.licenseVerified} />
-              <p className="mt-2 text-[10px] font-bold text-red-600">Expiry alert: {employee.nursingExpiry} ΓÇö renewal due within 30 days</p>
+              <p className="mt-2 text-[10px] font-bold text-red-600">Expiry alert: {employee.nursingExpiry} — renewal due within 30 days</p>
             </StaffPanel>
           )}
           {!employee.medicalLicenseNo && !employee.nursingRegistration && (

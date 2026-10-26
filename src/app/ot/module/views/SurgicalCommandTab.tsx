@@ -67,7 +67,7 @@ export default function SurgicalCommandTab({
 
       <OtPanel
         title="Live Surgery Workflow & Tracking Board"
-        subtitle="Timeline steps ┬╖ anesthesia ┬╖ emergency OT flags"
+        subtitle="Timeline steps · anesthesia · emergency OT flags"
         icon={ClipboardCheck}
         headerRight={<span className="text-[8px] font-bold text-violet-700">{activeCases.length} active</span>}
       >
@@ -110,7 +110,7 @@ export default function SurgicalCommandTab({
                       onClick={() => onAdvanceTimeline(s.id)}
                       className="rounded bg-[#2563EB] px-1.5 py-0.5 text-[8px] font-bold text-white hover:bg-blue-700"
                     >
-                      Next ΓåÆ
+                      Next →
                     </button>
                   )}
                 </td>

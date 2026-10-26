@@ -49,7 +49,7 @@ export default function OtSchedulingCalendar({ slots, onSlotClick }: OtSchedulin
                       >
                         <div className="flex items-start justify-between gap-1">
                           <span className="font-mono text-[10px] font-bold text-slate-800">
-                            {slot.startTime}ΓÇô{slot.endTime}
+                            {slot.startTime}–{slot.endTime}
                           </span>
                           <span
                             className={`shrink-0 rounded-full px-1.5 py-0.5 text-[7px] font-bold uppercase ring-1 ${OT_STATUS_STYLES[slot.status]}`}
@@ -64,7 +64,7 @@ export default function OtSchedulingCalendar({ slots, onSlotClick }: OtSchedulin
                         </p>
                         {clickable && (
                           <p className="mt-1 text-[8px] font-bold uppercase text-amber-700">
-                            Open instrument checklist ΓåÆ
+                            Open instrument checklist →
                           </p>
                         )}
                       </button>

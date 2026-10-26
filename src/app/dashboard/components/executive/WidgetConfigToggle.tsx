@@ -67,7 +67,7 @@ export default function WidgetConfigToggle({
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">Widget Configuration</h3>
                 <p className="text-[11px] text-slate-800">
-                  Show/hide cards ┬╖ reorder with arrows (mock drag-and-drop)
+                  Show/hide cards · reorder with arrows (mock drag-and-drop)
                 </p>
               </div>
               <button

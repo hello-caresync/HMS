@@ -25,7 +25,7 @@ const SEED_SCRIPTS: ActivePrescription[] = [
         catalogId: 'PHM-006',
         drugName: 'Ceftriaxone 1g',
         genericFormula: 'Ceftriaxone Sodium',
-        dosageInstructions: '1g IV OD ┬╖ 3 days',
+        dosageInstructions: '1g IV OD · 3 days',
         quantityOrdered: 3,
         unitPrice: 145,
         stockLevel: 'In Stock',
@@ -43,7 +43,7 @@ const SEED_SCRIPTS: ActivePrescription[] = [
         catalogId: 'PHM-004',
         drugName: 'Normal Saline 500 mL',
         genericFormula: 'Sodium Chloride 0.9%',
-        dosageInstructions: 'IV infusion ┬╖ as directed',
+        dosageInstructions: 'IV infusion · as directed',
         quantityOrdered: 2,
         unitPrice: 85,
         stockLevel: 'In Stock',
@@ -99,7 +99,7 @@ export default function PharmacyFulfillmentWorkbench() {
 
   const handleCheckout = () => {
     window.alert(
-      `Payment collected ┬╖ Script ${prescription.scriptId} dispensed to ${prescription.patientName}`,
+      `Payment collected · Script ${prescription.scriptId} dispensed to ${prescription.patientName}`,
     );
   };
 
@@ -111,7 +111,7 @@ export default function PharmacyFulfillmentWorkbench() {
           <div>
             <h1 className="text-lg font-black text-slate-900">Pharmacy Fulfillment &amp; Checkout</h1>
             <p className="text-xs text-slate-800">
-              Phase 3 ┬╖ Module 10 ┬╖ Retail counter ┬╖ inventory-aware dispensing
+              Phase 3 · Module 10 · Retail counter · inventory-aware dispensing
             </p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function PharmacyFulfillmentWorkbench() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
-            placeholder="Search patient UHID, name, or script IDΓÇª"
+            placeholder="Search patient UHID, name, or script ID…"
             className="w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100"
           />
         </div>
@@ -142,7 +142,7 @@ export default function PharmacyFulfillmentWorkbench() {
         <span className="mx-2 text-slate-900">|</span>
         <span>{prescription.patientName}</span>
         <span className="mx-2 font-mono text-slate-800">{prescription.patientUhid}</span>
-        <span className="text-slate-800">┬╖ {prescription.doctorName}</span>
+        <span className="text-slate-800">· {prescription.doctorName}</span>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_360px]">

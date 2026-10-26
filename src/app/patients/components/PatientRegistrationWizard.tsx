@@ -145,7 +145,7 @@ export default function PatientRegistrationWizard({ onComplete }: PatientRegistr
         <h3 className="text-base font-semibold text-emerald-900">Patient Registered</h3>
         <p className="mt-1 font-mono text-lg font-bold text-emerald-800">{successUhid}</p>
         <p className="mt-2 text-xs text-emerald-700">
-          {demographics.firstName} {demographics.lastName} ┬╖ {insurance.billingType} billing
+          {demographics.firstName} {demographics.lastName} · {insurance.billingType} billing
         </p>
         <button
           type="button"
@@ -275,7 +275,7 @@ export default function PatientRegistrationWizard({ onComplete }: PatientRegistr
               <RegField
                 label="National ID / Aadhaar"
                 htmlFor="p-nid"
-                hint="Optional ┬╖ last 4 digits masked in reports"
+                hint="Optional · last 4 digits masked in reports"
               >
                 <input
                   id="p-nid"
@@ -337,7 +337,7 @@ export default function PatientRegistrationWizard({ onComplete }: PatientRegistr
                       setEmergencyAddress({ ...emergencyAddress, relationship: e.target.value })
                     }
                     className={inputCls(Boolean(errors.relationship))}
-                    placeholder="Spouse, ParentΓÇª"
+                    placeholder="Spouse, Parent…"
                   />
                 </RegField>
                 <RegField label="Phone" htmlFor="e-phone" required error={errors.emergencyPhone}>
@@ -444,7 +444,7 @@ export default function PatientRegistrationWizard({ onComplete }: PatientRegistr
                       setInsurance({ ...insurance, providerName: e.target.value })
                     }
                     className={inputCls(Boolean(errors.providerName))}
-                    placeholder="Star Health, ICICI LombardΓÇª"
+                    placeholder="Star Health, ICICI Lombard…"
                   />
                 </RegField>
                 <RegField label="Policy Number" htmlFor="i-pol" required error={errors.policyNumber}>
@@ -504,7 +504,7 @@ export default function PatientRegistrationWizard({ onComplete }: PatientRegistr
 
             {insurance.billingType === 'Self' && (
               <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-800">
-                Self-pay billing ΓÇö no insurance or corporate linkage required.
+                Self-pay billing — no insurance or corporate linkage required.
               </p>
             )}
           </div>

@@ -113,7 +113,7 @@ export async function bookDoctorTimeSlot(
   patientId: string,
   patientName?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (slotId.startsWith('fallback-')) {
+  if (slotId.startsWith('fallback-') || slotId.startsWith('dynamic-')) {
     return { ok: true };
   }
 

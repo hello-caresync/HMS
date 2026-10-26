@@ -10,9 +10,9 @@ export type OtModalType =
   | null;
 
 export const OT_WORKSPACE_TABS: { id: OtWorkspaceTab; label: string; description: string }[] = [
-  { id: 'command', label: 'Surgical Command & Live Timeline', description: 'Census ┬╖ workflow board ┬╖ quick actions' },
-  { id: 'resources', label: 'Resource Allocation & Prep', description: 'OT rooms ┬╖ teams ┬╖ pre-op checklist ┬╖ equipment' },
-  { id: 'postop', label: 'Post-Op Routing & Analytics', description: 'Recovery ┬╖ transfers ┬╖ billing ┬╖ utilization' },
+  { id: 'command', label: 'Surgical Command & Live Timeline', description: 'Census · workflow board · quick actions' },
+  { id: 'resources', label: 'Resource Allocation & Prep', description: 'OT rooms · teams · pre-op checklist · equipment' },
+  { id: 'postop', label: 'Post-Op Routing & Analytics', description: 'Recovery · transfers · billing · utilization' },
 ];
 
 export type TimelineStep =

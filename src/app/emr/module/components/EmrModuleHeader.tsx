@@ -31,7 +31,7 @@ export default function EmrModuleHeader({
             <ViewOnlyBadge compact />
           </div>
           <p className="text-[9px] text-slate-500">
-            Audited clinical vault ┬╖ {patient.name} ┬╖ <span className="font-mono text-[#2563EB]">{patient.uhid}</span>
+            Audited clinical vault · {patient.name} · <span className="font-mono text-[#2563EB]">{patient.uhid}</span>
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -59,7 +59,7 @@ export default function EmrModuleHeader({
           type="search"
           value={lookupValue}
           onChange={(e) => onLookupChange(e.target.value)}
-          placeholder="Global Patient EMR Search ΓÇö UHID, name, or diagnostic episode"
+          placeholder="Global Patient EMR Search — UHID, name, or diagnostic episode"
           aria-label="Global Patient EMR Search"
           className="w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] py-1.5 pl-8 pr-3 text-[10px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
         />

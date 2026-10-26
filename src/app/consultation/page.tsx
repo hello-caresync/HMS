@@ -18,7 +18,7 @@ type VitalsState = {
 };
 
 const SESSION_STATUS =
-  'Standalone encounter recording ┬╖ sandbox patient initials only ┬╖ vitals auto-BMI ┬╖ 13 Jul 2026';
+  'Standalone encounter recording · sandbox patient initials only · vitals auto-BMI · 13 Jul 2026';
 
 const PATIENT_PROFILE = {
   initials: 'P.N.',
@@ -63,13 +63,13 @@ function computeBmi(heightCm: string, weightKg: string): string | null {
 export default function StandaloneConsultationPage() {
   const [chiefComplaint, setChiefComplaint] = useState('Fever, Headache, Vomiting');
   const [historyOfPresentIllness, setHistoryOfPresentIllness] = useState(
-    'Patient reports 3-day history of intermittent fever (up to 101┬░F), frontal headache, and two episodes of non-bloody vomiting. No recent travel. Sandbox narrative only.',
+    'Patient reports 3-day history of intermittent fever (up to 101°F), frontal headache, and two episodes of non-bloody vomiting. No recent travel. Sandbox narrative only.',
   );
   const [pastMedicalHistory, setPastMedicalHistory] = useState(
-    'Type 2 Diabetes ┬╖ Hypertension ┬╖ no prior surgeries in last 12 months',
+    'Type 2 Diabetes · Hypertension · no prior surgeries in last 12 months',
   );
   const [familyHistory, setFamilyHistory] = useState(
-    'Father ΓÇö CAD ┬╖ Mother ΓÇö Type 2 Diabetes',
+    'Father — CAD · Mother — Type 2 Diabetes',
   );
   const [surgicalHistory, setSurgicalHistory] = useState('None reported in sandbox profile');
   const [physicalExamination, setPhysicalExamination] = useState('');
@@ -110,7 +110,7 @@ export default function StandaloneConsultationPage() {
 
   const handleFinalize = () => {
     setFinalizeNote(
-      `Encounter signed ┬╖ ${PATIENT_PROFILE.uhid} ┬╖ ${PATIENT_PROFILE.initials} ┬╖ sandbox simulation only`,
+      `Encounter signed · ${PATIENT_PROFILE.uhid} · ${PATIENT_PROFILE.initials} · sandbox simulation only`,
     );
     window.setTimeout(() => setFinalizeNote(null), 5000);
   };
@@ -150,12 +150,12 @@ export default function StandaloneConsultationPage() {
               <div className="min-w-0 space-y-1">
                 <p className="text-lg font-black text-slate-950">{PATIENT_PROFILE.initials}</p>
                 <p className="font-mono text-sm font-black text-slate-950">
-                  UHID ┬╖ {PATIENT_PROFILE.uhid}
+                  UHID · {PATIENT_PROFILE.uhid}
                 </p>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-bold text-slate-950">
-                  <span>Age ┬╖ {PATIENT_PROFILE.age} yrs</span>
-                  <span>Gender ┬╖ {PATIENT_PROFILE.gender}</span>
-                  <span>Blood Group ┬╖ {PATIENT_PROFILE.bloodGroup}</span>
+                  <span>Age · {PATIENT_PROFILE.age} yrs</span>
+                  <span>Gender · {PATIENT_PROFILE.gender}</span>
+                  <span>Blood Group · {PATIENT_PROFILE.bloodGroup}</span>
                 </div>
               </div>
             </div>
@@ -206,7 +206,7 @@ export default function StandaloneConsultationPage() {
 
         {/* Three-column workspace */}
         <div className="grid w-full grid-cols-1 gap-5 xl:grid-cols-3">
-          {/* Column 1 ΓÇö intake & history */}
+          {/* Column 1 — intake & history */}
           <section
             aria-label="Patient intake and history"
             className="w-full space-y-4 rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4 shadow-sm sm:p-5"
@@ -296,7 +296,7 @@ export default function StandaloneConsultationPage() {
             </div>
           </section>
 
-          {/* Column 2 ΓÇö examination & vitals */}
+          {/* Column 2 — examination & vitals */}
           <section
             aria-label="Clinical examination and vitals"
             className="w-full space-y-4 rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4 shadow-sm sm:p-5"
@@ -308,7 +308,7 @@ export default function StandaloneConsultationPage() {
             <div className="grid grid-cols-2 gap-3">
               <label className="block space-y-1">
                 <span className="text-[10px] font-black uppercase text-slate-800">
-                  Temperature (┬░F)
+                  Temperature (°F)
                 </span>
                 <input
                   type="text"
@@ -386,7 +386,7 @@ export default function StandaloneConsultationPage() {
               <div className="flex flex-col justify-end rounded-lg border-2 border-slate-200 bg-slate-100 px-3 py-2">
                 <span className="text-[10px] font-black uppercase text-slate-800">BMI (calc)</span>
                 <span className="mt-1 text-xl font-black tabular-nums text-slate-950">
-                  {bmi ?? 'ΓÇö'}
+                  {bmi ?? '—'}
                 </span>
               </div>
             </div>
@@ -398,14 +398,14 @@ export default function StandaloneConsultationPage() {
               <textarea
                 value={physicalExamination}
                 onChange={(e) => setPhysicalExamination(e.target.value)}
-                placeholder="Document general appearance, HEENT, chest, abdomen, neuro findingsΓÇª"
+                placeholder="Document general appearance, HEENT, chest, abdomen, neuro findings…"
                 className={`${TEXTAREA_CLASS} min-h-[160px]`}
                 rows={6}
               />
             </label>
           </section>
 
-          {/* Column 3 ΓÇö evaluation & Rx */}
+          {/* Column 3 — evaluation & Rx */}
           <section
             aria-label="Clinical evaluation and prescription outcome"
             className="w-full space-y-4 rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4 shadow-sm sm:p-5"
@@ -469,7 +469,7 @@ export default function StandaloneConsultationPage() {
               <textarea
                 value={followUpAdvice}
                 onChange={(e) => setFollowUpAdvice(e.target.value)}
-                placeholder="Return in 7 days ┬╖ repeat CBC ┬╖ hydration adviceΓÇª"
+                placeholder="Return in 7 days · repeat CBC · hydration advice…"
                 className={TEXTAREA_CLASS}
                 rows={3}
               />

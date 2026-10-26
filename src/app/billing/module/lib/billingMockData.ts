@@ -150,12 +150,12 @@ export const FINANCE_CENSUS = {
 };
 
 export const INITIAL_BILLING_QUEUE: BillingQueueItem[] = [
-  { id: 'bq1', invoiceNumber: 'INV-2026-44201', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', queueType: 'IPD', charges: 'Room Day 3 ┬╖ Nursing ┬╖ CBC ┬╖ Amoxicillin', grossAmount: 28400, discount: 0, netAmount: 28400, paidAmount: 10000, status: 'Partial', insuranceLinked: true, identityVerified: true },
-  { id: 'bq2', invoiceNumber: 'INV-2026-44208', patientName: 'Vikram Patel', uhid: 'NX-2026-000388', queueType: 'OPD', charges: 'Consultation ┬╖ Lipid Profile ┬╖ Pharmacy', grossAmount: 3200, discount: 200, netAmount: 3000, paidAmount: 3000, status: 'Paid', insuranceLinked: false, identityVerified: true },
-  { id: 'bq3', invoiceNumber: 'INV-2026-44212', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', queueType: 'Emergency', charges: 'ER Triage ┬╖ CT Chest ┬╖ IV Fluids ┬╖ ABG', grossAmount: 18600, discount: 0, netAmount: 18600, paidAmount: 0, status: 'Pending', insuranceLinked: true, identityVerified: true },
-  { id: 'bq4', invoiceNumber: 'INV-2026-44215', patientName: 'Priya Patel', uhid: 'NX-2026-000413', queueType: 'OPD', charges: 'Surgery Consult ┬╖ US Abdomen', grossAmount: 4500, discount: 0, netAmount: 4500, paidAmount: 0, status: 'Pending', insuranceLinked: false, identityVerified: true },
-  { id: 'bq5', invoiceNumber: 'INV-2026-44198', patientName: 'Sanjay Rao', uhid: 'NX-2026-000365', queueType: 'IPD', charges: 'Room ┬╖ OT Charges ┬╖ Implant ┬╖ Pharmacy', grossAmount: 285000, discount: 15000, netAmount: 270000, paidAmount: 270000, status: 'Paid', insuranceLinked: true, identityVerified: true },
-  { id: 'bq6', invoiceNumber: 'INV-2026-44220', patientName: 'Arjun Das', uhid: 'NX-2026-000377', queueType: 'Emergency', charges: 'Code Blue ┬╖ Ventilator ┬╖ Labs STAT', grossAmount: 42000, discount: 0, netAmount: 42000, paidAmount: 20000, status: 'Disputed', insuranceLinked: false, identityVerified: true },
+  { id: 'bq1', invoiceNumber: 'INV-2026-44201', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', queueType: 'IPD', charges: 'Room Day 3 · Nursing · CBC · Amoxicillin', grossAmount: 28400, discount: 0, netAmount: 28400, paidAmount: 10000, status: 'Partial', insuranceLinked: true, identityVerified: true },
+  { id: 'bq2', invoiceNumber: 'INV-2026-44208', patientName: 'Vikram Patel', uhid: 'NX-2026-000388', queueType: 'OPD', charges: 'Consultation · Lipid Profile · Pharmacy', grossAmount: 3200, discount: 200, netAmount: 3000, paidAmount: 3000, status: 'Paid', insuranceLinked: false, identityVerified: true },
+  { id: 'bq3', invoiceNumber: 'INV-2026-44212', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', queueType: 'Emergency', charges: 'ER Triage · CT Chest · IV Fluids · ABG', grossAmount: 18600, discount: 0, netAmount: 18600, paidAmount: 0, status: 'Pending', insuranceLinked: true, identityVerified: true },
+  { id: 'bq4', invoiceNumber: 'INV-2026-44215', patientName: 'Priya Patel', uhid: 'NX-2026-000413', queueType: 'OPD', charges: 'Surgery Consult · US Abdomen', grossAmount: 4500, discount: 0, netAmount: 4500, paidAmount: 0, status: 'Pending', insuranceLinked: false, identityVerified: true },
+  { id: 'bq5', invoiceNumber: 'INV-2026-44198', patientName: 'Sanjay Rao', uhid: 'NX-2026-000365', queueType: 'IPD', charges: 'Room · OT Charges · Implant · Pharmacy', grossAmount: 285000, discount: 15000, netAmount: 270000, paidAmount: 270000, status: 'Paid', insuranceLinked: true, identityVerified: true },
+  { id: 'bq6', invoiceNumber: 'INV-2026-44220', patientName: 'Arjun Das', uhid: 'NX-2026-000377', queueType: 'Emergency', charges: 'Code Blue · Ventilator · Labs STAT', grossAmount: 42000, discount: 0, netAmount: 42000, paidAmount: 20000, status: 'Disputed', insuranceLinked: false, identityVerified: true },
 ];
 
 export const MOCK_PAYMENTS: PaymentCollection[] = [
@@ -168,7 +168,7 @@ export const MOCK_PAYMENTS: PaymentCollection[] = [
 export const INITIAL_INSURANCE_CLAIMS: InsuranceClaim[] = [
   { id: 'ic1', claimNumber: 'CLM-2026-5501', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', insurer: 'Star Health Insurance', policyRef: '[Financial Identification Document Masked for Security]', claimAmount: 28400, approvedAmount: 24000, stage: 'Under Review', submittedAt: '2026-07-18', identityVerified: true },
   { id: 'ic2', claimNumber: 'CLM-2026-5498', patientName: 'Sanjay Rao', uhid: 'NX-2026-000365', insurer: 'ICICI Lombard', policyRef: '[Financial Identification Document Masked for Security]', claimAmount: 270000, approvedAmount: 255000, stage: 'Settlement', submittedAt: '2026-07-15', identityVerified: true },
-  { id: 'ic3', claimNumber: 'CLM-2026-5505', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', insurer: 'Max Bupa', policyRef: '[Financial Identification Document Masked for Security]', claimAmount: 18600, approvedAmount: 0, stage: 'Denial Management', denialReason: 'Pre-auth not obtained for CT ΓÇö code mismatch', submittedAt: '2026-07-18', identityVerified: true },
+  { id: 'ic3', claimNumber: 'CLM-2026-5505', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', insurer: 'Max Bupa', policyRef: '[Financial Identification Document Masked for Security]', claimAmount: 18600, approvedAmount: 0, stage: 'Denial Management', denialReason: 'Pre-auth not obtained for CT — code mismatch', submittedAt: '2026-07-18', identityVerified: true },
   { id: 'ic4', claimNumber: 'CLM-2026-5508', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', insurer: 'Max Bupa', policyRef: '[Financial Identification Document Masked for Security]', claimAmount: 18600, approvedAmount: 0, stage: 'Pre-Authorization', submittedAt: '2026-07-18', identityVerified: true },
   { id: 'ic5', claimNumber: 'CLM-2026-5492', patientName: 'Vikram Patel', uhid: 'NX-2026-000388', insurer: 'HDFC ERGO', policyRef: '[Financial Identification Document Masked for Security]', claimAmount: 12000, approvedAmount: 10500, stage: 'Claim Submission', submittedAt: '2026-07-17', identityVerified: true },
 ];
@@ -177,14 +177,14 @@ export const MOCK_AP_LINES: AccountsPayableLine[] = [
   { id: 'ap1', vendor: 'MedSupply India Pvt Ltd', invoiceRef: 'INV-MSI-8841', category: 'Consumables', amount: 485000, status: 'Approved', dueDate: '2026-07-25' },
   { id: 'ap2', vendor: 'Apollo Pharma Distribution', invoiceRef: 'INV-APD-7720', category: 'Pharmacy Stock', amount: 309000, status: 'Pending Match', dueDate: '2026-07-22' },
   { id: 'ap3', vendor: 'Facility Management Co.', invoiceRef: 'INV-FMC-6633', category: 'Rent & Utilities', amount: 420000, status: 'Paid', dueDate: '2026-07-15' },
-  { id: 'ap4', vendor: 'Payroll ΓÇö July 2026', invoiceRef: 'PAY-JUL-2026', category: 'Staff Salary', amount: 4200000, status: 'Approved', dueDate: '2026-07-31' },
+  { id: 'ap4', vendor: 'Payroll — July 2026', invoiceRef: 'PAY-JUL-2026', category: 'Staff Salary', amount: 4200000, status: 'Approved', dueDate: '2026-07-31' },
 ];
 
 export const MOCK_EXPENSES: ExpenseLine[] = [
-  { id: 'ex1', category: 'Staff Salary', description: 'July 2026 ΓÇö Clinical & Admin payroll', amount: 4200000, period: 'Jul 2026', approved: true },
-  { id: 'ex2', category: 'Rent', description: 'Hospital premises ΓÇö Block A & B', amount: 850000, period: 'Jul 2026', approved: true },
+  { id: 'ex1', category: 'Staff Salary', description: 'July 2026 — Clinical & Admin payroll', amount: 4200000, period: 'Jul 2026', approved: true },
+  { id: 'ex2', category: 'Rent', description: 'Hospital premises — Block A & B', amount: 850000, period: 'Jul 2026', approved: true },
   { id: 'ex3', category: 'Consumables', description: 'OT & ICU consumables replenishment', amount: 620000, period: 'Jul 2026', approved: false },
-  { id: 'ex4', category: 'Utilities', description: 'Electricity ┬╖ Water ┬╖ HVAC', amount: 280000, period: 'Jul 2026', approved: true },
+  { id: 'ex4', category: 'Utilities', description: 'Electricity · Water · HVAC', amount: 280000, period: 'Jul 2026', approved: true },
 ];
 
 export const MOCK_CORPORATE: CorporateTieUp[] = [
@@ -211,8 +211,8 @@ export const MOCK_GL_ACCOUNTS: GlAccount[] = [
 
 export const MOCK_JOURNAL_ENTRIES: JournalEntry[] = [
   { id: 'je1', entryId: 'JE-2026-881', date: '2026-07-18', description: 'Daily OPD/IPD revenue accrual', debit: 1842000, credit: 1842000, posted: true },
-  { id: 'je2', entryId: 'JE-2026-878', date: '2026-07-17', description: 'Insurance claim settlement ΓÇö Sanjay Rao', debit: 255000, credit: 255000, posted: true },
-  { id: 'je3', entryId: 'JE-2026-875', date: '2026-07-16', description: 'Vendor payment ΓÇö Facility Management', debit: 420000, credit: 420000, posted: true },
+  { id: 'je2', entryId: 'JE-2026-878', date: '2026-07-17', description: 'Insurance claim settlement — Sanjay Rao', debit: 255000, credit: 255000, posted: true },
+  { id: 'je3', entryId: 'JE-2026-875', date: '2026-07-16', description: 'Vendor payment — Facility Management', debit: 420000, credit: 420000, posted: true },
 ];
 
 export const MOCK_GST_ITC: GstItcRecord[] = [
@@ -221,17 +221,17 @@ export const MOCK_GST_ITC: GstItcRecord[] = [
 ];
 
 export const INITIAL_AI_FINANCE: AiFinanceInsight[] = [
-  { id: 'ai1', insightType: 'Revenue Forecast', title: 'August Revenue Projection', detail: 'OPD volume Γåæ 12% ┬╖ IPD census stable ┬╖ monsoon ER uptick', suggestedAction: 'Increase ER billing staff shifts Fri-Sun', impact: 'Projected Γé╣4.6 Cr (+7.5%)', confidence: 88, status: 'Pending Review' },
-  { id: 'ai2', insightType: 'Fraud Detection', title: 'Suspicious Refund Pattern ΓÇö Cashier Shift B', detail: '3 refunds > Γé╣10K within 2hr window ┬╖ same patient UHID cluster', suggestedAction: 'Flag for audit ┬╖ suspend refund approval pending review', riskLevel: 'Suspicious', confidence: 92, status: 'Pending Review' },
-  { id: 'ai3', insightType: 'Cost Optimization', title: 'OT Consumables Over-Billing', detail: 'Suture kit charges 18% above peer benchmark', suggestedAction: 'Review charge master OT-8841 ┬╖ align to package rates', impact: 'Save Γé╣1.8L/month', confidence: 85, status: 'Accepted' },
-  { id: 'ai4', insightType: 'Fraud Detection', title: 'Duplicate Invoice Attempt', detail: 'INV-44220 disputed ΓÇö duplicate ER charges detected', suggestedAction: 'Hold settlement ┬╖ reconcile with ER log', riskLevel: 'Review', confidence: 79, status: 'Pending Review' },
+  { id: 'ai1', insightType: 'Revenue Forecast', title: 'August Revenue Projection', detail: 'OPD volume ↑ 12% · IPD census stable · monsoon ER uptick', suggestedAction: 'Increase ER billing staff shifts Fri-Sun', impact: 'Projected ₹4.6 Cr (+7.5%)', confidence: 88, status: 'Pending Review' },
+  { id: 'ai2', insightType: 'Fraud Detection', title: 'Suspicious Refund Pattern — Cashier Shift B', detail: '3 refunds > ₹10K within 2hr window · same patient UHID cluster', suggestedAction: 'Flag for audit · suspend refund approval pending review', riskLevel: 'Suspicious', confidence: 92, status: 'Pending Review' },
+  { id: 'ai3', insightType: 'Cost Optimization', title: 'OT Consumables Over-Billing', detail: 'Suture kit charges 18% above peer benchmark', suggestedAction: 'Review charge master OT-8841 · align to package rates', impact: 'Save ₹1.8L/month', confidence: 85, status: 'Accepted' },
+  { id: 'ai4', insightType: 'Fraud Detection', title: 'Duplicate Invoice Attempt', detail: 'INV-44220 disputed — duplicate ER charges detected', suggestedAction: 'Hold settlement · reconcile with ER log', riskLevel: 'Review', confidence: 79, status: 'Pending Review' },
 ];
 
 export const BILLING_PACKAGES: BillingPackage[] = [
-  { id: 'pkg1', name: 'Executive Health Check ΓÇö Premium', includes: 'CBC ┬╖ LFT ┬╖ Lipid ┬╖ TMT ┬╖ Chest X-Ray ┬╖ Physician Review', price: 8500, savings: 2200 },
-  { id: 'pkg2', name: 'Maternity Antenatal Package ΓÇö Trimester 2', includes: '4 ANC visits ┬╖ 2 USG ┬╖ Lab panel ┬╖ Pharmacy voucher', price: 24000, savings: 4800 },
-  { id: 'pkg3', name: 'Cardiac Screening Package', includes: 'ECG ┬╖ Echo ┬╖ Troponin ┬╖ Lipid ┬╖ Cardiologist consult', price: 12000, savings: 3500 },
-  { id: 'pkg4', name: 'IPD Daily Care Bundle', includes: 'Room ┬╖ Nursing ┬╖ Routine labs ┬╖ Diet ┬╖ Pharmacy cap', price: 8500, savings: 1200 },
+  { id: 'pkg1', name: 'Executive Health Check — Premium', includes: 'CBC · LFT · Lipid · TMT · Chest X-Ray · Physician Review', price: 8500, savings: 2200 },
+  { id: 'pkg2', name: 'Maternity Antenatal Package — Trimester 2', includes: '4 ANC visits · 2 USG · Lab panel · Pharmacy voucher', price: 24000, savings: 4800 },
+  { id: 'pkg3', name: 'Cardiac Screening Package', includes: 'ECG · Echo · Troponin · Lipid · Cardiologist consult', price: 12000, savings: 3500 },
+  { id: 'pkg4', name: 'IPD Daily Care Bundle', includes: 'Room · Nursing · Routine labs · Diet · Pharmacy cap', price: 8500, savings: 1200 },
 ];
 
 export const REVENUE_TREND = [

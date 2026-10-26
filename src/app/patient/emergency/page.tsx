@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { PATIENT_ROUTES } from '@/lib/patient/navigation';
 
-/** Legacy route ΓÇö Rakshak SOS now lives on the patient dashboard */
+/** Legacy route — Rakshak SOS now lives on the patient dashboard */
 export default function RakshakEmergencyRedirectPage() {
   const router = useRouter();
 
@@ -15,7 +15,7 @@ export default function RakshakEmergencyRedirectPage() {
 
   return (
     <div className="flex min-h-[40vh] items-center justify-center p-8 text-sm font-bold text-patient-lavender">
-      Redirecting to dashboardΓÇª
+      Redirecting to dashboard…
     </div>
   );
 }

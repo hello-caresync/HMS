@@ -33,7 +33,7 @@ export default function AssetMaintenanceWorkbench() {
             : a,
         ),
       );
-      setLastTicket(`${ticketId} ┬╖ ${selectedAsset.equipmentName}`);
+      setLastTicket(`${ticketId} · ${selectedAsset.equipmentName}`);
       setSheetOpen(false);
       setSelectedAsset(null);
       window.setTimeout(() => setLastTicket(null), 6000);
@@ -49,7 +49,7 @@ export default function AssetMaintenanceWorkbench() {
           <div>
             <h1 className="text-lg font-black text-slate-900">Medical Equipment &amp; AMC Ledger</h1>
             <p className="text-xs text-slate-800">
-              Phase 7 ┬╖ Module 21 ┬╖ Hardware inventory &amp; maintenance tracking
+              Phase 7 · Module 21 · Hardware inventory &amp; maintenance tracking
             </p>
           </div>
         </div>

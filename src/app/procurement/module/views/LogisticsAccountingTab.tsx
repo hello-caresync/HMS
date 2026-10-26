@@ -28,7 +28,7 @@ export default function LogisticsAccountingTab({ aiInsights, onUpdateAiStatus }:
         <div className="rounded-md border-2 border-indigo-500 bg-indigo-600 px-3 py-2 text-white">
           <div className="flex items-center gap-2">
             <Brain className="h-5 w-5" />
-            <span className="text-[11px] font-bold uppercase">AI Procurement Intelligence ΓÇö {pendingAi.length} insight{pendingAi.length !== 1 ? 's' : ''} pending review</span>
+            <span className="text-[11px] font-bold uppercase">AI Procurement Intelligence — {pendingAi.length} insight{pendingAi.length !== 1 ? 's' : ''} pending review</span>
           </div>
         </div>
       )}
@@ -50,10 +50,10 @@ export default function LogisticsAccountingTab({ aiInsights, onUpdateAiStatus }:
                 <td className="px-1.5 py-1 font-mono text-[7px] text-slate-600">{m.invoiceNumber}</td>
                 <td className="max-w-[90px] truncate px-1.5 py-1 text-[8px] text-slate-600" title={m.vendor}>{m.vendor}</td>
                 <td className="px-1.5 py-1 text-[9px] tabular-nums">{formatInr(m.poAmount)}</td>
-                <td className="px-1.5 py-1 text-[9px] tabular-nums">{m.grnAmount ? formatInr(m.grnAmount) : 'ΓÇö'}</td>
+                <td className="px-1.5 py-1 text-[9px] tabular-nums">{m.grnAmount ? formatInr(m.grnAmount) : '—'}</td>
                 <td className="px-1.5 py-1 text-[9px] tabular-nums">{formatInr(m.invoiceAmount)}</td>
                 <td className={`px-1.5 py-1 text-[9px] font-bold tabular-nums ${m.variance !== 0 ? 'text-red-600 animate-pulse' : 'text-emerald-600'}`}>
-                  {m.variance === 0 ? 'Γé╣0' : formatInr(m.variance)}
+                  {m.variance === 0 ? '₹0' : formatInr(m.variance)}
                 </td>
                 <td className="px-1.5 py-1"><MatchPill status={m.matchStatus} /></td>
               </tr>
@@ -63,11 +63,11 @@ export default function LogisticsAccountingTab({ aiInsights, onUpdateAiStatus }:
 
         <div className="mt-2 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-2">
           <p className="text-[8px] font-bold uppercase text-slate-500">Match Formula</p>
-          <p className="mt-0.5 font-mono text-[9px] text-[#0F172A]">[PO Amount] + [GRN Qty Verified] + [Invoice Amount] ΓåÆ Variance Γëñ tolerance ΓåÆ Approve Payment</p>
+          <p className="mt-0.5 font-mono text-[9px] text-[#0F172A]">[PO Amount] + [GRN Qty Verified] + [Invoice Amount] → Variance ≤ tolerance → Approve Payment</p>
         </div>
       </ProcPanel>
 
-      <ProcPanel title="Purchase Return Notes (PRN)" subtitle="Damaged goods ┬╖ credit note tracking" icon={RotateCcw}>
+      <ProcPanel title="Purchase Return Notes (PRN)" subtitle="Damaged goods · credit note tracking" icon={RotateCcw}>
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -93,7 +93,7 @@ export default function LogisticsAccountingTab({ aiInsights, onUpdateAiStatus }:
         </table>
       </ProcPanel>
 
-      <ProcPanel title="AI-Based Procurement Intelligence Panel" subtitle="Demand predictions ┬╖ vendor recommendations ┬╖ stock optimization" icon={Brain} secure>
+      <ProcPanel title="AI-Based Procurement Intelligence Panel" subtitle="Demand predictions · vendor recommendations · stock optimization" icon={Brain} secure>
         <table className="w-full min-w-[860px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -133,7 +133,7 @@ export default function LogisticsAccountingTab({ aiInsights, onUpdateAiStatus }:
               <LineChart data={SPENDING_TREND} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                 <XAxis dataKey="week" tick={{ fontSize: 8, fill: '#64748B' }} />
-                <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `Γé╣${(v / 100000).toFixed(1)}L`} />
+                <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `₹${(v / 100000).toFixed(1)}L`} />
                 <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid #E2E8F0' }} formatter={(v: number) => formatInr(v)} />
                 <Legend wrapperStyle={{ fontSize: 9 }} />
                 <Line type="monotone" dataKey="spend" stroke="#2563EB" strokeWidth={2} dot={{ r: 3 }} name="Actual Spend" />
@@ -158,7 +158,7 @@ export default function LogisticsAccountingTab({ aiInsights, onUpdateAiStatus }:
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                 <XAxis dataKey="dept" tick={{ fontSize: 8, fill: '#64748B' }} />
-                <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `Γé╣${(v / 100000).toFixed(0)}L`} />
+                <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `₹${(v / 100000).toFixed(0)}L`} />
                 <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid #E2E8F0' }} formatter={(v: number) => formatInr(v)} />
                 <Bar dataKey="spend" fill="#2563EB" name="Spend" radius={[2, 2, 0, 0]} />
               </BarChart>

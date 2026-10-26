@@ -92,7 +92,9 @@ function mapRowToDoctorQueueItem(row: Record<string, unknown>): DoctorQueueItem 
       (createdAt
         ? new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : undefined),
-    status: normalizeQueueItemStatus(row.queue_status ?? row.status),
+    status: rowReadsAsDone(row)
+      ? 'billing_pending'
+      : normalizeQueueItemStatus(row.queue_status ?? row.status),
     chiefComplaint: String(row.chief_complaint ?? row.complaint ?? row.reason_for_visit ?? 'General Consultation'),
     vitals: vitalsObj,
     appointmentType: String(row.appointment_type ?? row.source ?? 'walk_in'),
@@ -195,14 +197,24 @@ export const DOCTOR_DONE_QUEUE_STATUSES = [
   'billing',
   'finished',
   'paid',
+  'invoiced',
+  'dispatched',
+  'settled',
+  'checkout',
+  'closed',
 ] as const;
 
 export function isQueueDoneStatus(rawStatus: unknown): boolean {
   const status = String(rawStatus ?? '').trim().toLowerCase().replace(/_/g, '-');
-  if (!status) return false;
+  if (!status || /cancel/.test(status)) return false;
   return DOCTOR_DONE_QUEUE_STATUSES.some((candidate) =>
     status.includes(String(candidate).replace(/_/g, '-')),
   );
+}
+
+/** Done when either the queue stage or the appointment status says the visit is finished. */
+export function rowReadsAsDone(row: { status?: unknown; queue_status?: unknown }): boolean {
+  return isQueueDoneStatus(row.queue_status) || isQueueDoneStatus(row.status);
 }
 
 function isQueueWaitingStatus(rawStatus: unknown): boolean {
@@ -228,6 +240,46 @@ function isQueueWaitingStatus(rawStatus: unknown): boolean {
   return waitingStatuses.some((candidate) => status.includes(candidate));
 }
 
+function missingFilterColumn(message: string): string | null {
+  const text = String(message ?? '');
+  const postgrest = text.match(/Could not find the '([A-Za-z0-9_]+)' column/i);
+  if (postgrest?.[1]) return postgrest[1];
+  const postgres = text.match(/column (?:[\w]+\.)?([A-Za-z0-9_]+) does not exist/i);
+  return postgres?.[1] ?? null;
+}
+
+function omitFilterColumn(orFilter: string, column: string): string {
+  return orFilter
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part && !part.startsWith(`${column}.`))
+    .join(',');
+}
+
+/** Drop appointment columns the live schema does not have, then run the doctor query. */
+export async function fetchScopedAppointmentRecords(
+  supabase: SupabaseClient,
+  session: DoctorSession,
+  options?: { ascending?: boolean; limit?: number },
+): Promise<Record<string, unknown>[]> {
+  let orFilter = buildDoctorQueueOrFilter(session);
+  if (!orFilter) return [];
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    let query = supabase.from('appointments').select('*').or(orFilter).order('updated_at', { ascending: options?.ascending ?? false });
+    if (options?.limit) query = query.limit(options.limit);
+    const { data, error } = await query;
+    if (!error) return (data ?? []).map((row) => asRecord(row));
+
+    const column = missingFilterColumn(error.message);
+    const next = column ? omitFilterColumn(orFilter, column) : '';
+    if (!column || !next || next === orFilter) return [];
+    orFilter = next;
+  }
+
+  return [];
+}
+
 /** Strict clinician scope — ID / staff code only (no name-based matching). */
 export function buildDoctorQueueOrFilter(session: DoctorSession): string {
   const identifiers = getDoctorQueueIdentifiers(session);
@@ -250,7 +302,7 @@ async function fetchDoctorAppointmentRows(
   orderAscending: boolean,
   dateFilter: QueueDateFilter = DEFAULT_QUEUE_DATE_FILTER,
 ): Promise<Record<string, unknown>[]> {
-  const orFilter = buildDoctorQueueOrFilter(session);
+  let orFilter = buildDoctorQueueOrFilter(session);
   if (!orFilter) {
     return [];
   }
@@ -291,22 +343,33 @@ async function fetchDoctorAppointmentRows(
       break;
   }
 
-  const { data, error } = await query.order('created_at', { ascending: orderAscending });
+  let { data, error } = await query.order('created_at', { ascending: orderAscending });
 
-  if (!error && Array.isArray(data)) {
-    return data.map((row) => asRecord(row));
+  for (let attempt = 0; attempt < 8 && error; attempt += 1) {
+    const column = missingFilterColumn(error.message);
+    const nextFilter = column ? omitFilterColumn(orFilter, column) : '';
+    if (!nextFilter || nextFilter === orFilter) break;
+    orFilter = nextFilter;
+
+    let retry = supabase.from('appointments').select('*').or(orFilter);
+    if (dateFilter.mode === 'today') {
+      retry = retry.or(`appointment_date.eq.${today},appointment_date.is.null`);
+    } else if (dateFilter.mode === 'tomorrow') {
+      retry = retry.eq('appointment_date', tomorrowIsoDate());
+    } else if (dateFilter.mode === 'custom') {
+      const target = String(dateFilter.customDate ?? '').slice(0, 10);
+      if (target) retry = retry.eq('appointment_date', target);
+    } else if (dateFilter.mode === 'upcoming') {
+      retry = retry.gte('appointment_date', today);
+    }
+
+    const result = await retry.order('created_at', { ascending: orderAscending });
+    data = result.data;
+    error = result.error;
   }
 
-  console.warn('Doctor queue OR filter with patient join failed, retrying plain select:', error);
-
-  const plainJoinRetry = await supabase.from('appointments').select('*').or(orFilter).order('created_at', { ascending: orderAscending });
-
-  if (!plainJoinRetry.error && Array.isArray(plainJoinRetry.data)) {
-    return plainJoinRetry.data.map((row) => asRecord(row));
-  }
-
-  console.warn('Doctor queue OR filter failed — returning empty scoped queue:', plainJoinRetry.error ?? error);
-  return [];
+  if (error || !Array.isArray(data)) return [];
+  return data.map((row) => asRecord(row));
 }
 
 /** Primary appointments query — scoped to doctor identifiers and selected clinic date. */
@@ -322,6 +385,7 @@ export async function fetchDoctorQueue(
     .filter((item, index) => {
       const row = asRecord(data[index]);
       if (!matchesQueueDateFilter(row, dateFilter)) return false;
+      if (rowReadsAsDone(row)) return false;
       if (!isQueueWaitingStatus(row.queue_status ?? row.status)) return false;
       return appointmentBelongsToDoctor(row, session);
     });
@@ -342,7 +406,7 @@ export async function fetchDoctorDoneQueue(
     .filter((item, index) => {
       const row = asRecord(data[index]);
       if (!matchesQueueDateFilter(row, dateFilter)) return false;
-      if (!isQueueDoneStatus(row.queue_status ?? row.status)) return false;
+      if (!rowReadsAsDone(row)) return false;
       return appointmentBelongsToDoctor(row, session);
     });
 
@@ -494,6 +558,7 @@ export async function fetchDoctorQueueRows(
   const fallbackWaiting = results.flatMap((rows, index) =>
     rows
       .filter((row) => matchesQueueDateFilter(row, dateFilter))
+      .filter((row) => !rowReadsAsDone(row))
       .filter((row) => isQueueWaitingStatus(row.queue_status ?? row.status))
       .filter((row) => appointmentBelongsToDoctor(row, session))
       .map((row) => mapQueueRow(row, tables[index])),
@@ -502,12 +567,12 @@ export async function fetchDoctorQueueRows(
   const fallbackDone = results.flatMap((rows, index) =>
     rows
       .filter((row) => matchesQueueDateFilter(row, dateFilter))
-      .filter((row) => isQueueDoneStatus(row.queue_status ?? row.status))
+      .filter((row) => rowReadsAsDone(row))
       .filter((row) => appointmentBelongsToDoctor(row, session))
       .map((row) => mapQueueRow(row, tables[index])),
   );
 
-  const primaryRows = [...primaryWaiting, ...primaryDone].map(doctorQueueItemToRow);
+  const primaryRows = [...primaryDone, ...primaryWaiting].map(doctorQueueItemToRow);
   const primaryKeys = new Set(
     primaryRows.map((row) => String(row.appointment_id || row.id)),
   );

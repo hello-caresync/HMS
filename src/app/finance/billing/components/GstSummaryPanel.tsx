@@ -31,12 +31,12 @@ export default function GstSummaryPanel({
       <dl className="space-y-2 p-4 text-xs">
         <div className="flex justify-between">
           <dt className="text-slate-800">Subtotal</dt>
-          <dd className="font-mono font-bold tabular-nums">Γé╣ {summary.subtotal.toLocaleString('en-IN')}</dd>
+          <dd className="font-mono font-bold tabular-nums">₹ {summary.subtotal.toLocaleString('en-IN')}</dd>
         </div>
 
         <label className="block space-y-1 pt-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-800">
-            Authorized Discount (Γé╣)
+            Authorized Discount (₹)
           </span>
           <input
             type="number"
@@ -50,24 +50,24 @@ export default function GstSummaryPanel({
 
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 space-y-1.5">
           <p className="text-[9px] font-bold uppercase tracking-wider text-slate-800">
-            Taxable Base ┬╖ Γé╣ {summary.gst.taxableBase.toLocaleString('en-IN')}
+            Taxable Base · ₹ {summary.gst.taxableBase.toLocaleString('en-IN')}
           </p>
           <div className="flex justify-between">
             <dt className="text-slate-800">CGST @ {summary.gst.cgstRate}%</dt>
             <dd className="font-mono font-semibold tabular-nums">
-              Γé╣ {summary.gst.cgstAmount.toLocaleString('en-IN')}
+              ₹ {summary.gst.cgstAmount.toLocaleString('en-IN')}
             </dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-slate-800">SGST @ {summary.gst.sgstRate}%</dt>
             <dd className="font-mono font-semibold tabular-nums">
-              Γé╣ {summary.gst.sgstAmount.toLocaleString('en-IN')}
+              ₹ {summary.gst.sgstAmount.toLocaleString('en-IN')}
             </dd>
           </div>
           <div className="flex justify-between border-t border-slate-200 pt-1.5">
             <dt className="font-bold text-slate-900">Total GST</dt>
             <dd className="font-mono font-bold tabular-nums">
-              Γé╣ {summary.gst.totalGst.toLocaleString('en-IN')}
+              ₹ {summary.gst.totalGst.toLocaleString('en-IN')}
             </dd>
           </div>
         </div>
@@ -75,7 +75,7 @@ export default function GstSummaryPanel({
         <div className="flex justify-between border-t border-slate-200 pt-2">
           <dt className="text-sm font-black text-slate-900">Grand Total</dt>
           <dd className="font-mono text-lg font-black tabular-nums text-emerald-700">
-            Γé╣ {summary.grandTotal.toLocaleString('en-IN')}
+            ₹ {summary.grandTotal.toLocaleString('en-IN')}
           </dd>
         </div>
       </dl>

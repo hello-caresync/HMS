@@ -14,7 +14,7 @@ export default function AdministrationModuleHeader({ lookupValue, onLookupChange
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-base font-bold text-[#0F172A]">Administration Management</h1>
-          <p className="text-[9px] text-slate-500">Hospital governance ┬╖ operations command ┬╖ RBAC ┬╖ compliance ┬╖ incidents ┬╖ AI intelligence</p>
+          <p className="text-[9px] text-slate-500">Hospital governance · operations command · RBAC · compliance · incidents · AI intelligence</p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-md border border-[#2563EB]/30 bg-[#2563EB]/5 px-2 py-1 text-[9px] font-bold uppercase text-[#2563EB]">
           <Settings className="h-3.5 w-3.5" />
@@ -27,7 +27,7 @@ export default function AdministrationModuleHeader({ lookupValue, onLookupChange
           type="search"
           value={lookupValue}
           onChange={(e) => onLookupChange(e.target.value)}
-          placeholder="Search administration ΓÇö user, incident, compliance, policy, or department"
+          placeholder="Search administration — user, incident, compliance, policy, or department"
           aria-label="Search administration"
           className="w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] py-1.5 pl-8 pr-3 text-[10px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
         />

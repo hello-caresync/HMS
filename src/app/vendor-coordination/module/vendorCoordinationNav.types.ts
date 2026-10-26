@@ -11,9 +11,9 @@ export type VendorCoordinationModalType =
   | null;
 
 export const VENDOR_COORDINATION_WORKSPACE_TABS: { id: VendorCoordinationWorkspaceTab; label: string; description: string }[] = [
-  { id: 'vrm', label: 'VRM Command Center & Onboarding', description: 'KPIs ┬╖ registration pipeline ┬╖ PO coordination ┬╖ quick actions' },
-  { id: 'supplier', label: 'Supplier Master, Catalogues & Routing', description: 'Profiles ┬╖ catalogues ┬╖ RFQ comparison ┬╖ contract renewals' },
-  { id: 'logistics', label: 'Logistics, Finance & AI Intelligence', description: 'Fulfillment tracking ┬╖ invoices ┬╖ returns ┬╖ compliance ┬╖ AI' },
+  { id: 'vrm', label: 'VRM Command Center & Onboarding', description: 'KPIs · registration pipeline · PO coordination · quick actions' },
+  { id: 'supplier', label: 'Supplier Master, Catalogues & Routing', description: 'Profiles · catalogues · RFQ comparison · contract renewals' },
+  { id: 'logistics', label: 'Logistics, Finance & AI Intelligence', description: 'Fulfillment tracking · invoices · returns · compliance · AI' },
 ];
 
 export type OnboardingPhase =

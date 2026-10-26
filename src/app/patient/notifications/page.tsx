@@ -21,8 +21,8 @@ export default function NotificationsPage() {
           <h1 className="text-3xl font-black tracking-tight text-[#1A332F]">Notifications</h1>
           <p className="mt-1 text-sm font-semibold text-[#7BA89E]">
             {notifications.length === 0
-              ? 'No notifications ┬╖ listening for Regal Hospital broadcasts'
-              : `${unreadCount} unread ┬╖ live updates from hospital & doctor apps`}
+              ? 'No notifications · listening for Regal Hospital broadcasts'
+              : `${unreadCount} unread · live updates from hospital & doctor apps`}
           </p>
         </div>
 
@@ -41,7 +41,7 @@ export default function NotificationsPage() {
       {loading ? (
         <div className="flex items-center justify-center gap-2 rounded-3xl border border-[#D5E8E3] bg-white p-12">
           <Loader2 className="h-5 w-5 animate-spin text-[#227B6B]" />
-          <span className="text-xs font-black text-[#113831]">Syncing ecosystem messagesΓÇª</span>
+          <span className="text-xs font-black text-[#113831]">Syncing ecosystem messages…</span>
         </div>
       ) : notifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-[#CEB2C0] bg-white/60 p-12 text-center backdrop-blur-md">
@@ -90,7 +90,7 @@ export default function NotificationsPage() {
                         ? new Date(item.created_at).toLocaleString('en-IN')
                         : 'Just now'}
                     </span>
-                    <span>ΓÇó</span>
+                    <span>•</span>
                     <span className="capitalize">{item.category ?? 'general'}</span>
                   </div>
                 </div>

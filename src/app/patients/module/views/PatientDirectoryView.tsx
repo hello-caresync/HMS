@@ -38,7 +38,7 @@ export default function PatientDirectoryView({
     <div className="space-y-2">
       <div>
         <h2 className="text-sm font-bold text-[#0F172A]">Patient Directory</h2>
-        <p className="text-[10px] text-slate-500">Multi-attribute filter ┬╖ {filtered.length} records</p>
+        <p className="text-[10px] text-slate-500">Multi-attribute filter · {filtered.length} records</p>
       </div>
 
       <PatientPanel title="Advanced Filters" icon={Filter}>

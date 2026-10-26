@@ -80,7 +80,7 @@ export default function AiInsightsPanel({ metrics }: AiInsightsPanelProps) {
         <h2 className="text-base font-semibold tracking-tight text-slate-900">
           Governance & AI Insights
         </h2>
-        <p className="text-xs text-slate-800">Predictive intelligence ┬╖ workforce ┬╖ satisfaction</p>
+        <p className="text-xs text-slate-800">Predictive intelligence · workforce · satisfaction</p>
       </div>
 
       {/* AI Insights Card */}
@@ -94,7 +94,7 @@ export default function AiInsightsPanel({ metrics }: AiInsightsPanelProps) {
               AI Insights & Predictions
               <Sparkles className="h-3.5 w-3.5 text-violet-500" />
             </h3>
-            <p className="text-[11px] text-slate-800">Regal Intelligence Engine ┬╖ mock predictions</p>
+            <p className="text-[11px] text-slate-800">Regal Intelligence Engine · mock predictions</p>
           </div>
         </header>
 

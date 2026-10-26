@@ -22,7 +22,7 @@ type IntegrationsSecurityTabProps = {
 export default function IntegrationsSecurityTab({ integrations, onOpenIntegrationLog }: IntegrationsSecurityTabProps) {
   return (
     <div className="space-y-4">
-      <SettingsPanel title="Technical Sourcing & Protocol Ledger" subtitle="HL7 ┬╖ FHIR ┬╖ PACS ┬╖ LIS ┬╖ API keys ┬╖ webhooks ┬╖ rate limits" icon={Link2}>
+      <SettingsPanel title="Technical Sourcing & Protocol Ledger" subtitle="HL7 · FHIR · PACS · LIS · API keys · webhooks · rate limits" icon={Link2}>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -54,7 +54,7 @@ export default function IntegrationsSecurityTab({ integrations, onOpenIntegratio
       </SettingsPanel>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SettingsPanel title="Backup & Recovery Protocols" subtitle="Full ┬╖ incremental ┬╖ DMS ┬╖ offsite DR" icon={HardDrive}>
+        <SettingsPanel title="Backup & Recovery Protocols" subtitle="Full · incremental · DMS · offsite DR" icon={HardDrive}>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
@@ -79,13 +79,13 @@ export default function IntegrationsSecurityTab({ integrations, onOpenIntegratio
           </div>
         </SettingsPanel>
 
-        <SettingsPanel title="Document Printing Templates" subtitle="OPD ┬╖ IPD ┬╖ Lab ┬╖ Radiology ┬╖ Pharmacy formats" icon={FileText}>
+        <SettingsPanel title="Document Printing Templates" subtitle="OPD · IPD · Lab · Radiology · Pharmacy formats" icon={FileText}>
           <ul className="space-y-2">
             {PRINT_TEMPLATES.map((pt) => (
               <li key={pt.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-4 py-3">
                 <div>
                   <p className={`${settingsType.body} font-semibold`}>{pt.name}</p>
-                  <p className={settingsType.bodyMuted}>{pt.module} ┬╖ {pt.format}</p>
+                  <p className={settingsType.bodyMuted}>{pt.module} · {pt.format}</p>
                 </div>
                 <SettingsStatusPill status={pt.status} />
               </li>
@@ -94,7 +94,7 @@ export default function IntegrationsSecurityTab({ integrations, onOpenIntegratio
         </SettingsPanel>
       </div>
 
-      <SettingsPanel title="Security Control Zone" subtitle="2FA ┬╖ IP restrictions ┬╖ device filters ┬╖ session policies" icon={Lock} secure>
+      <SettingsPanel title="Security Control Zone" subtitle="2FA · IP restrictions · device filters · session policies" icon={Lock} secure>
         <div className="grid gap-3 sm:grid-cols-2">
           {SECURITY_CONTROLS.map((sc) => (
             <div key={sc.id} className="rounded-lg border border-slate-100 bg-[#F8FAFC] px-4 py-3">
@@ -111,24 +111,24 @@ export default function IntegrationsSecurityTab({ integrations, onOpenIntegratio
       </SettingsPanel>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SettingsPanel title="AI Engine Permissions" subtitle="Predictive analytics ┬╖ forecasting ┬╖ auto-action controls" icon={Brain} secure>
+        <SettingsPanel title="AI Engine Permissions" subtitle="Predictive analytics · forecasting · auto-action controls" icon={Brain} secure>
           <ul className="space-y-2">
             <li className="rounded-lg border border-violet-100 bg-violet-50/40 px-4 py-3">
               <p className="text-base font-semibold text-violet-900">Operational Forecasting</p>
-              <p className="text-base text-violet-700">Patient load ┬╖ staff shortage ┬╖ bed demand ΓÇö read-only dashboards</p>
+              <p className="text-base text-violet-700">Patient load · staff shortage · bed demand — read-only dashboards</p>
             </li>
             <li className="rounded-lg border border-violet-100 bg-violet-50/40 px-4 py-3">
               <p className="text-base font-semibold text-violet-900">Clinical Decision Support</p>
-              <p className="text-base text-violet-700">Drug interaction alerts ┬╖ lab trend analysis ΓÇö physician override required</p>
+              <p className="text-base text-violet-700">Drug interaction alerts · lab trend analysis — physician override required</p>
             </li>
             <li className="rounded-lg border border-amber-100 bg-amber-50/40 px-4 py-3">
               <p className="text-base font-semibold text-amber-900">Auto-Actions</p>
-              <p className="text-base text-amber-700">Disabled ΓÇö all AI outputs require human approval before system changes</p>
+              <p className="text-base text-amber-700">Disabled — all AI outputs require human approval before system changes</p>
             </li>
           </ul>
         </SettingsPanel>
 
-        <SettingsPanel title="Regulatory Compliance Thresholds" subtitle="NABH ┬╖ HIPAA ┬╖ CDSCO control parameters" icon={Shield}>
+        <SettingsPanel title="Regulatory Compliance Thresholds" subtitle="NABH · HIPAA · CDSCO control parameters" icon={Shield}>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
@@ -154,7 +154,7 @@ export default function IntegrationsSecurityTab({ integrations, onOpenIntegratio
         </SettingsPanel>
       </div>
 
-      <SettingsPanel title="System Log Tracks" subtitle="Immutable audit trail ┬╖ auth ┬╖ integration ┬╖ security events" icon={ScrollText}>
+      <SettingsPanel title="System Log Tracks" subtitle="Immutable audit trail · auth · integration · security events" icon={ScrollText}>
         <ul className="max-h-[320px] space-y-2 overflow-y-auto">
           {SYSTEM_LOGS.map((log) => (
             <li
@@ -164,7 +164,7 @@ export default function IntegrationsSecurityTab({ integrations, onOpenIntegratio
               <LogLevelBadge level={log.level} />
               <div className="min-w-0 flex-1">
                 <p className={settingsType.body}>{log.message}</p>
-                <p className={settingsType.bodyMuted}>{log.source} ┬╖ {formatTime(log.timestamp)}</p>
+                <p className={settingsType.bodyMuted}>{log.source} · {formatTime(log.timestamp)}</p>
               </div>
             </li>
           ))}

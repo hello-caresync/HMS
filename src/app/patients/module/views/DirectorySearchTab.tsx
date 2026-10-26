@@ -41,7 +41,7 @@ export default function DirectorySearchTab({
     if (referralFilter !== 'all') list = list.filter((p) => p.referralStatus === referralFilter);
     if (wardFilter !== 'all') {
       list = list.filter((p) =>
-        wardFilter === 'assigned' ? p.wardRoom !== 'ΓÇö' : p.wardRoom === 'ΓÇö',
+        wardFilter === 'assigned' ? p.wardRoom !== '—' : p.wardRoom === '—',
       );
     }
     return list;
@@ -54,7 +54,7 @@ export default function DirectorySearchTab({
 
   return (
     <div className="space-y-3">
-      <PatientPanel title="Advanced Search Grid" icon={Filter} subtitle="Multi-attribute filters ┬╖ click row to open detail drawer">
+      <PatientPanel title="Advanced Search Grid" icon={Filter} subtitle="Multi-attribute filters · click row to open detail drawer">
         <div className="flex flex-wrap gap-2">
           <select
             value={insuranceFilter}
@@ -72,7 +72,7 @@ export default function DirectorySearchTab({
             className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-semibold text-[#0F172A]"
             aria-label="Filter by Aadhaar status"
           >
-            <option value="all">Aadhaar ΓÇö All</option>
+            <option value="all">Aadhaar — All</option>
             <option value="verified">Aadhaar Verified</option>
             <option value="pending">Aadhaar Pending</option>
           </select>

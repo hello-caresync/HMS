@@ -20,7 +20,7 @@ function StaffWorkspaceShell({ title, subtitle }: StaffWorkspaceProps) {
           <h1 className="mt-2 text-3xl font-black text-slate-900">{title}</h1>
           <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
           <p className="mt-4 text-xs font-semibold text-slate-600">
-            Signed in as {session?.full_name ?? 'Staff Member'} ΓÇó {session?.hospital_name}
+            Signed in as {session?.full_name ?? 'Staff Member'} • {session?.hospital_name}
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">

@@ -1,7 +1,7 @@
 ﻿import CashierTerminalWorkbench from '../../finance/payments/components/CashierTerminalWorkbench';
 
 export const metadata = {
-  title: 'Payments ┬╖ CuraSync ERP',
+  title: 'Payments · CuraSync ERP',
   description: 'Cashier terminal and split-payment collection',
 };
 

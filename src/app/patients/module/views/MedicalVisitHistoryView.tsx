@@ -8,10 +8,10 @@ import { PatientPanel } from '../components/patientsUi';
 import PatientTimelineView from './PatientTimelineView';
 
 const VISIT_SUMMARY = [
-  { date: '2026-07-14', type: 'IPD', dept: 'Cardiology', provider: 'Dr. Anita Roy', summary: 'Admitted for ACS workup ΓÇö telemetry monitoring' },
-  { date: '2026-07-10', type: 'OPD', dept: 'Cardiology', provider: 'Dr. Anita Roy', summary: 'Echo + stress test ΓÇö LVEF 48%' },
-  { date: '2026-06-22', type: 'OPD', dept: 'General Medicine', provider: 'Dr. Rajesh Kumar', summary: 'Diabetes follow-up ΓÇö HbA1c 7.8%' },
-  { date: '2026-03-08', type: 'Emergency', dept: 'Emergency Medicine', provider: 'Dr. B. Joseph', summary: 'Hypertensive urgency ΓÇö stabilized and discharged' },
+  { date: '2026-07-14', type: 'IPD', dept: 'Cardiology', provider: 'Dr. Anita Roy', summary: 'Admitted for ACS workup — telemetry monitoring' },
+  { date: '2026-07-10', type: 'OPD', dept: 'Cardiology', provider: 'Dr. Anita Roy', summary: 'Echo + stress test — LVEF 48%' },
+  { date: '2026-06-22', type: 'OPD', dept: 'General Medicine', provider: 'Dr. Rajesh Kumar', summary: 'Diabetes follow-up — HbA1c 7.8%' },
+  { date: '2026-03-08', type: 'Emergency', dept: 'Emergency Medicine', provider: 'Dr. B. Joseph', summary: 'Hypertensive urgency — stabilized and discharged' },
 ];
 
 export default function MedicalVisitHistoryView() {
@@ -22,7 +22,7 @@ export default function MedicalVisitHistoryView() {
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="text-sm font-bold text-[#0F172A]">Medical &amp; Visit History</h2>
-          <p className="text-[10px] text-slate-500">Aggregated OPD ┬╖ IPD ┬╖ Emergency encounters</p>
+          <p className="text-[10px] text-slate-500">Aggregated OPD · IPD · Emergency encounters</p>
         </div>
         <div className="flex rounded-md border border-slate-200 bg-slate-50 p-0.5">
           {(

@@ -13,7 +13,7 @@ export default function PaymentHistoryTable({ logs }: PaymentHistoryTableProps) 
     <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
       <div className="flex items-center gap-2 border-b-2 border-slate-200 bg-slate-800 px-4 py-2.5 text-white">
         <History className="h-4 w-4" />
-        <h2 className="text-sm font-black">Payment History ┬╖ Active Shift</h2>
+        <h2 className="text-sm font-black">Payment History · Active Shift</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[780px] border-collapse text-sm">
@@ -51,7 +51,7 @@ export default function PaymentHistoryTable({ logs }: PaymentHistoryTableProps) 
                 <td className="px-3 py-2 font-mono text-xs text-slate-950">{log.invoiceRef}</td>
                 <td className="px-3 py-2 text-xs font-bold text-slate-950">{log.patientName}</td>
                 <td className="px-3 py-2 text-right font-mono text-xs font-bold tabular-nums">
-                  Γé╣ {log.totalAmount.toLocaleString('en-IN')}
+                  ₹ {log.totalAmount.toLocaleString('en-IN')}
                 </td>
                 <td className="px-3 py-2 text-[10px] text-slate-950">{log.methodsSummary}</td>
                 <td className="px-3 py-2">

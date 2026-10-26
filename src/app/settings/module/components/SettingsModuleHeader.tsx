@@ -17,7 +17,7 @@ export default function SettingsModuleHeader({ lookupValue, onLookupChange, resu
         <div>
           <h1 className={settingsType.canvasTitle}>Settings Management</h1>
           <p className={`mt-1 ${settingsType.canvasSubtitle}`}>
-            ERP configuration engine ┬╖ access controls ┬╖ module architecture ┬╖ integrations ┬╖ security ┬╖ compliance
+            ERP configuration engine · access controls · module architecture · integrations · security · compliance
           </p>
         </div>
         <span className="inline-flex items-center gap-2 rounded-lg border border-[#2563EB]/30 bg-[#2563EB]/5 px-3 py-2 text-base font-bold text-[#2563EB]">
@@ -31,7 +31,7 @@ export default function SettingsModuleHeader({ lookupValue, onLookupChange, resu
           type="search"
           value={lookupValue}
           onChange={(e) => onLookupChange(e.target.value)}
-          placeholder="Search settings ΓÇö user, integration, module, workflow, security, or compliance"
+          placeholder="Search settings — user, integration, module, workflow, security, or compliance"
           aria-label="Search settings"
           className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] py-3 pl-10 pr-4 text-base text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
         />

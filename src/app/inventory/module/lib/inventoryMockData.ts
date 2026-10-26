@@ -152,30 +152,30 @@ export const INVENTORY_CENSUS = {
 };
 
 export const INITIAL_PURCHASE_ORDERS: PurchaseRequestOrder[] = [
-  { id: 'po1', prNumber: 'PR-2026-4401', department: 'ICU', items: 'Norepinephrine 4mg/4mL ├ù 200 amp ┬╖ IV Sets ├ù 500', priority: 'Emergency', status: 'Sent to Vendor', requestedBy: 'ICU Incharge Dr. Joseph', vendor: 'MedSupply India Pvt Ltd', value: 485000, requestedAt: '2026-07-18T08:00:00' },
-  { id: 'po2', prNumber: 'PR-2026-4405', department: 'OT', items: 'Surgical Gloves Size 7 ├ù 2000 pairs ┬╖ Suture Kit ├ù 150', priority: 'High', status: 'Approved', requestedBy: 'OT Store Manager Anita R.', value: 312000, requestedAt: '2026-07-18T09:30:00' },
-  { id: 'po3', prNumber: 'PR-2026-4410', department: 'Pharmacy', items: 'Azithromycin 500mg ├ù 5000 tabs ┬╖ Insulin Glargine ├ù 50 pens', priority: 'High', status: 'Pending Approval', requestedBy: 'Chief Pharm. Joseph M.', value: 428000, requestedAt: '2026-07-18T10:15:00' },
-  { id: 'po4', prNumber: 'PR-2026-4412', department: 'Laboratory', items: 'CBC Reagent Kit ├ù 12 ┬╖ Troponin-I Reagent ├ù 8', priority: 'Normal', status: 'Draft', requestedBy: 'Lab Manager Lakshmi N.', value: 186000, requestedAt: '2026-07-18T11:00:00' },
-  { id: 'po5', prNumber: 'PR-2026-4398', department: 'Emergency', items: 'Adrenaline 1:1000 ├ù 100 amp ┬╖ Crash Cart Supplies Bundle', priority: 'Emergency', status: 'PO Issued', requestedBy: 'ER Incharge Dr. B. Joseph', vendor: 'Apollo Pharma Distribution', value: 562000, requestedAt: '2026-07-17T14:00:00' },
-  { id: 'po6', prNumber: 'PR-2026-4408', department: 'Radiology', items: 'Iohexol 350 mgI/mL ├ù 48 vials ┬╖ Gadoterate ├ù 20 syringes', priority: 'Normal', status: 'Sent to Vendor', requestedBy: 'Radiology Store Ravi K.', vendor: 'Cipla Healthcare Logistics', value: 298000, requestedAt: '2026-07-18T07:45:00' },
+  { id: 'po1', prNumber: 'PR-2026-4401', department: 'ICU', items: 'Norepinephrine 4mg/4mL × 200 amp · IV Sets × 500', priority: 'Emergency', status: 'Sent to Vendor', requestedBy: 'ICU Incharge Dr. Joseph', vendor: 'MedSupply India Pvt Ltd', value: 485000, requestedAt: '2026-07-18T08:00:00' },
+  { id: 'po2', prNumber: 'PR-2026-4405', department: 'OT', items: 'Surgical Gloves Size 7 × 2000 pairs · Suture Kit × 150', priority: 'High', status: 'Approved', requestedBy: 'OT Store Manager Anita R.', value: 312000, requestedAt: '2026-07-18T09:30:00' },
+  { id: 'po3', prNumber: 'PR-2026-4410', department: 'Pharmacy', items: 'Azithromycin 500mg × 5000 tabs · Insulin Glargine × 50 pens', priority: 'High', status: 'Pending Approval', requestedBy: 'Chief Pharm. Joseph M.', value: 428000, requestedAt: '2026-07-18T10:15:00' },
+  { id: 'po4', prNumber: 'PR-2026-4412', department: 'Laboratory', items: 'CBC Reagent Kit × 12 · Troponin-I Reagent × 8', priority: 'Normal', status: 'Draft', requestedBy: 'Lab Manager Lakshmi N.', value: 186000, requestedAt: '2026-07-18T11:00:00' },
+  { id: 'po5', prNumber: 'PR-2026-4398', department: 'Emergency', items: 'Adrenaline 1:1000 × 100 amp · Crash Cart Supplies Bundle', priority: 'Emergency', status: 'PO Issued', requestedBy: 'ER Incharge Dr. B. Joseph', vendor: 'Apollo Pharma Distribution', value: 562000, requestedAt: '2026-07-17T14:00:00' },
+  { id: 'po6', prNumber: 'PR-2026-4408', department: 'Radiology', items: 'Iohexol 350 mgI/mL × 48 vials · Gadoterate × 20 syringes', priority: 'Normal', status: 'Sent to Vendor', requestedBy: 'Radiology Store Ravi K.', vendor: 'Cipla Healthcare Logistics', value: 298000, requestedAt: '2026-07-18T07:45:00' },
 ];
 
 export const INITIAL_GRN_RECORDS: GrnIntakeRecord[] = [
   { id: 'gr1', grnNumber: 'GRN-2026-9901', poReference: 'PO-2026-7788', vendor: 'MedSupply India Pvt Ltd', itemName: 'Norepinephrine 4mg/4mL Ampoule', quantityOrdered: 200, quantityReceived: 200, batchNumber: 'NOR-8841-A', expiryDate: '2027-06-15', qcStatus: 'QC Passed', receivedBy: 'Store Incharge Lakshmi N.', receivedAt: '2026-07-18 09:45', identityVerified: true },
   { id: 'gr2', grnNumber: 'GRN-2026-9904', poReference: 'PO-2026-7792', vendor: 'Apollo Pharma Distribution', itemName: 'Surgical Gloves Size 7 (Latex-free)', quantityOrdered: 2000, quantityReceived: 1980, batchNumber: 'GLV-7720-B', expiryDate: '2028-03-01', qcStatus: 'Pending QC', receivedBy: 'QC Tech Joseph M.', receivedAt: '2026-07-18 11:20', identityVerified: true },
   { id: 'gr3', grnNumber: 'GRN-2026-9898', poReference: 'PO-2026-7785', vendor: 'Sun Pharma Wholesale', itemName: 'Ranitidine 150mg Tablet', quantityOrdered: 5000, quantityReceived: 5000, batchNumber: 'RAN-3300-G', expiryDate: '2026-07-20', qcStatus: 'QC Failed', receivedBy: 'QC Tech Anita R.', receivedAt: '2026-07-17 16:30', identityVerified: true },
-  { id: 'gr4', grnNumber: 'GRN-2026-9906', poReference: 'PO-2026-7795', vendor: 'Cipla Healthcare Logistics', itemName: 'Hip Implant ΓÇö Titanium Stem 52mm', quantityOrdered: 4, quantityReceived: 4, batchNumber: 'IMP-5521-C', expiryDate: '2031-12-31', qcStatus: 'Pending QC', receivedBy: 'OT Store Manager Anita R.', receivedAt: '2026-07-18 11:50', identityVerified: true },
+  { id: 'gr4', grnNumber: 'GRN-2026-9906', poReference: 'PO-2026-7795', vendor: 'Cipla Healthcare Logistics', itemName: 'Hip Implant — Titanium Stem 52mm', quantityOrdered: 4, quantityReceived: 4, batchNumber: 'IMP-5521-C', expiryDate: '2031-12-31', qcStatus: 'Pending QC', receivedBy: 'OT Store Manager Anita R.', receivedAt: '2026-07-18 11:50', identityVerified: true },
 ];
 
 export const MOCK_ITEM_MASTER: ItemMasterRecord[] = [
   { id: 'im1', itemCode: 'MED-AMX-500', itemName: 'Amoxicillin 500mg Capsule', category: 'Medicine', barcodeStatus: 'Scanned', storage: 'Ambient', criticality: 'High', unit: 'caps', reorderLevel: 500, currentStock: 2400, status: 'Available' },
   { id: 'im2', itemCode: 'SUR-GLV-07', itemName: 'Surgical Gloves Size 7 (Latex-free)', category: 'Surgical Consumable', barcodeStatus: 'Printed', storage: 'Ambient', criticality: 'Critical', unit: 'pairs', reorderLevel: 500, currentStock: 820, status: 'Low Stock' },
-  { id: 'im3', itemCode: 'IMP-HIP-52', itemName: 'Hip Implant ΓÇö Titanium Stem 52mm', category: 'Implant', barcodeStatus: 'Scanned', storage: 'Controlled Room', criticality: 'Critical', unit: 'units', reorderLevel: 2, currentStock: 6, status: 'Available' },
+  { id: 'im3', itemCode: 'IMP-HIP-52', itemName: 'Hip Implant — Titanium Stem 52mm', category: 'Implant', barcodeStatus: 'Scanned', storage: 'Controlled Room', criticality: 'Critical', unit: 'units', reorderLevel: 2, currentStock: 6, status: 'Available' },
   { id: 'im4', itemCode: 'EQP-VT-001', itemName: 'Hamilton C6 Ventilator', category: 'Medical Equipment', barcodeStatus: 'Scanned', storage: 'Ambient', criticality: 'Critical', unit: 'units', reorderLevel: 1, currentStock: 8, status: 'Available' },
-  { id: 'im5', itemCode: 'MED-INS-GLR', itemName: 'Insulin Glargine 100IU/mL Pen', category: 'Medicine', barcodeStatus: 'Pending', storage: 'Cold Chain 2-8┬░C', criticality: 'High', unit: 'pens', reorderLevel: 30, currentStock: 18, status: 'Low Stock' },
+  { id: 'im5', itemCode: 'MED-INS-GLR', itemName: 'Insulin Glargine 100IU/mL Pen', category: 'Medicine', barcodeStatus: 'Pending', storage: 'Cold Chain 2-8°C', criticality: 'High', unit: 'pens', reorderLevel: 30, currentStock: 18, status: 'Low Stock' },
   { id: 'im6', itemCode: 'MED-AZI-500', itemName: 'Azithromycin 500mg Tablet', category: 'Medicine', barcodeStatus: 'Pending', storage: 'Ambient', criticality: 'Standard', unit: 'tabs', reorderLevel: 200, currentStock: 0, status: 'Out of Stock' },
   { id: 'im7', itemCode: 'SUR-SUT-3-0', itemName: 'Ethicon Vicryl Suture 3-0', category: 'Surgical Consumable', barcodeStatus: 'Scanned', storage: 'Ambient', criticality: 'High', unit: 'packs', reorderLevel: 50, currentStock: 124, status: 'Available' },
-  { id: 'im8', itemCode: 'LAB-TROP-RG', itemName: 'Troponin-I Reagent Kit', category: 'Surgical Consumable', barcodeStatus: 'Printed', storage: 'Cold Chain 2-8┬░C', criticality: 'Critical', unit: 'kits', reorderLevel: 5, currentStock: 8, status: 'Available' },
+  { id: 'im8', itemCode: 'LAB-TROP-RG', itemName: 'Troponin-I Reagent Kit', category: 'Surgical Consumable', barcodeStatus: 'Printed', storage: 'Cold Chain 2-8°C', criticality: 'Critical', unit: 'kits', reorderLevel: 5, currentStock: 8, status: 'Available' },
 ];
 
 export const MOCK_STORE_ALLOCATIONS: StoreAllocation[] = [
@@ -203,10 +203,10 @@ export const MOCK_RECALL_IMPACTS: RecallImpactRecord[] = [
 ];
 
 export const MOCK_AUDITS: AuditRecord[] = [
-  { id: 'au1', auditId: 'AUD-2026-881', store: 'Main Store', scheduledDate: '2026-07-18', status: 'In Progress', systemCount: 1240, actualCount: 1236, variance: -4, auditor: 'Audit Team ΓÇö Ravi K.' },
-  { id: 'au2', auditId: 'AUD-2026-878', store: 'ICU Store', scheduledDate: '2026-07-17', status: 'Variance Reported', systemCount: 186, actualCount: 182, variance: -4, auditor: 'Audit Team ΓÇö Anita R.' },
-  { id: 'au3', auditId: 'AUD-2026-875', store: 'OT Store', scheduledDate: '2026-07-20', status: 'Scheduled', systemCount: 420, actualCount: 0, variance: 0, auditor: 'Audit Team ΓÇö Joseph M.' },
-  { id: 'au4', auditId: 'AUD-2026-872', store: 'Pharmacy Store', scheduledDate: '2026-07-15', status: 'Completed', systemCount: 890, actualCount: 890, variance: 0, auditor: 'Audit Team ΓÇö Lakshmi N.' },
+  { id: 'au1', auditId: 'AUD-2026-881', store: 'Main Store', scheduledDate: '2026-07-18', status: 'In Progress', systemCount: 1240, actualCount: 1236, variance: -4, auditor: 'Audit Team — Ravi K.' },
+  { id: 'au2', auditId: 'AUD-2026-878', store: 'ICU Store', scheduledDate: '2026-07-17', status: 'Variance Reported', systemCount: 186, actualCount: 182, variance: -4, auditor: 'Audit Team — Anita R.' },
+  { id: 'au3', auditId: 'AUD-2026-875', store: 'OT Store', scheduledDate: '2026-07-20', status: 'Scheduled', systemCount: 420, actualCount: 0, variance: 0, auditor: 'Audit Team — Joseph M.' },
+  { id: 'au4', auditId: 'AUD-2026-872', store: 'Pharmacy Store', scheduledDate: '2026-07-15', status: 'Completed', systemCount: 890, actualCount: 890, variance: 0, auditor: 'Audit Team — Lakshmi N.' },
 ];
 
 export const MOCK_ADJUSTMENTS: StockAdjustment[] = [
@@ -225,11 +225,11 @@ export const MOCK_BIOMEDICAL_ASSETS: BiomedicalAsset[] = [
 ];
 
 export const INITIAL_AI_SUGGESTIONS: AiForecastSuggestion[] = [
-  { id: 'ai1', insight: 'Monsoon Surge Forecast', itemName: 'Dengue NS1 Antigen Kit', currentStock: 48, suggestedQty: 60, changePct: 25, confidence: 92, status: 'Pending Review', rationale: 'Historical monsoon pattern ΓÇö dengue cases Γåæ 28% YoY in Jul-Aug' },
-  { id: 'ai2', insight: 'ICU Consumption Spike', itemName: 'Norepinephrine 4mg/4mL Ampoule', currentStock: 48, suggestedQty: 80, changePct: 67, confidence: 88, status: 'Accepted', rationale: 'ICU census at 94% ΓÇö vasopressor usage trending +40% over 7 days' },
-  { id: 'ai3', insight: 'Overstock Risk', itemName: 'Surgical Masks N95', currentStock: 12000, suggestedQty: 8000, changePct: -33, confidence: 85, status: 'Pending Review', rationale: 'Consumption rate declining ΓÇö 45 days supply vs optimal 21 days' },
-  { id: 'ai4', insight: 'Seasonal Antibiotic Demand', itemName: 'Azithromycin 500mg Tablet', currentStock: 0, suggestedQty: 5000, changePct: 100, confidence: 94, status: 'Pending Review', rationale: 'Out-of-stock + respiratory OPD volume Γåæ 18% ΓÇö auto-reorder triggered' },
-  { id: 'ai5', insight: 'Wastage Prevention', itemName: 'Insulin Glargine 100IU Pen', currentStock: 18, suggestedQty: 12, changePct: -33, confidence: 79, status: 'Rejected', rationale: 'Near-expiry batch INS-5521-E ΓÇö reduce reorder until FEFO clearance' },
+  { id: 'ai1', insight: 'Monsoon Surge Forecast', itemName: 'Dengue NS1 Antigen Kit', currentStock: 48, suggestedQty: 60, changePct: 25, confidence: 92, status: 'Pending Review', rationale: 'Historical monsoon pattern — dengue cases ↑ 28% YoY in Jul-Aug' },
+  { id: 'ai2', insight: 'ICU Consumption Spike', itemName: 'Norepinephrine 4mg/4mL Ampoule', currentStock: 48, suggestedQty: 80, changePct: 67, confidence: 88, status: 'Accepted', rationale: 'ICU census at 94% — vasopressor usage trending +40% over 7 days' },
+  { id: 'ai3', insight: 'Overstock Risk', itemName: 'Surgical Masks N95', currentStock: 12000, suggestedQty: 8000, changePct: -33, confidence: 85, status: 'Pending Review', rationale: 'Consumption rate declining — 45 days supply vs optimal 21 days' },
+  { id: 'ai4', insight: 'Seasonal Antibiotic Demand', itemName: 'Azithromycin 500mg Tablet', currentStock: 0, suggestedQty: 5000, changePct: 100, confidence: 94, status: 'Pending Review', rationale: 'Out-of-stock + respiratory OPD volume ↑ 18% — auto-reorder triggered' },
+  { id: 'ai5', insight: 'Wastage Prevention', itemName: 'Insulin Glargine 100IU Pen', currentStock: 18, suggestedQty: 12, changePct: -33, confidence: 79, status: 'Rejected', rationale: 'Near-expiry batch INS-5521-E — reduce reorder until FEFO clearance' },
 ];
 
 export const CONSUMPTION_TREND = [

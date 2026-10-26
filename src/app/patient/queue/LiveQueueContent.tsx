@@ -125,7 +125,7 @@ export default function LiveQueueContent() {
 
       {loading ? (
         <div className="flex h-64 items-center justify-center rounded-3xl border border-[#BDE2F5] bg-white/80 p-8 backdrop-blur-md">
-          <p className="animate-pulse text-sm font-bold text-[#8E7692]">Connecting to live hospital queueΓÇª</p>
+          <p className="animate-pulse text-sm font-bold text-[#8E7692]">Connecting to live hospital queue…</p>
         </div>
       ) : !queue ? (
         <div className="rounded-3xl border border-dashed border-[#CEB2C0] bg-white/80 p-10 text-center backdrop-blur-md">
@@ -133,7 +133,7 @@ export default function LiveQueueContent() {
           <h3 className="mt-3 text-lg font-bold text-[#1A332F]">No Active Queue</h3>
           <p className="mt-2 text-sm text-[#8E7692]">You don&apos;t have an active OPD check-in right now.</p>
           {profileGateLoading ? (
-            <p className="mt-6 text-xs font-semibold text-[#8E7692]">Checking profile readinessΓÇª</p>
+            <p className="mt-6 text-xs font-semibold text-[#8E7692]">Checking profile readiness…</p>
           ) : !profileComplete ? (
             <div className="mt-6 text-left">
               <ProfileCompletionGate

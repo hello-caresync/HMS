@@ -2,7 +2,7 @@
 import type { InternalStaffRole, StaffPermission } from './types';
 import { hasAnyPermission, hasPermission } from './permissions';
 
-/** Route ΓåÆ minimum permission required (undefined = any authenticated staff) */
+/** Route → minimum permission required (undefined = any authenticated staff) */
 export const ROUTE_PERMISSION_REQUIREMENTS: Partial<Record<string, StaffPermission>> = {
   [APP_ROUTES.dashboard]: 'reports_view',
   [APP_ROUTES.appointments]: 'appointments_manage',

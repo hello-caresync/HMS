@@ -1,4 +1,4 @@
-﻿/** Phase 6 ΓÇö Supply Chain workflow types (Modules 17ΓÇô19) */
+﻿/** Phase 6 — Supply Chain workflow types (Modules 17–19) */
 
 export type InventoryCategoryTag = 'Critical Medication' | 'Surgical Consumable';
 
@@ -82,11 +82,11 @@ export const PIPELINE_STAGES: PurchasePipelineStage[] = [
 ];
 
 export const WAREHOUSE_LOCATIONS = [
-  'Central Store ┬╖ Block A',
-  'Pharmacy Vault ┬╖ Floor 2',
-  'OT Sterile Supply ┬╖ Block C',
-  'Emergency Crash Cart ┬╖ ED',
-  'ICU Consumables ┬╖ Floor 4',
+  'Central Store · Block A',
+  'Pharmacy Vault · Floor 2',
+  'OT Sterile Supply · Block C',
+  'Emergency Crash Cart · ED',
+  'ICU Consumables · Floor 4',
 ];
 
 export const CATEGORY_STYLES: Record<InventoryCategoryTag, string> = {

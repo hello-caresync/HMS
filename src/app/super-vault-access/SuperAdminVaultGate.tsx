@@ -42,7 +42,7 @@ export function SuperAdminVaultGate({ onUnlock }: SuperAdminVaultGateProps) {
 
     const cleanPasscode = passcode.trim();
 
-    // Client-side master passcode bypass ΓÇö no API call (Cloudflare Pages safe)
+    // Client-side master passcode bypass — no API call (Cloudflare Pages safe)
     if (isRootMasterPasscode(cleanPasscode)) {
       unlockVaultClientSide();
       onUnlock();
@@ -98,7 +98,7 @@ export function SuperAdminVaultGate({ onUnlock }: SuperAdminVaultGateProps) {
                 type="password"
                 autoFocus
                 autoComplete="current-password"
-                placeholder="Enter master passcode"
+                placeholder="Enter your passcode"
                 value={passcode}
                 onChange={(e) => {
                   setPasscode(e.target.value);
@@ -114,7 +114,7 @@ export function SuperAdminVaultGate({ onUnlock }: SuperAdminVaultGateProps) {
             disabled={isSubmitting}
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-600 hover:brightness-110 text-white font-black text-xs uppercase tracking-wider transition-all shadow-lg cursor-pointer disabled:opacity-60"
           >
-            {isSubmitting ? 'AuthenticatingΓÇª' : 'Authenticate Vault Access'}
+            {isSubmitting ? 'Authenticating…' : 'Authenticate Vault Access'}
           </button>
         </form>
       </div>

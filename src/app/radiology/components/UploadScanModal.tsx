@@ -56,7 +56,7 @@ export default function UploadScanModal({ order, open, onClose }: UploadScanModa
           <div>
             <h2 className="text-sm font-bold text-white">Upload Scan Diagnostics</h2>
             <p className="text-[11px] text-slate-800">
-              {order.patientName} ┬╖ {order.uhid} ┬╖ {order.scanDetails}
+              {order.patientName} · {order.uhid} · {order.scanDetails}
             </p>
           </div>
           <button type="button" onClick={handleClose} className="rounded p-1 text-slate-800 hover:bg-slate-800 hover:text-white">
@@ -99,8 +99,8 @@ export default function UploadScanModal({ order, open, onClose }: UploadScanModa
               </div>
             ) : (
               <div className="rounded-xl border border-emerald-800 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300">
-                Γ£ô Uploaded: <span className="font-mono">{fileName}</span>
-                <p className="mt-1 text-[11px] text-emerald-500">Status ΓåÆ Ready for Interpretation</p>
+                ✓ Uploaded: <span className="font-mono">{fileName}</span>
+                <p className="mt-1 text-[11px] text-emerald-500">Status → Ready for Interpretation</p>
               </div>
             )}
           </div>

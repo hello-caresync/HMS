@@ -39,7 +39,7 @@ export default function OperationsSideColumn({ data }: OperationsSideColumnProps
     <div className="space-y-2">
       <ExecutivePanel
         title="Emergency Operations"
-        subtitle="Ambulances ┬╖ triage ┬╖ ER beds ┬╖ Code Blue"
+        subtitle="Ambulances · triage · ER beds · Code Blue"
         icon={Siren}
         dense
         className="border-red-100/80"
@@ -84,7 +84,7 @@ export default function OperationsSideColumn({ data }: OperationsSideColumnProps
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] font-bold text-red-800">Code Blue Active</p>
                   <p className="truncate text-[9px] text-red-700">
-                    {cb.location} ┬╖ {cb.time}
+                    {cb.location} · {cb.time}
                   </p>
                 </div>
               </li>
@@ -95,7 +95,7 @@ export default function OperationsSideColumn({ data }: OperationsSideColumnProps
 
       <ExecutivePanel
         title="Recent Activities"
-        subtitle="Admissions ┬╖ billing ┬╖ staff logins"
+        subtitle="Admissions · billing · staff logins"
         icon={ClipboardList}
         dense
       >
@@ -127,7 +127,7 @@ export default function OperationsSideColumn({ data }: OperationsSideColumnProps
 
       <ExecutivePanel
         title="Schedule & Flow"
-        subtitle="Today's surgeries ┬╖ shift changes ┬╖ OT timeline"
+        subtitle="Today's surgeries · shift changes · OT timeline"
         icon={CalendarClock}
         dense
       >

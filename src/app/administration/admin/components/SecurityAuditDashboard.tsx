@@ -14,7 +14,7 @@ export default function SecurityAuditDashboard() {
           <div>
             <h1 className="text-lg font-black text-slate-900">Security &amp; Audit Console</h1>
             <p className="text-xs text-slate-800">
-              Phase 7 ┬╖ Modules 23ΓÇô24 ┬╖ Immutable audit trail ┬╖ read-only
+              Phase 7 · Modules 23–24 · Immutable audit trail · read-only
             </p>
           </div>
         </div>

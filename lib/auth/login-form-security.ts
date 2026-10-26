@@ -6,8 +6,9 @@ export const LOGIN_IDENTIFIER_INPUT_PROPS = {
   autoCorrect: 'off' as const,
   autoCapitalize: 'off' as const,
   spellCheck: false as const,
-  'data-1p-ignore': true,
+  'data-1p-ignore': 'true',
   'data-lpignore': 'true',
+  suppressHydrationWarning: true,
 } as const;
 
 export const LOGIN_PASSWORD_INPUT_PROPS = {
@@ -15,6 +16,7 @@ export const LOGIN_PASSWORD_INPUT_PROPS = {
   autoCorrect: 'off' as const,
   autoCapitalize: 'off' as const,
   spellCheck: false as const,
-  'data-1p-ignore': true,
+  'data-1p-ignore': 'true',
   'data-lpignore': 'true',
+  suppressHydrationWarning: true,
 } as const;

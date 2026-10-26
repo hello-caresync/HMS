@@ -11,9 +11,9 @@ export type AdmissionModalType =
   | null;
 
 export const ADMISSIONS_WORKSPACE_TABS: { id: AdmissionsWorkspaceTab; label: string; description: string }[] = [
-  { id: 'executive', label: 'Executive Desk & Requests', description: 'Census ┬╖ intake queues ┬╖ inpatient console ┬╖ quick actions' },
-  { id: 'spatial', label: 'Spatial Capacity & Matrix', description: 'Bed map ┬╖ ward grid ┬╖ transfer routing' },
-  { id: 'financial', label: 'Financial, Discharge & Compliance', description: 'Deposits ┬╖ TPA ┬╖ clearance ┬╖ analytics' },
+  { id: 'executive', label: 'Executive Desk & Requests', description: 'Census · intake queues · inpatient console · quick actions' },
+  { id: 'spatial', label: 'Spatial Capacity & Matrix', description: 'Bed map · ward grid · transfer routing' },
+  { id: 'financial', label: 'Financial, Discharge & Compliance', description: 'Deposits · TPA · clearance · analytics' },
 ];
 
 export type RequestPriority = 'Emergency' | 'Urgent' | 'Elective' | 'Referral';

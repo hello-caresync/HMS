@@ -311,7 +311,7 @@ export default function VendorPortalDashboard() {
           </span>
           <div className="mt-2 text-3xl font-black text-vendor-charcoal">{pendingCount}</div>
           <span className="mt-1 block font-mono text-[11px] text-vendor-muted">
-            {PROCUREMENT_PO_TABLE} ┬╖ pending vendor action
+            {PROCUREMENT_PO_TABLE} · pending vendor action
           </span>
         </div>
 
@@ -321,7 +321,7 @@ export default function VendorPortalDashboard() {
           </span>
           <div className="mt-2 text-3xl font-black text-vendor-charcoal">{activeShipmentsCount}</div>
           <span className="mt-1 block font-mono text-[11px] text-vendor-muted">
-            shipments ┬╖ IN_TRANSIT
+            shipments · IN_TRANSIT
           </span>
         </div>
 
@@ -343,11 +343,11 @@ export default function VendorPortalDashboard() {
           <h3 className="text-sm font-black uppercase tracking-wider text-vendor-charcoal">
             Latest Incoming Orders
           </h3>
-          <p className="text-[11px] text-gray-400">Most recent purchase orders ┬╖ accept or reject inline.</p>
+          <p className="text-[11px] text-gray-400">Most recent purchase orders · accept or reject inline.</p>
         </div>
 
         {loading && orders.length === 0 ? (
-          <div className="py-12 text-center text-xs text-gray-400">Loading purchase ordersΓÇª</div>
+          <div className="py-12 text-center text-xs text-gray-400">Loading purchase orders…</div>
         ) : orders.length === 0 ? (
           <div className="py-12 text-center text-xs text-gray-400">
             No incoming purchase orders assigned to this vendor yet.
@@ -375,7 +375,7 @@ export default function VendorPortalDashboard() {
                       </span>
                     </div>
                     <p className="text-xs text-gray-600 dark:text-gray-300">
-                      <span className="font-semibold text-gray-800 dark:text-gray-200">Regal Hospital</span> ┬╖{' '}
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">Regal Hospital</span> ·{' '}
                       {order.item_description}
                     </p>
                     {order.created_at ? (
@@ -402,7 +402,7 @@ export default function VendorPortalDashboard() {
                           onClick={() => void handleUpdateOrderStatus(order, 'accept')}
                           className="rounded-xl bg-vendor-primary px-3 py-1.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-vendor-secondary disabled:opacity-60"
                         >
-                          {busyOrderId === order.id ? 'ΓÇª' : 'Accept'}
+                          {busyOrderId === order.id ? '…' : 'Accept'}
                         </button>
                         <button
                           type="button"

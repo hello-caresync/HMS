@@ -62,7 +62,7 @@ export default function EnterpriseComplianceTab({
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <HpPanel title="Approval Center" subtitle="Purchase ┬╖ Leave ┬╖ Discount ┬╖ Insurance pre-auth lifecycles" icon={ClipboardCheck}>
+        <HpPanel title="Approval Center" subtitle="Purchase · Leave · Discount · Insurance pre-auth lifecycles" icon={ClipboardCheck}>
           <table className="w-full min-w-[520px] text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -78,7 +78,7 @@ export default function EnterpriseComplianceTab({
                   <td className="px-1.5 py-1"><ApprovalTypePill type={a.type} /></td>
                   <td className="px-1.5 py-1 text-[8px]">{a.requester}</td>
                   <td className="max-w-[140px] truncate px-1.5 py-1 text-[8px] text-slate-600" title={a.summary}>{a.summary}</td>
-                  <td className="px-1.5 py-1 text-[8px] tabular-nums">{a.amount ? formatInr(a.amount) : 'ΓÇö'}</td>
+                  <td className="px-1.5 py-1 text-[8px] tabular-nums">{a.amount ? formatInr(a.amount) : '—'}</td>
                   <td className="px-1.5 py-1">
                     <button type="button" onClick={() => onAdvanceApproval(a.id)} disabled={a.status === 'Approved' || a.status === 'Rejected'} title="Advance approval">
                       <ApprovalStatusPill status={a.status} />
@@ -91,7 +91,7 @@ export default function EnterpriseComplianceTab({
           </table>
         </HpPanel>
 
-        <HpPanel title="Shift Compliance & Duty Rosters" subtitle="Scheduled vs actual hours ┬╖ overtime ┬╖ understaffing" icon={Shield}>
+        <HpPanel title="Shift Compliance & Duty Rosters" subtitle="Scheduled vs actual hours · overtime · understaffing" icon={Shield}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -119,7 +119,7 @@ export default function EnterpriseComplianceTab({
         </HpPanel>
       </div>
 
-      <HpPanel title="AI Hospital Assistant & Predictive Insights" subtitle="Natural language queries ┬╖ capacity forecasting ┬╖ inventory alerts" icon={Bot} accent="purple">
+      <HpPanel title="AI Hospital Assistant & Predictive Insights" subtitle="Natural language queries · capacity forecasting · inventory alerts" icon={Bot} accent="purple">
         <div className="flex gap-2">
           <input
             value={aiQuery}
@@ -165,13 +165,13 @@ export default function EnterpriseComplianceTab({
             <p className="text-sm font-bold tabular-nums text-[#2563EB]">{k.value}{k.unit === '%' ? '%' : ` ${k.unit}`}</p>
             <p className="text-[7px] font-bold uppercase text-slate-500">{k.label}</p>
             <p className={`text-[8px] font-semibold ${k.trend === 'down' ? 'text-emerald-600' : k.trend === 'up' ? 'text-amber-600' : 'text-slate-500'}`}>
-              Target: {k.target}{k.unit === '%' ? '%' : ` ${k.unit}`} ┬╖ {k.trend}
+              Target: {k.target}{k.unit === '%' ? '%' : ` ${k.unit}`} · {k.trend}
             </p>
           </div>
         ))}
       </div>
 
-      <HpPanel title="Operational Performance Trends" subtitle="Weekly census ΓÇö OPD ┬╖ IPD ┬╖ ICU ┬╖ ER" icon={TrendingUp}>
+      <HpPanel title="Operational Performance Trends" subtitle="Weekly census — OPD · IPD · ICU · ER" icon={TrendingUp}>
         <div className="h-[180px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={OCCUPANCY_TREND}>
@@ -200,7 +200,7 @@ export default function EnterpriseComplianceTab({
         </div>
       </HpPanel>
 
-      <HpPanel title="User Access Logs & Audit Trails" subtitle="Immutable security audit ΓÇö read-only" icon={Shield}>
+      <HpPanel title="User Access Logs & Audit Trails" subtitle="Immutable security audit — read-only" icon={Shield}>
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">

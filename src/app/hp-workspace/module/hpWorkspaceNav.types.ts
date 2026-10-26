@@ -24,9 +24,9 @@ export type AiInsightStatus = 'Active' | 'Acknowledged' | 'Dismissed';
 export type CommSubTab = 'chat' | 'documents' | 'meetings';
 
 export const HP_WORKSPACE_TABS: { id: HpWorkspaceTab; label: string; description: string }[] = [
-  { id: 'cockpit', label: 'My Cockpit & Collaboration', description: 'Activity feed ┬╖ tasks ┬╖ communication ┬╖ quick actions' },
-  { id: 'clinical', label: 'Clinical & Departmental Suites', description: 'Patient workspace ┬╖ EMR ┬╖ capacity ┬╖ beds ┬╖ shifts ┬╖ equipment' },
-  { id: 'enterprise', label: 'Clearance, Compliance & AI Insights', description: 'Approvals ┬╖ shift governance ┬╖ AI assistant ┬╖ audit trails' },
+  { id: 'cockpit', label: 'My Cockpit & Collaboration', description: 'Activity feed · tasks · communication · quick actions' },
+  { id: 'clinical', label: 'Clinical & Departmental Suites', description: 'Patient workspace · EMR · capacity · beds · shifts · equipment' },
+  { id: 'enterprise', label: 'Clearance, Compliance & AI Insights', description: 'Approvals · shift governance · AI assistant · audit trails' },
 ];
 
 export const TASK_STATUS_FLOW: TaskStatus[] = ['Pending', 'In Progress', 'Verified', 'Completed'];

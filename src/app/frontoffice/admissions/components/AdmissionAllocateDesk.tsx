@@ -53,9 +53,9 @@ export default function AdmissionAllocateDesk() {
         <div className="flex items-center gap-2">
           <Building2 className="h-5 w-5 text-sky-700" />
           <div>
-            <h1 className="text-lg font-black text-slate-900">Admission Desk ┬╖ Room Matrix</h1>
+            <h1 className="text-lg font-black text-slate-900">Admission Desk · Room Matrix</h1>
             <p className="text-xs text-slate-800">
-              Phase 2 ┬╖ Module 7 ┬╖ Inpatient floor allocation control
+              Phase 2 · Module 7 · Inpatient floor allocation control
             </p>
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function AdmissionAllocateDesk() {
           >
             {ADMISSION_PACKAGES.map((pkg) => (
               <option key={pkg.id} value={pkg.id}>
-                {pkg.label} ┬╖ Γé╣{pkg.baseRate.toLocaleString('en-IN')}/day
+                {pkg.label} · ₹{pkg.baseRate.toLocaleString('en-IN')}/day
               </option>
             ))}
           </select>
@@ -100,7 +100,7 @@ export default function AdmissionAllocateDesk() {
 
         <label className="block space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-800">
-            Initial Deposit (Γé╣)
+            Initial Deposit (₹)
           </span>
           <input
             type="number"
@@ -132,7 +132,7 @@ export default function AdmissionAllocateDesk() {
 
       <div className="rounded-xl border border-slate-300 bg-slate-50 p-4">
         <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-800">
-          {draft.wardType} ┬╖ Bed Matrix
+          {draft.wardType} · Bed Matrix
         </p>
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
           {filteredBeds.map((bed) => (

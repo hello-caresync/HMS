@@ -19,7 +19,7 @@ export function GenerateInvoiceModal({ onClose }: { onClose: () => void }) {
 export function CollectPaymentModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Collect Payment" onClose={onClose} wide>
-      <p className="text-[10px] font-semibold">INV-2026-44201 ΓÇö Rahul Sharma ┬╖ Balance Γé╣18,400</p>
+      <p className="text-[10px] font-semibold">INV-2026-44201 — Rahul Sharma · Balance ₹18,400</p>
       <input className={`${inputClass} mt-2`} type="number" placeholder="Amount" defaultValue="18400" />
       <select className={`${inputClass} mt-2`}><option>UPI</option><option>Card</option><option>Cash</option><option>Corporate Credit</option></select>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-emerald-600 py-2 text-[10px] font-bold text-white">Record Payment</button>
@@ -32,7 +32,7 @@ export function ApproveDiscountModal({ onClose }: { onClose: () => void }) {
     <ModalOverlay title="Approve Discount" onClose={onClose} wide>
       <input className={inputClass} placeholder="Invoice" defaultValue="INV-2026-44215" />
       <input className={`${inputClass} mt-2`} type="number" placeholder="Discount %" defaultValue="10" />
-      <input className={`${inputClass} mt-2`} placeholder="Authorization reason" defaultValue="Senior citizen concession ΓÇö policy SC-2026" />
+      <input className={`${inputClass} mt-2`} placeholder="Authorization reason" defaultValue="Senior citizen concession — policy SC-2026" />
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">Approve Discount</button>
     </ModalOverlay>
   );
@@ -44,7 +44,7 @@ export function ProcessRefundModal({ onClose }: { onClose: () => void }) {
       <SecureFinancialPlaceholder verified />
       <input className={`${inputClass} mt-2`} placeholder="Receipt reference" defaultValue="RCP-2026-88105" />
       <input className={`${inputClass} mt-2`} type="number" placeholder="Refund amount" defaultValue="5000" />
-      <p className="mt-2 text-[9px] text-red-600">Requires supervisor approval for refunds &gt; Γé╣5,000</p>
+      <p className="mt-2 text-[9px] text-red-600">Requires supervisor approval for refunds &gt; ₹5,000</p>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-red-600 py-2 text-[10px] font-bold text-white">Submit Refund Request</button>
     </ModalOverlay>
   );

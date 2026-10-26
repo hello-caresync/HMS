@@ -34,7 +34,7 @@ export default function DoctorMgmtView() {
           { label: 'Consultants Active', value: '36', icon: Users, tone: 'cyan' },
           { label: 'OPD Load', value: '142', icon: Briefcase, tone: 'indigo' },
           { label: 'On Leave', value: '4', icon: CalendarOff, tone: 'amber' },
-          { label: 'Revenue Share MTD', value: 'Γé╣18.4L', icon: TrendingUp, tone: 'emerald' },
+          { label: 'Revenue Share MTD', value: '₹18.4L', icon: TrendingUp, tone: 'emerald' },
         ]}
       />
       <SearchDesk value={search} onChange={setSearch} placeholder="Search consultant roster..." />

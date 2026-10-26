@@ -45,7 +45,7 @@ export default function DoctorRegistryView() {
       <MasterToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search name, specialization, departmentΓÇª"
+        searchPlaceholder="Search name, specialization, department…"
         recordCount={filtered.length}
         recordLabel="doctors"
         onAdd={() => setSheet({ type: 'add' })}

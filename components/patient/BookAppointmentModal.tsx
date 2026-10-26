@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { acceptClinicalDraft, sanitizeClinicalInput } from '@/lib/clinical/clinical-text';
 import { formatDoctorBookingOptionLabel } from '@/lib/hospital/doctors';
 import {
   doctorsForDepartment,
@@ -175,7 +176,7 @@ export function BookAppointmentModal({
 
     if (!prefill) return;
 
-    const reason = String(prefill.symptoms ?? prefill.reason ?? '').trim();
+    const reason = sanitizeClinicalInput(String(prefill.symptoms ?? prefill.reason ?? ''));
     if (reason) setSymptoms(reason);
 
     if (prefill.department) {
@@ -282,7 +283,13 @@ export function BookAppointmentModal({
     let cancelled = false;
     setLoadingSlots(true);
 
-    void loadDynamicDoctorSchedule(supabase, selectedDoctorId, appointmentDate)
+    const rosterDoctor = allDoctors.find(
+      (doctor) => doctor.id === selectedDoctorId || doctor.doctor_id === selectedDoctorId,
+    );
+    void loadDynamicDoctorSchedule(supabase, selectedDoctorId, appointmentDate, undefined, {
+      ids: [rosterDoctor?.id, rosterDoctor?.doctor_id, selectedDoctorId],
+      name: rosterDoctor?.full_name,
+    })
       .then(({ slots }) => {
         if (cancelled) return;
         setDynamicSlots(slots);
@@ -304,7 +311,7 @@ export function BookAppointmentModal({
       cancelled = true;
     };
     // Slot availability depends only on doctor + date — not reason/symptoms/beneficiary.
-  }, [isOpen, selectedDoctorId, appointmentDate]);
+  }, [isOpen, selectedDoctorId, appointmentDate, allDoctors]);
 
   const activeDoctor = doctors.find((doctor) => doctor.id === selectedDoctorId);
   const hasSelectableSlot = dynamicSlots.some((slot) => slot.isSelectable);
@@ -388,7 +395,7 @@ export function BookAppointmentModal({
         department: bookingDepartment,
         appointmentDate,
         slotTime: appointmentTime,
-        reason: symptoms.trim() || 'General Consultation',
+        reason: sanitizeClinicalInput(symptoms) || 'General Consultation',
         hospitalId: resolvedHospitalId || hospitalId,
         consultation_fee: activeDoctor.consultation_fee,
       });
@@ -579,11 +586,17 @@ export function BookAppointmentModal({
             <label className={fieldLabelClass}>Reason for Visit / Symptoms</label>
             <input
               type="text"
-              placeholder="e.g., Chest discomfort, routine follow-up, knee fracture review"
+              maxLength={180}
+              placeholder="e.g. Fever, cough, routine checkup"
               value={symptoms}
-              onChange={(event) => setSymptoms(event.target.value)}
+              onChange={(event) =>
+                setSymptoms((current) => acceptClinicalDraft(event.target.value, current))
+              }
               className={`${fieldControlClass} placeholder:text-[#7C5C48]/60`}
             />
+            <p className="mt-1 text-[10px] text-[#7C5C48]">
+              Short clinical note only. Letters, numbers, and basic punctuation.
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 border-t border-[#F3ECE4] pt-2">

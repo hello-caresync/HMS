@@ -34,7 +34,7 @@ export default function DischargePdfPreview({
         <div className="flex items-center justify-between border-b-2 border-slate-200 bg-slate-50 px-4 py-3">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-indigo-600" />
-            <h2 className="text-sm font-bold text-slate-900">Discharge Summary ΓÇö PDF Preview</h2>
+            <h2 className="text-sm font-bold text-slate-900">Discharge Summary — PDF Preview</h2>
           </div>
           <button type="button" onClick={onClose} className="rounded p-1 text-slate-800 hover:bg-slate-200">
             <X className="h-4 w-4" />
@@ -50,10 +50,10 @@ export default function DischargePdfPreview({
               </p>
               <h1 className="mt-1 text-lg font-bold text-slate-900">Discharge Summary</h1>
               <p className="mt-2 text-xs text-slate-800">
-                {admission.patientName} ┬╖ {admission.uhid}
+                {admission.patientName} · {admission.uhid}
               </p>
               <p className="text-[10px] text-slate-800">
-                Admitted: {new Date(admission.admittedAt).toLocaleDateString('en-IN')} ┬╖ {admission.admittingDoctor}
+                Admitted: {new Date(admission.admittedAt).toLocaleDateString('en-IN')} · {admission.admittingDoctor}
               </p>
             </header>
 
@@ -70,7 +70,7 @@ export default function DischargePdfPreview({
               <section key={title} className="mb-4">
                 <h2 className="mb-1 text-[11px] font-bold uppercase tracking-wide text-slate-900">{title}</h2>
                 <p className="text-xs leading-relaxed text-slate-800 whitespace-pre-wrap">
-                  {body || 'ΓÇö'}
+                  {body || '—'}
                 </p>
               </section>
             ))}
@@ -95,7 +95,7 @@ export default function DischargePdfPreview({
               </table>
               {billingPayload && (
                 <p className="mt-2 font-mono text-[9px] text-slate-800">
-                  Ledger: {billingPayload.ledgerId} ┬╖ Locked {new Date(billingPayload.lockedAt).toLocaleString('en-IN')}
+                  Ledger: {billingPayload.ledgerId} · Locked {new Date(billingPayload.lockedAt).toLocaleString('en-IN')}
                 </p>
               )}
             </footer>

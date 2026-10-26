@@ -10,9 +10,9 @@ export const MEDICINE_CATALOG = SEED_MASTER_DATA.medicines.map((m) => ({
 }));
 
 const SAFETY_ALERTS: SafetyAlert[] = [
-  { id: 'sa1', type: 'allergy', label: 'Penicillin ΓÇö Anaphylaxis risk', severity: 'high' },
-  { id: 'sa2', type: 'allergy', label: 'Sulfa drugs ΓÇö Rash / Hives', severity: 'high' },
-  { id: 'sa3', type: 'anticoagulant', label: 'On Aspirin 75mg ΓÇö Bleeding precaution', severity: 'medium' },
+  { id: 'sa1', type: 'allergy', label: 'Penicillin — Anaphylaxis risk', severity: 'high' },
+  { id: 'sa2', type: 'allergy', label: 'Sulfa drugs — Rash / Hives', severity: 'high' },
+  { id: 'sa3', type: 'anticoagulant', label: 'On Aspirin 75mg — Bleeding precaution', severity: 'medium' },
 ];
 
 export const ACTIVE_ENCOUNTER: ConsultationEncounter = {
@@ -30,8 +30,8 @@ export const ACTIVE_ENCOUNTER: ConsultationEncounter = {
     bloodGroup: 'B+',
     phone: '+91 91234 56789',
     email: 'rahul.sharma@email.com',
-    address: '14, Lake View Apartments, Koramangala, Bengaluru ΓÇö 560034',
-    emergencyContact: 'Priya Sharma (Spouse) ┬╖ +91 98765 11111',
+    address: '14, Lake View Apartments, Koramangala, Bengaluru — 560034',
+    emergencyContact: 'Priya Sharma (Spouse) · +91 98765 11111',
     insuranceId: 'INS-NEX-8842',
   },
   vitals: {
@@ -45,7 +45,7 @@ export const ACTIVE_ENCOUNTER: ConsultationEncounter = {
     recordedBy: 'Nurse Kavitha R.',
   },
   nurseAssessment: {
-    chiefComplaint: 'Intermittent chest discomfort ├ù 3 days, worse on exertion',
+    chiefComplaint: 'Intermittent chest discomfort × 3 days, worse on exertion',
     triageLevel: 'Urgent',
     painScore: 4,
     notes: 'No diaphoresis. Mild pallor noted. ECG ordered at triage.',
@@ -55,10 +55,10 @@ export const ACTIVE_ENCOUNTER: ConsultationEncounter = {
   safetyAlerts: SAFETY_ALERTS,
   allergies: ['Penicillin', 'Sulfa drugs'],
   medicalHistory: [
-    'Hypertension ΓÇö on Telmisartan 40mg OD',
-    'Dyslipidemia ΓÇö Rosuvastatin 10mg HS',
+    'Hypertension — on Telmisartan 40mg OD',
+    'Dyslipidemia — Rosuvastatin 10mg HS',
     'Former smoker (quit 2019)',
-    'Family Hx: Father ΓÇö MI at 58',
+    'Family Hx: Father — MI at 58',
   ],
   soap: {
     subjective: '',

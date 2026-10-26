@@ -27,7 +27,7 @@ import { OpdPanel, StatusPill } from '../components/opdUi';
 export default function AccountingAnalyticsTab() {
   return (
     <div className="space-y-3">
-      <OpdPanel title="Billing Coordination Grid" subtitle="Consultation ┬╖ procedures ┬╖ lab/radiology ┬╖ outstanding balance" icon={Receipt}>
+      <OpdPanel title="Billing Coordination Grid" subtitle="Consultation · procedures · lab/radiology · outstanding balance" icon={Receipt}>
         <table className="w-full min-w-[800px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -50,7 +50,7 @@ export default function AccountingAnalyticsTab() {
                 <td className="px-2 py-1.5 text-[10px] tabular-nums">{formatInr(b.procedureFees)}</td>
                 <td className="px-2 py-1.5 text-[10px] tabular-nums">{formatInr(b.labRadiologyFees)}</td>
                 <td className="px-2 py-1.5 text-[10px] font-bold tabular-nums text-red-600">
-                  {b.outstandingBalance > 0 ? formatInr(b.outstandingBalance) : 'ΓÇö'}
+                  {b.outstandingBalance > 0 ? formatInr(b.outstandingBalance) : '—'}
                 </td>
                 <td className="px-2 py-1.5">
                   <StatusPill status={b.paymentStatus} />
@@ -91,7 +91,7 @@ export default function AccountingAnalyticsTab() {
           </table>
         </OpdPanel>
 
-        <OpdPanel title="Doctor-wise OPD Report" subtitle="Patients seen ┬╖ avg consult time ┬╖ revenue" icon={BarChart3} className="xl:col-span-7">
+        <OpdPanel title="Doctor-wise OPD Report" subtitle="Patients seen · avg consult time · revenue" icon={BarChart3} className="xl:col-span-7">
           <table className="mb-3 w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">

@@ -26,7 +26,7 @@ export default function InsuranceTpaView() {
         items={[
           { label: 'Pre-auth Pending', value: '18', icon: FileCheck, tone: 'amber' },
           { label: 'Claims Submitted', value: '42', icon: Building2, tone: 'cyan' },
-          { label: 'Settlements MTD', value: 'Γé╣2.1L', icon: Wallet, tone: 'emerald' },
+          { label: 'Settlements MTD', value: '₹2.1L', icon: Wallet, tone: 'emerald' },
           { label: 'Denials', value: '3', icon: ShieldCheck, tone: 'rose' },
         ]}
       />
@@ -74,8 +74,8 @@ export default function InsuranceTpaView() {
           <DataTable
             columns={['Policy', 'Co-pay', 'Deductible Remaining']}
             rows={[
-              ['Corp Plan A', '10%', 'Γé╣12,000'],
-              ['Retail Plan B', '20%', 'Γé╣25,000'],
+              ['Corp Plan A', '10%', '₹12,000'],
+              ['Retail Plan B', '20%', '₹25,000'],
             ]}
           />
         </Panel>
@@ -85,8 +85,8 @@ export default function InsuranceTpaView() {
           <DataTable
             columns={['Corporate', 'Limit', 'Utilized']}
             rows={[
-              ['TechCorp India', 'Γé╣50L', 'Γé╣18L'],
-              ['Regal Staff Plan', 'Γé╣10L', 'Γé╣2.4L'],
+              ['TechCorp India', '₹50L', '₹18L'],
+              ['Regal Staff Plan', '₹10L', '₹2.4L'],
             ]}
           />
         </Panel>

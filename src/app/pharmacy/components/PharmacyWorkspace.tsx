@@ -28,7 +28,7 @@ export default function PharmacyWorkspace() {
           <Package className="h-4 w-4 text-teal-400" />
           <div>
             <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-800">
-              Phase 9 ┬╖ Pharmacy
+              Phase 9 · Pharmacy
             </p>
             <h1 className="text-sm font-bold leading-tight text-white">Dispatch Command Center</h1>
           </div>
@@ -51,7 +51,7 @@ export default function PharmacyWorkspace() {
         <section className="lg:w-[42%] lg:border-r lg:border-slate-200 lg:p-3">
           <PharmacyQueueTable />
           <p className="mt-2 hidden text-[10px] text-slate-800 lg:block">
-            Select a row to open the dispensing panel ΓåÆ
+            Select a row to open the dispensing panel →
           </p>
         </section>
 

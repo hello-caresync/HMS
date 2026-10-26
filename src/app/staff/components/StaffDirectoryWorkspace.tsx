@@ -42,7 +42,7 @@ export default function StaffDirectoryWorkspace() {
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by ID, name, department, roleΓÇª"
+            placeholder="Search by ID, name, department, role…"
             className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm outline-none focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-100"
           />
         </div>

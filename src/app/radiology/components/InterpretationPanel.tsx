@@ -20,7 +20,7 @@ export default function InterpretationPanel({ order, onFinalized }: Interpretati
   const [locked, setLocked] = useState(isCompleted);
   const [emrOutput, setEmrOutput] = useState<string | null>(
     isCompleted && order.findings
-      ? `Report finalized by ${order.finalizedBy} ┬╖ EMR appended Γ£ô`
+      ? `Report finalized by ${order.finalizedBy} · EMR appended ✓`
       : null,
   );
 
@@ -62,7 +62,7 @@ export default function InterpretationPanel({ order, onFinalized }: Interpretati
             <p className="font-mono text-[10px] text-cyan-500">{order.uhid}</p>
             <ul className="mt-2 space-y-0.5">
               {order.clinicalHistory.map((item) => (
-                <li key={item} className="text-[11px] text-slate-800">ΓÇó {item}</li>
+                <li key={item} className="text-[11px] text-slate-800">• {item}</li>
               ))}
             </ul>
             <p className="mt-2 text-[10px] text-slate-800">
@@ -88,7 +88,7 @@ export default function InterpretationPanel({ order, onFinalized }: Interpretati
             onBlur={handleDraftSave}
             disabled={locked}
             rows={14}
-            placeholder="Describe imaging findings, measurements, and clinical impressionΓÇª"
+            placeholder="Describe imaging findings, measurements, and clinical impression…"
             className="flex-1 resize-none rounded-lg border border-slate-700 bg-[#0a0e14] px-3 py-2 text-sm leading-relaxed text-slate-200 placeholder:text-slate-800 focus:border-cyan-600 focus:outline-none focus:ring-1 focus:ring-cyan-600/30 disabled:cursor-not-allowed disabled:opacity-60"
           />
 

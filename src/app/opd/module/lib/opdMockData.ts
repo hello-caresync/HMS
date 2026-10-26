@@ -111,7 +111,7 @@ export const INITIAL_OPD_QUEUE: OpdQueueEntry[] = [
     patientName: 'Rahul Sharma',
     uhid: 'NX-2026-000412',
     priority: 'General',
-    consultationRoom: 'Room 3 ΓÇö General Medicine',
+    consultationRoom: 'Room 3 — General Medicine',
     assignedDoctor: 'Dr. Rajesh Kumar',
     status: 'Waiting for Consultation',
     checkInTime: '2026-07-18T09:12:00',
@@ -124,7 +124,7 @@ export const INITIAL_OPD_QUEUE: OpdQueueEntry[] = [
     patientName: 'Sanjay Rao',
     uhid: 'NX-2026-000365',
     priority: 'Emergency Queue',
-    consultationRoom: 'Room 1 ΓÇö Emergency OPD',
+    consultationRoom: 'Room 1 — Emergency OPD',
     assignedDoctor: 'Dr. B. Joseph',
     status: 'Consultation in Progress',
     checkInTime: '2026-07-18T09:05:00',
@@ -137,7 +137,7 @@ export const INITIAL_OPD_QUEUE: OpdQueueEntry[] = [
     patientName: 'Deepa Singh',
     uhid: 'NX-2026-000352',
     priority: 'VIP',
-    consultationRoom: 'Room 5 ΓÇö VIP Suite',
+    consultationRoom: 'Room 5 — VIP Suite',
     assignedDoctor: 'Dr. Anita Roy',
     status: 'Waiting for Consultation',
     checkInTime: '2026-07-18T09:28:00',
@@ -150,7 +150,7 @@ export const INITIAL_OPD_QUEUE: OpdQueueEntry[] = [
     patientName: 'Priya Patel',
     uhid: 'NX-2026-000413',
     priority: 'General',
-    consultationRoom: 'Room 4 ΓÇö Pulmonology',
+    consultationRoom: 'Room 4 — Pulmonology',
     assignedDoctor: 'Dr. Meera Iyer',
     status: 'Consultation in Progress',
     checkInTime: '2026-07-18T09:18:00',
@@ -163,7 +163,7 @@ export const INITIAL_OPD_QUEUE: OpdQueueEntry[] = [
     patientName: 'Vikram Patel',
     uhid: 'NX-2026-000388',
     priority: 'General',
-    consultationRoom: 'Room 3 ΓÇö General Medicine',
+    consultationRoom: 'Room 3 — General Medicine',
     assignedDoctor: 'Dr. Rajesh Kumar',
     status: 'Consultation Completed',
     checkInTime: '2026-07-18T08:45:00',
@@ -176,7 +176,7 @@ export const INITIAL_OPD_QUEUE: OpdQueueEntry[] = [
     patientName: 'Anita Desai',
     uhid: 'NX-2026-000329',
     priority: 'General',
-    consultationRoom: 'Room 2 ΓÇö Orthopedics',
+    consultationRoom: 'Room 2 — Orthopedics',
     assignedDoctor: 'Dr. Kapoor',
     status: 'No-show',
     checkInTime: '2026-07-18T08:30:00',
@@ -198,9 +198,9 @@ export const MOCK_RADIOLOGY_REQUESTS: RadiologyRequest[] = [
 ];
 
 export const MOCK_PRESCRIPTIONS: PrescriptionTrack[] = [
-  { id: 'RX-7781', patientName: 'Vikram Patel', uhid: 'NX-2026-000388', medicines: 'Metformin 500mg ┬╖ Atorvastatin 10mg', status: 'Fully Dispensed', pharmacyStatus: 'Collected at Counter 2', medicineAvailable: true },
-  { id: 'RX-7782', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', medicines: 'Amoxicillin 500mg ┬╖ Ambroxol Syrup', status: 'Sent to Pharmacy', pharmacyStatus: 'Awaiting dispensation', medicineAvailable: true },
-  { id: 'RX-7783', patientName: 'Priya Patel', uhid: 'NX-2026-000413', medicines: 'Pantoprazole 40mg ┬╖ Domperidone 10mg', status: 'Partially Dispensed', pharmacyStatus: 'Pantoprazole dispensed ΓÇö Domperidone OOS', medicineAvailable: false },
+  { id: 'RX-7781', patientName: 'Vikram Patel', uhid: 'NX-2026-000388', medicines: 'Metformin 500mg · Atorvastatin 10mg', status: 'Fully Dispensed', pharmacyStatus: 'Collected at Counter 2', medicineAvailable: true },
+  { id: 'RX-7782', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', medicines: 'Amoxicillin 500mg · Ambroxol Syrup', status: 'Sent to Pharmacy', pharmacyStatus: 'Awaiting dispensation', medicineAvailable: true },
+  { id: 'RX-7783', patientName: 'Priya Patel', uhid: 'NX-2026-000413', medicines: 'Pantoprazole 40mg · Domperidone 10mg', status: 'Partially Dispensed', pharmacyStatus: 'Pantoprazole dispensed — Domperidone OOS', medicineAvailable: false },
 ];
 
 export const MOCK_PROCEDURES: MinorProcedure[] = [
@@ -211,9 +211,9 @@ export const MOCK_PROCEDURES: MinorProcedure[] = [
 ];
 
 export const MOCK_RECOMMENDATIONS: Recommendation[] = [
-  { id: 'REC-301', patientName: 'Sanjay Rao', uhid: 'NX-2026-000365', type: 'Admit to IPD', target: 'Admissions Module ΓÇö Cardiology Ward', reason: 'Hypertensive crisis ΓÇö step-up monitoring required', priority: 'Critical', status: 'Pending' },
-  { id: 'REC-302', patientName: 'Priya Patel', uhid: 'NX-2026-000413', type: 'Internal Referral', target: 'Gastroenterology OPD', reason: 'Persistent epigastric pain ΓÇö specialist evaluation', priority: 'Urgent', status: 'Scheduled' },
-  { id: 'REC-303', patientName: 'Deepa Singh', uhid: 'NX-2026-000352', type: 'External Referral', target: 'City Neurology Centre', reason: 'Refractory migraine ΓÇö tertiary neurology opinion', priority: 'Routine', status: 'Accepted' },
+  { id: 'REC-301', patientName: 'Sanjay Rao', uhid: 'NX-2026-000365', type: 'Admit to IPD', target: 'Admissions Module — Cardiology Ward', reason: 'Hypertensive crisis — step-up monitoring required', priority: 'Critical', status: 'Pending' },
+  { id: 'REC-302', patientName: 'Priya Patel', uhid: 'NX-2026-000413', type: 'Internal Referral', target: 'Gastroenterology OPD', reason: 'Persistent epigastric pain — specialist evaluation', priority: 'Urgent', status: 'Scheduled' },
+  { id: 'REC-303', patientName: 'Deepa Singh', uhid: 'NX-2026-000352', type: 'External Referral', target: 'City Neurology Centre', reason: 'Refractory migraine — tertiary neurology opinion', priority: 'Routine', status: 'Accepted' },
 ];
 
 export const MOCK_BILLING: BillingLine[] = [
@@ -224,8 +224,8 @@ export const MOCK_BILLING: BillingLine[] = [
 ];
 
 export const MOCK_FOLLOWUPS: FollowUpEntry[] = [
-  { id: 'FU-801', patientName: 'Vikram Patel', uhid: 'NX-2026-000388', doctor: 'Dr. Rajesh Kumar', followUpDate: '2026-07-25', reason: 'Diabetes review ΓÇö HbA1c follow-up', status: 'Scheduled' },
-  { id: 'FU-802', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', doctor: 'Dr. Rajesh Kumar', followUpDate: '2026-07-23', reason: 'Bronchitis ΓÇö review cough resolution', status: 'Scheduled' },
+  { id: 'FU-801', patientName: 'Vikram Patel', uhid: 'NX-2026-000388', doctor: 'Dr. Rajesh Kumar', followUpDate: '2026-07-25', reason: 'Diabetes review — HbA1c follow-up', status: 'Scheduled' },
+  { id: 'FU-802', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', doctor: 'Dr. Rajesh Kumar', followUpDate: '2026-07-23', reason: 'Bronchitis — review cough resolution', status: 'Scheduled' },
   { id: 'FU-803', patientName: 'Anita Desai', uhid: 'NX-2026-000329', doctor: 'Dr. Kapoor', followUpDate: '2026-07-11', reason: 'Post-TKR physiotherapy review', status: 'Missed' },
 ];
 
@@ -237,11 +237,11 @@ export const DOCTOR_OPD_REPORT = [
 ];
 
 export const CONSULTATION_TIME_ANALYSIS = [
-  { slot: '08ΓÇô09', avgMin: 11, patients: 22 },
-  { slot: '09ΓÇô10', avgMin: 14, patients: 38 },
-  { slot: '10ΓÇô11', avgMin: 16, patients: 41 },
-  { slot: '11ΓÇô12', avgMin: 13, patients: 35 },
-  { slot: '12ΓÇô13', avgMin: 10, patients: 18 },
+  { slot: '08–09', avgMin: 11, patients: 22 },
+  { slot: '09–10', avgMin: 14, patients: 38 },
+  { slot: '10–11', avgMin: 16, patients: 41 },
+  { slot: '11–12', avgMin: 13, patients: 35 },
+  { slot: '12–13', avgMin: 10, patients: 18 },
 ];
 
 export const WAITING_TIME_ANALYSIS = [

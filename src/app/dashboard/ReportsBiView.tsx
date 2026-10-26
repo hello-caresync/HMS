@@ -56,7 +56,7 @@ export default function ReportsBiView() {
           <DataTable
             columns={['KPI', 'Formula', 'Owner']}
             rows={[
-              ['Bed Occupancy %', 'Occupied / Total ├ù 100', 'Admin'],
+              ['Bed Occupancy %', 'Occupied / Total × 100', 'Admin'],
               ['AR Days', 'AR / Daily Revenue', 'Finance'],
             ]}
           />

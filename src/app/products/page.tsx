@@ -176,7 +176,7 @@ export default function ProductsPage() {
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-black">Product Catalog</h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Live Supabase catalog ┬╖ vendor {DEFAULT_VENDOR_ID.slice(0, 8)}ΓÇª</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Live Supabase catalog · vendor {DEFAULT_VENDOR_ID.slice(0, 8)}…</p>
           </div>
           <button
             type="button"
@@ -203,7 +203,7 @@ export default function ProductsPage() {
 
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
           {loading ? (
-            <p className="p-8 text-center text-sm text-slate-500">Loading productsΓÇª</p>
+            <p className="p-8 text-center text-sm text-slate-500">Loading products…</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[880px] border-collapse text-left text-sm">
@@ -258,7 +258,7 @@ export default function ProductsPage() {
                               className="inline-flex items-center gap-0.5 text-xs font-bold text-red-600 hover:underline disabled:opacity-50"
                             >
                               <Trash2 className="h-3 w-3" aria-hidden />
-                              {deletingId === p.id ? 'DeletingΓÇª' : 'Delete'}
+                              {deletingId === p.id ? 'Deleting…' : 'Delete'}
                             </button>
                             <button
                               type="button"
@@ -401,7 +401,7 @@ export default function ProductsPage() {
                 Unit of Measure
                 <input
                   required
-                  placeholder="boxes, units, packsΓÇª"
+                  placeholder="boxes, units, packs…"
                   value={form.unit_of_measure}
                   onChange={(e) => setForm((f) => ({ ...f, unit_of_measure: e.target.value }))}
                   className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950"
@@ -416,7 +416,7 @@ export default function ProductsPage() {
                   disabled={saving}
                   className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
                 >
-                  {saving ? 'SavingΓÇª' : modalMode === 'add' ? 'Save Product' : 'Update Product'}
+                  {saving ? 'Saving…' : modalMode === 'add' ? 'Save Product' : 'Update Product'}
                 </button>
               </div>
             </form>

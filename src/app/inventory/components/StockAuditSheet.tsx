@@ -63,7 +63,7 @@ export default function StockAuditSheet() {
               }}
               className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             >
-              <option value="">Choose SKU to auditΓÇª</option>
+              <option value="">Choose SKU to audit…</option>
               {auditItems.map((i) => (
                 <option key={i.id} value={i.id}>
                   {i.itemName} ({i.sku})
@@ -83,7 +83,7 @@ export default function StockAuditSheet() {
                   <span className="text-sm font-normal text-slate-800">{selected.unit}</span>
                 </p>
                 <p className="text-[9px] text-slate-800">
-                  {selected.location} ┬╖ {selected.department}
+                  {selected.location} · {selected.department}
                 </p>
               </div>
 
@@ -116,8 +116,8 @@ export default function StockAuditSheet() {
                 >
                   <p className="text-[10px] font-bold uppercase text-slate-800">Variance</p>
                   <p className="font-mono text-sm tabular-nums text-slate-900">
-                    Expected: <strong>{selected.quantityOnHand}</strong> ┬╖ Found:{' '}
-                    <strong>{countedNum}</strong> ┬╖ Variance:{' '}
+                    Expected: <strong>{selected.quantityOnHand}</strong> · Found:{' '}
+                    <strong>{countedNum}</strong> · Variance:{' '}
                     <strong
                       className={
                         variance === 0
@@ -138,7 +138,7 @@ export default function StockAuditSheet() {
 
               {lastVariance !== null && (
                 <p className="text-[10px] font-medium text-emerald-600">
-                  Audit recorded ┬╖ system quantity updated
+                  Audit recorded · system quantity updated
                 </p>
               )}
 

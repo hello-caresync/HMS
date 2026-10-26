@@ -21,7 +21,7 @@ export function AssetDetailDrawer({ asset, onClose }: AssetDetailDrawerProps) {
   const cal = CALIBRATION_RECORDS.find((c) => c.assetTag === asset.assetTag);
 
   return (
-    <DrawerOverlay title={asset.name} subtitle={`${asset.assetTag} ┬╖ ${asset.department}`} onClose={onClose}>
+    <DrawerOverlay title={asset.name} subtitle={`${asset.assetTag} · ${asset.department}`} onClose={onClose}>
       <SecureCompliancePlaceholder verified={asset.complianceVerified} />
       <div className="mt-3 grid grid-cols-2 gap-2">
         <div className="rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-2">
@@ -50,8 +50,8 @@ export function AssetDetailDrawer({ asset, onClose }: AssetDetailDrawerProps) {
       {amc && (
         <div className="mt-3 rounded-md border border-slate-100 p-2">
           <p className="mb-1 text-[9px] font-bold uppercase text-slate-500">AMC Contract</p>
-          <p className="text-[9px]">SLA Response: {amc.slaResponseHrs}h ┬╖ Resolution: {amc.slaResolutionHrs}h</p>
-          <p className="text-[9px]">Annual: {formatInr(amc.annualCost)} ┬╖ End: {amc.contractEnd}</p>
+          <p className="text-[9px]">SLA Response: {amc.slaResponseHrs}h · Resolution: {amc.slaResolutionHrs}h</p>
+          <p className="text-[9px]">Annual: {formatInr(amc.annualCost)} · End: {amc.contractEnd}</p>
           <AmcStatusPill status={amc.status} />
         </div>
       )}

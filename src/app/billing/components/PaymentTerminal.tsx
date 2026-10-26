@@ -92,8 +92,8 @@ export default function PaymentTerminal() {
 
     setSuccess(
       result.transactionStatus === 'Authorized'
-        ? 'TPA pre-auth recorded ┬╖ Claim Pending settlement'
-        : 'Payment captured ┬╖ Invoice settled',
+        ? 'TPA pre-auth recorded · Claim Pending settlement'
+        : 'Payment captured · Invoice settled',
     );
     setSplitAmounts({ Cash: 0, UPI: 0, Card: 0, Corporate: 0, Insurance: 0 });
     setSplitEnabled(false);
@@ -205,7 +205,7 @@ export default function PaymentTerminal() {
               </div>
               {!splitValidation.valid && splitValidation.splitSum > 0 && (
                 <p className="text-[10px] font-medium text-rose-600">
-                  Split must equal Grand Total exactly (╬ö Γé╣
+                  Split must equal Grand Total exactly (Δ ₹
                   {Math.abs(splitValidation.difference).toFixed(2)})
                 </p>
               )}
@@ -225,7 +225,7 @@ export default function PaymentTerminal() {
               <div>
                 <p className="text-xs font-bold text-violet-900">TPA Pre-Authorization</p>
                 <p className="text-[10px] text-violet-600">
-                  Insurance / Corporate claim ΓÇö defers settlement to TPA ledger
+                  Insurance / Corporate claim — defers settlement to TPA ledger
                 </p>
               </div>
             </label>

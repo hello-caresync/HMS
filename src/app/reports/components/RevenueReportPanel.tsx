@@ -32,7 +32,7 @@ export default function RevenueReportPanel() {
               <p className="text-[11px] font-bold text-slate-900">Department Gross-to-Net Breakdown</p>
             </div>
             <span className="rounded bg-indigo-50 px-2 py-0.5 font-mono text-[9px] font-bold text-indigo-700">
-              MTD ┬╖ Jul 2026 W1
+              MTD · Jul 2026 W1
             </span>
           </div>
           <div className="overflow-x-auto">
@@ -74,7 +74,7 @@ export default function RevenueReportPanel() {
                       {formatCurrency(row.gstCollected)}
                     </td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums text-rose-600">
-                      ΓêÆ{formatCurrency(row.deductions)}
+                      −{formatCurrency(row.deductions)}
                     </td>
                     <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-emerald-700">
                       {formatCurrency(row.netProfit)}
@@ -94,7 +94,7 @@ export default function RevenueReportPanel() {
                     {formatCurrency(totals.gst)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-rose-700">
-                    ΓêÆ{formatCurrency(totals.deductions)}
+                    −{formatCurrency(totals.deductions)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-emerald-800">
                     {formatCurrency(totals.net)}
@@ -132,12 +132,12 @@ export default function RevenueReportPanel() {
               })}
             </div>
             <p className="mt-2 text-[9px] leading-relaxed text-slate-800">
-              Visualization placeholder ┬╖ 6-month net profit trend. Connect live BI pipeline for
+              Visualization placeholder · 6-month net profit trend. Connect live BI pipeline for
               interactive drill-down.
             </p>
             <div className="mt-2 rounded border border-dashed border-indigo-200 bg-indigo-50/50 px-2 py-1.5">
               <p className="text-[10px] font-bold text-indigo-700">+14.5% MoM Growth</p>
-              <p className="text-[9px] text-indigo-600">Peak: Jul 2026 ┬╖ Γé╣1.16 Cr net</p>
+              <p className="text-[9px] text-indigo-600">Peak: Jul 2026 · ₹1.16 Cr net</p>
             </div>
           </div>
         </div>

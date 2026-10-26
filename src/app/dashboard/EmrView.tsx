@@ -58,7 +58,7 @@ export default function EmrView() {
       {tab === 'vault' && (
         <Panel title="Master EMR Search Vault">
           <p className="text-xs text-slate-400">
-            Active record: Rahul Sharma ΓÇö {uhidQuery} ΓÇö Type-2 DM, HTN, Penicillin allergy.
+            Active record: Rahul Sharma — {uhidQuery} — Type-2 DM, HTN, Penicillin allergy.
           </p>
         </Panel>
       )}

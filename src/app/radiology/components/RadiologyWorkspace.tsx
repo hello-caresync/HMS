@@ -22,7 +22,7 @@ export default function RadiologyWorkspace() {
             <ScanLine className="h-5 w-5 text-cyan-500" />
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-800">
-                PACS ┬╖ Phase 8
+                PACS · Phase 8
               </p>
               <h1 className="text-sm font-bold text-white">Radiology Command Center</h1>
             </div>

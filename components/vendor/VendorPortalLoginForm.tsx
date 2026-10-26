@@ -7,11 +7,13 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
+  Info,
   Loader2,
   Lock,
   Mail,
 } from 'lucide-react';
 
+import { AuthSceneBackground } from '@/components/auth/AuthSceneBackground';
 import { HospitalLogo } from '@/components/common/Logo';
 import { toast } from 'sonner';
 
@@ -42,6 +44,7 @@ export function VendorPortalLoginForm({
   const [showPasscode, setShowPasscode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showCredentialInfo, setShowCredentialInfo] = useState(false);
 
   const handleVendorLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -85,14 +88,31 @@ export function VendorPortalLoginForm({
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-md rounded-3xl border border-[#dcc2f9]/70 bg-white p-8 shadow-xl">
+    <div className="relative isolate flex min-h-screen items-center justify-center overflow-hidden p-6 font-sans">
+      <AuthSceneBackground tone="vendor" />
+      <div className="relative z-10 w-full max-w-md rounded-3xl border border-[#dcc2f9]/70 bg-white p-8 shadow-xl">
         <div className="mb-6 text-center">
           <div className="mb-3 flex justify-center">
             <HospitalLogo className="h-11 w-auto" priority />
           </div>
           <h1 className="text-2xl font-black text-[#2e1053]">Vendor Portal</h1>
           <p className="mt-1 text-xs text-[#684594]">Hospital supply chain partner access</p>
+          <button
+            type="button"
+            onClick={() => setShowCredentialInfo((open) => !open)}
+            aria-expanded={showCredentialInfo}
+            className="mx-auto mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#dcc2f9] bg-[#f7f0ff] px-3 py-1.5 text-[11px] font-bold text-[#6a38a0] hover:bg-[#efe4fb]"
+          >
+            <Info className="h-3.5 w-3.5" aria-hidden />
+            Where do I get this login?
+          </button>
+          {showCredentialInfo ? (
+            <p className="mx-auto mt-3 max-w-sm text-left text-[11px] leading-relaxed text-[#52316e]">
+              The hospital desk creates this login. In the hospital portal, open Staff credentials
+              and choose Provision Supplier / Vendor Credentials. Use the email and passcode saved
+              there for your company. This page does not keep a shared password.
+            </p>
+          ) : null}
         </div>
 
         {error ? (
@@ -115,8 +135,8 @@ export function VendorPortalLoginForm({
                 name="vendor-portal-email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Vendor representative email"
-                className="w-full rounded-xl border border-[#dcc2f9]/70 py-3 pr-3 pl-10 text-sm outline-none focus:border-[#6a38a0] focus:ring-2 focus:ring-[#6a38a0]/20"
+                placeholder="name@email.com"
+                className="w-full rounded-xl border border-[#dcc2f9]/70 py-3 pr-3 pl-10 text-sm outline-none placeholder:text-slate-400 focus:border-[#6a38a0] focus:ring-2 focus:ring-[#6a38a0]/20"
                 {...LOGIN_IDENTIFIER_INPUT_PROPS}
               />
             </div>
@@ -133,8 +153,8 @@ export function VendorPortalLoginForm({
                 name="vendor-portal-passcode"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
-                placeholder="Enter your portal PIN"
-                className="w-full rounded-xl border border-[#dcc2f9]/70 py-3 pr-10 pl-10 text-sm outline-none focus:border-[#6a38a0] focus:ring-2 focus:ring-[#6a38a0]/20"
+                placeholder="Enter your passcode"
+                className="w-full rounded-xl border border-[#dcc2f9]/70 py-3 pr-10 pl-10 text-sm outline-none placeholder:text-slate-400 focus:border-[#6a38a0] focus:ring-2 focus:ring-[#6a38a0]/20"
                 {...LOGIN_PASSWORD_INPUT_PROPS}
               />
               <button

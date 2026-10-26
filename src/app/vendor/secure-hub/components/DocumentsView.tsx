@@ -46,7 +46,7 @@ export default function DocumentsView({
           >
             <div>
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-800">
-                {doc.type} ┬╖ {doc.id}
+                {doc.type} · {doc.id}
               </p>
               <h3 className="mt-1 text-sm font-semibold text-slate-900">
                 {doc.name}

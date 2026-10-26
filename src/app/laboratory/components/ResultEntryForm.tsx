@@ -31,7 +31,7 @@ export default function ResultEntryForm({ order, onSubmitted }: ResultEntryFormP
       <div className="flex items-center justify-between border-b-2 border-slate-200 px-3 py-1.5">
         <h3 className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-slate-800">
           <FlaskConical className="h-3.5 w-3.5 text-primary" />
-          Result Entry ┬╖ {order.barcode}
+          Result Entry · {order.barcode}
         </h3>
         <span className="font-mono text-[10px] text-slate-800">{order.uhid}</span>
       </div>
@@ -55,7 +55,7 @@ export default function ResultEntryForm({ order, onSubmitted }: ResultEntryFormP
                 <div>
                   <p className="text-xs font-semibold text-slate-800">{test.name}</p>
                   <p className="text-[10px] text-slate-800">
-                    Ref: {test.refMin}ΓÇô{test.refMax} {test.unit}
+                    Ref: {test.refMin}–{test.refMax} {test.unit}
                   </p>
                 </div>
                 {(alertLevel === 'critical' || alertLevel === 'warning') && (
@@ -81,7 +81,7 @@ export default function ResultEntryForm({ order, onSubmitted }: ResultEntryFormP
                     updateResult(order.id, test.code, v);
                   }}
                   className={`w-28 rounded border px-2 py-1.5 text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 ${inputBg}`}
-                  placeholder="ΓÇö"
+                  placeholder="—"
                 />
                 <span className="text-[11px] text-slate-800">{test.unit}</span>
               </div>
@@ -94,7 +94,7 @@ export default function ResultEntryForm({ order, onSubmitted }: ResultEntryFormP
         {hasCritical && (
           <p className="mb-2 flex items-center gap-1 text-[10px] font-semibold text-rose-700">
             <AlertTriangle className="h-3.5 w-3.5" />
-            Critical values detected ΓÇö pathologist review required
+            Critical values detected — pathologist review required
           </p>
         )}
         <button

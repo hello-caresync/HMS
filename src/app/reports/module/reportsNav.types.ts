@@ -26,9 +26,9 @@ export type AiReportInsightStatus = 'Active' | 'Acknowledged' | 'Dismissed';
 export type TrendDirection = 'up' | 'down' | 'stable';
 
 export const REPORTS_WORKSPACE_TABS: { id: ReportsWorkspaceTab; label: string; description: string }[] = [
-  { id: 'executive', label: 'Executive Command Dashboard & Live Performance', description: 'Census KPIs ┬╖ departmental stream ┬╖ export & AI quick actions' },
-  { id: 'operational', label: 'Operational & Clinical Intelligence', description: 'Analytics directory ┬╖ trend graphs ┬╖ heat maps ┬╖ performance tables' },
-  { id: 'finance', label: 'Procurement, Finance & AI Hospital Intelligence', description: 'Supply chain ledger ┬╖ claims ┬╖ HR productivity ┬╖ predictive AI' },
+  { id: 'executive', label: 'Executive Command Dashboard & Live Performance', description: 'Census KPIs · departmental stream · export & AI quick actions' },
+  { id: 'operational', label: 'Operational & Clinical Intelligence', description: 'Analytics directory · trend graphs · heat maps · performance tables' },
+  { id: 'finance', label: 'Procurement, Finance & AI Hospital Intelligence', description: 'Supply chain ledger · claims · HR productivity · predictive AI' },
 ];
 
 export type AnalyticsTreeGroup = {

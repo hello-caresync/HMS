@@ -119,7 +119,7 @@ export default function OperationalConsoleTab({
 
       <OpdPanel
         title="Live Token Stream"
-        subtitle="Real-time OPD queue ΓÇö priority tiers ┬╖ rooms ┬╖ status"
+        subtitle="Real-time OPD queue — priority tiers · rooms · status"
         icon={ListOrdered}
         headerRight={
           <span className="rounded bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold text-violet-800">
@@ -165,7 +165,7 @@ export default function OperationalConsoleTab({
                   </td>
                   <td className="px-2 py-1.5 text-[9px] text-slate-500">{formatTime(entry.checkInTime)}</td>
                   <td className="px-2 py-1.5 text-[10px] tabular-nums text-amber-700">
-                    {entry.status === 'Waiting for Consultation' ? `${entry.waitMinutes}m` : 'ΓÇö'}
+                    {entry.status === 'Waiting for Consultation' ? `${entry.waitMinutes}m` : '—'}
                   </td>
                   <td className="px-2 py-1.5">
                     <button type="button" onClick={() => onAdvanceStatus(entry.id)} title="Advance status">

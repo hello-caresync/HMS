@@ -1,7 +1,7 @@
 ﻿import UnifiedRegistrationPanel from '../../../frontoffice/patients/components/UnifiedRegistrationPanel';
 
 export const metadata = {
-  title: 'Patient Registration ┬╖ CuraSync ERP',
+  title: 'Patient Registration · CuraSync ERP',
   description: 'Unified registration and identity verification desk',
 };
 

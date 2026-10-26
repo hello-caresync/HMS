@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { AuthSceneBackground } from '@/components/auth/AuthSceneBackground';
 import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
 import {
   extractErrorMessage,
@@ -36,6 +37,12 @@ import {
   safeSignInWithPassword,
   safeSignUpPatient,
 } from '@/lib/auth/patient-auth-request';
+import {
+  patientEmailAlreadyRegistered,
+  recordPatientRegistrationEmail,
+  savePatientProfileRow,
+  signupIsExistingAccount,
+} from '@/lib/auth/patient-signup';
 import { persistPatientAuthSession } from '@/lib/auth/patientAuth';
 import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
 import {
@@ -63,7 +70,7 @@ const LABEL_CLASS =
   'mb-1 block text-[10px] font-bold uppercase tracking-wider text-[#52331F]';
 
 const SIGN_IN_DENIED_MESSAGE =
-  'Access denied. This identifier is not provisioned or has been revoked by facility administration.';
+  'We could not sign you in. Check your email, mobile number, and password, or use Register New if you do not have an account yet.';
 
 const PHONE_MISMATCH_MESSAGE =
   'The entered phone number does not match registered records.';
@@ -123,7 +130,11 @@ function isInvalidLoginCredentials(error: AuthError | null | undefined): boolean
     Reflect.get(error, 'status') ?? Reflect.get(error, 'code') ?? '',
   ).toLowerCase();
 
-  return message.includes('invalid login credentials') || code === '400';
+  return (
+    message.includes('invalid login credentials') ||
+    message.includes('invalid email or password') ||
+    code === 'invalid_credentials'
+  );
 }
 
 function mapSupabaseAuthError(error: AuthError | null | undefined, context: AuthMode): string {
@@ -174,7 +185,7 @@ function mapSupabaseAuthError(error: AuthError | null | undefined, context: Auth
     lower.includes('saving new user') ||
     lower.includes('trigger')
   ) {
-    return 'Account provisioning failed on the server (profiles trigger). Plain signup was attempted ΓÇö contact hospital IT if this persists.';
+    return 'Account provisioning failed on the server (profiles trigger). Plain signup was attempted — contact hospital IT if this persists.';
   }
 
   return sanitizeAuthMessage(message, fallback);
@@ -196,6 +207,7 @@ function PatientAuthForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showForgotPasswordHint, setShowForgotPasswordHint] = useState(false);
+  const [forgotSending, setForgotSending] = useState(false);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -306,7 +318,7 @@ function PatientAuthForm() {
   const fetchPatientProfile = async (
     userId: string,
   ): Promise<
-    | { ok: true; profile: PatientProfileRow }
+    | { ok: true; profile: PatientProfileRow | null }
     | { ok: false; error: string; signOutRequired: boolean }
   > => {
     const { data: profile, error: profileError } = await runNetworkSafe<
@@ -314,7 +326,7 @@ function PatientAuthForm() {
     >(async () =>
       supabase
         .from('profiles')
-        .select('id, role, full_name, email, phone, hospital_id')
+        .select('id, full_name')
         .eq('id', userId)
         .maybeSingle(),
     );
@@ -343,11 +355,7 @@ function PatientAuthForm() {
     }
 
     if (!profile) {
-      return {
-        ok: false,
-        signOutRequired: true,
-        error: 'No patient profile found for this account. Please register first.',
-      };
+      return { ok: true, profile: null };
     }
 
     return { ok: true, profile };
@@ -357,6 +365,7 @@ function PatientAuthForm() {
     userId: string,
     enteredPhoneDigits: string,
     hospital: RegisteredHospitalOption,
+    account: { email: string; fullName?: string },
   ): Promise<{ ok: true; profile: PatientProfileRow } | { ok: false; error: string }> => {
     const result = await fetchPatientProfile(userId);
 
@@ -367,21 +376,58 @@ function PatientAuthForm() {
       return { ok: false, error: result.error };
     }
 
-    const { profile } = result;
+    let profile = result.profile;
 
-    if (normalizeRole(profile.role) !== 'PATIENT') {
+    if (!profile) {
+      await upsertPatientProfile({
+        userId,
+        email: account.email,
+        fullName: account.fullName || account.email.split('@')[0] || 'Patient',
+        phone: formatPhone(enteredPhoneDigits),
+        hospitalId: hospital.id,
+      });
+      const created = await fetchPatientProfile(userId);
+      if (!created.ok || !created.profile) {
+        profile = {
+          id: userId,
+          role: 'PATIENT',
+          full_name: account.fullName || null,
+          email: account.email,
+          phone: formatPhone(enteredPhoneDigits),
+          hospital_id: hospital.id,
+        };
+      } else {
+        profile = created.profile;
+      }
+    }
+
+    if (normalizeRole(profile.role) && normalizeRole(profile.role) !== 'PATIENT') {
       await runNetworkSafe(() => supabase.auth.signOut());
       return { ok: false, error: RBAC_DENIED_MESSAGE };
     }
 
-    if (!profileBelongsToHospital(profile.hospital_id, hospital)) {
+    if (
+      profile.hospital_id &&
+      !profileBelongsToHospital(profile.hospital_id, hospital)
+    ) {
       await runNetworkSafe(() => supabase.auth.signOut());
       return { ok: false, error: HOSPITAL_MISMATCH_MESSAGE };
     }
 
-    if (!phonesMatch(profile.phone, enteredPhoneDigits)) {
+    if (profile.phone && !phonesMatch(profile.phone, enteredPhoneDigits)) {
       await runNetworkSafe(() => supabase.auth.signOut());
       return { ok: false, error: PHONE_MISMATCH_MESSAGE };
+    }
+
+    if (!profile.hospital_id) {
+      await upsertPatientProfile({
+        userId,
+        email: account.email,
+        fullName: String(profile.full_name ?? account.fullName ?? '').trim() || 'Patient',
+        phone: profile.phone || formatPhone(enteredPhoneDigits),
+        hospitalId: hospital.id,
+      });
+      profile = { ...profile, hospital_id: hospital.id, role: profile.role || 'PATIENT' };
     }
 
     return { ok: true, profile };
@@ -394,34 +440,34 @@ function PatientAuthForm() {
     phone: string;
     hospitalId: string;
   }) => {
-    const { error } = await runNetworkSafe<PostgrestSingleResponse<null>>(async () =>
-      supabase.from('profiles').upsert(
-        {
-          id: params.userId,
-          email: params.email.toLowerCase().trim(),
-          full_name: params.fullName.trim(),
-          phone: params.phone.trim(),
-          role: 'PATIENT',
-          hospital_id: params.hospitalId,
-        },
-        { onConflict: 'id' },
-      ),
-    );
+    const errorMessage = await savePatientProfileRow(supabase, params);
+    if (errorMessage) {
+      throw new Error(
+        sanitizeAuthMessage(errorMessage, 'Could not save your patient profile.'),
+      );
+    }
+  };
 
-    if (error) {
-      const message = extractErrorMessage(error).toLowerCase();
-      if (
-        !message.includes('does not exist') &&
-        !message.includes('relation') &&
-        !message.includes('schema cache')
-      ) {
-        throw new Error(
-          sanitizeAuthMessage(
-            extractErrorMessage(error),
-            'Could not save your patient profile.',
-          ),
-        );
+  const handleForgotPassword = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !isValidEmail(cleanEmail)) {
+      toast.error('Enter your registered email address, then choose Forgot password.');
+      return;
+    }
+
+    setForgotSending(true);
+    try {
+      assertSupabaseConfigured();
+      const redirectTo = `${window.location.origin}/patient/reset-password/`;
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo });
+      if (error) {
+        throw error;
       }
+      toast.success('Password reset link sent. Open the email to choose a new password.');
+    } catch (err: unknown) {
+      toast.error(resolveAuthUiError(err, 'Could not send the reset email. Please try again.'));
+    } finally {
+      setForgotSending(false);
     }
   };
 
@@ -476,6 +522,10 @@ function PatientAuthForm() {
         data.user.id,
         cleanPhoneDigits,
         selectedHospital,
+        {
+          email: cleanEmail,
+          fullName: String(data.user.user_metadata?.full_name ?? '').trim(),
+        },
       );
       if (!access.ok) {
         throw new Error(access.error);
@@ -498,7 +548,11 @@ function PatientAuthForm() {
     } catch (err: unknown) {
       const credentialFailure =
         err instanceof Error && err.message === SIGN_IN_DENIED_MESSAGE;
-      publishPatientAuthError(err, SIGN_IN_DENIED_MESSAGE, credentialFailure);
+      publishPatientAuthError(
+        err,
+        'Could not sign in. Please check your details and try again.',
+        credentialFailure,
+      );
     } finally {
       setLoading(false);
     }
@@ -539,6 +593,10 @@ function PatientAuthForm() {
         throw new Error('Passwords do not match. Please re-enter your password.');
       }
 
+      if (await patientEmailAlreadyRegistered(supabase, cleanEmail)) {
+        throw new Error(DUPLICATE_EMAIL_MESSAGE);
+      }
+
       const signUpResult = await safeSignUpPatient(supabase, {
         email: cleanEmail,
         password,
@@ -566,11 +624,19 @@ function PatientAuthForm() {
         throw new Error('Registration failed. Please try again.');
       }
 
-      if (data.user.identities?.length === 0) {
+      if (signupIsExistingAccount(data.user)) {
+        await supabase.auth.signOut();
         throw new Error(DUPLICATE_EMAIL_MESSAGE);
       }
 
       const registeredUserId = data.user.id;
+
+      await recordPatientRegistrationEmail(supabase, {
+        userId: registeredUserId,
+        email: cleanEmail,
+        fullName: cleanName,
+        phone: formattedPhone,
+      });
 
       await upsertPatientProfile({
         userId: registeredUserId,
@@ -619,8 +685,9 @@ function PatientAuthForm() {
   };
 
   return (
-    <main className="flex h-screen max-h-screen w-screen flex-col overflow-hidden bg-[#FBF7F2] text-[#361E10] select-none">
-      <header className="mx-auto flex w-full max-w-[430px] shrink-0 items-center justify-between px-4 pt-4">
+    <main className="relative isolate flex h-dvh max-h-dvh w-full flex-col overflow-hidden text-[#361E10]">
+      <AuthSceneBackground tone="patient" />
+      <header className="relative z-10 mx-auto flex w-full max-w-3xl shrink-0 items-center justify-between px-4 pt-3 sm:px-6">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#8C6044] transition hover:text-[#361E10]"
@@ -634,14 +701,14 @@ function PatientAuthForm() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col justify-center px-4 py-2">
-        <div className="rounded-[2rem] border border-[#EFE7DE] bg-white p-5 shadow-[0_12px_40px_rgba(140,96,68,0.06)] sm:p-6">
-          <div className="mb-4 text-center">
-            <div className="mb-3 flex justify-center">
-              <RegalHospitalLogo heightClass="h-10" framed />
+      <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col px-4 py-3 sm:px-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-3xl border border-[#EFE7DE] bg-white/95 p-4 shadow-[0_12px_40px_rgba(140,96,68,0.06)] sm:p-6">
+          <div className="mb-3 shrink-0 text-center">
+            <div className="mb-2 flex justify-center">
+              <RegalHospitalLogo heightClass="h-9" framed />
             </div>
             <span className="inline-flex rounded-full bg-[#ECFDF5] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#0D9488]">
-              Patient Portal ┬╖ {selectedHospital?.code ?? 'HOSP-01'} ΓÇó{' '}
+              Patient Portal · {selectedHospital?.code ?? 'HOSP-01'} ·{' '}
               {(selectedHospital?.city ?? 'Bengaluru').toUpperCase()}
             </span>
             <h1 className="sr-only">Patient Portal Sign In</h1>
@@ -707,9 +774,9 @@ function PatientAuthForm() {
           <form
             onSubmit={authMode === 'signin' ? handleLogin : handleRegister}
             autoComplete="off"
-            className="space-y-2.5"
+            className="grid min-h-0 grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2"
           >
-            <div>
+            <div className="sm:col-span-2">
               <label className={LABEL_CLASS}>Hospital / Healthcare Clinic</label>
               <select
                 value={selectedHospitalId}
@@ -719,17 +786,25 @@ function PatientAuthForm() {
                 className={`${INPUT_CLASS} font-semibold ${hospitalsLoading ? 'opacity-70' : ''}`}
               >
                 {hospitalsLoading ? (
-                  <option value="">Loading registered hospitalsΓÇª</option>
+                  <option value="">Loading registered hospitals...</option>
                 ) : hospitals.length === 0 ? (
                   <option value="">No registered hospitals found</option>
                 ) : (
                   hospitals.map((hospital) => (
-                    <option key={hospital.id} value={hospital.id}>
+                    <option key={hospital.id} value={hospital.id} title={formatRegisteredHospitalLabel(hospital)}>
                       {formatRegisteredHospitalLabel(hospital)}
                     </option>
                   ))
                 )}
               </select>
+              {selectedHospital ? (
+                <p className="mt-1 text-[11px] font-medium text-[#7D6354]">
+                  {selectedHospital.name}
+                  {selectedHospital.code ? ` · ${selectedHospital.code}` : ''}
+                  {selectedHospital.city ? ` · ${selectedHospital.city}` : ''}
+                  {selectedHospital.status ? ` · ${selectedHospital.status}` : ''}
+                </p>
+              ) : null}
               {hospitalsLoadNotice ? (
                 <p className="mt-1 text-[10px] font-medium text-[#7D6354]">{hospitalsLoadNotice}</p>
               ) : null}
@@ -750,9 +825,9 @@ function PatientAuthForm() {
                     required
                     autoComplete="off"
                     name="patient-full-name"
-                    placeholder="Your full name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    placeholder="e.g. Full name"
                     className={`${INPUT_CLASS} pl-9`}
                   />
                 </div>
@@ -776,13 +851,14 @@ function PatientAuthForm() {
                   required
                   autoComplete="off"
                   name="phone_number_no_autofill"
-                  placeholder="Enter 10-digit mobile number"
                   aria-autocomplete="none"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="10-digit mobile number"
                   className="w-full bg-transparent py-2 px-3 text-[12px] font-medium text-[#361E10] placeholder:text-[#94A3B8] focus:outline-none"
-                  data-1p-ignore
+                  data-1p-ignore="true"
                   data-lpignore="true"
+                  suppressHydrationWarning
                 />
               </div>
             </div>
@@ -802,17 +878,18 @@ function PatientAuthForm() {
                       ? 'patient-signin-email'
                       : 'patient-register-email'
                   }
-                  placeholder="Enter your email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@email.com"
                   className={`${INPUT_CLASS} pl-9`}
-                  data-1p-ignore
+                  data-1p-ignore="true"
                   data-lpignore="true"
+                  suppressHydrationWarning
                 />
               </div>
             </div>
 
-            <div>
+            <div className={authMode === 'signin' ? 'sm:col-span-2' : undefined}>
               <label className={LABEL_CLASS}>Password</label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8]" />
@@ -826,14 +903,13 @@ function PatientAuthForm() {
                       ? 'patient-signin-password'
                       : 'patient-register-password'
                   }
-                  placeholder={
-                    authMode === 'register' ? 'Minimum 6 characters' : 'Enter your password'
-                  }
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
                   className={`${INPUT_CLASS} pl-9 pr-10`}
-                  data-1p-ignore
+                  data-1p-ignore="true"
                   data-lpignore="true"
+                  suppressHydrationWarning
                 />
                 <button
                   type="button"
@@ -844,10 +920,22 @@ function PatientAuthForm() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {authMode === 'signin' ? (
+                <div className="mt-1.5 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => void handleForgotPassword()}
+                    disabled={forgotSending || loading}
+                    className="text-[11px] font-bold text-[#8C5A3C] underline-offset-2 hover:underline disabled:opacity-60"
+                  >
+                    {forgotSending ? 'Sending reset link...' : 'Forgot password?'}
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             {authMode === 'register' ? (
-              <div>
+              <div className="sm:col-span-2">
                 <label className={LABEL_CLASS}>Confirm Password</label>
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94A3B8]" />
@@ -857,12 +945,13 @@ function PatientAuthForm() {
                     minLength={6}
                     autoComplete="new-password"
                     name="patient-register-confirm-password"
-                    placeholder="Re-enter your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter your password"
                     className={`${INPUT_CLASS} pl-9 pr-10`}
-                    data-1p-ignore
+                    data-1p-ignore="true"
                     data-lpignore="true"
+                    suppressHydrationWarning
                   />
                   <button
                     type="button"
@@ -885,7 +974,7 @@ function PatientAuthForm() {
             <button
               type="submit"
               disabled={loading || !canSubmit}
-              className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#9E6A4B] py-2.5 text-[11px] font-bold uppercase tracking-wide text-white transition hover:bg-[#8B593C] disabled:opacity-60"
+              className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#9E6A4B] py-2.5 text-[11px] font-bold uppercase tracking-wide text-white transition hover:bg-[#8B593C] disabled:opacity-60 sm:col-span-2"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -895,24 +984,24 @@ function PatientAuthForm() {
               <span>
                 {loading
                   ? authMode === 'signin'
-                    ? 'Signing inΓÇª'
-                    : 'Creating accountΓÇª'
+                    ? 'Signing in...'
+                    : 'Creating account...'
                   : authMode === 'signin'
-                    ? 'Sign In to Patient Portal ΓåÆ'
-                    : 'Create Patient Account ΓåÆ'}
+                    ? 'Sign In to Patient Portal'
+                    : 'Create Patient Account'}
               </span>
             </button>
           </form>
 
-          <p className="mt-4 text-center text-[10px] font-medium text-[#7D6354]">
+          <p className="mt-3 shrink-0 text-center text-[10px] font-medium text-[#7D6354]">
             Protected by End-to-End Hospital OS Encryption
           </p>
         </div>
       </div>
 
-      <footer className="shrink-0 pb-4 text-center text-[10px] font-medium text-[#8C6044]">
-        {selectedHospital?.name ?? 'Healthcare Network'} ΓÇó Patient Node{' '}
-        {selectedHospital?.code ?? selectedHospital?.id ?? 'ΓÇö'}
+      <footer className="relative z-10 shrink-0 pb-3 text-center text-[10px] font-medium text-[#8C6044]">
+        {selectedHospital?.name ?? 'Healthcare Network'} · Patient Node{' '}
+        {selectedHospital?.code ?? selectedHospital?.id ?? '—'}
       </footer>
     </main>
   );

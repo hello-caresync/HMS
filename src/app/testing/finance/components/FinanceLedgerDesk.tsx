@@ -49,7 +49,7 @@ export default function FinanceLedgerDesk() {
       });
     }
     setActionNote(
-      `${ACTION_LABELS[action]} simulated ┬╖ sandbox only ┬╖ no patient identifiers stored`,
+      `${ACTION_LABELS[action]} simulated · sandbox only · no patient identifiers stored`,
     );
     window.setTimeout(() => setActionNote(null), 5000);
   }, []);
@@ -62,7 +62,7 @@ export default function FinanceLedgerDesk() {
           <div>
             <h1 className="text-lg font-black text-slate-900">Unified Finance &amp; GST Ledger</h1>
             <p className="text-sm font-medium text-slate-800">
-              Billing simulation desk ┬╖ initials only ┬╖ multi-tester safe
+              Billing simulation desk · initials only · multi-tester safe
             </p>
           </div>
         </div>
@@ -78,7 +78,7 @@ export default function FinanceLedgerDesk() {
         {/* Transaction table */}
         <div className="overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm">
           <div className="border-b-2 border-slate-200 bg-slate-100 px-4 py-2.5">
-            <h2 className="text-sm font-black text-slate-900">Transaction Ledger ┬╖ Sandbox</h2>
+            <h2 className="text-sm font-black text-slate-900">Transaction Ledger · Sandbox</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-sm">
@@ -207,7 +207,7 @@ export default function FinanceLedgerDesk() {
 
           <p className="mt-3 flex items-center gap-1 text-[10px] font-bold text-slate-800">
             <ClipboardList className="h-3 w-3" />
-            GST split ┬╖ 9% CGST + 9% SGST ┬╖ sandbox totals only
+            GST split · 9% CGST + 9% SGST · sandbox totals only
           </p>
         </div>
       </div>

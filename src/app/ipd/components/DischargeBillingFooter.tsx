@@ -92,7 +92,7 @@ export default function DischargeBillingFooter() {
               Discharge Planning & Summary Compilation
             </h3>
             <p className="text-[11px] text-slate-800">
-              {admission.patientName} ┬╖ Est. room Γé╣{estimatedRoom.toLocaleString('en-IN')} + pharmacy Γé╣{estimatedPharmacy.toLocaleString('en-IN')}
+              {admission.patientName} · Est. room ₹{estimatedRoom.toLocaleString('en-IN')} + pharmacy ₹{estimatedPharmacy.toLocaleString('en-IN')}
             </p>
           </div>
 
@@ -108,7 +108,7 @@ export default function DischargeBillingFooter() {
                     onChange={(e) => handleField(key, e.target.value)}
                     rows={rows}
                     className="w-full resize-none rounded border border-slate-200 px-2 py-1 text-[11px] leading-snug focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
-                    placeholder={`${label}ΓÇª`}
+                    placeholder={`${label}…`}
                   />
                 </div>
               ))}
@@ -125,11 +125,11 @@ export default function DischargeBillingFooter() {
             {locked && admission.billingPayload ? (
               <div className="flex items-center gap-2 text-xs text-slate-800">
                 <Lock className="h-4 w-4 text-emerald-600" />
-                Ledger {admission.billingPayload.ledgerId} ┬╖ {formatCurrency(admission.billingPayload.totalOutstanding)} locked
+                Ledger {admission.billingPayload.ledgerId} · {formatCurrency(admission.billingPayload.totalOutstanding)} locked
               </div>
             ) : (
               <p className="text-[10px] text-slate-800">
-                Complete summary fields ┬╖ preview PDF ┬╖ finalize to lock record & sync billing
+                Complete summary fields · preview PDF · finalize to lock record & sync billing
               </p>
             )}
 

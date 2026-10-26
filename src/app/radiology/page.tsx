@@ -43,7 +43,7 @@ type ViewerStudy = {
 };
 
 const ROUTING_SUMMARY =
-  'Standalone imaging vault ┬╖ modality routing ┬╖ DICOM sandbox viewer ┬╖ compare prior studies ┬╖ 13 Jul 2026';
+  'Standalone imaging vault · modality routing · DICOM sandbox viewer · compare prior studies · 13 Jul 2026';
 
 const PATIENT = {
   initials: 'P.N.',
@@ -69,7 +69,7 @@ const MODALITY_ORDERS: Record<Modality, ImagingOrder[]> = {
       tokenId: 'RAD-CT-1188',
       patientInitials: 'K.V.',
       modality: 'CT',
-      region: 'Head ┬╖ non-contrast',
+      region: 'Head · non-contrast',
       orderedAt: '2026-07-13 08:45',
       status: 'Scheduled',
     },
@@ -91,7 +91,7 @@ const MODALITY_ORDERS: Record<Modality, ImagingOrder[]> = {
       tokenId: 'RAD-US-0441',
       patientInitials: 'P.N.',
       modality: 'Ultrasound',
-      region: 'Abdomen ┬╖ FAST',
+      region: 'Abdomen · FAST',
       orderedAt: '2026-07-13 10:05',
       status: 'Scheduled',
     },
@@ -106,16 +106,16 @@ const PREVIOUS_SCANS: PreviousScan[] = [
     modality: 'X-ray',
     region: 'Chest PA',
     status: 'Final',
-    findings: 'No acute infiltrate ┬╖ heart size within normal limits ┬╖ sandbox read',
+    findings: 'No acute infiltrate · heart size within normal limits · sandbox read',
   },
   {
     id: 'scan-2',
     studyId: 'STU-2025-1104',
     examDate: '2025-11-04',
     modality: 'CT',
-    region: 'Abdomen ┬╖ contrast',
+    region: 'Abdomen · contrast',
     status: 'Archived',
-    findings: 'Unremarkable hepatobiliary study ┬╖ no free fluid',
+    findings: 'Unremarkable hepatobiliary study · no free fluid',
   },
   {
     id: 'scan-3',
@@ -124,7 +124,7 @@ const PREVIOUS_SCANS: PreviousScan[] = [
     modality: 'MRI',
     region: 'Brain',
     status: 'Final',
-    findings: 'No acute intracranial abnormality ┬╖ prior comparison available',
+    findings: 'No acute intracranial abnormality · prior comparison available',
   },
   {
     id: 'scan-4',
@@ -133,7 +133,7 @@ const PREVIOUS_SCANS: PreviousScan[] = [
     modality: 'Ultrasound',
     region: 'Thyroid',
     status: 'Final',
-    findings: 'Homogeneous thyroid parenchyma ┬╖ no dominant nodule flagged',
+    findings: 'Homogeneous thyroid parenchyma · no dominant nodule flagged',
   },
 ];
 
@@ -161,7 +161,7 @@ function createOrderId(): string {
 function scanToViewerStudy(scan: PreviousScan): ViewerStudy {
   return {
     studyId: scan.studyId,
-    label: `${scan.modality} ┬╖ ${scan.region}`,
+    label: `${scan.modality} · ${scan.region}`,
     modality: scan.modality,
     tokenId: PATIENT.tokenId,
     patientInitials: PATIENT.initials,
@@ -201,13 +201,13 @@ function ViewerPanel({
       {study ? (
         <>
           <div className="absolute left-3 top-10 space-y-0.5 text-[10px] font-bold text-slate-200">
-            <p>{study.patientInitials} ┬╖ {study.tokenId}</p>
+            <p>{study.patientInitials} · {study.tokenId}</p>
             <p className="font-mono text-slate-300">{study.studyId}</p>
-            <p>{study.modality} ┬╖ {study.region}</p>
+            <p>{study.modality} · {study.region}</p>
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
             <p className="rounded-lg border border-slate-600 bg-slate-950/70 px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-100">
-              DICOM Sandbox ┬╖ {study.label}
+              DICOM Sandbox · {study.label}
             </p>
           </div>
         </>
@@ -220,7 +220,7 @@ function ViewerPanel({
       )}
 
       <div className="absolute bottom-0 left-0 right-0 border-t border-slate-700 bg-slate-950/90 px-3 py-2 text-[10px] font-bold text-slate-300">
-        View Images ┬╖ window/level simulated ┬╖ read-only sandbox
+        View Images · window/level simulated · read-only sandbox
       </div>
     </div>
   );
@@ -230,7 +230,7 @@ export default function RadiologyWorkspacePage() {
   const [orders, setOrders] = useState<Record<Modality, ImagingOrder[]>>(MODALITY_ORDERS);
   const [primaryStudy, setPrimaryStudy] = useState<ViewerStudy | null>({
     studyId: 'STU-2026-0312',
-    label: 'X-ray ┬╖ Chest PA',
+    label: 'X-ray · Chest PA',
     modality: 'X-ray',
     tokenId: PATIENT.tokenId,
     patientInitials: PATIENT.initials,
@@ -266,7 +266,7 @@ export default function RadiologyWorkspacePage() {
       tokenId: `${tokenPrefix}-${Math.floor(1000 + Math.random() * 9000)}`,
       patientInitials: PATIENT.initials,
       modality,
-      region: 'To be confirmed ┬╖ sandbox',
+      region: 'To be confirmed · sandbox',
       orderedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
       status: 'Scheduled',
     };
@@ -275,7 +275,7 @@ export default function RadiologyWorkspacePage() {
       ...prev,
       [modality]: [newOrder, ...prev[modality]],
     }));
-    showNotice(`${modality} requisition queued ┬╖ ${newOrder.tokenId} ┬╖ routing sandbox only`);
+    showNotice(`${modality} requisition queued · ${newOrder.tokenId} · routing sandbox only`);
   };
 
   const loadScanForCompare = (scan: PreviousScan, asPrimary: boolean) => {
@@ -289,7 +289,7 @@ export default function RadiologyWorkspacePage() {
       setCompareStudy(viewerStudy);
     }
     setCompareMode(true);
-    showNotice(`Historical scan loaded ┬╖ ${scan.studyId} ┬╖ ${scan.modality} ┬╖ side-by-side ready`);
+    showNotice(`Historical scan loaded · ${scan.studyId} · ${scan.modality} · side-by-side ready`);
   };
 
   const toggleCompareMode = () => {
@@ -312,7 +312,7 @@ export default function RadiologyWorkspacePage() {
               {ROUTING_SUMMARY}
             </p>
             <p className="mt-2 font-mono text-xs font-black text-slate-950">
-              Active routing ┬╖ {allOrders.length} open requisitions ┬╖ {PATIENT.initials} ┬╖{' '}
+              Active routing · {allOrders.length} open requisitions · {PATIENT.initials} ·{' '}
               {PATIENT.uhid}
             </p>
           </div>
@@ -355,7 +355,7 @@ export default function RadiologyWorkspacePage() {
 
         {/* Split canvas workspace */}
         <div className="grid w-full grid-cols-1 gap-5 xl:grid-cols-2">
-          {/* Left ΓÇö DICOM viewer sandbox */}
+          {/* Left — DICOM viewer sandbox */}
           <section
             aria-label="Radiological DICOM viewer sandbox"
             className="w-full space-y-3 rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4 shadow-sm sm:p-5"
@@ -386,15 +386,15 @@ export default function RadiologyWorkspacePage() {
             )}
 
             <div className="flex flex-wrap gap-2 rounded-lg border-2 border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-800">
-              <span>Patient ┬╖ {PATIENT.initials}</span>
-              <span>┬╖</span>
+              <span>Patient · {PATIENT.initials}</span>
+              <span>·</span>
               <span className="font-mono">{PATIENT.tokenId}</span>
-              <span>┬╖</span>
+              <span>·</span>
               <span>UHID {PATIENT.uhid}</span>
             </div>
           </section>
 
-          {/* Right ΓÇö reports & archive */}
+          {/* Right — reports & archive */}
           <section
             aria-label="Clinical documentation and archive"
             className="w-full space-y-4 rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4 shadow-sm sm:p-5"
@@ -402,7 +402,7 @@ export default function RadiologyWorkspacePage() {
             <div>
               <h2 className="text-base font-black text-slate-950">View Reports</h2>
               <p className="text-xs font-medium text-slate-800">
-                Prior study archive ┬╖ pull historical scans into comparison viewport
+                Prior study archive · pull historical scans into comparison viewport
               </p>
             </div>
 
@@ -414,7 +414,7 @@ export default function RadiologyWorkspacePage() {
                 <p className="mt-2 text-sm font-black text-slate-950">{primaryStudy.label}</p>
                 <p className="mt-1 text-xs font-bold leading-relaxed text-slate-800">
                   {PREVIOUS_SCANS.find((s) => s.studyId === primaryStudy.studyId)?.findings ??
-                    'Sandbox imaging read ┬╖ no acute cardiopulmonary process ┬╖ correlate clinically.'}
+                    'Sandbox imaging read · no acute cardiopulmonary process · correlate clinically.'}
                 </p>
               </article>
             )}
@@ -482,7 +482,7 @@ export default function RadiologyWorkspacePage() {
 
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800">
               <Activity className="mr-1 inline h-4 w-4 text-slate-950" aria-hidden />
-              Archive index ┬╖ {PREVIOUS_SCANS.length} prior studies ┬╖ isolated sandbox ┬╖ no PACS
+              Archive index · {PREVIOUS_SCANS.length} prior studies · isolated sandbox · no PACS
               integration
             </div>
           </section>

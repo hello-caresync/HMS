@@ -73,7 +73,7 @@ export default function RefundModal({ transaction, onClose }: RefundModalProps) 
               <p className="font-mono text-[10px] text-slate-800">{transaction.id}</p>
               <p className="font-medium text-slate-900">{transaction.patientName}</p>
               <p className="text-slate-800">
-                {transaction.mode} ┬╖{' '}
+                {transaction.mode} ·{' '}
                 <span className="font-mono font-bold tabular-nums">
                   {formatCurrency(transaction.amount)}
                 </span>
@@ -83,7 +83,7 @@ export default function RefundModal({ transaction, onClose }: RefundModalProps) 
             <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
               <p className="flex items-start gap-1.5 text-[11px] text-amber-800">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                Authorized action ΓÇö refund will update shift ledger balances and mark transaction
+                Authorized action — refund will update shift ledger balances and mark transaction
                 as Refunded.
               </p>
             </div>
@@ -98,7 +98,7 @@ export default function RefundModal({ transaction, onClose }: RefundModalProps) 
                 setError(null);
               }}
               rows={3}
-              placeholder="e.g. Duplicate charge, service cancelled, billing errorΓÇª"
+              placeholder="e.g. Duplicate charge, service cancelled, billing error…"
               className="mt-1 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-xs focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
             />
 
@@ -107,7 +107,7 @@ export default function RefundModal({ transaction, onClose }: RefundModalProps) 
             )}
             {success && (
               <p className="mt-2 text-[11px] font-medium text-emerald-600">
-                Refund logged ┬╖ ledger updated
+                Refund logged · ledger updated
               </p>
             )}
 

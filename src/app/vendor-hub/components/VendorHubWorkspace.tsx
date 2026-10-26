@@ -41,7 +41,7 @@ export default function VendorHubWorkspace() {
           <Link2 className="h-4 w-4 text-cyan-400" />
           <div>
             <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-800">
-              Phase 15 ┬╖ Vendor Integration
+              Phase 15 · Vendor Integration
             </p>
             <h1 className="text-sm font-bold leading-tight text-white">
               Vendor Integration Control Center

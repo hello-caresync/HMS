@@ -10,9 +10,9 @@ export type InventoryModalType =
   | null;
 
 export const INVENTORY_WORKSPACE_TABS: { id: InventoryWorkspaceTab; label: string; description: string }[] = [
-  { id: 'procure', label: 'Operational Census & Procure-to-Pay', description: 'KPIs ┬╖ PR/PO queue ┬╖ GRN intake ┬╖ quick actions' },
-  { id: 'master', label: 'Item Master, Stock & Warehousing', description: 'Item registry ┬╖ spatial stores ┬╖ FEFO ┬╖ recall engine' },
-  { id: 'audit', label: 'Audits, Equipment Assets & AI Vault', description: 'Physical audit ┬╖ biomedical assets ┬╖ demand forecasting' },
+  { id: 'procure', label: 'Operational Census & Procure-to-Pay', description: 'KPIs · PR/PO queue · GRN intake · quick actions' },
+  { id: 'master', label: 'Item Master, Stock & Warehousing', description: 'Item registry · spatial stores · FEFO · recall engine' },
+  { id: 'audit', label: 'Audits, Equipment Assets & AI Vault', description: 'Physical audit · biomedical assets · demand forecasting' },
 ];
 
 export type RequestPriority = 'Emergency' | 'High' | 'Normal';
@@ -27,7 +27,7 @@ export type CriticalityLevel = 'Critical' | 'High' | 'Standard' | 'Low';
 
 export type BarcodeStatus = 'Pending' | 'Printed' | 'Scanned';
 
-export type StorageType = 'Ambient' | 'Cold Chain 2-8┬░C' | 'Controlled Room' | 'Freezer -20┬░C';
+export type StorageType = 'Ambient' | 'Cold Chain 2-8°C' | 'Controlled Room' | 'Freezer -20°C';
 
 export type StoreLocation =
   | 'Main Store'

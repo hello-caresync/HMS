@@ -52,7 +52,7 @@ export default function VrmCommandCenterTab({
       {census.delayedDeliveries > 0 && (
         <div className="flex items-center gap-2 rounded-md border-2 border-red-500 bg-red-600 px-3 py-1.5 text-white animate-pulse">
           <AlertTriangle className="h-4 w-4" />
-          <span className="text-[10px] font-bold uppercase">{census.delayedDeliveries} Delayed Deliveries ΓÇö Vendor escalation required</span>
+          <span className="text-[10px] font-bold uppercase">{census.delayedDeliveries} Delayed Deliveries — Vendor escalation required</span>
         </div>
       )}
 
@@ -76,7 +76,7 @@ export default function VrmCommandCenterTab({
       </div>
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <VrmPanel title="Vendor Registration & Onboarding Pipeline" subtitle="Registration ΓåÆ document verification ΓåÆ quality review ΓåÆ activated" icon={UserPlus}>
+        <VrmPanel title="Vendor Registration & Onboarding Pipeline" subtitle="Registration → document verification → quality review → activated" icon={UserPlus}>
           <SecureSupplierPlaceholder verified />
           <table className="mt-2 w-full min-w-[520px] text-left">
             <thead>
@@ -111,7 +111,7 @@ export default function VrmCommandCenterTab({
           </table>
         </VrmPanel>
 
-        <VrmPanel title="Active PO Coordination Grid" subtitle="Live order updates ┬╖ quantity confirmations ┬╖ response clocks" icon={ShoppingCart}>
+        <VrmPanel title="Active PO Coordination Grid" subtitle="Live order updates · quantity confirmations · response clocks" icon={ShoppingCart}>
           <table className="w-full min-w-[520px] text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -165,7 +165,7 @@ export default function VrmCommandCenterTab({
         </table>
       </VrmPanel>
 
-      <VrmPanel title="Quick Actions" icon={Zap} subtitle="Vendor lifecycle ┬╖ communication ┬╖ fulfillment">
+      <VrmPanel title="Quick Actions" icon={Zap} subtitle="Vendor lifecycle · communication · fulfillment">
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-7">
           {[
             { id: 'add-vendor' as const, label: 'Add Vendor', icon: UserPlus },

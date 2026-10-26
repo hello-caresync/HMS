@@ -3,16 +3,27 @@
 export const dynamic = 'force-static';
 
 import React, { useState, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ShieldCheck, Eye, EyeOff, Lock, Mail, ArrowRight, AlertCircle, Building2 } from 'lucide-react';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
+
+import { AuthSceneBackground } from '@/components/auth/AuthSceneBackground';
+import {
+  LOGIN_FORM_AUTOCOMPLETE,
+  LOGIN_IDENTIFIER_INPUT_PROPS,
+  LOGIN_PASSWORD_INPUT_PROPS,
+} from '@/lib/auth/login-form-security';
+import {
+  hardNavigateSuperAdminRoute,
+  isRootMasterCredentials,
+  SUPER_ADMIN_DEFAULT_PORTAL,
+} from '@/lib/auth/superAdminAuth';
+
+const ROOT_HARDWARE_TOKEN = 'NXR-1001';
 
 function SuperAdminLoginContent() {
-  const router = useRouter();
-
   const [email, setEmail] = useState('');
   const [passcode, setPasscode] = useState('');
-  const [showPasscode, setShowPasscode] = useState(false);
+  const [tokenKey, setTokenKey] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,154 +34,132 @@ function SuperAdminLoginContent() {
 
     const cleanEmail = email.trim().toLowerCase();
     const cleanPasscode = passcode.trim();
+    const cleanToken = tokenKey.trim().toUpperCase();
 
-    // Master Super Admin bypass to prevent Cloudflare 405 API route errors
-    if (
-      cleanEmail === 'platform.root@regalhealth.io' &&
-      cleanPasscode === 'CURA#2026@ROOT_VAULT'
-    ) {
-      const superAdminSession = {
-        role: 'SUPER_ADMIN',
-        email: cleanEmail,
-        name: 'Platform Root Super Admin',
-        accessLevel: 'ROOT_LEVEL_0',
-        token: `root_vault_${Date.now()}`,
-        authenticatedAt: new Date().toISOString(),
-      };
-
-      // Store credentials across common auth keys
-      localStorage.setItem('super_admin_session', JSON.stringify(superAdminSession));
-      localStorage.setItem('curasync_root_session', JSON.stringify(superAdminSession));
-      localStorage.setItem('userRole', 'SUPER_ADMIN');
-      localStorage.setItem('isAuthenticated', 'true');
-
-      // Set cookie for proxy/edge recognition
-      document.cookie = `super_admin_session=active; path=/; max-age=604800; SameSite=Lax`;
-      document.cookie = `auth-token=${superAdminSession.token}; path=/; max-age=604800; SameSite=Lax`;
-
-      // Redirect immediately to the vaulted directory
-      router.push('/super-vault-access/');
+    if (!isRootMasterCredentials(cleanEmail, cleanPasscode) || (cleanToken && cleanToken !== ROOT_HARDWARE_TOKEN)) {
+      setError('Access Denied: Invalid Regal Root Identifier, Passkey, or Token.');
+      setLoading(false);
       return;
     }
 
-    // Invalid credentials
-    setTimeout(() => {
-      setError('Invalid Platform Root Credentials. Access strictly restricted.');
-      setLoading(false);
-    }, 400);
+    const superAdminSession = {
+      role: 'SUPER_ADMIN',
+      email: cleanEmail,
+      name: 'Platform Root Super Admin',
+      accessLevel: 'ROOT_LEVEL_0',
+      token: `root_vault_${Date.now()}`,
+      hardwareToken: cleanToken || ROOT_HARDWARE_TOKEN,
+      authenticatedAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem('super_admin_session', JSON.stringify(superAdminSession));
+    localStorage.setItem('curasync_root_session', JSON.stringify(superAdminSession));
+    localStorage.setItem('userRole', 'SUPER_ADMIN');
+    localStorage.setItem('isAuthenticated', 'true');
+
+    document.cookie = `super_admin_session=active; path=/; max-age=604800; SameSite=Lax`;
+    document.cookie = `auth-token=${superAdminSession.token}; path=/; max-age=604800; SameSite=Lax`;
+
+    hardNavigateSuperAdminRoute(SUPER_ADMIN_DEFAULT_PORTAL);
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1d] flex flex-col justify-between p-4 sm:p-6 lg:p-8 font-sans antialiased text-slate-100">
-      {/* Top Navigation Bar */}
-      <div className="w-full max-w-7xl mx-auto flex items-center justify-between py-2">
+    <div className="relative isolate flex min-h-dvh flex-col overflow-hidden font-sans text-slate-100">
+      <AuthSceneBackground tone="vault" />
+
+      <div className="relative z-10 mx-auto flex w-full max-w-[440px] flex-1 flex-col px-4 py-8">
         <Link
           href="/"
-          className="text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5"
+          className="mb-8 inline-flex items-center gap-1.5 self-start text-xs font-medium text-slate-400 transition hover:text-white"
         >
-          <span>←</span> Portal Selector
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to Regal HMS Gateway
         </Link>
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[11px] font-bold tracking-wider text-amber-400 uppercase">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>ROOT LEVEL 0</span>
-        </div>
-      </div>
 
-      {/* Main Terminal Card */}
-      <div className="w-full max-w-[480px] mx-auto my-auto">
-        <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-2xl shadow-black/40 text-slate-900 border border-slate-100">
-          {/* Logo & Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center gap-2 mb-3">
-              <Building2 className="w-7 h-7 text-cyan-700" />
-              <div className="text-left leading-none">
-                <span className="block text-xl font-black tracking-tight text-cyan-950">REGAL</span>
-                <span className="block text-[10px] font-bold tracking-[0.2em] text-red-600">HOSPITAL</span>
+        <div className="my-auto overflow-hidden rounded-2xl border border-violet-500/25 bg-[#12141f]/90 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-md">
+          <div className="h-1 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-violet-400" />
+
+          <div className="p-6 sm:p-8">
+            <div className="mb-7 flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300 ring-1 ring-violet-400/30">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold tracking-tight text-white">Regal Platform Vault</h1>
+                <p className="mt-0.5 text-[11px] font-medium text-slate-400">
+                  Classified Root Access · Level 0
+                </p>
               </div>
             </div>
-            <p className="text-[11px] font-black uppercase tracking-widest text-red-600">
-              GLOBAL PLATFORM SECURITY
-            </p>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-              Super Admin Gateway
-            </h1>
-            <p className="text-xs font-medium text-slate-500 mt-1.5">
-              Multi-tenant isolation & hospital node orchestration
-            </p>
-          </div>
 
-          {/* Error Banner */}
-          {error && (
-            <div className="mb-6 p-3 rounded-xl bg-red-50 border border-red-200/80 flex items-center gap-2.5 text-xs text-red-700 font-semibold">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
+            {error ? (
+              <div className="mb-5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2.5 text-xs font-semibold text-rose-300">
+                {error}
+              </div>
+            ) : null}
 
-          {/* Form */}
-          <form onSubmit={handleRootLogin} className="space-y-4">
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1.5">
-                Platform Master Email
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <form onSubmit={handleRootLogin} autoComplete={LOGIN_FORM_AUTOCOMPLETE} className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-300">
+                  Master Identifier
+                </label>
                 <input
                   type="email"
+                  required
+                  name="superadmin-identifier"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Platform master email"
-                  required
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-slate-50/50"
+                  placeholder="name@email.com"
+                  className="w-full rounded-xl border border-slate-700/80 bg-[#0c0e16] px-3.5 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                  {...LOGIN_IDENTIFIER_INPUT_PROPS}
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1.5">
-                Root Security Passcode
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-300">
+                  Master Passkey
+                </label>
                 <input
-                  type={showPasscode ? 'text' : 'password'}
+                  type="password"
+                  required
+                  name="superadmin-passkey"
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter root passcode"
-                  required
-                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-slate-50/50"
+                  placeholder="Enter your passcode"
+                  className="w-full rounded-xl border border-slate-700/80 bg-[#0c0e16] px-3.5 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                  {...LOGIN_PASSWORD_INPUT_PROPS}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPasscode(!showPasscode)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
-                >
-                  {showPasscode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-sm tracking-wide shadow-lg shadow-amber-600/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
-            >
-              <span>{loading ? 'AUTHENTICATING...' : 'ENTER ROOT CONSOLE'}</span>
-              {!loading && <ArrowRight className="w-4 h-4" />}
-            </button>
-          </form>
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold text-slate-300">
+                  Hardware Token Key
+                </label>
+                <input
+                  type="text"
+                  name="superadmin-token"
+                  value={tokenKey}
+                  onChange={(e) => setTokenKey(e.target.value)}
+                  autoComplete="off"
+                  placeholder="e.g. Hardware token"
+                  className="w-full rounded-xl border border-slate-700/80 bg-[#0c0e16] px-3.5 py-3 text-sm text-slate-100 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                />
+              </div>
 
-          {/* Footer Security Badge */}
-          <div className="mt-8 pt-5 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] font-medium text-slate-400">
-            <Lock className="w-3.5 h-3.5" />
-            <span>Biometric & MFA Guarded Operational Terminal</span>
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-2 w-full rounded-xl bg-violet-600 py-3.5 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-lg shadow-violet-900/40 transition hover:bg-violet-500 disabled:opacity-70"
+              >
+                {loading ? 'Authenticating…' : 'Authenticate Super Admin'}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-[10px] font-medium tracking-wide text-slate-500">
+              Regal Hospital Management System Security Protocol 2026.
+            </p>
           </div>
         </div>
-      </div>
-
-      {/* Page Footer */}
-      <div className="w-full text-center py-4 text-[11px] font-medium text-slate-500 tracking-wide">
-        Regal Healthcare Platform • Node 2026-v2.4
       </div>
     </div>
   );
@@ -180,7 +169,8 @@ export default function SuperAdminLoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#0a0f1d] flex items-center justify-center text-slate-400 text-xs font-semibold tracking-wider uppercase">
+        <div className="relative isolate flex min-h-dvh items-center justify-center text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <AuthSceneBackground tone="vault" />
           Loading Super Admin Terminal...
         </div>
       }

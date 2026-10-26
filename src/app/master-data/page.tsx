@@ -2,7 +2,7 @@
 
 import { APP_ROUTES } from '../lib/routes';
 
-/** Legacy path ΓÇö forwards to /admin/master-data */
+/** Legacy path — forwards to /admin/master-data */
 export default function LegacyMasterDataRedirect() {
   redirect(APP_ROUTES.masterData);
 }

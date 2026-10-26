@@ -230,7 +230,7 @@ export default function ComplianceContractsPage() {
           <div>
             <h1 className="text-2xl font-black text-slate-900 dark:text-white">Compliance & Contracts Vault</h1>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              Vendor verification: {vendor?.compliance_status ?? 'ΓÇö'}
+              Vendor verification: {vendor?.compliance_status ?? '—'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -241,7 +241,7 @@ export default function ComplianceContractsPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-teal-600 px-4 py-2.5 text-sm font-bold text-teal-800 disabled:opacity-60 dark:text-teal-300"
             >
               <ShieldCheck className="h-4 w-4" aria-hidden />
-              {saving ? 'SyncingΓÇª' : 'Sync compliance score'}
+              {saving ? 'Syncing…' : 'Sync compliance score'}
             </button>
             <button
               type="button"
@@ -271,7 +271,7 @@ export default function ComplianceContractsPage() {
           >
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
             <div>
-              <p className="font-bold">Expiry alert ┬╖ renew within 30 days</p>
+              <p className="font-bold">Expiry alert · renew within 30 days</p>
               <ul className="mt-1 list-inside list-disc text-xs">
                 {expiringSoon.map((d) => (
                   <li key={d.id}>
@@ -286,7 +286,7 @@ export default function ComplianceContractsPage() {
         <section>
           <h2 className="mb-4 text-sm font-black uppercase tracking-wider text-slate-500">Compliance document center</h2>
           {loading ? (
-            <p className="text-sm text-slate-500">Loading documentsΓÇª</p>
+            <p className="text-sm text-slate-500">Loading documents…</p>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {docGrid.map(({ docType, record }) => {
@@ -327,7 +327,7 @@ export default function ComplianceContractsPage() {
                           onClick={() => void markDocumentVerified(record)}
                           className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[10px] font-bold text-white disabled:opacity-60"
                         >
-                          {actionDocId === record.id ? 'SavingΓÇª' : 'Mark verified'}
+                          {actionDocId === record.id ? 'Saving…' : 'Mark verified'}
                         </button>
                       ) : null}
                       {!record ? (
@@ -363,7 +363,7 @@ export default function ComplianceContractsPage() {
                       <p className="font-bold">{c.title}</p>
                       <p className="text-sm text-slate-600">{c.hospital_name}</p>
                       <p className="mt-1 text-xs text-slate-500">
-                        {c.effective_date} ΓåÆ {c.expiry_date}
+                        {c.effective_date} → {c.expiry_date}
                       </p>
                     </div>
                     <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase text-emerald-800">
@@ -393,7 +393,7 @@ export default function ComplianceContractsPage() {
                         onClick={() => void acknowledgeContract(c)}
                         className="rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
                       >
-                        {actionDocId === c.id ? 'SavingΓÇª' : 'Acknowledge renewal'}
+                        {actionDocId === c.id ? 'Saving…' : 'Acknowledge renewal'}
                       </button>
                     ) : null}
                   </div>
@@ -455,7 +455,7 @@ export default function ComplianceContractsPage() {
                   Cancel
                 </button>
                 <button type="submit" disabled={saving} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
-                  {saving ? 'UploadingΓÇª' : 'Submit'}
+                  {saving ? 'Uploading…' : 'Submit'}
                 </button>
               </div>
             </form>
@@ -471,11 +471,11 @@ export default function ComplianceContractsPage() {
             <p className="text-xs text-slate-500">{termsContract.hospital_name}</p>
             {termsContract.terms_url ? (
               <a href={termsContract.terms_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm font-bold text-teal-700">
-                Open full terms URL ΓåÆ
+                Open full terms URL →
               </a>
             ) : (
               <p className="mt-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-                SLA: on-time delivery ΓëÑ 95%, recall notification within 24h, cold-chain maintenance per hospital SOP.
+                SLA: on-time delivery ≥ 95%, recall notification within 24h, cold-chain maintenance per hospital SOP.
                 Pricing locked per annexure for contract period {termsContract.effective_date} to {termsContract.expiry_date}.
               </p>
             )}

@@ -75,7 +75,7 @@ export default function MessagingPage() {
           <div>
             <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Secure Internal Chat</h1>
             <p className="mt-1 text-sm font-medium text-slate-800">
-              Standalone messaging ┬╖ Nurses ┬╖ Lab ┬╖ Pharmacy ┬╖ Reception ┬╖ 13 Jul 2026
+              Standalone messaging · Nurses · Lab · Pharmacy · Reception · 13 Jul 2026
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-xs font-black uppercase text-slate-950">
@@ -130,7 +130,7 @@ export default function MessagingPage() {
                     {msg.text}
                   </div>
                   <span className="mt-0.5 text-[10px] font-bold text-slate-600">
-                    {msg.sender} ┬╖ {msg.timestamp}
+                    {msg.sender} · {msg.timestamp}
                   </span>
                 </div>
               ))}
@@ -139,7 +139,7 @@ export default function MessagingPage() {
             <div className="flex gap-2 border-t-2 border-slate-200 p-3">
               <button
                 type="button"
-                onClick={() => showNotice('File sharing ┬╖ sandbox attachment')}
+                onClick={() => showNotice('File sharing · sandbox attachment')}
                 className="shrink-0 rounded-lg border-2 border-slate-200 bg-white p-2"
                 aria-label="File sharing"
               >
@@ -151,7 +151,7 @@ export default function MessagingPage() {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), sendMessage())}
-                placeholder="Type secure messageΓÇª"
+                placeholder="Type secure message…"
               />
               <button
                 type="button"

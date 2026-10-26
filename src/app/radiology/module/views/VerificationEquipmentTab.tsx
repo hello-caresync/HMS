@@ -41,7 +41,7 @@ export default function VerificationEquipmentTab({ reports, onAdvanceReport }: V
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
             <span className="text-[11px] font-bold uppercase">
-              Critical Finding Escalation ΓÇö {criticalItems.length} report(s) awaiting radiologist sign-off
+              Critical Finding Escalation — {criticalItems.length} report(s) awaiting radiologist sign-off
             </span>
           </div>
         </div>
@@ -49,7 +49,7 @@ export default function VerificationEquipmentTab({ reports, onAdvanceReport }: V
 
       <RadPanel
         title="Report Verification & Sign-off Panel"
-        subtitle="Draft reports ┬╖ radiologist verification ┬╖ digital signatures ┬╖ critical escalation"
+        subtitle="Draft reports · radiologist verification · digital signatures · critical escalation"
         icon={AlertTriangle}
         critical={criticalItems.length > 0}
       >
@@ -114,7 +114,7 @@ export default function VerificationEquipmentTab({ reports, onAdvanceReport }: V
       </RadPanel>
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <RadPanel title="Equipment Dashboard" subtitle="MRI ┬╖ CT ┬╖ X-Ray availability ┬╖ calibration ┬╖ maintenance" icon={Wrench}>
+        <RadPanel title="Equipment Dashboard" subtitle="MRI · CT · X-Ray availability · calibration · maintenance" icon={Wrench}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -154,7 +154,7 @@ export default function VerificationEquipmentTab({ reports, onAdvanceReport }: V
           </table>
         </RadPanel>
 
-        <RadPanel title="Contrast Media Inventory Ledger" subtitle="Stock counts ┬╖ expiry ┬╖ low stock alerts" icon={Package}>
+        <RadPanel title="Contrast Media Inventory Ledger" subtitle="Stock counts · expiry · low stock alerts" icon={Package}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -187,7 +187,7 @@ export default function VerificationEquipmentTab({ reports, onAdvanceReport }: V
         </RadPanel>
       </div>
 
-      <RadPanel title="Turnaround Time Analytics" subtitle="Routine vs STAT median report TAT (minutes) ΓÇö 7-day trend">
+      <RadPanel title="Turnaround Time Analytics" subtitle="Routine vs STAT median report TAT (minutes) — 7-day trend">
         <div className="h-36">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={TAT_ANALYTICS} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>

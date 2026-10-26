@@ -5,7 +5,7 @@ export const SEED_ASSETS: MedicalAsset[] = [
   {
     id: 'ast-001',
     assetId: 'NEX-AST-5001',
-    name: 'Portable Ventilator ΓÇö Hamilton C6',
+    name: 'Portable Ventilator — Hamilton C6',
     department: 'ICU',
     manufacturer: 'Hamilton Medical',
     amcStatus: 'Active',
@@ -17,7 +17,7 @@ export const SEED_ASSETS: MedicalAsset[] = [
   {
     id: 'ast-002',
     assetId: 'NEX-AST-5002',
-    name: 'Digital X-Ray Unit ΓÇö Siemens Multix',
+    name: 'Digital X-Ray Unit — Siemens Multix',
     department: 'Radiology',
     manufacturer: 'Siemens Healthineers',
     amcStatus: 'Active',
@@ -29,7 +29,7 @@ export const SEED_ASSETS: MedicalAsset[] = [
   {
     id: 'ast-003',
     assetId: 'NEX-AST-5003',
-    name: 'Infusion Pump ΓÇö B Braun Space',
+    name: 'Infusion Pump — B Braun Space',
     department: 'General Ward',
     manufacturer: 'B Braun',
     amcStatus: 'Active',
@@ -41,7 +41,7 @@ export const SEED_ASSETS: MedicalAsset[] = [
   {
     id: 'ast-004',
     assetId: 'NEX-AST-5004',
-    name: 'Defibrillator ΓÇö Philips HeartStart',
+    name: 'Defibrillator — Philips HeartStart',
     department: 'Emergency',
     manufacturer: 'Philips Healthcare',
     amcStatus: 'Expired',
@@ -53,7 +53,7 @@ export const SEED_ASSETS: MedicalAsset[] = [
   {
     id: 'ast-005',
     assetId: 'NEX-AST-5005',
-    name: 'CT Scanner ΓÇö GE Revolution',
+    name: 'CT Scanner — GE Revolution',
     department: 'Radiology',
     manufacturer: 'GE Healthcare',
     amcStatus: 'Active',
@@ -65,7 +65,7 @@ export const SEED_ASSETS: MedicalAsset[] = [
   {
     id: 'ast-006',
     assetId: 'NEX-AST-5006',
-    name: 'Patient Monitor ΓÇö Mindray BeneVision',
+    name: 'Patient Monitor — Mindray BeneVision',
     department: 'ICU',
     manufacturer: 'Mindray',
     amcStatus: 'Active',
@@ -77,9 +77,9 @@ export const SEED_ASSETS: MedicalAsset[] = [
   {
     id: 'ast-007',
     assetId: 'NEX-AST-5007',
-    name: 'Anesthesia Workstation ΓÇö Dr├ñger Fabius',
+    name: 'Anesthesia Workstation — Dräger Fabius',
     department: 'OT Complex',
-    manufacturer: 'Dr├ñger',
+    manufacturer: 'Dräger',
     amcStatus: 'Active',
     amcRenewalDeadline: '2027-08-15',
     lastServiceDate: '2026-05-01',
@@ -89,7 +89,7 @@ export const SEED_ASSETS: MedicalAsset[] = [
   {
     id: 'ast-008',
     assetId: 'NEX-AST-5008',
-    name: 'Lab Analyzer ΓÇö Roche Cobas c311',
+    name: 'Lab Analyzer — Roche Cobas c311',
     department: 'Laboratory',
     manufacturer: 'Roche Diagnostics',
     amcStatus: 'Active',
@@ -104,7 +104,7 @@ export const SEED_TICKETS: MaintenanceTicket[] = [
   {
     id: generateTicketId(),
     assetId: 'ast-004',
-    assetName: 'Defibrillator ΓÇö Philips HeartStart',
+    assetName: 'Defibrillator — Philips HeartStart',
     urgency: 'Critical Breakdown',
     description: 'Unit fails self-test; shock delivery disabled alarm active.',
     reportedAt: '2026-07-09T07:00:00Z',
@@ -113,7 +113,7 @@ export const SEED_TICKETS: MaintenanceTicket[] = [
   {
     id: generateTicketId(),
     assetId: 'ast-002',
-    assetName: 'Digital X-Ray Unit ΓÇö Siemens Multix',
+    assetName: 'Digital X-Ray Unit — Siemens Multix',
     urgency: 'High',
     description: 'Calibration drift detected on exposure index.',
     reportedAt: '2026-07-08T14:30:00Z',

@@ -32,13 +32,13 @@ export default function AppointmentHub() {
         id: 'scheduling',
         label: 'Scheduling Matrix',
         icon: CalendarDays,
-        description: 'Day-at-a-glance ┬╖ 15-min slots',
+        description: 'Day-at-a-glance · 15-min slots',
       },
       {
         id: 'queue',
         label: 'Queue Control Center',
         icon: Radio,
-        description: 'Token generation ┬╖ live queue board',
+        description: 'Token generation · live queue board',
       },
     ];
 
@@ -58,7 +58,7 @@ export default function AppointmentHub() {
         <div className="border-b border-slate-700/60 px-4 py-4">
           <p className="text-sm font-bold text-white">Appointments</p>
           <p className="text-[10px] uppercase tracking-wider text-slate-800">
-            Module 3 ┬╖ Queue Engine
+            Module 3 · Queue Engine
           </p>
         </div>
 

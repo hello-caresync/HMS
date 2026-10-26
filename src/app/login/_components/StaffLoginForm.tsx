@@ -228,7 +228,7 @@ export default function StaffLoginForm() {
           label="Employee Identifier / Access Mail"
           value={identifier}
           onChange={setIdentifier}
-          placeholder="Enter work email or staff ID"
+          placeholder="e.g. staff id or name@email.com"
           autoComplete="off"
           icon={Mail}
         />
@@ -239,7 +239,7 @@ export default function StaffLoginForm() {
           type={showPassword ? 'text' : 'password'}
           value={password}
           onChange={setPassword}
-          placeholder="Enter security passcode"
+          placeholder="Enter your passcode"
           autoComplete="new-password"
           icon={Lock}
           trailing={

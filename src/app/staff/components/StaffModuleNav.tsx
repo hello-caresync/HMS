@@ -11,7 +11,7 @@ const NAV_ITEMS = [
     href: APP_ROUTES.staffDirectory,
     label: 'Staff Directory',
     icon: Users,
-    description: 'Profiles ┬╖ status ┬╖ onboarding',
+    description: 'Profiles · status · onboarding',
   },
   {
     href: APP_ROUTES.staffRoles,
@@ -29,7 +29,7 @@ export default function StaffModuleNav() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-800">
-            Phase 1 ┬╖ Module 2
+            Phase 1 · Module 2
           </p>
           <h1 className="text-lg font-black tracking-tight text-slate-900">
             Staff &amp; Role Management

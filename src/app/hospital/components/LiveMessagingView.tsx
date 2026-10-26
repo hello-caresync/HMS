@@ -105,7 +105,7 @@ export default function LiveMessagingView({
                     msg.sender === 'Hospital' ? 'text-white/80' : 'text-slate-800'
                   }`}
                 >
-                  {msg.sender} ┬╖ {msg.timestamp}
+                  {msg.sender} · {msg.timestamp}
                 </p>
               </div>
             ))

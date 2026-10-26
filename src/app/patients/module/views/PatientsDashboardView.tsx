@@ -17,7 +17,7 @@ export default function PatientsDashboardView() {
     <div className="space-y-2">
       <div>
         <h2 className="text-sm font-bold text-[#0F172A]">Patients Dashboard</h2>
-        <p className="text-[10px] text-slate-500">Front office census ┬╖ today&apos;s intake overview</p>
+        <p className="text-[10px] text-slate-500">Front office census · today&apos;s intake overview</p>
       </div>
 
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
@@ -35,7 +35,7 @@ export default function PatientsDashboardView() {
         ))}
       </div>
 
-      <PatientPanel title="Recent Registrations" subtitle="Last 24 hours ΓÇö front desk intake queue">
+      <PatientPanel title="Recent Registrations" subtitle="Last 24 hours — front desk intake queue">
         <ul className="space-y-1.5">
           {MOCK_PATIENTS.slice(0, 4).map((p) => (
             <li

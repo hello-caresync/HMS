@@ -28,7 +28,7 @@ export default function ItemMasterTab() {
     <div className="space-y-2">
       <RecallAlertBanner count={recallActive} />
 
-      <InvPanel title="Item Master & Stock Monitoring Directory" subtitle="Medicines ┬╖ consumables ┬╖ implants ┬╖ equipment ┬╖ barcode ┬╖ storage ┬╖ criticality" icon={Layers}>
+      <InvPanel title="Item Master & Stock Monitoring Directory" subtitle="Medicines · consumables · implants · equipment · barcode · storage · criticality" icon={Layers}>
         <table className="w-full min-w-[920px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -57,7 +57,7 @@ export default function ItemMasterTab() {
         </table>
       </InvPanel>
 
-      <InvPanel title="Spatial Store Allocation Dashboard" subtitle="Main ┬╖ Pharmacy ┬╖ ICU ┬╖ OT ┬╖ ER ┬╖ Lab ┬╖ Departmental holdings" icon={Warehouse}>
+      <InvPanel title="Spatial Store Allocation Dashboard" subtitle="Main · Pharmacy · ICU · OT · ER · Lab · Departmental holdings" icon={Warehouse}>
         <table className="w-full min-w-[780px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -74,7 +74,7 @@ export default function ItemMasterTab() {
                 <td className="px-1.5 py-1 font-mono text-[7px] text-slate-500">{s.itemCode}</td>
                 <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums text-emerald-700">{s.available}</td>
                 <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums text-indigo-600">{s.reserved}</td>
-                <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums text-violet-600">{s.inTransit || 'ΓÇö'}</td>
+                <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums text-violet-600">{s.inTransit || '—'}</td>
                 <td className="px-1.5 py-1 text-[8px] text-slate-500">{s.unit}</td>
               </tr>
             ))}
@@ -83,7 +83,7 @@ export default function ItemMasterTab() {
       </InvPanel>
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <InvPanel title="Batch, Expiry & FEFO Tracking" subtitle="30/60-day alerts ┬╖ first expire first out sorting">
+        <InvPanel title="Batch, Expiry & FEFO Tracking" subtitle="30/60-day alerts · first expire first out sorting">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -116,7 +116,7 @@ export default function ItemMasterTab() {
 
         <InvPanel
           title="Manufacturer Recall Simulation Engine"
-          subtitle="Input recalled batch ΓåÆ identify affected distribution histories"
+          subtitle="Input recalled batch → identify affected distribution histories"
           icon={AlertTriangle}
           critical={impacts.length > 0}
           headerRight={
@@ -157,7 +157,7 @@ export default function ItemMasterTab() {
               </tbody>
             </table>
           )}
-          <p className="mt-2 text-[8px] text-slate-400">Try batch: RAN-3300-G ┬╖ Total affected units: {impacts.reduce((s, r) => s + r.quantityIssued, 0)}</p>
+          <p className="mt-2 text-[8px] text-slate-400">Try batch: RAN-3300-G · Total affected units: {impacts.reduce((s, r) => s + r.quantityIssued, 0)}</p>
         </InvPanel>
       </div>
     </div>

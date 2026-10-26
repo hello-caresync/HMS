@@ -48,7 +48,7 @@ export default function SchedulingCalendarTab() {
   return (
     <div className="grid grid-cols-1 gap-3 xl:grid-cols-10">
       <div className="space-y-3 xl:col-span-3">
-        <AptPanel title="Booking Engine" icon={Calendar} subtitle="Walk-in ┬╖ follow-up ┬╖ referral ┬╖ emergency ┬╖ teleconsult">
+        <AptPanel title="Booking Engine" icon={Calendar} subtitle="Walk-in · follow-up · referral · emergency · teleconsult">
           <div className="mb-2 flex flex-wrap gap-1">
             {(
               [
@@ -76,7 +76,7 @@ export default function SchedulingCalendarTab() {
             <input className={inputClass} placeholder="UHID" />
             <select className={inputClass}>
               {MOCK_DOCTORS.map((d) => (
-                <option key={d.id}>{d.name} ΓÇö {d.department}</option>
+                <option key={d.id}>{d.name} — {d.department}</option>
               ))}
             </select>
             <div className="grid grid-cols-2 gap-2">
@@ -84,7 +84,7 @@ export default function SchedulingCalendarTab() {
               <input type="time" className={inputClass} defaultValue="11:00" />
             </div>
             <button type="button" className="w-full rounded-md bg-[#2563EB] py-1.5 text-[10px] font-bold text-white">
-              Reserve Slot ΓÇö {bookingVariant}
+              Reserve Slot — {bookingVariant}
             </button>
           </div>
         </AptPanel>
@@ -96,7 +96,7 @@ export default function SchedulingCalendarTab() {
                 <div className="flex items-start justify-between gap-1">
                   <div>
                     <p className="text-[10px] font-semibold text-[#0F172A]">{req.patientName}</p>
-                    <p className="text-[9px] text-slate-500">{req.doctorName} ┬╖ {req.requestedSlot}</p>
+                    <p className="text-[9px] text-slate-500">{req.doctorName} · {req.requestedSlot}</p>
                   </div>
                   <StatusPill status={req.status} />
                 </div>
@@ -128,7 +128,7 @@ export default function SchedulingCalendarTab() {
         <AptPanel
           title="Master Calendar"
           icon={Calendar}
-          subtitle="Daily ┬╖ weekly ┬╖ monthly ┬╖ doctor ┬╖ department ┬╖ room filters"
+          subtitle="Daily · weekly · monthly · doctor · department · room filters"
           headerRight={
             <div className="flex gap-0.5 rounded border border-[#E2E8F0] p-0.5">
               {(['daily', 'weekly', 'monthly'] as CalendarView[]).map((v) => (
@@ -185,7 +185,7 @@ export default function SchedulingCalendarTab() {
                     <p className="text-[10px] font-semibold text-[#0F172A]">
                       {slot.patientName ?? slot.slotType.charAt(0).toUpperCase() + slot.slotType.slice(1)}
                     </p>
-                    <p className="text-[9px] text-slate-500">{slot.doctorName} ┬╖ {slot.room} ┬╖ {slot.durationMin} min</p>
+                    <p className="text-[9px] text-slate-500">{slot.doctorName} · {slot.room} · {slot.durationMin} min</p>
                   </div>
                   <span className="shrink-0 rounded bg-white px-1.5 py-px text-[8px] font-bold uppercase text-slate-500">
                     {slot.slotType}

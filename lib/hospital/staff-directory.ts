@@ -1,19 +1,22 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { isGlobalSuperAdminStaffRecord } from '@/lib/auth/superAdminAuth';
 import { resolveDoctorRegistrationEmail } from '@/lib/hospital/doctors';
 import { fetchBookableDoctorsFromTable, upsertBookableDoctor } from '@/lib/hospital/doctors-directory';
 import {
   classifyGovernancePersonnelRole,
   fetchGovernancePersonnelCredentials,
 } from '@/lib/hospital/governance-directory';
-import { hospitalDirectoryFilterIds } from '@/lib/hospital/hospital-node';
-import {
-  isHospitalCode,
-  isHospitalUuid,
-  resolveHospitalUuid,
-} from '@/lib/hospital/resolve-hospital-context';
+import { hospitalDirectoryFilterIds, recordBelongsToHospitalNode } from '@/lib/hospital/hospital-node';
+import { isHospitalCode, resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
 import { permanentlyDeleteStaffCredential } from '@/lib/hospital/permanent-staff-delete';
-import { HOSPITAL_TENANT_ID, REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
+import {
+  HOSPITAL_TENANT_ID,
+  LEGACY_ACTIVE_HOSPITAL_ID,
+  LEGACY_ROSTER_HOSPITAL_ID,
+  LEGACY_SEED_HOSPITAL_ID,
+  REGAL_HOSPITAL_CODE,
+} from '@/lib/regal/constants';
 
 export type StaffRole = 'doctor' | 'staff' | 'admin';
 
@@ -31,6 +34,9 @@ export type HospitalStaffMember = {
   department: string;
   qualification: string;
   consultation_fee: number | null;
+  specialization?: string;
+  experience?: string;
+  timings?: string;
   is_active: boolean;
   created_at?: string;
 };
@@ -46,11 +52,206 @@ export type StaffDirectoryDraft = {
   department: string;
   qualification: string;
   consultation_fee: number | null;
+  specialization?: string;
+  experience?: string;
+  timings?: string;
   is_active: boolean;
 };
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+}
+
+const STORED_PASSCODE_FIELDS = [
+  'passcode_key',
+  'temporary_passcode',
+  'passcode',
+  'password',
+  'portal_pin',
+  'pin',
+] as const;
+
+function readStoredPasscode(row: Record<string, unknown>): string {
+  for (const key of STORED_PASSCODE_FIELDS) {
+    const value = String(row[key] ?? '').trim();
+    if (value && !value.startsWith('$2')) return value;
+  }
+  return '';
+}
+
+type DirectoryProfile = {
+  passcode: string;
+  specialization: string;
+  experience: string;
+  timings: string;
+  qualification: string;
+};
+
+function readProfileDetails(row: Record<string, unknown>): Omit<DirectoryProfile, 'passcode'> {
+  const yearsRaw = row.experience_years ?? row.years_of_experience ?? row.experience;
+  let experience = '';
+  if (typeof yearsRaw === 'number' && Number.isFinite(yearsRaw) && yearsRaw > 0) {
+    experience = `${yearsRaw} Years`;
+  } else if (typeof yearsRaw === 'string' && yearsRaw.trim() && yearsRaw.trim() !== '0') {
+    const text = yearsRaw.trim();
+    experience = /year|appointment/i.test(text) ? text : `${text} Years`;
+  }
+  if (!experience) {
+    const designation = String(row.designation ?? '').trim();
+    if (/year|appointment/i.test(designation)) experience = designation;
+  }
+  return {
+    specialization: String(row.specialization ?? row.specialty ?? '').trim(),
+    experience,
+    timings: String(
+      row.timings ?? row.visiting_hours ?? row.opd_timings ?? row.schedule ?? row.clinic_hours ?? row.shift ?? '',
+    ).trim(),
+    qualification: String(row.qualification ?? row.qualifications ?? '').trim(),
+  };
+}
+
+function rememberPasscode(
+  index: Map<string, string>,
+  keys: { email?: string; code?: string; name?: string },
+  passcode: string,
+) {
+  const value = passcode.trim();
+  if (!value) return;
+  const email = String(keys.email ?? '').trim().toLowerCase();
+  const code = String(keys.code ?? '').trim().toUpperCase();
+  const name = rosterNameKey(String(keys.name ?? ''));
+  if (email) index.set(`e:${email}`, value);
+  if (code) index.set(`c:${code}`, value);
+  if (name) index.set(`n:${name}`, value);
+}
+
+function lookupPasscode(
+  index: Map<string, string>,
+  keys: { email?: string; code?: string; name?: string },
+): string {
+  const email = String(keys.email ?? '').trim().toLowerCase();
+  const code = String(keys.code ?? '').trim().toUpperCase();
+  const name = rosterNameKey(String(keys.name ?? ''));
+  return (
+    (email ? index.get(`e:${email}`) : '') ||
+    (code ? index.get(`c:${code}`) : '') ||
+    (name ? index.get(`n:${name}`) : '') ||
+    ''
+  );
+}
+
+async function loadDirectoryEnrichment(supabase: SupabaseClient): Promise<{
+  passcodes: Map<string, string>;
+  profiles: Map<string, Omit<DirectoryProfile, 'passcode'>>;
+}> {
+  const passcodes = new Map<string, string>();
+  const profiles = new Map<string, Omit<DirectoryProfile, 'passcode'>>();
+  const tables = [
+    'hospital_user_credentials',
+    'hospital_staff',
+    'hospital_staff_credentials',
+    'hospital_doctors',
+    'doctor_profiles',
+    'hospital_members',
+  ] as const;
+
+  const results = await Promise.all(
+    tables.map(async (table) => {
+      const { data, error } = await supabase.from(table).select('*');
+      if (error || !Array.isArray(data)) return [];
+      return data.map(asRecord);
+    }),
+  );
+
+  const rememberProfile = (
+    keys: { email?: string; code?: string; name?: string },
+    details: Omit<DirectoryProfile, 'passcode'>,
+  ) => {
+    const slots = [
+      keys.email ? `e:${keys.email.trim().toLowerCase()}` : '',
+      keys.code ? `c:${keys.code.trim().toUpperCase()}` : '',
+      keys.name ? `n:${rosterNameKey(keys.name)}` : '',
+    ].filter(Boolean);
+    for (const slot of slots) {
+      const current = profiles.get(slot) ?? {
+        specialization: '',
+        experience: '',
+        timings: '',
+        qualification: '',
+      };
+      profiles.set(slot, {
+        specialization: current.specialization || details.specialization,
+        experience: current.experience || details.experience,
+        timings: current.timings || details.timings,
+        qualification: current.qualification || details.qualification,
+      });
+    }
+  };
+
+  for (const rows of results) {
+    for (const row of rows) {
+      const fullName = `${String(row.first_name ?? '')} ${String(row.last_name ?? '')}`.trim();
+      const keys = {
+        email: String(row.email ?? ''),
+        code: String(
+          row.employee_id ??
+            row.staff_id_code ??
+            row.doctor_code ??
+            row.doctor_id ??
+            row.badge_id ??
+            '',
+        ),
+        name: String(row.full_name ?? row.doctor_name ?? row.name ?? fullName),
+      };
+      rememberPasscode(passcodes, keys, readStoredPasscode(row));
+      rememberProfile(keys, readProfileDetails(row));
+    }
+  }
+
+  return { passcodes, profiles };
+}
+
+function lookupProfile(
+  profiles: Map<string, Omit<DirectoryProfile, 'passcode'>>,
+  keys: { email?: string; code?: string; name?: string },
+): Omit<DirectoryProfile, 'passcode'> {
+  const email = String(keys.email ?? '').trim().toLowerCase();
+  const code = String(keys.code ?? '').trim().toUpperCase();
+  const name = rosterNameKey(String(keys.name ?? ''));
+  const found =
+    (email ? profiles.get(`e:${email}`) : undefined) ||
+    (code ? profiles.get(`c:${code}`) : undefined) ||
+    (name ? profiles.get(`n:${name}`) : undefined);
+  return (
+    found ?? {
+      specialization: '',
+      experience: '',
+      timings: '',
+      qualification: '',
+    }
+  );
+}
+
+function rosterNameKey(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/^dr\.?\s+/, '')
+    .replace(/\s+/g, ' ');
+}
+
+/** Registered clinicians live under the legacy roster UUID or with a blank hospital id. */
+function rosterRowBelongsToNode(row: Record<string, unknown>, hospitalId: string): boolean {
+  const stored = String(row.hospital_id ?? '').trim();
+  if (!stored) return true;
+  if (
+    stored === LEGACY_ROSTER_HOSPITAL_ID ||
+    stored === LEGACY_SEED_HOSPITAL_ID ||
+    stored === LEGACY_ACTIVE_HOSPITAL_ID
+  ) {
+    return true;
+  }
+  return recordBelongsToHospitalNode(row, hospitalId);
 }
 
 export function normalizeStaffRole(raw?: string | null): StaffRole {
@@ -165,10 +366,27 @@ export async function fetchCommandCenterPersonnel(
   const seen = new Set<string>();
   const members: HospitalStaffMember[] = [];
 
+  const remember = (email: string, code: string, name: string) => {
+    if (email) seen.add(`e:${email}`);
+    if (code) seen.add(`c:${code}`);
+    const nameKey = rosterNameKey(name);
+    if (nameKey) seen.add(`n:${nameKey}`);
+  };
+
+  const alreadyListed = (email: string, code: string, name: string) => {
+    const nameKey = rosterNameKey(name);
+    return (
+      (email && seen.has(`e:${email}`)) ||
+      (code && seen.has(`c:${code}`)) ||
+      (nameKey && seen.has(`n:${nameKey}`))
+    );
+  };
+
   for (const credential of credentials) {
     const emailKey = credential.email.trim().toLowerCase();
-    if (!emailKey || seen.has(emailKey)) continue;
-    seen.add(emailKey);
+    const codeKey = String(credential.employee_id ?? '').trim().toUpperCase();
+    if (!emailKey || alreadyListed(emailKey, codeKey, credential.full_name)) continue;
+    remember(emailKey, codeKey, credential.full_name);
 
     const staff = staffByEmail.get(emailKey);
     const doctor =
@@ -196,7 +414,7 @@ export async function fetchCommandCenterPersonnel(
       staff_id_code: credential.employee_id || staff?.staff_id_code || '',
       full_name: credential.full_name || staff?.full_name || '',
       email: credential.email,
-      passcode_key: staff?.passcode_key || '',
+      passcode_key: staff?.passcode_key || readStoredPasscode(asRecord(credential)) || '',
       role,
       department: credential.department || staff?.department || '',
       qualification: staff?.qualification || String(doctor?.qualification ?? ''),
@@ -206,7 +424,128 @@ export async function fetchCommandCenterPersonnel(
     });
   }
 
-  return members.filter((row) => row.full_name.trim());
+  for (const staff of staffRows) {
+    const emailKey = staff.email.trim().toLowerCase();
+    const codeKey = staff.staff_id_code.trim().toUpperCase();
+    if (!staff.full_name.trim()) continue;
+    if (alreadyListed(emailKey, codeKey, staff.full_name)) continue;
+    remember(emailKey, codeKey, staff.full_name);
+    members.push({
+      ...staff,
+      raw_role: staff.raw_role || staff.role,
+    });
+  }
+
+  for (const doctor of doctorRows) {
+    const emailKey = String(doctor.email ?? '').trim().toLowerCase();
+    const codeKey = String(doctor.doctor_code ?? doctor.doctor_id ?? doctor.id ?? '')
+      .trim()
+      .toUpperCase();
+    const fullName = String(
+      doctor.full_name ?? doctor.doctor_name ?? doctor.name ?? '',
+    ).trim();
+    if (!fullName) continue;
+    if (alreadyListed(emailKey, codeKey, fullName)) continue;
+    remember(emailKey, codeKey, fullName);
+    const feeRaw = doctor.consultation_fee ?? doctor.fee;
+    members.push({
+      id: String(doctor.id ?? doctor.doctor_id ?? codeKey),
+      hospital_id: hospitalId,
+      staff_id_code: codeKey,
+      full_name: fullName,
+      email: emailKey,
+      passcode_key: readStoredPasscode(doctor),
+      role: 'doctor',
+      raw_role: 'Doctor',
+      department: String(doctor.department ?? doctor.specialization ?? doctor.specialty ?? ''),
+      qualification: String(doctor.qualification ?? ''),
+      consultation_fee: feeRaw == null || feeRaw === '' ? null : Number(feeRaw) || null,
+      is_active: doctor.is_active !== false,
+    });
+  }
+
+  const [memberResult, profileResult] = await Promise.all([
+    supabase.from('hospital_members').select('*'),
+    supabase.from('doctor_profiles').select('*'),
+  ]);
+
+  const memberRows = Array.isArray(memberResult.data) ? memberResult.data : [];
+  for (const row of memberRows) {
+    const record = asRecord(row);
+    if (!rosterRowBelongsToNode(record, hospitalId)) continue;
+    const fullName = `${String(record.first_name ?? '')} ${String(record.last_name ?? '')}`.trim();
+    const emailKey = String(record.email ?? '').trim().toLowerCase();
+    const codeKey = String(record.employee_id ?? '').trim().toUpperCase();
+    if (!fullName || alreadyListed(emailKey, codeKey, fullName)) continue;
+    remember(emailKey, codeKey, fullName);
+    const feeRaw = record.consultation_fee;
+    const status = String(record.status ?? 'Active').trim().toLowerCase();
+    members.push({
+      id: String(record.id ?? codeKey),
+      hospital_id: String(record.hospital_id ?? hospitalId),
+      staff_id_code: codeKey,
+      full_name: fullName,
+      email: emailKey,
+      passcode_key: readStoredPasscode(record),
+      role: mapCredentialRoleToStaffRole(String(record.role ?? 'Doctor')),
+      raw_role: String(record.role ?? 'Doctor'),
+      department: String(record.department ?? record.specialization ?? ''),
+      qualification: String(record.qualification ?? ''),
+      consultation_fee: feeRaw == null || feeRaw === '' ? null : Number(feeRaw) || null,
+      is_active: status !== 'inactive' && status !== 'restricted' && status !== 'revoked',
+    });
+  }
+
+  const profileRows = Array.isArray(profileResult.data) ? profileResult.data : [];
+  for (const row of profileRows) {
+    const record = asRecord(row);
+    if (!rosterRowBelongsToNode(record, hospitalId)) continue;
+    const fullName = String(record.full_name ?? record.name ?? '').trim();
+    const emailKey = String(record.email ?? '').trim().toLowerCase();
+    const codeKey = String(record.employee_id ?? record.doctor_code ?? '')
+      .trim()
+      .toUpperCase();
+    if (!fullName || alreadyListed(emailKey, codeKey, fullName)) continue;
+    remember(emailKey, codeKey, fullName);
+    const feeRaw = record.consultation_fee ?? record.fee;
+    members.push({
+      id: String(record.id ?? codeKey),
+      hospital_id: String(record.hospital_id ?? hospitalId),
+      staff_id_code: codeKey,
+      full_name: fullName,
+      email: emailKey,
+      passcode_key: readStoredPasscode(record),
+      role: 'doctor',
+      raw_role: 'Doctor',
+      department: String(record.department ?? record.specialization ?? record.specialty ?? ''),
+      qualification: String(record.qualification ?? ''),
+      consultation_fee: feeRaw == null || feeRaw === '' ? null : Number(feeRaw) || null,
+      is_active: record.is_available !== false && record.is_active !== false,
+    });
+  }
+
+  const enrichment = await loadDirectoryEnrichment(supabase);
+  return members
+    .filter((row) => row.full_name.trim())
+    .filter(
+      (row) =>
+        !isGlobalSuperAdminStaffRecord({
+          email: row.email,
+          role: row.raw_role || row.role,
+        }) && !/platform root/i.test(row.full_name),
+    )
+    .map((row) => {
+      const keys = { email: row.email, code: row.staff_id_code, name: row.full_name };
+      const profile = lookupProfile(enrichment.profiles, keys);
+      return {
+        ...row,
+        passcode_key: row.passcode_key.trim() || lookupPasscode(enrichment.passcodes, keys),
+        specialization: row.specialization?.trim() || profile.specialization,
+        experience: row.experience?.trim() || profile.experience,
+        timings: row.timings?.trim() || profile.timings,
+        qualification: row.qualification.trim() || profile.qualification,
+      };
+    });
 }
 
 function nextStaffCode(role: StaffRole): string {
@@ -228,6 +567,38 @@ function resolveHospitalCodeForWrite(hospitalId: string): string {
   return REGAL_HOSPITAL_CODE;
 }
 
+/** Staff rows use hospitals.id, which is the tenant code HOSP-01 on this node. */
+async function resolveStaffHospitalTenant(
+  supabase: SupabaseClient,
+  hospitalId: string,
+): Promise<{ hospitalId: string; hospitalCode: string } | null> {
+  const trimmed = hospitalId.trim();
+  const uuid = await resolveHospitalUuid(supabase, trimmed || REGAL_HOSPITAL_CODE);
+  if (uuid) {
+    return { hospitalId: uuid, hospitalCode: resolveHospitalCodeForWrite(trimmed) };
+  }
+
+  const code = isHospitalCode(trimmed) ? trimmed.toUpperCase() : REGAL_HOSPITAL_CODE;
+  const byCode = await supabase
+    .from('hospitals')
+    .select('id, hospital_code')
+    .eq('hospital_code', code)
+    .limit(1)
+    .maybeSingle();
+  const row = byCode.data?.id
+    ? byCode.data
+    : (
+        await supabase.from('hospitals').select('id, hospital_code').eq('id', code).limit(1).maybeSingle()
+      ).data;
+
+  const tenantId = String((row as { id?: unknown } | null)?.id ?? '').trim();
+  if (!tenantId) return null;
+  const hospitalCode = String((row as { hospital_code?: unknown } | null)?.hospital_code ?? code)
+    .trim()
+    .toUpperCase();
+  return { hospitalId: tenantId, hospitalCode: hospitalCode || code };
+}
+
 function staffPayload(
   hospitalUuid: string,
   hospitalCode: string,
@@ -237,7 +608,7 @@ function staffPayload(
   const fee =
     role === 'doctor'
       ? Math.max(0, Number(draft.consultation_fee ?? 500) || 500)
-      : null;
+      : 0;
   const employeeCode = (draft.staff_id_code.trim() || nextStaffCode(role)).toUpperCase();
 
   // Never send `id` — custom RH-D / RH-S codes belong in staff_id_code + employee_id only.
@@ -270,19 +641,14 @@ export async function createHospitalStaffMember(
     return { ok: false, error: 'Consultation fee cannot be negative' };
   }
 
-  const resolvedHospitalUuid =
-    (await resolveHospitalUuid(supabase, hospitalId)) ||
-    (isHospitalUuid(hospitalId) ? hospitalId.trim() : null);
-
-  if (!resolvedHospitalUuid) {
+  const tenant = await resolveStaffHospitalTenant(supabase, hospitalId);
+  if (!tenant) {
     return { ok: false, error: 'Could not resolve hospital tenant for this credential.' };
   }
 
-  const hospitalCode = resolveHospitalCodeForWrite(hospitalId);
-
   const { data, error } = await supabase
     .from('hospital_staff')
-    .insert([staffPayload(resolvedHospitalUuid, hospitalCode, draft)])
+    .insert([staffPayload(tenant.hospitalId, tenant.hospitalCode, draft)])
     .select()
     .maybeSingle();
 
@@ -325,21 +691,16 @@ export async function updateHospitalStaffMember(
 ): Promise<{ ok: boolean; member?: HospitalStaffMember; error?: string }> {
   if (!draft.full_name.trim()) return { ok: false, error: 'Full name is required' };
 
-  const resolvedHospitalUuid =
-    (await resolveHospitalUuid(supabase, hospitalId)) ||
-    (isHospitalUuid(hospitalId) ? hospitalId.trim() : null);
-
-  if (!resolvedHospitalUuid) {
+  const tenant = await resolveStaffHospitalTenant(supabase, hospitalId);
+  if (!tenant) {
     return { ok: false, error: 'Could not resolve hospital tenant for this credential.' };
   }
 
-  const hospitalCode = resolveHospitalCodeForWrite(hospitalId);
-
   const { data, error } = await supabase
     .from('hospital_staff')
-    .update(staffPayload(resolvedHospitalUuid, hospitalCode, draft))
+    .update(staffPayload(tenant.hospitalId, tenant.hospitalCode, draft))
     .eq('id', id)
-    .eq('hospital_id', resolvedHospitalUuid)
+    .eq('hospital_id', tenant.hospitalId)
     .select()
     .maybeSingle();
 
@@ -372,6 +733,92 @@ export async function updateHospitalStaffMember(
   }
 
   return { ok: true, member };
+}
+
+function experienceYears(value: string): number | null {
+  const match = value.match(/\d+/);
+  if (!match) return null;
+  const years = Number(match[0]);
+  return Number.isFinite(years) ? years : null;
+}
+
+async function updateByEmail(
+  supabase: SupabaseClient,
+  table: string,
+  email: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  const address = email.trim().toLowerCase();
+  if (!address) return;
+  let next = { ...payload };
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    if (Object.keys(next).length === 0) return;
+    const { error } = await supabase.from(table).update(next).ilike('email', address);
+    if (!error) return;
+    const missing = String(error.message).match(/'([^']+)' column|column "([^"]+)"/i);
+    const column = missing?.[1] || missing?.[2];
+    if (!column || !(column in next)) return;
+    const { [column]: _removed, ...rest } = next;
+    next = rest;
+  }
+}
+
+/** Save directory edits onto staff, member, profile, and login credential rows. */
+export async function saveDirectoryProfile(
+  supabase: SupabaseClient,
+  hospitalId: string,
+  member: HospitalStaffMember | null,
+  draft: StaffDirectoryDraft,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!draft.full_name.trim()) return { ok: false, error: 'Full name is required' };
+
+  const email = (member?.email || draft.email).trim().toLowerCase();
+  const years = experienceYears(draft.experience ?? '');
+  const staffId = member?.staff_record_id || '';
+  if (staffId) {
+    const updated = await updateHospitalStaffMember(supabase, hospitalId, staffId, draft);
+    if (!updated.ok && !/0 rows|not find|no rows/i.test(updated.error || '')) {
+      console.warn('[saveDirectoryProfile] hospital_staff update:', updated.error);
+    }
+  }
+
+  await updateByEmail(supabase, 'hospital_members', email, {
+    specialization: draft.specialization?.trim() || null,
+    qualification: draft.qualification.trim() || null,
+    ...(years != null ? { experience_years: years } : {}),
+  });
+  await updateByEmail(supabase, 'doctor_profiles', email, {
+    full_name: draft.full_name.trim(),
+    department: draft.department.trim() || null,
+    specialization: draft.specialization?.trim() || null,
+    specialty: draft.specialization?.trim() || null,
+    qualification: draft.qualification.trim() || null,
+    experience: draft.experience?.trim() || null,
+    timings: draft.timings?.trim() || null,
+  });
+  await updateByEmail(supabase, 'hospital_doctors', email, {
+    doctor_name: draft.full_name.trim(),
+    department: draft.department.trim() || null,
+    specialization: draft.specialization?.trim() || null,
+    qualification: draft.qualification.trim() || null,
+    experience: draft.experience?.trim() || null,
+    passcode: draft.passcode_key.trim() || null,
+  });
+  await updateByEmail(supabase, 'hospital_user_credentials', email, {
+    full_name: draft.full_name.trim(),
+    department: draft.department.trim() || null,
+    passcode: draft.passcode_key.trim() || null,
+    passcode_key: draft.passcode_key.trim() || null,
+    temporary_passcode: draft.passcode_key.trim() || null,
+  });
+  await updateByEmail(supabase, 'hospital_staff_credentials', email, {
+    full_name: draft.full_name.trim(),
+    department: draft.department.trim() || null,
+    temporary_passcode: draft.passcode_key.trim() || null,
+    passcode: draft.passcode_key.trim() || null,
+  });
+
+  return { ok: true };
 }
 
 export function memberLooksLikeDoctor(

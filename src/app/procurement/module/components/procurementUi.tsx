@@ -196,7 +196,7 @@ export function BudgetAlertBanner({ utilizationPct }: { utilizationPct: number }
     <div className={`mb-2 flex items-center gap-2 rounded-md border-2 px-3 py-1.5 ${utilizationPct >= 95 ? 'border-red-500 bg-red-600 text-white animate-pulse' : 'border-amber-400 bg-amber-50 text-amber-900'}`}>
       <AlertTriangle className="h-4 w-4" />
       <span className="text-[10px] font-bold uppercase tracking-wide">
-        Budget Utilization at {utilizationPct}% ΓÇö {utilizationPct >= 95 ? 'Over Budget Risk' : 'Approaching Cap'}
+        Budget Utilization at {utilizationPct}% — {utilizationPct >= 95 ? 'Over Budget Risk' : 'Approaching Cap'}
       </span>
     </div>
   );

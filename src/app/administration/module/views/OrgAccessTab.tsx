@@ -22,7 +22,7 @@ export default function OrgAccessTab({ selectedNode, onSelectNode, onOpenConfigD
   return (
     <div className="flex flex-col gap-2 xl:flex-row">
       <div className="w-full shrink-0 xl:w-[35%]">
-        <GovPanel title="System Hierarchies & Setups Tree" subtitle="Hospital profile ┬╖ org structure ┬╖ employee ┬╖ dept parameters" icon={FolderTree}>
+        <GovPanel title="System Hierarchies & Setups Tree" subtitle="Hospital profile · org structure · employee · dept parameters" icon={FolderTree}>
           <nav className="max-h-[520px] overflow-y-auto">
             {ORG_CONFIG_TREE.map((group) => (
               <div key={group.id} className="mb-1">
@@ -52,7 +52,7 @@ export default function OrgAccessTab({ selectedNode, onSelectNode, onOpenConfigD
       </div>
 
       <div className="min-w-0 flex-1 space-y-2">
-        <GovPanel title="User Profiles & Account Provisioning" subtitle="Active accounts ┬╖ roles ┬╖ last login">
+        <GovPanel title="User Profiles & Account Provisioning" subtitle="Active accounts · roles · last login">
           <table className="w-full min-w-[520px] text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -97,7 +97,7 @@ export default function OrgAccessTab({ selectedNode, onSelectNode, onOpenConfigD
           </table>
         </GovPanel>
 
-        <GovPanel title="Staff Duty Shift Rosters" subtitle="Morning ┬╖ evening ┬╖ night coverage assignments">
+        <GovPanel title="Staff Duty Shift Rosters" subtitle="Morning · evening · night coverage assignments">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">

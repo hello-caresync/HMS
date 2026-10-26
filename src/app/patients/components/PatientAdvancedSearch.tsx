@@ -33,7 +33,7 @@ export default function PatientAdvancedSearch({ onPatientSelect }: PatientAdvanc
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="NEX-2026-1001 ┬╖ Ananya Sharma ┬╖ +91 98765ΓÇª"
+          placeholder="NEX-2026-1001 · Ananya Sharma · +91 98765…"
           className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-800 placeholder:text-slate-800 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           autoComplete="off"
         />

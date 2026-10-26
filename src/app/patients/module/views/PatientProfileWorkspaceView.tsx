@@ -78,7 +78,7 @@ export default function PatientProfileWorkspaceView({ selectedUhid }: PatientPro
         </PatientPanel>
       </div>
 
-      <PatientPanel title="Identity Verification Status" subtitle="Government ID ΓÇö secure vault">
+      <PatientPanel title="Identity Verification Status" subtitle="Government ID — secure vault">
         <div className="space-y-2">
           <SecureMaskedField label="Aadhaar" verified={patient.aadhaarVerified} docType="Aadhaar" />
           <SecureMaskedField label="Passport" verified={patient.passportVerified} docType="Passport" />

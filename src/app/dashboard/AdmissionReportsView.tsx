@@ -22,8 +22,8 @@ const DAILY_SUMMARY = [
 ];
 
 const FORECAST_ROWS = [
-  { period: 'Next 7 days', admissions: '148ΓÇô162', occupancy: '85ΓÇô88%', alos: '3.6ΓÇô4.0d' },
-  { period: 'Next 30 days', admissions: '620ΓÇô680', occupancy: '82ΓÇô86%', alos: '3.5ΓÇô4.2d' },
+  { period: 'Next 7 days', admissions: '148–162', occupancy: '85–88%', alos: '3.6–4.0d' },
+  { period: 'Next 30 days', admissions: '620–680', occupancy: '82–86%', alos: '3.5–4.2d' },
 ];
 
 export default function AdmissionReportsView() {

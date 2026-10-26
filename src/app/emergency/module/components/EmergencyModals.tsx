@@ -11,8 +11,8 @@ export function RegisterEmergencyModal({ onClose }: { onClose: () => void }) {
         <div>
           <label className="mb-1 block text-[9px] font-semibold uppercase text-slate-500">Registration Type</label>
           <select className={inputClass}>
-            <option>Known Patient ΓÇö UHID lookup</option>
-            <option>Unknown Patient ΓÇö Trauma</option>
+            <option>Known Patient — UHID lookup</option>
+            <option>Unknown Patient — Trauma</option>
             <option>Walk-in Emergency</option>
           </select>
         </div>
@@ -49,14 +49,14 @@ export function StartTriageModal({ onClose }: { onClose: () => void }) {
         <div>
           <label className="mb-1 block text-[9px] font-semibold uppercase text-slate-500">Priority</label>
           <select className={inputClass}>
-            <option>Critical ΓÇö RED</option>
-            <option>Emergent ΓÇö ORANGE</option>
-            <option>Urgent ΓÇö YELLOW</option>
-            <option>Non-Urgent ΓÇö GREEN</option>
+            <option>Critical — RED</option>
+            <option>Emergent — ORANGE</option>
+            <option>Urgent — YELLOW</option>
+            <option>Non-Urgent — GREEN</option>
           </select>
         </div>
         <input className={`${inputClass} col-span-2`} placeholder="Chief complaint summary" />
-        <input className={`${inputClass} col-span-2`} placeholder="Vitals snapshot ΓÇö BP, HR, SpOΓéé, RR" />
+        <input className={`${inputClass} col-span-2`} placeholder="Vitals snapshot — BP, HR, SpO₂, RR" />
       </div>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">
         Complete Triage & Assign Queue
@@ -101,8 +101,8 @@ export function DispatchAmbulanceModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Dispatch Ambulance" onClose={onClose} wide>
       <select className={`${inputClass} mb-2`}>
-        <option>AMB-05 ΓÇö Delta-5 (Available)</option>
-        <option>AMB-07 ΓÇö Alpha-7 (Returning ΓÇö ETA 8 min)</option>
+        <option>AMB-05 — Delta-5 (Available)</option>
+        <option>AMB-07 — Alpha-7 (Returning — ETA 8 min)</option>
       </select>
       <input className={inputClass} placeholder="Pickup location" />
       <input className={`${inputClass} mt-2`} placeholder="Incident type / chief complaint" />
@@ -118,9 +118,9 @@ export function ActivateCodeBlueModal({ onClose, onConfirm }: { onClose: () => v
     <ModalOverlay title="Activate Code Blue" onClose={onClose} critical>
       <p className="text-[11px] font-semibold text-red-700">This will alert resuscitation team, ICU liaison, and broadcast hospital-wide.</p>
       <select className={`${inputClass} mt-2`}>
-        <option>Resuscitation Bay ΓÇö Resus-1</option>
-        <option>Trauma Bay ΓÇö Trauma-2</option>
-        <option>Observation ΓÇö Obs-5</option>
+        <option>Resuscitation Bay — Resus-1</option>
+        <option>Trauma Bay — Trauma-2</option>
+        <option>Observation — Obs-5</option>
       </select>
       <div className="mt-3 flex gap-2">
         <button type="button" onClick={onClose} className="flex-1 rounded-md border border-[#E2E8F0] py-2 text-[10px] font-bold">

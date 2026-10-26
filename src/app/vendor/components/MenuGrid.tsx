@@ -21,8 +21,8 @@ export default function MenuGrid({ setActiveTab, revenue, activeAlerts, pendingO
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button onClick={() => setActiveTab('OverviewDashboard')} className="bg-[#EBF1F1] border border-[#CBD6D6] rounded-2xl p-5 flex flex-col items-start justify-between text-left shadow-2xs hover:shadow-md hover:border-[#4A5D5E] transition-all h-36 relative cursor-pointer">
-            <span className="absolute top-4 right-4 bg-white border border-[#CBD6D6] text-[#4A5D5E] font-black text-[10px] px-2 py-0.5 rounded-md">Γé╣{revenue.toLocaleString('en-IN')} NET</span>
-            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">≡ƒôè</div>
+            <span className="absolute top-4 right-4 bg-white border border-[#CBD6D6] text-[#4A5D5E] font-black text-[10px] px-2 py-0.5 rounded-md">₹{revenue.toLocaleString('en-IN')} NET</span>
+            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">📊</div>
             <div className="mt-3">
               <h4 className="text-sm font-black text-[#2C393A]">Transaction Dashboard</h4>
               <p className="text-[11px] text-[#5A6E70] font-semibold mt-0.5">Revenue streams, volume mix, and partner KPIs</p>
@@ -31,7 +31,7 @@ export default function MenuGrid({ setActiveTab, revenue, activeAlerts, pendingO
 
           <button onClick={() => setActiveTab('POs')} className="bg-[#EBF1F1] border border-[#CBD6D6] rounded-2xl p-5 flex flex-col items-start justify-between text-left shadow-2xs hover:shadow-md hover:border-[#4A5D5E] transition-all h-36 relative cursor-pointer">
             <span className="absolute top-4 right-4 bg-white border border-[#CBD6D6] text-[#4A5D5E] font-black text-[10px] px-2 py-0.5 rounded-md">ACTIVE</span>
-            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">≡ƒôï</div>
+            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">📋</div>
             <div className="mt-3">
               <h4 className="text-sm font-black text-[#2C393A]">PO Visibility</h4>
               <p className="text-[11px] text-[#5A6E70] font-semibold mt-0.5">Hospital bulk purchase orders and lanes</p>
@@ -40,7 +40,7 @@ export default function MenuGrid({ setActiveTab, revenue, activeAlerts, pendingO
 
           <button onClick={() => setActiveTab('Orders')} className="bg-[#EBF1F1] border border-[#CBD6D6] rounded-2xl p-5 flex flex-col items-start justify-between text-left shadow-2xs hover:shadow-md hover:border-[#4A5D5E] transition-all h-36 relative cursor-pointer">
             <span className="absolute top-4 right-4 bg-white border border-[#CBD6D6] text-[#4A5D5E] font-black text-[10px] px-2 py-0.5 rounded-md">{pendingOrdersCount} PENDING</span>
-            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">≡ƒôä</div>
+            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">📄</div>
             <div className="mt-3">
               <h4 className="text-sm font-black text-[#2C393A]">Invoice Status</h4>
               <p className="text-[11px] text-[#5A6E70] font-semibold mt-0.5">Prescription orders awaiting verification or dispatch</p>
@@ -49,7 +49,7 @@ export default function MenuGrid({ setActiveTab, revenue, activeAlerts, pendingO
 
           <button onClick={() => setActiveTab('BillingLedger')} className="bg-[#EBF1F1] border border-[#CBD6D6] rounded-2xl p-5 flex flex-col items-start justify-between text-left shadow-2xs hover:shadow-md hover:border-[#4A5D5E] transition-all h-36 relative cursor-pointer">
             <span className="absolute top-4 right-4 bg-white border border-[#CBD6D6] text-[#4A5D5E] font-black text-[10px] px-2 py-0.5 rounded-md">TAX MATRIX</span>
-            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">≡ƒÆ╕</div>
+            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">💸</div>
             <div className="mt-3">
               <h4 className="text-sm font-black text-[#2C393A]">Payment Status & Tax</h4>
               <p className="text-[11px] text-[#5A6E70] font-semibold mt-0.5">CGST/SGST ledgers and disbursement clearance</p>
@@ -58,7 +58,7 @@ export default function MenuGrid({ setActiveTab, revenue, activeAlerts, pendingO
 
           <button onClick={() => setActiveTab('AutoBids')} className="bg-[#EBF1F1] border border-[#CBD6D6] rounded-2xl p-5 flex flex-col items-start justify-between text-left shadow-2xs hover:shadow-md hover:border-[#4A5D5E] transition-all h-36 relative cursor-pointer">
             <span className="absolute top-4 right-4 bg-white border border-[#CBD6D6] text-rose-600 font-black text-[10px] px-2 py-0.5 rounded-md">{activeAlerts} ACTIVE ALERTS</span>
-            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">≡ƒÜ¿</div>
+            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">🚨</div>
             <div className="mt-3">
               <h4 className="text-sm font-black text-[#2C393A]">Smart Alerts Auto-Bidding</h4>
               <p className="text-[11px] text-[#5A6E70] font-semibold mt-0.5">Auto-bidding on critical hospital deficits</p>
@@ -66,7 +66,7 @@ export default function MenuGrid({ setActiveTab, revenue, activeAlerts, pendingO
           </button>
 
           <button onClick={() => setActiveTab('FulfillmentLog')} className="bg-[#EBF1F1] border border-[#CBD6D6] rounded-2xl p-5 flex flex-col items-start justify-between text-left shadow-2xs hover:shadow-md hover:border-[#4A5D5E] transition-all h-36 relative cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">≡ƒÜÜ</div>
+            <div className="w-10 h-10 rounded-full bg-white text-[#4A5D5E] border border-[#CBD6D6] flex items-center justify-center text-sm">🚚</div>
             <div className="mt-3">
               <h4 className="text-sm font-black text-[#2C393A]">My Supplies & Analysis</h4>
               <p className="text-[11px] text-[#5A6E70] font-semibold mt-0.5">Delivered inventory historical throughput logs</p>
@@ -83,7 +83,7 @@ export default function MenuGrid({ setActiveTab, revenue, activeAlerts, pendingO
           </div>
           <div className="bg-white rounded-xl border border-[#CBD6D6] p-4 text-left">
             <span className="text-[10px] font-bold text-slate-800 font-mono uppercase block">Net Account Balance</span>
-            <span className="text-2xl font-black text-[#4A5D5E] mt-1 block">Γé╣{revenue.toLocaleString('en-IN')}</span>
+            <span className="text-2xl font-black text-[#4A5D5E] mt-1 block">₹{revenue.toLocaleString('en-IN')}</span>
           </div>
         </div>
       </div>

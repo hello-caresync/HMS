@@ -11,8 +11,8 @@ export default function BillingView() {
   const [tab, setTab] = useState<BillTab>('invoice');
   const [search, setSearch] = useState('');
   const [invoices, setInvoices] = useState([
-    { id: 'INV-982', patient: 'Rahul Sharma', amount: 'Γé╣42,800', status: 'Pending' },
-    { id: 'INV-981', patient: 'Priya Patel', amount: 'Γé╣8,420', status: 'Paid' },
+    { id: 'INV-982', patient: 'Rahul Sharma', amount: '₹42,800', status: 'Pending' },
+    { id: 'INV-981', patient: 'Priya Patel', amount: '₹8,420', status: 'Paid' },
   ]);
 
   return (
@@ -24,10 +24,10 @@ export default function BillingView() {
       />
       <KpiGrid
         items={[
-          { label: "Today's Collections", value: 'Γé╣4,82,900', icon: TrendingUp, tone: 'emerald' },
-          { label: 'Pending Dues', value: 'Γé╣1,24,500', icon: Wallet, tone: 'amber' },
+          { label: "Today's Collections", value: '₹4,82,900', icon: TrendingUp, tone: 'emerald' },
+          { label: 'Pending Dues', value: '₹1,24,500', icon: Wallet, tone: 'amber' },
           { label: 'Invoices Open', value: '156', icon: Receipt, tone: 'cyan' },
-          { label: 'Refunds Today', value: 'Γé╣12,400', icon: RefreshCcw, tone: 'rose' },
+          { label: 'Refunds Today', value: '₹12,400', icon: RefreshCcw, tone: 'rose' },
         ]}
       />
       <SearchDesk value={search} onChange={setSearch} placeholder="Search billing ledger..." />
@@ -56,7 +56,7 @@ export default function BillingView() {
                 {
                   id: `INV-${980 + rows.length}`,
                   patient: 'New Patient',
-                  amount: 'Γé╣15,000',
+                  amount: '₹15,000',
                   status: 'Pending',
                 },
                 ...rows,
@@ -73,8 +73,8 @@ export default function BillingView() {
           <DataTable
             columns={['Bill', 'Ward', 'Running Total']}
             rows={[
-              ['INT-441', 'ICU-A', 'Γé╣18,200'],
-              ['INT-442', 'Gen-2', 'Γé╣6,800'],
+              ['INT-441', 'ICU-A', '₹18,200'],
+              ['INT-442', 'Gen-2', '₹6,800'],
             ]}
           />
         </Panel>
@@ -84,9 +84,9 @@ export default function BillingView() {
           <DataTable
             columns={['Txn', 'Mode', 'Amount']}
             rows={[
-              ['POS-771', 'UPI', 'Γé╣4,200'],
-              ['POS-772', 'Card', 'Γé╣12,800'],
-              ['POS-773', 'Cash', 'Γé╣2,000'],
+              ['POS-771', 'UPI', '₹4,200'],
+              ['POS-772', 'Card', '₹12,800'],
+              ['POS-773', 'Cash', '₹2,000'],
             ]}
           />
         </Panel>
@@ -95,7 +95,7 @@ export default function BillingView() {
         <Panel title="Refunding Ledger">
           <DataTable
             columns={['Refund', 'Reason', 'Amount']}
-            rows={[['RF-12', 'Duplicate charge', 'Γé╣1,200']]}
+            rows={[['RF-12', 'Duplicate charge', '₹1,200']]}
           />
         </Panel>
       )}

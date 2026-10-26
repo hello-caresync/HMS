@@ -66,7 +66,7 @@ export function BookAppointmentModal({ onClose, onBooked }: BookAppointmentModal
             <label className="mb-1 block text-[10px] font-semibold uppercase text-slate-500">Doctor & Department *</label>
             <select className={inputClass} value={form.doctorId} onChange={(e) => setForm({ ...form, doctorId: e.target.value })}>
               {MOCK_DOCTORS.map((d) => (
-                <option key={d.id} value={d.id}>{d.name} ΓÇö {d.department} ({d.room})</option>
+                <option key={d.id} value={d.id}>{d.name} — {d.department} ({d.room})</option>
               ))}
             </select>
           </div>
@@ -115,9 +115,9 @@ export function CheckInModal({ onClose }: { onClose: () => void }) {
     <ModalOverlay title="Check-in Patient" onClose={onClose}>
       {token ? (
         <div className="space-y-3 text-center">
-          <p className="text-[11px] text-emerald-700 font-semibold">Check-in successful ┬╖ Token generated</p>
+          <p className="text-[11px] text-emerald-700 font-semibold">Check-in successful · Token generated</p>
           <p className="font-mono text-2xl font-bold text-[#2563EB]">{token}</p>
-          <p className="text-[10px] text-slate-500">Print token at reception desk ┬╖ Queue updated</p>
+          <p className="text-[10px] text-slate-500">Print token at reception desk · Queue updated</p>
           <button type="button" onClick={onClose} className="w-full rounded-md bg-[#2563EB] py-2 text-[11px] font-bold text-white">
             Done
           </button>
@@ -139,7 +139,7 @@ export function CheckInModal({ onClose }: { onClose: () => void }) {
 
 export function DoctorScheduleModal({ onClose }: { onClose: () => void }) {
   return (
-    <ModalOverlay title="Doctor Schedule ΓÇö Today" onClose={onClose} wide>
+    <ModalOverlay title="Doctor Schedule — Today" onClose={onClose} wide>
       <table className="w-full text-left">
         <thead>
           <tr className="border-b border-slate-100">
@@ -168,7 +168,7 @@ export function PrintSlipModal({ onClose, patientName, token }: { onClose: () =>
   return (
     <ModalOverlay title="Appointment Slip Preview" onClose={onClose}>
       <div className="rounded-lg border-2 border-[#0F172A] p-4 text-center">
-        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS ΓÇö OPD Appointment</p>
+        <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS — OPD Appointment</p>
         <p className="mt-2 text-sm font-bold text-[#0F172A]">{patientName}</p>
         <p className="font-mono text-lg font-bold text-[#2563EB]">{token}</p>
         <p className="mt-2 text-[10px] text-slate-500">Present at reception 15 min before slot</p>

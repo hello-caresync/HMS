@@ -227,7 +227,7 @@ export const ECOSYSTEM_NAV_LAYERS: EcosystemNavLayer[] = [
   },
 ];
 
-/** Icon map keyed by nav link id ΓÇö keeps href data separate from Lucide imports */
+/** Icon map keyed by nav link id — keeps href data separate from Lucide imports */
 export const NAV_LINK_ICON_IDS: Record<string, string> = {
   'l1-login': 'shield',
   'l2-dashboard': 'layout',

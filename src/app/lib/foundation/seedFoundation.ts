@@ -63,19 +63,19 @@ export const SEED_MEDICAL_TESTS: MedicalTestItem[] = [
 export const SEED_INSURANCE_PROVIDERS: InsuranceProviderConfig[] = [
   {
     providerId: 'INS-STAR-001',
-    tpaName: 'Star Health ┬╖ Medi Assist',
+    tpaName: 'Star Health · Medi Assist',
     clearanceActive: true,
     settlementCapLimit: 500000,
   },
   {
     providerId: 'INS-HDFC-002',
-    tpaName: 'HDFC ERGO ┬╖ Paramount TPA',
+    tpaName: 'HDFC ERGO · Paramount TPA',
     clearanceActive: true,
     settlementCapLimit: 750000,
   },
   {
     providerId: 'INS-ICICI-003',
-    tpaName: 'ICICI Lombard ┬╖ Health India',
+    tpaName: 'ICICI Lombard · Health India',
     clearanceActive: false,
     settlementCapLimit: 300000,
   },
@@ -142,7 +142,7 @@ export const SEED_BED_CONTAINERS: FacilityBedContainer[] = [
   {
     id: 'BED-CNT-001',
     branchId: 'BR-NEX-MAIN',
-    floorName: 'Floor 4 ┬╖ Critical Care',
+    floorName: 'Floor 4 · Critical Care',
     wardCategory: 'ICU',
     roomIdentifier: 'ICU-A',
     maxBedCount: 8,
@@ -152,7 +152,7 @@ export const SEED_BED_CONTAINERS: FacilityBedContainer[] = [
   {
     id: 'BED-CNT-002',
     branchId: 'BR-NEX-MAIN',
-    floorName: 'Floor 3 ┬╖ Cardiac',
+    floorName: 'Floor 3 · Cardiac',
     wardCategory: 'CCU',
     roomIdentifier: 'CCU-01',
     maxBedCount: 6,

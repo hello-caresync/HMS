@@ -136,7 +136,9 @@ export function PatientProfileForm({
                   min={1}
                   max={120}
                   value={profile.age}
-                  onChange={(e) => onProfileChange({ age: e.target.value })}
+                  onChange={(e) => onProfileChange({ age: e.target.value.replace(/\D/g, '').slice(0, 3) })}
+                  inputMode="numeric"
+                  maxLength={3}
                   placeholder="Enter age"
                   className={inputClass}
                 />

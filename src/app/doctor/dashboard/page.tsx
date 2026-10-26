@@ -8,7 +8,15 @@ import { NotificationHandler } from '@/components/common/NotificationHandler';
 import { PatientQueue } from '@/components/doctor/command-center/PatientQueue';
 import { PatientHistory360Section } from '@/components/doctor/PatientHistory360Section';
 import { PatientHistorySection } from '@/components/doctor/PatientHistorySection';
-import { useDoctorQueue } from '@/lib/doctor/command-center/hooks';
+import {
+  EMERGENCY_CONTINUE_KEY,
+  emergencyAssignedToDoctor,
+  useAcknowledgeEmergency,
+  useDoctorQueue,
+  useEmergencyAlertsRealtime,
+  type EmergencyAlertView,
+} from '@/lib/doctor/command-center/hooks';
+import { displayClinicalText } from '@/lib/clinical/clinical-text';
 import { isQueueDoneStatus } from '@/lib/doctor/command-center/supabase-service';
 import { todayIsoDate, type QueueDateFilter } from '@/lib/scheduling/queue-date-filter';
 import {
@@ -43,6 +51,7 @@ import {
   FileText,
   LogOut,
   AlertCircle,
+  Siren,
 } from 'lucide-react';
 
 interface ActiveDoctorSession {
@@ -78,7 +87,7 @@ function formatIntakeVitals(patient: QueueAppointment): string {
     raw.spo2 ? `SpO2 ${String(raw.spo2)}` : '',
     raw.weight ? `Wt ${String(raw.weight)}` : '',
   ].filter(Boolean);
-  return parts.join(' ┬╖ ');
+  return parts.join(' · ');
 }
 
 function readDoctorSessionFromStorage(): ActiveDoctorSession | null {
@@ -95,7 +104,7 @@ function readDoctorSessionFromStorage(): ActiveDoctorSession | null {
 }
 
 function formatToken(token?: string | number | null): string {
-  if (token === undefined || token === null || String(token).trim() === '') return 'ΓÇö';
+  if (token === undefined || token === null || String(token).trim() === '') return '—';
   return `#${String(token).replace(/^#/, '')}`;
 }
 
@@ -167,6 +176,20 @@ export default function DoctorWorkstation() {
   } = useDoctorQueue(isMounted && session ? loadDoctorWorkspaceSession() : null, {
     dateFilter: queueDateFilter,
   });
+  const emergencyIdentity = resolveDoctorSessionIdentity(
+    isMounted ? (getDoctorSession() ?? (session ? { ...session, employeeId: session.doctorId } : null)) : null,
+  );
+  const { data: emergencyAlerts = [] } = useEmergencyAlertsRealtime(emergencyIdentity.employeeId);
+  const ackEmergency = useAcknowledgeEmergency();
+  const assignedEmergencies = emergencyAlerts.filter(
+    (alert) =>
+      alert.status !== 'RESOLVED' &&
+      emergencyAssignedToDoctor(alert, {
+        doctorName: session?.doctorName || emergencyIdentity.doctorName,
+        email: session?.email || emergencyIdentity.email,
+        employeeId: session?.doctorId || emergencyIdentity.employeeId,
+      }),
+  );
 
   const loadConsultationFeed = useCallback(async () => {
     const workspace = loadDoctorWorkspaceSession();
@@ -234,6 +257,7 @@ export default function DoctorWorkstation() {
   useEffect(() => {
     const waiting = appointments.filter((row) => !isQueueDoneStatus(row.status));
     setActivePatient((prev) => {
+      if (prev?.source === 'emergency') return prev;
       if (!prev) return waiting[0] || null;
       const updated = appointments.find(
         (row) => row.id === prev.id || row.appointment_id === prev.appointment_id,
@@ -254,13 +278,56 @@ export default function DoctorWorkstation() {
       return;
     }
     setAppointmentId(String(activePatient.appointment_id || activePatient.id || ''));
-    setChiefComplaint(activePatient.chief_complaint || activePatient.reason_for_visit || '');
+    setChiefComplaint(
+      displayClinicalText(activePatient.chief_complaint || activePatient.reason_for_visit || ''),
+    );
     setIntakeVitals(formatIntakeVitals(activePatient));
   }, [activePatient?.id, activePatient?.appointment_id, activePatient?.patient_id, activePatient?.uhid]);
 
+  const openEmergencyCase = useCallback(
+    (alert: Pick<EmergencyAlertView, 'id' | 'patient_name' | 'patient_id' | 'message'>) => {
+      const complaint = displayClinicalText(alert.message || '') || 'Emergency attendance';
+      const patient: QueueAppointment = {
+        id: alert.id,
+        patient_id: alert.patient_id,
+        patient_name: alert.patient_name || 'Emergency patient',
+        chief_complaint: complaint,
+        reason_for_visit: complaint,
+        status: 'waiting',
+        source: 'emergency',
+        token_number: 'ER',
+        appointment_type: 'Emergency',
+      };
+      setActivePatient(patient);
+      setAppointmentId(alert.id);
+      setChiefComplaint(complaint);
+      setIntakeVitals('');
+      setDiagnosis('');
+      setClinicalNotes('');
+      setDoctorAdvice('');
+      setMedications([]);
+      setStatusMessage(null);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!isMounted || !session) return;
+    const raw = sessionStorage.getItem(EMERGENCY_CONTINUE_KEY);
+    if (!raw) return;
+    sessionStorage.removeItem(EMERGENCY_CONTINUE_KEY);
+    try {
+      openEmergencyCase(JSON.parse(raw) as EmergencyAlertView);
+    } catch {
+      /* ignore a bad handoff */
+    }
+  }, [isMounted, openEmergencyCase, session]);
+
   const handleSelectPatient = async (patient: QueueAppointment) => {
     const nextAppointmentId = String(patient.appointment_id || patient.id || '').trim();
-    const nextComplaint = patient.chief_complaint || patient.reason_for_visit || '';
+    const nextComplaint = displayClinicalText(
+      patient.chief_complaint || patient.reason_for_visit || '',
+    );
     const nextVitals = formatIntakeVitals(patient);
 
     setActivePatient(patient);
@@ -413,7 +480,6 @@ export default function DoctorWorkstation() {
       }
 
       await Promise.allSettled([
-        queryClient.invalidateQueries({ queryKey: ['doctor-queue'] }),
         queryClient.invalidateQueries({ queryKey: ['doctor-records'] }),
         queryClient.invalidateQueries({ queryKey: ['patient-records'] }),
         queryClient.invalidateQueries({ queryKey: ['patient-prescriptions'] }),
@@ -422,8 +488,33 @@ export default function DoctorWorkstation() {
         queryClient.invalidateQueries({ queryKey: ['opd-charges'] }),
       ]);
 
+      const completedRow: QueueAppointment = {
+        ...patient,
+        appointment_id: activeAppointmentId || patient.appointment_id,
+        status: 'billing_pending',
+        queue_status: 'billing_pending',
+      };
+      queryClient.setQueriesData<QueueAppointment[]>({ queryKey: ['doctor-queue'] }, (current) => {
+        if (!Array.isArray(current)) return current;
+        const seen = current.some(
+          (row) =>
+            row.id === patient.id ||
+            row.appointment_id === patient.appointment_id ||
+            row.appointment_id === activeAppointmentId,
+        );
+        const next = current.map((row) =>
+          row.id === patient.id ||
+          row.appointment_id === patient.appointment_id ||
+          row.appointment_id === activeAppointmentId
+            ? { ...row, ...completedRow }
+            : row,
+        );
+        return seen ? next : [completedRow, ...next];
+      });
+      setQueueTab('done');
+
       toast.success(
-        `Prescription dispatched. Consultation invoice (Γé╣${billing.consultationFee}) sent to billing counter ΓÇö pharmacy charges entered at dispense.`,
+        `Consultation completed for ${patientName || 'the patient'}. Invoice sent to hospital billing.`,
       );
       setStatusMessage({
         type: 'success',
@@ -458,18 +549,30 @@ export default function DoctorWorkstation() {
       setChiefComplaint('');
       setIntakeVitals('');
 
-      setQueueTab('done');
       const refreshedQueue = await refetch();
       const refreshedRows = refreshedQueue.data ?? appointments;
       const completedPatient =
         refreshedRows.find(
           (row) =>
-            row.id === patient.id ||
-            row.appointment_id === patient.appointment_id ||
-            row.appointment_id === activeAppointmentId,
+            (row.id === patient.id ||
+              row.appointment_id === patient.appointment_id ||
+              row.appointment_id === activeAppointmentId) &&
+            isQueueDoneStatus(row.status),
         ) ?? null;
 
-      if (completedPatient) {
+      if (!completedPatient) {
+        queryClient.setQueriesData<QueueAppointment[]>({ queryKey: ['doctor-queue'] }, (current) => {
+          const list = Array.isArray(current) ? current : [];
+          const rest = list.filter(
+            (row) =>
+              row.id !== patient.id &&
+              row.appointment_id !== patient.appointment_id &&
+              row.appointment_id !== activeAppointmentId,
+          );
+          return [completedRow, ...rest];
+        });
+        setActivePatient(completedRow);
+      } else if (completedPatient) {
         setActivePatient(completedPatient);
         setChiefComplaint(
           completedPatient.chief_complaint || completedPatient.reason_for_visit || complaint,
@@ -478,8 +581,6 @@ export default function DoctorWorkstation() {
         setAutoExpandFeedId(
           String(completedPatient.appointment_id || completedPatient.id || activeAppointmentId),
         );
-      } else {
-        setActivePatient(null);
       }
     } catch (err: unknown) {
       console.error('Error finalizing encounter:', err);
@@ -560,7 +661,7 @@ export default function DoctorWorkstation() {
               </span>
             </div>
             <p className="text-[11px] text-slate-500">
-              {session.department} ΓÇó Isolated Clinician Environment
+              {session.department} • Isolated Clinician Environment
             </p>
           </div>
         </div>
@@ -591,6 +692,48 @@ export default function DoctorWorkstation() {
           </button>
         </div>
       </header>
+
+      {assignedEmergencies.length > 0 ? (
+        <div className="shrink-0 space-y-2 border-b border-rose-200 bg-rose-50 px-6 py-3">
+          {assignedEmergencies.map((alert) => (
+            <div key={alert.id} className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-black text-rose-800">
+                  {alert.severity || 'Emergency'} · {alert.patient_name || 'Emergency patient'}
+                </p>
+                <p className="text-xs font-semibold text-rose-700">
+                  {alert.message || 'Attend the trauma desk and continue the procedure.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const identity = resolveDoctorSessionIdentity(getDoctorSession());
+                  const accept =
+                    alert.status === 'ACTIVE'
+                      ? ackEmergency.mutateAsync({
+                          alertId: alert.id,
+                          assigned_doctor_id: identity.employeeId,
+                          assigned_doctor_name: identity.doctorName,
+                        })
+                      : Promise.resolve(undefined);
+                  void accept
+                    .then(() => {
+                      openEmergencyCase(alert);
+                      toast.success('Emergency case is open. Continue the procedure.');
+                    })
+                    .catch((err: unknown) => {
+                      toast.error(err instanceof Error ? err.message : 'Could not open this case');
+                    });
+                }}
+                className="rounded-xl bg-rose-700 px-4 py-2 text-xs font-black text-white"
+              >
+                Start emergency
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3.5 p-3.5 overflow-hidden">
         <section className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl flex flex-col h-full overflow-hidden shadow-xs">
@@ -689,7 +832,7 @@ export default function DoctorWorkstation() {
                     className="w-full rounded-lg bg-teal-800 px-2 py-1.5 text-[10px] font-black text-white disabled:opacity-50"
                   >
                     {isBilling === String(patient.patient_id || patient.id)
-                      ? 'PostingΓÇª'
+                      ? 'Posting…'
                       : 'Complete & Bill'}
                   </button>
                 );
@@ -733,12 +876,12 @@ export default function DoctorWorkstation() {
                   </span>
                   <div>
                     <h2 className="text-base font-extrabold text-white">
-                      {activePatient.patient_name || 'ΓÇö'}
+                      {activePatient.patient_name || '—'}
                     </h2>
                     <p className="text-xs text-slate-300">
-                      {activePatient.age ? `${activePatient.age} Yrs` : 'ΓÇö'} ΓÇó{' '}
-                      {activePatient.gender || 'ΓÇö'} ΓÇó Slot:{' '}
-                      {activePatient.appointment_time || activePatient.time_slot || 'ΓÇö'}
+                      {activePatient.age ? `${activePatient.age} Yrs` : '—'} •{' '}
+                      {activePatient.gender || '—'} • Slot:{' '}
+                      {activePatient.appointment_time || activePatient.time_slot || '—'}
                     </p>
                   </div>
                 </div>
@@ -748,7 +891,7 @@ export default function DoctorWorkstation() {
                     Intake Vitals
                   </span>
                   <span className="text-xs font-mono font-bold text-emerald-400">
-                    {intakeVitals || activePatient.vitals_summary || 'ΓÇö'}
+                    {intakeVitals || activePatient.vitals_summary || '—'}
                   </span>
                 </div>
               </div>
@@ -759,8 +902,13 @@ export default function DoctorWorkstation() {
                   <span className="text-[10px] font-black uppercase text-teal-900 tracking-wider block">
                     Reported Chief Complaint
                   </span>
-                  <p className="text-xs font-bold text-teal-950 mt-0.5">
-                    {chiefComplaint || activePatient.chief_complaint || activePatient.reason_for_visit || 'ΓÇö'}
+                  <p className="mt-0.5 line-clamp-3 break-words text-xs font-bold text-teal-950">
+                    {displayClinicalText(
+                      chiefComplaint ||
+                        activePatient.chief_complaint ||
+                        activePatient.reason_for_visit ||
+                        '',
+                    ) || '—'}
                   </p>
                 </div>
               </div>
@@ -801,7 +949,7 @@ export default function DoctorWorkstation() {
 
                 <div className="mb-2.5 grid grid-cols-2 gap-2 shrink-0">
                   <label className="text-[10px] font-black uppercase tracking-wider text-slate-600">
-                    Consultation fee (Γé╣)
+                    Consultation fee (₹)
                     <input
                       type="number"
                       min={0}
@@ -812,7 +960,7 @@ export default function DoctorWorkstation() {
                   </label>
                   <div className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-2">
                     <div className="text-[10px] font-black uppercase text-teal-800">Billing handoff</div>
-                    <div className="text-sm font-black text-teal-950 font-mono">Γé╣{consultationFee}</div>
+                    <div className="text-sm font-black text-teal-950 font-mono">₹{consultationFee}</div>
                     <div className="text-[10px] text-teal-700">Pharmacy charges settled at billing counter</div>
                   </div>
                 </div>
@@ -916,7 +1064,7 @@ export default function DoctorWorkstation() {
                   className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-800 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-900 active:bg-emerald-950 disabled:opacity-50"
                 >
                   <CheckCircle2 className="h-5 w-5 text-emerald-200" />
-                  {isFinalizing ? 'DISPATCHING TO PATIENT APP...' : 'Γ£ô DONE & DISPATCH DIGITAL PRESCRIPTION'}
+                  {isFinalizing ? 'DISPATCHING TO PATIENT APP...' : '✓ DONE & DISPATCH DIGITAL PRESCRIPTION'}
                 </button>
               </div>
             </div>
@@ -942,6 +1090,42 @@ export default function DoctorWorkstation() {
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">
+            {assignedEmergencies.length > 0 ? (
+              <div className="mb-3 space-y-2">
+                {assignedEmergencies.map((alert) => (
+                  <div
+                    key={`sos-${alert.id}`}
+                    className="rounded-xl border border-rose-200 bg-rose-50 p-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-black uppercase tracking-wide text-rose-700">
+                        Emergency
+                      </p>
+                      <span className="rounded-full bg-rose-700 px-2 py-0.5 text-[9px] font-black text-white">
+                        SOS active
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm font-black text-rose-950">
+                      {alert.patient_name || 'Emergency patient'}
+                    </p>
+                    <p className="mt-0.5 text-[11px] font-semibold text-rose-800">
+                      {alert.severity || 'Emergency'} · {alert.message || 'Assigned to you'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        openEmergencyCase(alert);
+                        toast.success('Emergency case is open. Continue the procedure.');
+                      }}
+                      className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-rose-700 px-3 py-2 text-[11px] font-black text-white"
+                    >
+                      <Siren className="h-3.5 w-3.5" />
+                      Start emergency
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <PatientHistory360Section activePatient={activePatient} />
             <div className="mb-2 shrink-0 border-t border-slate-100 pt-3">
               <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">

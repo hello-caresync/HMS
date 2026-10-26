@@ -10,8 +10,8 @@
 
 export const SEED_WARD_ASSIGNMENT: IpdWardAssignment = {
   wardId: 'WARD-GEN-3A',
-  wardName: 'General Ward ┬╖ 3A',
-  floorLabel: 'Floor 3 ┬╖ East Wing',
+  wardName: 'General Ward · 3A',
+  floorLabel: 'Floor 3 · East Wing',
   beds: [
     { bedId: 'GEN-3A-01', label: '3A-01', occupancy: 'occupied', patientName: 'P.N.', patientUhid: 'NX-2026-301882', dietTag: 'Low Sodium' },
     { bedId: 'GEN-3A-02', label: '3A-02', occupancy: 'occupied', patientName: 'R.K.', patientUhid: 'NX-2026-482910', dietTag: 'Diabetic' },
@@ -37,40 +37,40 @@ export const SEED_MAR_LINES: MarPrescriptionLine[] = [
 ];
 
 export const SEED_TRIAGE_QUEUE: EmergencyTriageEntry[] = [
-  { triageId: 'TRI-2401', patientIdentifier: 'Unknown Male ┬╖ ~45y', chiefComplaint: 'Road traffic accident ┬╖ head trauma', urgency: 'Critical / Resuscitation', registeredAt: '2026-07-10T09:02:00Z', traumaBedAssigned: null },
-  { triageId: 'TRI-2402', patientIdentifier: 'K.V. ┬╖ NX-2026-331002', chiefComplaint: 'Chest pain ┬╖ radiating to arm', urgency: 'Urgent', registeredAt: '2026-07-10T09:08:00Z', traumaBedAssigned: 'TR-BED-03' },
-  { triageId: 'TRI-2403', patientIdentifier: 'Walk-in ┬╖ ankle sprain', chiefComplaint: 'Sports injury ┬╖ swelling', urgency: 'Non-Urgent', registeredAt: '2026-07-10T09:15:00Z', traumaBedAssigned: null },
+  { triageId: 'TRI-2401', patientIdentifier: 'Unknown Male · ~45y', chiefComplaint: 'Road traffic accident · head trauma', urgency: 'Critical / Resuscitation', registeredAt: '2026-07-10T09:02:00Z', traumaBedAssigned: null },
+  { triageId: 'TRI-2402', patientIdentifier: 'K.V. · NX-2026-331002', chiefComplaint: 'Chest pain · radiating to arm', urgency: 'Urgent', registeredAt: '2026-07-10T09:08:00Z', traumaBedAssigned: 'TR-BED-03' },
+  { triageId: 'TRI-2403', patientIdentifier: 'Walk-in · ankle sprain', chiefComplaint: 'Sports injury · swelling', urgency: 'Non-Urgent', registeredAt: '2026-07-10T09:15:00Z', traumaBedAssigned: null },
 ];
 
 export const SEED_AMBULANCE_TELEMETRY: AmbulanceTelemetry[] = [
-  { id: 'amb-1', unitId: 'AMB-07 ┬╖ ALS', etaMinutes: 4, patientCount: 1, status: 'En Route', lastUpdate: '2026-07-10T09:18:00Z' },
-  { id: 'amb-2', unitId: 'AMB-12 ┬╖ BLS', etaMinutes: 0, patientCount: 2, status: 'Arrived', lastUpdate: '2026-07-10T09:16:00Z' },
-  { id: 'amb-3', unitId: 'AMB-03 ┬╖ ALS', etaMinutes: 12, patientCount: 1, status: 'En Route', lastUpdate: '2026-07-10T09:14:00Z' },
+  { id: 'amb-1', unitId: 'AMB-07 · ALS', etaMinutes: 4, patientCount: 1, status: 'En Route', lastUpdate: '2026-07-10T09:18:00Z' },
+  { id: 'amb-2', unitId: 'AMB-12 · BLS', etaMinutes: 0, patientCount: 2, status: 'Arrived', lastUpdate: '2026-07-10T09:16:00Z' },
+  { id: 'amb-3', unitId: 'AMB-03 · ALS', etaMinutes: 12, patientCount: 1, status: 'En Route', lastUpdate: '2026-07-10T09:14:00Z' },
 ];
 
 export const SEED_CRITICAL_ALERTS: CriticalAlertBanner[] = [
-  { id: 'alert-1', message: 'Code Blue ┬╖ Resuscitation Bay 2 ┬╖ Activate crash team', severity: 'critical', triggeredAt: '2026-07-10T09:17:00Z' },
-  { id: 'alert-2', message: 'Mass casualty protocol standby ΓÇö 2 ambulances inbound', severity: 'warning', triggeredAt: '2026-07-10T09:12:00Z' },
+  { id: 'alert-1', message: 'Code Blue · Resuscitation Bay 2 · Activate crash team', severity: 'critical', triggeredAt: '2026-07-10T09:17:00Z' },
+  { id: 'alert-2', message: 'Mass casualty protocol standby — 2 ambulances inbound', severity: 'warning', triggeredAt: '2026-07-10T09:12:00Z' },
 ];
 
 export const TRAUMA_BEDS = ['TR-BED-01', 'TR-BED-02', 'TR-BED-03', 'TR-BED-04', 'TR-BED-05'];
 
 export const SEED_OT_SLOTS: OtScheduleSlot[] = [
-  { slotId: 'ot-1', theaterId: 'OT-1', theaterName: 'OT-1 ┬╖ General Surgery', dateLabel: 'Today ┬╖ 10 Jul 2026', startTime: '08:00', endTime: '10:30', patientName: 'S.M.', leadSurgeon: 'Dr. Arjun Das', procedureType: 'Laparoscopic Cholecystectomy', status: 'Post-Op Recovery' },
-  { slotId: 'ot-2', theaterId: 'OT-1', theaterName: 'OT-1 ┬╖ General Surgery', dateLabel: 'Today ┬╖ 10 Jul 2026', startTime: '11:00', endTime: '13:00', patientName: 'R.K.', leadSurgeon: 'Dr. Meera Iyer', procedureType: 'Inguinal Hernia Repair', status: 'Pre-Op Checklist Pending' },
-  { slotId: 'ot-3', theaterId: 'OT-2', theaterName: 'OT-2 ┬╖ Orthopedics', dateLabel: 'Today ┬╖ 10 Jul 2026', startTime: '09:00', endTime: '11:30', patientName: 'V.P.', leadSurgeon: 'Dr. Lakshmi Nair', procedureType: 'Total Knee Replacement', status: 'In Surgery' },
-  { slotId: 'ot-4', theaterId: 'OT-2', theaterName: 'OT-2 ┬╖ Orthopedics', dateLabel: 'Today ┬╖ 10 Jul 2026', startTime: '12:30', endTime: '14:00', patientName: 'P.N.', leadSurgeon: 'Dr. Arjun Das', procedureType: 'ACL Reconstruction', status: 'Scheduled' },
-  { slotId: 'ot-5', theaterId: 'OT-CARD', theaterName: 'Cardiac Suite', dateLabel: 'Today ┬╖ 10 Jul 2026', startTime: '10:00', endTime: '14:00', patientName: 'Unknown Male', leadSurgeon: 'Dr. Priya Menon', procedureType: 'Emergency CABG', status: 'Pre-Op Checklist Pending' },
-  { slotId: 'ot-6', theaterId: 'OT-CARD', theaterName: 'Cardiac Suite', dateLabel: 'Today ┬╖ 10 Jul 2026', startTime: '15:00', endTime: '17:00', patientName: 'L.I.', leadSurgeon: 'Dr. Vikram Patel', procedureType: 'Pacemaker Implant', status: 'Scheduled' },
+  { slotId: 'ot-1', theaterId: 'OT-1', theaterName: 'OT-1 · General Surgery', dateLabel: 'Today · 10 Jul 2026', startTime: '08:00', endTime: '10:30', patientName: 'S.M.', leadSurgeon: 'Dr. Arjun Das', procedureType: 'Laparoscopic Cholecystectomy', status: 'Post-Op Recovery' },
+  { slotId: 'ot-2', theaterId: 'OT-1', theaterName: 'OT-1 · General Surgery', dateLabel: 'Today · 10 Jul 2026', startTime: '11:00', endTime: '13:00', patientName: 'R.K.', leadSurgeon: 'Dr. Meera Iyer', procedureType: 'Inguinal Hernia Repair', status: 'Pre-Op Checklist Pending' },
+  { slotId: 'ot-3', theaterId: 'OT-2', theaterName: 'OT-2 · Orthopedics', dateLabel: 'Today · 10 Jul 2026', startTime: '09:00', endTime: '11:30', patientName: 'V.P.', leadSurgeon: 'Dr. Lakshmi Nair', procedureType: 'Total Knee Replacement', status: 'In Surgery' },
+  { slotId: 'ot-4', theaterId: 'OT-2', theaterName: 'OT-2 · Orthopedics', dateLabel: 'Today · 10 Jul 2026', startTime: '12:30', endTime: '14:00', patientName: 'P.N.', leadSurgeon: 'Dr. Arjun Das', procedureType: 'ACL Reconstruction', status: 'Scheduled' },
+  { slotId: 'ot-5', theaterId: 'OT-CARD', theaterName: 'Cardiac Suite', dateLabel: 'Today · 10 Jul 2026', startTime: '10:00', endTime: '14:00', patientName: 'Unknown Male', leadSurgeon: 'Dr. Priya Menon', procedureType: 'Emergency CABG', status: 'Pre-Op Checklist Pending' },
+  { slotId: 'ot-6', theaterId: 'OT-CARD', theaterName: 'Cardiac Suite', dateLabel: 'Today · 10 Jul 2026', startTime: '15:00', endTime: '17:00', patientName: 'L.I.', leadSurgeon: 'Dr. Vikram Patel', procedureType: 'Pacemaker Implant', status: 'Scheduled' },
 ];
 
 export const DEFAULT_INSTRUMENT_CHECKLIST: InstrumentChecklistItem[] = [
   { itemId: 'inst-1', instrumentName: 'Scalpel Handle #3', sterilizationBatch: 'STZ-2026-0710-A', verified: false },
-  { itemId: 'inst-2', instrumentName: 'Mayo Scissors ┬╖ Curved', sterilizationBatch: 'STZ-2026-0710-A', verified: false },
-  { itemId: 'inst-3', instrumentName: 'Kelly Forceps ┬╖ Straight', sterilizationBatch: 'STZ-2026-0710-B', verified: false },
-  { itemId: 'inst-4', instrumentName: 'Needle Holder ┬╖ Mayo-Hegar', sterilizationBatch: 'STZ-2026-0710-B', verified: false },
-  { itemId: 'inst-5', instrumentName: 'Retractor ┬╖ Weitlaner', sterilizationBatch: 'STZ-2026-0709-C', verified: false },
-  { itemId: 'inst-6', instrumentName: 'Electrocautery Tip ┬╖ Bipolar', sterilizationBatch: 'STZ-2026-0710-D', verified: false },
+  { itemId: 'inst-2', instrumentName: 'Mayo Scissors · Curved', sterilizationBatch: 'STZ-2026-0710-A', verified: false },
+  { itemId: 'inst-3', instrumentName: 'Kelly Forceps · Straight', sterilizationBatch: 'STZ-2026-0710-B', verified: false },
+  { itemId: 'inst-4', instrumentName: 'Needle Holder · Mayo-Hegar', sterilizationBatch: 'STZ-2026-0710-B', verified: false },
+  { itemId: 'inst-5', instrumentName: 'Retractor · Weitlaner', sterilizationBatch: 'STZ-2026-0709-C', verified: false },
+  { itemId: 'inst-6', instrumentName: 'Electrocautery Tip · Bipolar', sterilizationBatch: 'STZ-2026-0710-D', verified: false },
 ];
 
 export function generateTriageId(existing: EmergencyTriageEntry[]): string {
@@ -79,8 +79,8 @@ export function generateTriageId(existing: EmergencyTriageEntry[]): string {
 }
 
 export const OT_THEATERS = [
-  { id: 'OT-1', name: 'OT-1 ┬╖ General Surgery' },
-  { id: 'OT-2', name: 'OT-2 ┬╖ Orthopedics' },
+  { id: 'OT-1', name: 'OT-1 · General Surgery' },
+  { id: 'OT-2', name: 'OT-2 · Orthopedics' },
   { id: 'OT-CARD', name: 'Cardiac Suite' },
 ] as const;
 

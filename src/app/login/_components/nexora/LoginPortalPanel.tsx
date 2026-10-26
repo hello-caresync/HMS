@@ -168,7 +168,7 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
                     autoComplete="off"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setEmailError(''); setFormError(''); if (authStage === 'error') setAuthStage('idle'); }}
-                    placeholder="Enter admin email"
+                    placeholder="name@email.com"
                     aria-invalid={!!emailError}
                     className="w-full rounded-[14px] border border-[#D9E2F2] bg-[#F9FBFF] py-2.5 pl-10 pr-4 text-sm text-[#14213D] outline-none transition-all placeholder:text-[#94A3B8] focus:border-[#3B82F6] focus:bg-white focus:shadow-[0_0_0_4px_rgba(59,130,246,0.10)]"
                   />
@@ -235,7 +235,7 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
                 <ShieldCheck className="h-3.5 w-3.5 text-[#3B82F6]" aria-hidden="true" />
                 <span>Secure administrator session</span>
               </div>
-              <p className="mt-1 text-[10px] text-[#94A3B8]">Protected access ΓÇó Regal Health HMS</p>
+              <p className="mt-1 text-[10px] text-[#94A3B8]">Protected access • Regal Health HMS</p>
             </div>
           </div>
 
@@ -249,7 +249,7 @@ export default function LoginPortalPanel({ redirectUrl }: LoginPortalPanelProps)
         </motion.div>
 
         <footer className="mt-[clamp(0.4rem,1vh,0.75rem)] w-full max-w-[460px] shrink-0 text-center text-[10px] text-[#64748B]">
-          <p>┬⌐ 2026 Regal Health HMS</p>
+          <p>© 2026 Regal Health HMS</p>
           <div className="mt-1 flex items-center justify-center gap-3 text-[#94A3B8]">
             <button type="button" className="hover:text-[#3B82F6]">Privacy</button>
             <button type="button" className="hover:text-[#3B82F6]">Security</button>

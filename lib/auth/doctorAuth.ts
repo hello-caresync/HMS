@@ -97,6 +97,7 @@ export async function authenticateDoctorCredential(
   supabase: SupabaseClient,
   identifierInput: string,
   passcodeInput: string,
+  hospital?: { id?: string | null; code?: string | null },
 ): Promise<DoctorAuthResult> {
   const rawIdentifier = (identifierInput || '').trim();
   const cleanPasscode = (passcodeInput || '').trim();
@@ -114,8 +115,8 @@ export async function authenticateDoctorCredential(
     cleanPasscode,
   );
 
-  if (error || !row) {
-    return { ok: false, error: DOCTOR_LOGIN_INVALID_MESSAGE };
+  if (!row) {
+    return { ok: false, error: error || DOCTOR_LOGIN_INVALID_MESSAGE };
   }
 
   const credential = mapHospitalStaffAuthRow(row);
@@ -133,6 +134,24 @@ export async function authenticateDoctorCredential(
 
   if (role !== 'doctor') {
     return { ok: false, error: DOCTOR_LOGIN_INVALID_MESSAGE };
+  }
+
+  const requestedHospital = String(hospital?.id ?? hospital?.code ?? '').trim().toLowerCase();
+  if (requestedHospital) {
+    const staffHospital = String(row.hospital_id ?? row.hospital_code ?? '')
+      .trim()
+      .toLowerCase();
+    const requestedCode = String(hospital?.code ?? '').trim().toLowerCase();
+    const matches =
+      !staffHospital ||
+      staffHospital === requestedHospital ||
+      (requestedCode && staffHospital === requestedCode);
+    if (!matches) {
+      return {
+        ok: false,
+        error: 'This clinician is registered at a different hospital. Choose that hospital and try again.',
+      };
+    }
   }
 
   const doctor = mapDoctorRowToSession(row);

@@ -8,11 +8,11 @@
 } from './types';
 
 export const CBC_RESULT_MATRIX: LabResultFieldEntry[] = [
-  { parameterKey: 'wbc', label: 'WBC', unit: '├ù10┬│/┬╡L', referenceMin: 4.5, referenceMax: 11.0, value: '' },
-  { parameterKey: 'rbc', label: 'RBC', unit: '├ù10Γü╢/┬╡L', referenceMin: 4.2, referenceMax: 5.4, value: '' },
+  { parameterKey: 'wbc', label: 'WBC', unit: '×10³/µL', referenceMin: 4.5, referenceMax: 11.0, value: '' },
+  { parameterKey: 'rbc', label: 'RBC', unit: '×10⁶/µL', referenceMin: 4.2, referenceMax: 5.4, value: '' },
   { parameterKey: 'hgb', label: 'Hemoglobin', unit: 'g/dL', referenceMin: 12.0, referenceMax: 16.0, value: '' },
   { parameterKey: 'hct', label: 'Hematocrit', unit: '%', referenceMin: 36.0, referenceMax: 46.0, value: '' },
-  { parameterKey: 'plt', label: 'Platelets', unit: '├ù10┬│/┬╡L', referenceMin: 150, referenceMax: 400, value: '' },
+  { parameterKey: 'plt', label: 'Platelets', unit: '×10³/µL', referenceMin: 150, referenceMax: 400, value: '' },
 ];
 
 export const HBA1C_RESULT_MATRIX: LabResultFieldEntry[] = [
@@ -66,7 +66,7 @@ export const SEED_LAB_ORDERS: LabSamplePacket[] = [
     trackingId: 'LAB-ORD-2404',
     patientReferenceId: 'NX-2026-774320',
     patientInitials: 'A.K.',
-    testName: 'Urinalysis ┬╖ Routine',
+    testName: 'Urinalysis · Routine',
     specimenCategory: 'Urine',
     collectionTimestamp: '2026-07-10T08:00:00Z',
     status: 'Awaiting Verification',
@@ -80,7 +80,7 @@ export const SEED_LAB_ORDERS: LabSamplePacket[] = [
     trackingId: 'LAB-ORD-2405',
     patientReferenceId: 'NX-2026-558901',
     patientInitials: 'H.D.',
-    testName: 'Throat Swab ┬╖ Culture',
+    testName: 'Throat Swab · Culture',
     specimenCategory: 'Swab',
     collectionTimestamp: '2026-07-10T08:22:00Z',
     status: 'Processing',
@@ -95,18 +95,18 @@ export const SEED_RADIOLOGY_SESSIONS: RadiologyScanSession[] = [
   {
     sessionId: 'RAD-SES-901',
     appointmentSlotNumber: 'SLOT-14',
-    machineRoomLocator: 'Block B ┬╖ MRI Suite 2 ┬╖ Floor 1',
+    machineRoomLocator: 'Block B · MRI Suite 2 · Floor 1',
     patientReferenceId: 'NX-2026-482910',
     patientInitials: 'R.K.',
     studyName: 'MRI Brain Plain',
     imageFileUrls: ['/mock-imaging/mri-brain-001.dcm'],
-    technicianNotes: 'Patient claustrophobic ΓÇö mild sedation administered.',
+    technicianNotes: 'Patient claustrophobic — mild sedation administered.',
     status: 'In Progress',
   },
   {
     sessionId: 'RAD-SES-902',
     appointmentSlotNumber: 'SLOT-18',
-    machineRoomLocator: 'Block A ┬╖ X-Ray Room 3 ┬╖ Ground',
+    machineRoomLocator: 'Block A · X-Ray Room 3 · Ground',
     patientReferenceId: 'NX-2026-301882',
     patientInitials: 'P.N.',
     studyName: 'Chest X-Ray PA View',
@@ -117,7 +117,7 @@ export const SEED_RADIOLOGY_SESSIONS: RadiologyScanSession[] = [
   {
     sessionId: 'RAD-SES-903',
     appointmentSlotNumber: 'SLOT-09',
-    machineRoomLocator: 'Block C ┬╖ CT Suite 1 ┬╖ Floor 2',
+    machineRoomLocator: 'Block C · CT Suite 1 · Floor 2',
     patientReferenceId: 'NX-2026-119045',
     patientInitials: 'S.M.',
     studyName: 'CT Abdomen Contrast',
@@ -171,7 +171,7 @@ const RX_LINES: PrescriptionLineItem[] = [
     catalogId: 'PHM-001',
     drugName: 'Dolo 650',
     genericFormula: 'Paracetamol 650 mg',
-    dosageInstructions: '1 tab PO TID after meals ┬╖ 5 days',
+    dosageInstructions: '1 tab PO TID after meals · 5 days',
     quantityOrdered: 15,
     unitPrice: 2.8,
     stockLevel: 'In Stock',
@@ -183,7 +183,7 @@ const RX_LINES: PrescriptionLineItem[] = [
     catalogId: 'PHM-002',
     drugName: 'Augmentin 625',
     genericFormula: 'Amoxicillin + Clavulanic Acid',
-    dosageInstructions: '1 tab PO BID ┬╖ 7 days',
+    dosageInstructions: '1 tab PO BID · 7 days',
     quantityOrdered: 14,
     unitPrice: 18.5,
     stockLevel: 'Out of Stock',
@@ -195,7 +195,7 @@ const RX_LINES: PrescriptionLineItem[] = [
     catalogId: 'PHM-005',
     drugName: 'Pantocid 40',
     genericFormula: 'Pantoprazole 40 mg',
-    dosageInstructions: '1 tab PO OD before breakfast ┬╖ 14 days',
+    dosageInstructions: '1 tab PO OD before breakfast · 14 days',
     quantityOrdered: 14,
     unitPrice: 6.2,
     stockLevel: 'Low Stock',
@@ -231,16 +231,16 @@ export function findMoleculeAlternatives(genericFormula: string): string[] {
   const key = genericFormula.toLowerCase();
   const alternatives: Record<string, string[]> = {
     'amoxicillin + clavulanic acid': [
-      'Clavam 625 ┬╖ Amoxicillin + Clavulanate',
-      'Moxclav 625 ┬╖ Same molecule ┬╖ In stock',
-      'Amoxyclav 625 ┬╖ Substitutable generic',
+      'Clavam 625 · Amoxicillin + Clavulanate',
+      'Moxclav 625 · Same molecule · In stock',
+      'Amoxyclav 625 · Substitutable generic',
     ],
-    'pantoprazole 40 mg': ['Pan 40 ┬╖ Pantoprazole', 'Pantodac 40 ┬╖ Generic equivalent'],
-    paracetamol: ['Calpol 650 ┬╖ Paracetamol', 'Tylenol 650 ┬╖ Import brand'],
+    'pantoprazole 40 mg': ['Pan 40 · Pantoprazole', 'Pantodac 40 · Generic equivalent'],
+    paracetamol: ['Calpol 650 · Paracetamol', 'Tylenol 650 · Import brand'],
   };
 
   for (const [pattern, list] of Object.entries(alternatives)) {
     if (key.includes(pattern.split(' ')[0] ?? '')) return list;
   }
-  return [`Generic substitute for ${genericFormula} ┬╖ Query master catalog`];
+  return [`Generic substitute for ${genericFormula} · Query master catalog`];
 }

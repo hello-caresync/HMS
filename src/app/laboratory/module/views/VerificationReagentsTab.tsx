@@ -26,12 +26,12 @@ export default function VerificationReagentsTab({ verifications, onAdvanceVerifi
         <div className="rounded-md border-2 border-red-500 bg-red-600 px-3 py-2 text-white animate-pulse">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
-            <span className="text-[11px] font-bold uppercase">Critical Value Center ΓÇö {criticalItems.length} result(s) awaiting pathologist release</span>
+            <span className="text-[11px] font-bold uppercase">Critical Value Center — {criticalItems.length} result(s) awaiting pathologist release</span>
           </div>
         </div>
       )}
 
-      <LabPanel title="Result Verification & Critical Value Center" subtitle="Tech verification ┬╖ pathologist review ┬╖ delta checks ┬╖ digital signatures" icon={AlertTriangle} critical={criticalItems.length > 0}>
+      <LabPanel title="Result Verification & Critical Value Center" subtitle="Tech verification · pathologist review · delta checks · digital signatures" icon={AlertTriangle} critical={criticalItems.length > 0}>
         <SecureIdentityPlaceholder verified />
         <table className="mt-2 w-full min-w-[800px] text-left">
           <thead>
@@ -76,7 +76,7 @@ export default function VerificationReagentsTab({ verifications, onAdvanceVerifi
 
         {criticalItems.length > 0 && (
           <div className="mt-3 rounded-md border border-red-200 bg-red-50/50 p-2">
-            <p className="mb-1 text-[8px] font-bold uppercase text-red-800">Delta Check ΓÇö Lactate Trend (Meera Krishnan)</p>
+            <p className="mb-1 text-[8px] font-bold uppercase text-red-800">Delta Check — Lactate Trend (Meera Krishnan)</p>
             <div className="h-24">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={DELTA_TREND} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -93,7 +93,7 @@ export default function VerificationReagentsTab({ verifications, onAdvanceVerifi
       </LabPanel>
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <LabPanel title="Reagent Inventory" subtitle="Stock ┬╖ expiry ┬╖ low stock ┬╖ auto reorder" icon={Package}>
+        <LabPanel title="Reagent Inventory" subtitle="Stock · expiry · low stock · auto reorder" icon={Package}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -119,7 +119,7 @@ export default function VerificationReagentsTab({ verifications, onAdvanceVerifi
           </table>
         </LabPanel>
 
-        <LabPanel title="Test Billing Coordination" subtitle="Itemized test charges ┬╖ payment status" icon={Receipt}>
+        <LabPanel title="Test Billing Coordination" subtitle="Itemized test charges · payment status" icon={Receipt}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">

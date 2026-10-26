@@ -62,7 +62,7 @@ export default function ServiceCatalogView() {
                 ))}
               </select>
             </FormField>
-            <FormField label="Base Price (Γé╣)" htmlFor="svc-price" required>
+            <FormField label="Base Price (₹)" htmlFor="svc-price" required>
               <input
                 id="svc-price"
                 type="number"

@@ -21,7 +21,7 @@ export default function RegistriesMappingTab({ selectedNode, onSelectNode }: Reg
   return (
     <div className="flex flex-col gap-2 xl:flex-row">
       <div className="w-full shrink-0 xl:w-[35%]">
-        <MdmPanel title="Core Sub-System Masters Tree" subtitle="Clinical ┬╖ Support ┬╖ Ancillary ┬╖ SCM clusters" icon={FolderTree}>
+        <MdmPanel title="Core Sub-System Masters Tree" subtitle="Clinical · Support · Ancillary · SCM clusters" icon={FolderTree}>
           <nav className="max-h-[560px] overflow-y-auto" aria-label="Master registries">
             {REGISTRY_TREE.map((group) => (
               <div key={group.id} className="mb-1">
@@ -58,7 +58,7 @@ export default function RegistriesMappingTab({ selectedNode, onSelectNode }: Reg
       </div>
 
       <div className="min-w-0 flex-1">
-        <MdmPanel title="Relational Inventory & Ancillary Configurator" subtitle="Service charges ┬╖ rooms ┬╖ lab ┬╖ pharmacy ┬╖ SCM registries">
+        <MdmPanel title="Relational Inventory & Ancillary Configurator" subtitle="Service charges · rooms · lab · pharmacy · SCM registries">
           <RegistryTableCanvas nodeId={selectedNode} />
         </MdmPanel>
       </div>

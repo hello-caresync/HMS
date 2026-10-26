@@ -123,7 +123,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
         if (!validation.valid) {
           return {
             success: false,
-            error: `Split total Γé╣${validation.splitSum.toLocaleString('en-IN')} must equal Grand Total Γé╣${grandTotal.toLocaleString('en-IN')} (╬ö Γé╣${Math.abs(validation.difference).toFixed(2)})`,
+            error: `Split total ₹${validation.splitSum.toLocaleString('en-IN')} must equal Grand Total ₹${grandTotal.toLocaleString('en-IN')} (Δ ₹${Math.abs(validation.difference).toFixed(2)})`,
           };
         }
         splits = activeSplits;

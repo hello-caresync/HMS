@@ -124,11 +124,11 @@ export const INITIAL_TRIAGE_STREAM: TriageEntry[] = [
   {
     id: 'tr1',
     erNumber: 'ER-2026-0841',
-    patientName: 'Unknown Male ΓÇö Trauma',
+    patientName: 'Unknown Male — Trauma',
     uhid: 'TMP-ER-2026-0091',
     isUnknown: true,
     priority: 'Critical',
-    chiefComplaint: 'RTA ΓÇö polytrauma, GCS 8, hypotensive',
+    chiefComplaint: 'RTA — polytrauma, GCS 8, hypotensive',
     gcs: 8,
     mlcFlag: true,
     arrivalTime: '2026-07-18T11:02:00',
@@ -142,7 +142,7 @@ export const INITIAL_TRIAGE_STREAM: TriageEntry[] = [
     uhid: 'NX-2026-000415',
     isUnknown: false,
     priority: 'Emergent',
-    chiefComplaint: 'Acute chest pain ΓÇö suspected ACS',
+    chiefComplaint: 'Acute chest pain — suspected ACS',
     gcs: 15,
     mlcFlag: false,
     arrivalTime: '2026-07-18T11:08:00',
@@ -156,7 +156,7 @@ export const INITIAL_TRIAGE_STREAM: TriageEntry[] = [
     uhid: 'NX-2026-000365',
     isUnknown: false,
     priority: 'Urgent',
-    chiefComplaint: 'High-grade fever + rigors ΓÇö sepsis screen',
+    chiefComplaint: 'High-grade fever + rigors — sepsis screen',
     gcs: 14,
     mlcFlag: false,
     arrivalTime: '2026-07-18T11:15:00',
@@ -170,7 +170,7 @@ export const INITIAL_TRIAGE_STREAM: TriageEntry[] = [
     uhid: 'NX-2026-000329',
     isUnknown: false,
     priority: 'Non-Urgent',
-    chiefComplaint: 'Minor laceration ΓÇö left forearm',
+    chiefComplaint: 'Minor laceration — left forearm',
     gcs: 15,
     mlcFlag: false,
     arrivalTime: '2026-07-18T11:22:00',
@@ -184,7 +184,7 @@ export const INITIAL_TRIAGE_STREAM: TriageEntry[] = [
     uhid: 'NX-2026-000388',
     isUnknown: false,
     priority: 'Emergent',
-    chiefComplaint: 'Stroke symptoms ΓÇö FAST positive, onset 45 min',
+    chiefComplaint: 'Stroke symptoms — FAST positive, onset 45 min',
     gcs: 12,
     mlcFlag: false,
     arrivalTime: '2026-07-18T10:55:00',
@@ -194,7 +194,7 @@ export const INITIAL_TRIAGE_STREAM: TriageEntry[] = [
 ];
 
 export const INITIAL_ER_BEDS: ErTreatmentBed[] = [
-  { id: 'eb1', bedLabel: 'Resus-1', bay: 'Resuscitation Bay', status: 'Occupied', patientName: 'Unknown Male ΓÇö Trauma', uhid: 'TMP-ER-2026-0091', assignedDoctor: 'Dr. B. Joseph', assignedNurse: 'Sister Susan Joseph', codeBlue: true, treatmentStatus: 'Under Treatment' },
+  { id: 'eb1', bedLabel: 'Resus-1', bay: 'Resuscitation Bay', status: 'Occupied', patientName: 'Unknown Male — Trauma', uhid: 'TMP-ER-2026-0091', assignedDoctor: 'Dr. B. Joseph', assignedNurse: 'Sister Susan Joseph', codeBlue: true, treatmentStatus: 'Under Treatment' },
   { id: 'eb2', bedLabel: 'Trauma-2', bay: 'Trauma Bay', status: 'Occupied', patientName: 'Vikram Patel', uhid: 'NX-2026-000388', assignedDoctor: 'Dr. Anita Roy', assignedNurse: 'Sister Priya Menon', codeBlue: false, treatmentStatus: 'Under Treatment' },
   { id: 'eb3', bedLabel: 'Obs-5', bay: 'Observation', status: 'Occupied', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', assignedDoctor: 'Dr. Rajesh Kumar', assignedNurse: 'Sister Meera Iyer', treatmentStatus: 'Observation' },
   { id: 'eb4', bedLabel: 'Obs-6', bay: 'Observation', status: 'Available' },
@@ -204,32 +204,32 @@ export const INITIAL_ER_BEDS: ErTreatmentBed[] = [
 ];
 
 export const MOCK_URGENT_LABS: UrgentLabOrder[] = [
-  { id: 'UL-901', patientName: 'Unknown Male ΓÇö Trauma', testName: 'ABG + Lactate + Crossmatch', priority: 'Critical', status: 'In Progress', orderedAt: '2026-07-18T11:05:00' },
-  { id: 'UL-902', patientName: 'Meera Krishnan', testName: 'Troponin-I ┬╖ CK-MB ┬╖ D-Dimer', priority: 'Emergent', status: 'Sample Collected', orderedAt: '2026-07-18T11:10:00' },
-  { id: 'UL-903', patientName: 'Sanjay Rao', testName: 'Blood Culture ├ù 2 ┬╖ Procalcitonin', priority: 'Urgent', status: 'Ordered', orderedAt: '2026-07-18T11:18:00' },
+  { id: 'UL-901', patientName: 'Unknown Male — Trauma', testName: 'ABG + Lactate + Crossmatch', priority: 'Critical', status: 'In Progress', orderedAt: '2026-07-18T11:05:00' },
+  { id: 'UL-902', patientName: 'Meera Krishnan', testName: 'Troponin-I · CK-MB · D-Dimer', priority: 'Emergent', status: 'Sample Collected', orderedAt: '2026-07-18T11:10:00' },
+  { id: 'UL-903', patientName: 'Sanjay Rao', testName: 'Blood Culture × 2 · Procalcitonin', priority: 'Urgent', status: 'Ordered', orderedAt: '2026-07-18T11:18:00' },
 ];
 
 export const MOCK_URGENT_RAD: UrgentRadOrder[] = [
-  { id: 'UR-501', patientName: 'Unknown Male ΓÇö Trauma', studyName: 'Whole Body CT Trauma Protocol', modality: 'CT', status: 'In Progress', orderedAt: '2026-07-18T11:06:00' },
+  { id: 'UR-501', patientName: 'Unknown Male — Trauma', studyName: 'Whole Body CT Trauma Protocol', modality: 'CT', status: 'In Progress', orderedAt: '2026-07-18T11:06:00' },
   { id: 'UR-502', patientName: 'Vikram Patel', studyName: 'CT Brain Plain + CTA Head/Neck', modality: 'CT', status: 'Ordered', orderedAt: '2026-07-18T11:00:00' },
 ];
 
 export const MOCK_BLOOD_BANK: BloodBankRequest[] = [
-  { id: 'BB-301', patientName: 'Unknown Male ΓÇö Trauma', component: 'PRBC O-Negative', units: 4, status: 'In Progress', urgency: 'Critical' },
+  { id: 'BB-301', patientName: 'Unknown Male — Trauma', component: 'PRBC O-Negative', units: 4, status: 'In Progress', urgency: 'Critical' },
   { id: 'BB-302', patientName: 'Meera Krishnan', component: 'Platelets A+', units: 1, status: 'Ordered', urgency: 'Emergent' },
 ];
 
 export const MOCK_PROCEDURES: EmergencyProcedure[] = [
-  { id: 'EP-101', patientName: 'Unknown Male ΓÇö Trauma', procedure: 'CPR', status: 'In Progress', teamLead: 'Dr. B. Joseph', startedAt: '2026-07-18T11:03:00' },
-  { id: 'EP-102', patientName: 'Unknown Male ΓÇö Trauma', procedure: 'Intubation', status: 'Completed', teamLead: 'Dr. B. Joseph', startedAt: '2026-07-18T11:04:00' },
+  { id: 'EP-101', patientName: 'Unknown Male — Trauma', procedure: 'CPR', status: 'In Progress', teamLead: 'Dr. B. Joseph', startedAt: '2026-07-18T11:03:00' },
+  { id: 'EP-102', patientName: 'Unknown Male — Trauma', procedure: 'Intubation', status: 'Completed', teamLead: 'Dr. B. Joseph', startedAt: '2026-07-18T11:04:00' },
   { id: 'EP-103', patientName: 'Anita Desai', procedure: 'Suturing', status: 'In Progress', teamLead: 'Dr. Kapoor', startedAt: '2026-07-18T11:25:00' },
 ];
 
 export const MOCK_AMBULANCES: AmbulanceUnit[] = [
-  { id: 'amb1', vehicleId: 'AMB-07', callSign: 'Alpha-7', status: 'En Route', crew: 'Paramedic Raj + EMT Suresh', destination: 'City Ring Road ΓÇö RTA site', etaMinutes: 8, lastAlert: 'ETA updated ΓÇö traffic delay on NH-48' },
-  { id: 'amb2', vehicleId: 'AMB-03', callSign: 'Bravo-3', status: 'At Scene', crew: 'Paramedic Anita + Driver Mohan', destination: 'Koramangala 4th Block', etaMinutes: null, lastAlert: 'Patient extricated ΓÇö loading in 5 min' },
-  { id: 'amb3', vehicleId: 'AMB-12', callSign: 'Charlie-12', status: 'Returning', crew: 'Paramedic Joseph + EMT Ravi', destination: 'Regal ER Bay 1', etaMinutes: 12, lastAlert: 'Critical patient onboard ΓÇö pre-alert sent' },
-  { id: 'amb4', vehicleId: 'AMB-05', callSign: 'Delta-5', status: 'Available', crew: 'Standby crew', destination: 'Station ΓÇö ER Annex', etaMinutes: null, lastAlert: 'Ready for dispatch' },
+  { id: 'amb1', vehicleId: 'AMB-07', callSign: 'Alpha-7', status: 'En Route', crew: 'Paramedic Raj + EMT Suresh', destination: 'City Ring Road — RTA site', etaMinutes: 8, lastAlert: 'ETA updated — traffic delay on NH-48' },
+  { id: 'amb2', vehicleId: 'AMB-03', callSign: 'Bravo-3', status: 'At Scene', crew: 'Paramedic Anita + Driver Mohan', destination: 'Koramangala 4th Block', etaMinutes: null, lastAlert: 'Patient extricated — loading in 5 min' },
+  { id: 'amb3', vehicleId: 'AMB-12', callSign: 'Charlie-12', status: 'Returning', crew: 'Paramedic Joseph + EMT Ravi', destination: 'Regal ER Bay 1', etaMinutes: 12, lastAlert: 'Critical patient onboard — pre-alert sent' },
+  { id: 'amb4', vehicleId: 'AMB-05', callSign: 'Delta-5', status: 'Available', crew: 'Standby crew', destination: 'Station — ER Annex', etaMinutes: null, lastAlert: 'Ready for dispatch' },
   { id: 'amb5', vehicleId: 'AMB-09', callSign: 'Echo-9', status: 'Dispatched', crew: 'Paramedic Lakshmi + EMT Arun', destination: 'Indiranagar Metro incident', etaMinutes: 15, lastAlert: 'Dispatch confirmed 11:28' },
 ];
 
@@ -237,13 +237,13 @@ export const MOCK_MLC_CASES: MlcCase[] = [
   {
     id: 'mlc1',
     caseNumber: 'MLC-2026-0441',
-    patientName: 'Unknown Male ΓÇö Trauma',
+    patientName: 'Unknown Male — Trauma',
     uhid: 'TMP-ER-2026-0091',
-    incidentType: 'Road Traffic Accident ΓÇö hit-and-run suspected',
+    incidentType: 'Road Traffic Accident — hit-and-run suspected',
     policeStation: 'HSR Layout PS',
     status: 'Police Notified',
-    injuryDocumentation: 'Open tibial fracture R ┬╖ scalp laceration ┬╖ hemothorax suspected',
-    chainOfCustody: 'Clothing bag #MLC-441-A sealed 11:10 ┬╖ blood samples logged',
+    injuryDocumentation: 'Open tibial fracture R · scalp laceration · hemothorax suspected',
+    chainOfCustody: 'Clothing bag #MLC-441-A sealed 11:10 · blood samples logged',
     openedAt: '2026-07-18T11:08:00',
   },
   {
@@ -251,11 +251,11 @@ export const MOCK_MLC_CASES: MlcCase[] = [
     caseNumber: 'MLC-2026-0438',
     patientName: 'Rahul Sharma',
     uhid: 'NX-2026-000412',
-    incidentType: 'Workplace injury ΓÇö fall from height',
+    incidentType: 'Workplace injury — fall from height',
     policeStation: 'Electronic City PS',
     status: 'Documentation Complete',
-    injuryDocumentation: 'Lumbar compression fracture ┬╖ contusions bilateral knees',
-    chainOfCustody: 'Hard hat & safety harness retained ΓÇö exhibit #MLC-438-B',
+    injuryDocumentation: 'Lumbar compression fracture · contusions bilateral knees',
+    chainOfCustody: 'Hard hat & safety harness retained — exhibit #MLC-438-B',
     openedAt: '2026-07-17T16:20:00',
   },
 ];
@@ -263,14 +263,14 @@ export const MOCK_MLC_CASES: MlcCase[] = [
 export const MOCK_TRANSFERS: ErTransfer[] = [
   { id: 'ET-801', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', disposition: 'Transfer to ICU', fromLocation: 'ER Obs-5', toLocation: 'ICU-4 Bed 05', status: 'Pending', charges: 8500 },
   { id: 'ET-802', patientName: 'Vikram Patel', uhid: 'NX-2026-000388', disposition: 'Transfer to OT', fromLocation: 'ER Trauma-2', toLocation: 'Neuro OT-2', status: 'In Progress', charges: 12400 },
-  { id: 'ET-803', patientName: 'Unknown Male ΓÇö Trauma', uhid: 'TMP-ER-2026-0091', disposition: 'Admit to IPD', fromLocation: 'Resus-1', toLocation: 'Trauma IPD Ward 7A', status: 'Pending', charges: 25000 },
+  { id: 'ET-803', patientName: 'Unknown Male — Trauma', uhid: 'TMP-ER-2026-0091', disposition: 'Admit to IPD', fromLocation: 'Resus-1', toLocation: 'Trauma IPD Ward 7A', status: 'Pending', charges: 25000 },
 ];
 
 export const RESPONSE_TIME_ANALYSIS = [
-  { interval: '00ΓÇô05 min', count: 18, target: 20 },
-  { interval: '05ΓÇô10 min', count: 14, target: 15 },
-  { interval: '10ΓÇô15 min', count: 9, target: 10 },
-  { interval: '15ΓÇô20 min', count: 4, target: 5 },
+  { interval: '00–05 min', count: 18, target: 20 },
+  { interval: '05–10 min', count: 14, target: 15 },
+  { interval: '10–15 min', count: 9, target: 10 },
+  { interval: '15–20 min', count: 4, target: 5 },
   { interval: '20+ min', count: 2, target: 2 },
 ];
 

@@ -45,7 +45,7 @@ export default function ComplianceBillingTab({ narcoticEntries, onAdvanceControl
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 animate-pulse" />
             <span className="text-[11px] font-bold uppercase">
-              Narcotic Register ΓÇö {pendingControlled.length} controlled substance entr{pendingControlled.length !== 1 ? 'ies' : 'y'} under audit
+              Narcotic Register — {pendingControlled.length} controlled substance entr{pendingControlled.length !== 1 ? 'ies' : 'y'} under audit
             </span>
           </div>
         </div>
@@ -53,7 +53,7 @@ export default function ComplianceBillingTab({ narcoticEntries, onAdvanceControl
 
       <PharmPanel
         title="Controlled Drug & Narcotic Register"
-        subtitle="Schedule H/H1/X ┬╖ chief pharmacist signature ┬╖ regulatory audit trail"
+        subtitle="Schedule H/H1/X · chief pharmacist signature · regulatory audit trail"
         icon={Shield}
         secure
         critical={pendingControlled.some((n) => n.stage === 'Pending Chief Pharmacist')}
@@ -114,7 +114,7 @@ export default function ComplianceBillingTab({ narcoticEntries, onAdvanceControl
         </table>
       </PharmPanel>
 
-      <PharmPanel title="Regulatory Audit Log" subtitle="Immutable track ΓÇö controlled actions ┬╖ recalls ┬╖ QC events" icon={AlertTriangle}>
+      <PharmPanel title="Regulatory Audit Log" subtitle="Immutable track — controlled actions · recalls · QC events" icon={AlertTriangle}>
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -140,7 +140,7 @@ export default function ComplianceBillingTab({ narcoticEntries, onAdvanceControl
       </PharmPanel>
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <PharmPanel title="Billing Coordination" subtitle="Itemized lines ┬╖ insurance ┬╖ discount locks" icon={Receipt}>
+        <PharmPanel title="Billing Coordination" subtitle="Itemized lines · insurance · discount locks" icon={Receipt}>
           <SecureIdentityPlaceholder verified />
           <table className="mt-2 w-full text-left">
             <thead>
@@ -178,10 +178,10 @@ export default function ComplianceBillingTab({ narcoticEntries, onAdvanceControl
           </table>
         </PharmPanel>
 
-        <PharmPanel title="Drug Information Center" subtitle="Interactions ┬╖ contraindications ┬╖ generic alternatives" icon={BookOpen}>
+        <PharmPanel title="Drug Information Center" subtitle="Interactions · contraindications · generic alternatives" icon={BookOpen}>
           <input
             type="search"
-            placeholder="Quick lookup ΓÇö brand or generic"
+            placeholder="Quick lookup — brand or generic"
             className="mb-2 w-full rounded-md border border-[#E2E8F0] px-2 py-1 text-[10px] focus:border-[#2563EB] focus:outline-none"
             defaultValue="Azithromycin"
           />
@@ -219,13 +219,13 @@ export default function ComplianceBillingTab({ narcoticEntries, onAdvanceControl
         </PharmPanel>
       </div>
 
-      <PharmPanel title="Revenue Analytics ΓÇö OPD / IPD / ER" subtitle="7-day pharmacy revenue breakdown">
+      <PharmPanel title="Revenue Analytics — OPD / IPD / ER" subtitle="7-day pharmacy revenue breakdown">
         <div className="h-36">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={REVENUE_TREND} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
               <XAxis dataKey="day" tick={{ fontSize: 8, fill: '#64748B' }} />
-              <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `Γé╣${(v / 1000).toFixed(0)}k`} />
+              <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
               <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid #E2E8F0' }} formatter={(v: number) => formatInr(v)} />
               <Legend wrapperStyle={{ fontSize: 9 }} />
               <Bar dataKey="opd" fill="#2563EB" name="OPD" stackId="a" radius={[0, 0, 0, 0]} />

@@ -52,7 +52,7 @@ function getPatientDisplayName(patient: PatientListRow | null | undefined): stri
 }
 
 function formatDateLabel(value?: string): string {
-  if (!value) return 'ΓÇö';
+  if (!value) return '—';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return new Intl.DateTimeFormat('en-IN', {
@@ -66,7 +66,7 @@ function formatDateLabel(value?: string): string {
 
 function getTimelineSubtitle(entry: PatientMedicalTimelineItem): string {
   if (entry.type === 'CONSULTATION') {
-    return [entry.diagnosis, entry.notes, entry.doctor_name].filter(Boolean).join(' ┬╖ ');
+    return [entry.diagnosis, entry.notes, entry.doctor_name].filter(Boolean).join(' · ');
   }
   if (entry.type === 'PRESCRIPTION') {
     const medCount = Array.isArray(entry.medications) ? entry.medications.length : 0;
@@ -76,7 +76,7 @@ function getTimelineSubtitle(entry: PatientMedicalTimelineItem): string {
       entry.doctor_name,
     ]
       .filter(Boolean)
-      .join(' ┬╖ ');
+      .join(' · ');
   }
   if (entry.type === 'VITALS') {
     return entry.vitalsSummary || '';
@@ -297,8 +297,8 @@ export default function DoctorRecordsPage() {
                           {displayName}
                         </p>
                         <p className="text-[11px] text-[#227B6B] font-semibold mt-0.5">
-                          {patient.age ? `${patient.age} yrs` : 'Age ΓÇö'}
-                          {patient.gender ? ` ┬╖ ${patient.gender}` : ''}
+                          {patient.age ? `${patient.age} yrs` : 'Age —'}
+                          {patient.gender ? ` · ${patient.gender}` : ''}
                         </p>
                         <p className="text-[10px] text-[#227B6B]/80 mt-1">
                           Last seen {formatDateLabel(patient.created_at)}
@@ -340,8 +340,8 @@ export default function DoctorRecordsPage() {
                     </h2>
                     <p className="text-xs text-[#227B6B] font-semibold">
                       Patient ID: {selectedPatient.patient_id || 'Not linked'}
-                      {selectedPatient.gender ? ` ┬╖ ${selectedPatient.gender}` : ''}
-                      {selectedPatient.age ? ` ┬╖ ${selectedPatient.age} yrs` : ''}
+                      {selectedPatient.gender ? ` · ${selectedPatient.gender}` : ''}
+                      {selectedPatient.age ? ` · ${selectedPatient.age} yrs` : ''}
                     </p>
                   </div>
                 </div>

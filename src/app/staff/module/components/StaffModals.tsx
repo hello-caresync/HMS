@@ -10,7 +10,7 @@ export function AddEmployeeModal({ onClose }: { onClose: () => void }) {
     <ModalOverlay title="Add New Employee" onClose={onClose} wide>
       <div className="grid grid-cols-2 gap-2">
         <div><label className="mb-1 block text-[10px] font-semibold uppercase text-slate-500">Full Name *</label><input className={inputClass} /></div>
-        <div><label className="mb-1 block text-[10px] font-semibold uppercase text-slate-500">Department *</label><select className={inputClass}>{['Cardiology', 'Front Office', 'Nursing ΓÇö ICU', 'HR', 'IT'].map((d) => <option key={d}>{d}</option>)}</select></div>
+        <div><label className="mb-1 block text-[10px] font-semibold uppercase text-slate-500">Department *</label><select className={inputClass}>{['Cardiology', 'Front Office', 'Nursing — ICU', 'HR', 'IT'].map((d) => <option key={d}>{d}</option>)}</select></div>
         <div><label className="mb-1 block text-[10px] font-semibold uppercase text-slate-500">Designation *</label><input className={inputClass} /></div>
         <div><label className="mb-1 block text-[10px] font-semibold uppercase text-slate-500">Reporting Manager</label><input className={inputClass} /></div>
         <div className="col-span-2"><button type="button" onClick={onClose} className="w-full rounded-md bg-[#2563EB] py-2 text-[11px] font-bold text-white">Create Employee Record</button></div>
@@ -22,9 +22,9 @@ export function AddEmployeeModal({ onClose }: { onClose: () => void }) {
 export function AssignShiftModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Assign Shift" onClose={onClose} wide>
-      <select className={`${inputClass} mb-2`}>{MOCK_EMPLOYEES.map((e) => <option key={e.id}>{e.name} ΓÇö {e.department}</option>)}</select>
+      <select className={`${inputClass} mb-2`}>{MOCK_EMPLOYEES.map((e) => <option key={e.id}>{e.name} — {e.department}</option>)}</select>
       <div className="grid grid-cols-2 gap-2">
-        <select className={inputClass}><option>Morning (07:00ΓÇô15:00)</option><option>Evening (14:00ΓÇô22:00)</option><option>Night (22:00ΓÇô07:00)</option></select>
+        <select className={inputClass}><option>Morning (07:00–15:00)</option><option>Evening (14:00–22:00)</option><option>Night (22:00–07:00)</option></select>
         <input type="date" className={inputClass} defaultValue="2026-07-18" />
       </div>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[11px] font-bold text-white">Confirm Assignment</button>
@@ -38,14 +38,14 @@ export function ApproveLeaveModal({ onClose }: { onClose: () => void }) {
     <ModalOverlay title="Approve Leave Request" onClose={onClose}>
       {!done ? (
         <>
-          <p className="text-[11px] text-slate-700"><strong>Arjun Das</strong> ΓÇö Half-day leave ┬╖ 19 Jul 2026</p>
+          <p className="text-[11px] text-slate-700"><strong>Arjun Das</strong> — Half-day leave · 19 Jul 2026</p>
           <div className="mt-3 flex gap-2">
             <button type="button" onClick={() => setDone(true)} className="flex-1 rounded-md bg-emerald-600 py-2 text-[11px] font-bold text-white">Approve</button>
             <button type="button" onClick={onClose} className="flex-1 rounded-md bg-red-600 py-2 text-[11px] font-bold text-white">Reject</button>
           </div>
         </>
       ) : (
-        <p className="text-center text-[11px] font-semibold text-emerald-700">Leave approved ┬╖ attendance updated</p>
+        <p className="text-center text-[11px] font-semibold text-emerald-700">Leave approved · attendance updated</p>
       )}
     </ModalOverlay>
   );

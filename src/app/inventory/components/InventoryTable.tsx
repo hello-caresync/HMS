@@ -94,7 +94,7 @@ export default function InventoryTable() {
                             : 'text-slate-800'
                       }`}
                     >
-                      {item.expiryDate ?? 'ΓÇö'}
+                      {item.expiryDate ?? '—'}
                     </td>
                     <td className="px-3 py-2">
                       <span

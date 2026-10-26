@@ -31,7 +31,7 @@ export default function OperationalStrip({ metrics }: OperationalStripProps) {
               <span className="ml-2 text-violet-400">{metrics.ipdCount}</span>
               <span className="ml-2 text-slate-800 font-normal text-lg 2xl:text-xl">IPD</span>
             </p>
-            <p className="mt-1 text-[11px] text-slate-800">Active encounters ┬╖ real-time</p>
+            <p className="mt-1 text-[11px] text-slate-800">Active encounters · real-time</p>
           </div>
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/15 ring-1 ring-sky-400/30">
             <Activity className="h-5 w-5 text-sky-400" strokeWidth={2} />
@@ -63,7 +63,7 @@ export default function OperationalStrip({ metrics }: OperationalStripProps) {
               {metrics.emergencyCount}
             </p>
             <p className="mt-1 text-[11px] text-slate-800">
-              {hasEmergency ? 'Active triage ┬╖ ER bays engaged' : 'No active red alerts'}
+              {hasEmergency ? 'Active triage · ER bays engaged' : 'No active red alerts'}
             </p>
           </div>
           <span
@@ -127,7 +127,7 @@ export default function OperationalStrip({ metrics }: OperationalStripProps) {
               <span className="ml-2 text-orange-400">{metrics.doctorsOnCall}</span>
               <span className="ml-2 text-slate-800 font-normal text-sm">On-Call</span>
             </p>
-            <p className="mt-1 text-[11px] text-slate-800">Clinical roster ┬╖ all departments</p>
+            <p className="mt-1 text-[11px] text-slate-800">Clinical roster · all departments</p>
           </div>
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/15 ring-1 ring-amber-400/30">
             <Stethoscope className="h-5 w-5 text-amber-400" strokeWidth={2} />

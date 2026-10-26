@@ -84,7 +84,7 @@ export default function MyCockpitTab({
                 <ActivityCategoryDot category={item.category} />
                 <div className="min-w-0 flex-1">
                   <p className="text-base font-medium text-slate-900">{item.message}</p>
-                  <p className="mt-1 text-sm text-slate-600">{item.actor} ┬╖ {item.department} ┬╖ {formatTime(item.timestamp)}</p>
+                  <p className="mt-1 text-sm text-slate-600">{item.actor} · {item.department} · {formatTime(item.timestamp)}</p>
                 </div>
               </li>
             ))}
@@ -93,7 +93,7 @@ export default function MyCockpitTab({
 
         <HpPanel
           title="My Tasks & Work Queue"
-          subtitle={`Role: ${activeRole} ┬╖ Emergency ┬╖ High ┬╖ Normal priorities`}
+          subtitle={`Role: ${activeRole} · Emergency · High · Normal priorities`}
           icon={ClipboardList}
           headerRight={<RoleBadge role={activeRole} />}
         >
@@ -128,7 +128,7 @@ export default function MyCockpitTab({
         </HpPanel>
       </div>
 
-      <HpPanel title="Communication & Meeting Workspace" subtitle="Staff chat ┬╖ shared documents ┬╖ review agendas" icon={MessageSquare}>
+      <HpPanel title="Communication & Meeting Workspace" subtitle="Staff chat · shared documents · review agendas" icon={MessageSquare}>
         <div className="mb-2 flex gap-0.5">
           {(['chat', 'documents', 'meetings'] as const).map((tab) => (
             <button
@@ -186,7 +186,7 @@ export default function MyCockpitTab({
             {MEETING_AGENDAS.map((m) => (
               <li key={m.id} className="rounded-md border border-slate-100 px-3 py-3">
                 <p className="text-base font-semibold text-slate-900">{m.title}</p>
-                <p className="mt-1 text-sm text-slate-600">{formatDateTime(m.datetime)} ┬╖ {m.location}</p>
+                <p className="mt-1 text-sm text-slate-600">{formatDateTime(m.datetime)} · {m.location}</p>
                 <p className="text-sm text-slate-600">{m.attendees}</p>
                 <span className={`mt-2 inline-block rounded-md px-3 py-1 text-sm font-semibold uppercase ${m.status === 'Scheduled' ? 'bg-sky-100 text-sky-800' : 'bg-emerald-100 text-emerald-800'}`}>{m.status}</span>
               </li>

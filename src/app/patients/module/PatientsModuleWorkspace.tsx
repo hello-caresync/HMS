@@ -110,7 +110,7 @@ export default function PatientsModuleWorkspace() {
         >
           <QuickActionModalContent
             type={quickActionModal}
-            uhid={activePatient?.uhid ?? 'ΓÇö'}
+            uhid={activePatient?.uhid ?? '—'}
             patientName={activePatient?.name ?? 'Patient'}
           />
         </ModalOverlay>

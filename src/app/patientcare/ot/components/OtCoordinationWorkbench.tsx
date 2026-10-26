@@ -62,7 +62,7 @@ export default function OtCoordinationWorkbench() {
               Operation Theatre Scheduling &amp; Safety
             </h1>
             <p className="text-xs text-slate-800">
-              Phase 4 ┬╖ Module 13 ┬╖ Theater calendar ┬╖ pre-op instrument validation
+              Phase 4 · Module 13 · Theater calendar · pre-op instrument validation
             </p>
           </div>
         </div>

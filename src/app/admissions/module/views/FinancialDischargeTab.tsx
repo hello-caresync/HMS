@@ -37,7 +37,7 @@ export default function FinancialDischargeTab() {
     <div className="space-y-3">
       <AdmPanel
         title="Admission Finance & TPA Hub"
-        subtitle="Deposits ┬╖ advance payments ┬╖ packages ┬╖ pre-authorization"
+        subtitle="Deposits · advance payments · packages · pre-authorization"
         icon={Receipt}
       >
         <div className="mb-2">
@@ -76,7 +76,7 @@ export default function FinancialDischargeTab() {
 
       <AdmPanel
         title="Multi-Department Discharge Clearance Pipeline"
-        subtitle="Medical ┬╖ Nursing ┬╖ Pharmacy ┬╖ Billing ┬╖ Digital Gatepass"
+        subtitle="Medical · Nursing · Pharmacy · Billing · Digital Gatepass"
         icon={ShieldCheck}
       >
         <div className="space-y-3">
@@ -86,7 +86,7 @@ export default function FinancialDischargeTab() {
                 <div>
                   <p className="text-[11px] font-bold text-[#0F172A]">{dp.patientName}</p>
                   <p className="font-mono text-[9px] text-[#2563EB]">
-                    {dp.uhid} ┬╖ {dp.ward}
+                    {dp.uhid} · {dp.ward}
                   </p>
                 </div>
                 {dp.gatepassIssued ? (
@@ -128,7 +128,7 @@ export default function FinancialDischargeTab() {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <AdmPanel
           title="Daily Admission & Discharge Trend"
-          subtitle="Last 7 days ΓÇö admissions vs discharges vs readmissions"
+          subtitle="Last 7 days — admissions vs discharges vs readmissions"
           icon={BarChart3}
           className="xl:col-span-8"
         >

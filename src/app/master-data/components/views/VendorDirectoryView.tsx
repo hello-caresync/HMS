@@ -43,7 +43,7 @@ export default function VendorDirectoryView() {
       <MasterToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search company, contact, GSTIN, categoryΓÇª"
+        searchPlaceholder="Search company, contact, GSTIN, category…"
         recordCount={filtered.length}
         recordLabel="vendors"
         onAdd={() => setSheet({ type: 'add' })}
@@ -61,7 +61,7 @@ export default function VendorDirectoryView() {
         ]}
         rows={filtered.map((v) => ({
           company: <span className="font-medium text-slate-900">{v.vendorName}</span>,
-          contact: <span className="text-xs text-slate-800">{v.contactPerson || 'ΓÇö'}</span>,
+          contact: <span className="text-xs text-slate-800">{v.contactPerson || '—'}</span>,
           gstin: <span className="font-mono text-[11px]">{v.taxId}</span>,
           category: <StatusBadge label={v.supplyCategory} tone="info" />,
           status: (

@@ -36,7 +36,7 @@ export default function ProfileVaultTab({ lookupQuery }: ProfileVaultTabProps) {
   return (
     <div className="grid grid-cols-1 gap-3 xl:grid-cols-10">
       <aside className="xl:col-span-3">
-        <StaffPanel title="Organizational Filters" icon={Filter} subtitle="Department ┬╖ designation ┬╖ manager ┬╖ role">
+        <StaffPanel title="Organizational Filters" icon={Filter} subtitle="Department · designation · manager · role">
           <div className="space-y-2">
             <FilterSelect label="Department" value={dept} onChange={setDept} options={departments} />
             <FilterSelect label="Designation" value={designation} onChange={setDesignation} options={designations} />

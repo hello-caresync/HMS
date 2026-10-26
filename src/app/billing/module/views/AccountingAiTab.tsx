@@ -45,12 +45,12 @@ export default function AccountingAiTab({ aiInsights, onUpdateAiStatus }: Accoun
     <div className="space-y-2">
       {suspicious > 0 && (
         <div className="rounded-md border-2 border-red-500 bg-red-600 px-3 py-2 text-white animate-pulse">
-          <span className="text-[11px] font-bold uppercase">Fraud Detection ΓÇö {suspicious} suspicious activity flag{suspicious !== 1 ? 's' : ''} under review</span>
+          <span className="text-[11px] font-bold uppercase">Fraud Detection — {suspicious} suspicious activity flag{suspicious !== 1 ? 's' : ''} under review</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <FinPanel title="Chart of Accounts" subtitle="Asset ┬╖ liability ┬╖ revenue ┬╖ expense balances" icon={BookOpen} secure>
+        <FinPanel title="Chart of Accounts" subtitle="Asset · liability · revenue · expense balances" icon={BookOpen} secure>
           <SecureFinancialPlaceholder verified />
           <table className="mt-2 w-full text-left">
             <thead>
@@ -76,7 +76,7 @@ export default function AccountingAiTab({ aiInsights, onUpdateAiStatus }: Accoun
           <p className="mt-2 text-[9px] font-bold text-slate-600">Trial Balance (absolute sum): {formatInr(trialBalance)}</p>
         </FinPanel>
 
-        <FinPanel title="Journal Entries & GST ITC" subtitle="Immutable ledger ┬╖ input tax credit tracking">
+        <FinPanel title="Journal Entries & GST ITC" subtitle="Immutable ledger · input tax credit tracking">
           <p className="mb-1 text-[8px] font-bold uppercase text-slate-500">Recent Journal Entries</p>
           <table className="mb-3 w-full text-left">
             <thead>
@@ -123,7 +123,7 @@ export default function AccountingAiTab({ aiInsights, onUpdateAiStatus }: Accoun
         </FinPanel>
       </div>
 
-      <FinPanel title="AI-Based Finance Intelligence Hub" subtitle="Revenue forecasts ┬╖ fraud detection ┬╖ cost optimization" icon={Brain} secure>
+      <FinPanel title="AI-Based Finance Intelligence Hub" subtitle="Revenue forecasts · fraud detection · cost optimization" icon={Brain} secure>
         <table className="w-full min-w-[860px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -166,7 +166,7 @@ export default function AccountingAiTab({ aiInsights, onUpdateAiStatus }: Accoun
               <ComposedChart data={PL_SUMMARY} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                 <XAxis dataKey="month" tick={{ fontSize: 8, fill: '#64748B' }} />
-                <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `Γé╣${(v / 10000000).toFixed(1)}Cr`} />
+                <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `₹${(v / 10000000).toFixed(1)}Cr`} />
                 <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid #E2E8F0' }} formatter={(v: number) => formatInr(v)} />
                 <Legend wrapperStyle={{ fontSize: 8 }} />
                 <Bar dataKey="revenue" fill="#059669" name="Revenue" radius={[2, 2, 0, 0]} />
@@ -192,13 +192,13 @@ export default function AccountingAiTab({ aiInsights, onUpdateAiStatus }: Accoun
           </div>
         </FinPanel>
 
-        <FinPanel title="Cash Flow Metrics" subtitle="Operating ┬╖ investing ┬╖ financing">
+        <FinPanel title="Cash Flow Metrics" subtitle="Operating · investing · financing">
           <div className="h-32">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={CASH_FLOW} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                 <XAxis dataKey="month" tick={{ fontSize: 8, fill: '#64748B' }} />
-                <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `Γé╣${(v / 100000).toFixed(0)}L`} />
+                <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `₹${(v / 100000).toFixed(0)}L`} />
                 <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid #E2E8F0' }} formatter={(v: number) => formatInr(v)} />
                 <Legend wrapperStyle={{ fontSize: 8 }} />
                 <Bar dataKey="operating" fill="#059669" name="Operating" stackId="a" />

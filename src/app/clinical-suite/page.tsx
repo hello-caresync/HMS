@@ -43,7 +43,7 @@ type DocTemplate = {
 };
 
 const PIPELINE_SUMMARY =
-  'Standalone clinical intelligence ┬╖ AI decision support ┬╖ task routing ┬╖ secure comms ┬╖ document generation ┬╖ 13 Jul 2026';
+  'Standalone clinical intelligence · AI decision support · task routing · secure comms · document generation · 13 Jul 2026';
 
 const SUITE_TABS: { key: SuiteTab; label: string }[] = [
   { key: 'ai-decision', label: 'AI Decision Support' },
@@ -60,36 +60,36 @@ const CHAT_CHANNELS: { key: ChatChannel; label: string }[] = [
 ];
 
 const INITIAL_TASKS: DailyTask[] = [
-  { id: 't-1', label: 'Follow-up ┬╖ P.N. ┬╖ post-op review 14 Jul', category: 'follow-up', checked: false },
-  { id: 't-2', label: 'Follow-up ┬╖ R.S. ┬╖ diabetes control check', category: 'follow-up', checked: true },
-  { id: 't-3', label: 'Pending ┬╖ CBC report ┬╖ K.V.', category: 'pending-report', checked: false },
-  { id: 't-4', label: 'Pending ┬╖ Chest X-ray sign-off ┬╖ M.A.', category: 'pending-report', checked: false },
-  { id: 't-5', label: 'CRITICAL ┬╖ P.N. ┬╖ elevated potassium 6.1', category: 'critical', checked: false },
-  { id: 't-6', label: 'CRITICAL ┬╖ S.D. ┬╖ chest pain triage escalation', category: 'critical', checked: false },
+  { id: 't-1', label: 'Follow-up · P.N. · post-op review 14 Jul', category: 'follow-up', checked: false },
+  { id: 't-2', label: 'Follow-up · R.S. · diabetes control check', category: 'follow-up', checked: true },
+  { id: 't-3', label: 'Pending · CBC report · K.V.', category: 'pending-report', checked: false },
+  { id: 't-4', label: 'Pending · Chest X-ray sign-off · M.A.', category: 'pending-report', checked: false },
+  { id: 't-5', label: 'CRITICAL · P.N. · elevated potassium 6.1', category: 'critical', checked: false },
+  { id: 't-6', label: 'CRITICAL · S.D. · chest pain triage escalation', category: 'critical', checked: false },
 ];
 
 const INITIAL_CHAT: Record<ChatChannel, ChatMessage[]> = {
   nurses: [
-    { id: 'n-1', sender: 'Nurse A.', text: 'Vitals updated for OT-03 ┬╖ BP stable.', timestamp: '08:45' },
+    { id: 'n-1', sender: 'Nurse A.', text: 'Vitals updated for OT-03 · BP stable.', timestamp: '08:45' },
     { id: 'n-2', sender: 'You', text: 'Acknowledged. Prepare PACU handoff checklist.', timestamp: '08:47' },
   ],
   lab: [
-    { id: 'l-1', sender: 'Lab Desk', text: 'HbA1c result ready for P.N. ┬╖ flagged borderline.', timestamp: '09:10' },
+    { id: 'l-1', sender: 'Lab Desk', text: 'HbA1c result ready for P.N. · flagged borderline.', timestamp: '09:10' },
   ],
   pharmacy: [
     { id: 'p-1', sender: 'Pharmacy', text: 'Warfarin interaction query on pending Rx.', timestamp: '09:22' },
-    { id: 'p-2', sender: 'You', text: 'Reviewing ┬╖ hold dispense until consult note.', timestamp: '09:25' },
+    { id: 'p-2', sender: 'You', text: 'Reviewing · hold dispense until consult note.', timestamp: '09:25' },
   ],
   reception: [
-    { id: 'r-1', sender: 'Reception', text: 'Walk-in slot opened ┬╖ 11:30 ┬╖ sandbox queue.', timestamp: '10:00' },
+    { id: 'r-1', sender: 'Reception', text: 'Walk-in slot opened · 11:30 · sandbox queue.', timestamp: '10:00' },
   ],
 };
 
 const DOC_TEMPLATES: DocTemplate[] = [
   { id: 'ref', title: 'Referral Letters', description: 'Specialist referral with clinical summary block' },
-  { id: 'med-cert', title: 'Medical Certificates', description: 'Sick leave ┬╖ fitness for duty ┬╖ sandbox template' },
-  { id: 'fit-cert', title: 'Fitness Certificates', description: 'Pre-employment ┬╖ sports ┬╖ travel clearance' },
-  { id: 'consent', title: 'Procedure Consent Forms', description: 'Informed consent ┬╖ risks ┬╖ witness signatures' },
+  { id: 'med-cert', title: 'Medical Certificates', description: 'Sick leave · fitness for duty · sandbox template' },
+  { id: 'fit-cert', title: 'Fitness Certificates', description: 'Pre-employment · sports · travel clearance' },
+  { id: 'consent', title: 'Procedure Consent Forms', description: 'Informed consent · risks · witness signatures' },
 ];
 
 const INPUT_CLASS =
@@ -106,9 +106,9 @@ export default function ClinicalSuitePage() {
   const [activeTab, setActiveTab] = useState<SuiteTab>('ai-decision');
   const [tasks, setTasks] = useState<DailyTask[]>(INITIAL_TASKS);
   const [drugQuery, setDrugQuery] = useState('Warfarin + Amiodarone');
-  const [allergyQuery, setAllergyQuery] = useState('Penicillin ┬╖ Sulfa');
+  const [allergyQuery, setAllergyQuery] = useState('Penicillin · Sulfa');
   const [aiSuggestions, setAiSuggestions] = useState(
-    'Protocol match ┬╖ Hypertension Stage 2 ┬╖ JNC-8 first-line ARB suggested ┬╖ monitor renal function ┬╖ sandbox AI output only.',
+    'Protocol match · Hypertension Stage 2 · JNC-8 first-line ARB suggested · monitor renal function · sandbox AI output only.',
   );
   const [suggestionsExpanded, setSuggestionsExpanded] = useState(true);
   const [activeChannel, setActiveChannel] = useState<ChatChannel>('nurses');
@@ -133,11 +133,11 @@ export default function ClinicalSuitePage() {
   };
 
   const runInteractionCheck = () => {
-    showNotice(`Drug interaction scan ┬╖ ${drugQuery} ┬╖ sandbox ┬╖ elevated bleeding risk flagged`);
+    showNotice(`Drug interaction scan · ${drugQuery} · sandbox · elevated bleeding risk flagged`);
   };
 
   const runAllergyCheck = () => {
-    showNotice(`Allergy alert scan ┬╖ ${allergyQuery} ┬╖ cross-reactivity review simulated`);
+    showNotice(`Allergy alert scan · ${allergyQuery} · cross-reactivity review simulated`);
   };
 
   const sendChatMessage = () => {
@@ -158,7 +158,7 @@ export default function ClinicalSuitePage() {
   };
 
   const handleFileShare = () => {
-    showNotice('File sharing ┬╖ sandbox attachment ┬╖ no upload pipeline connected');
+    showNotice('File sharing · sandbox attachment · no upload pipeline connected');
   };
 
   const renderTaskList = (items: DailyTask[], critical = false) => (
@@ -200,7 +200,7 @@ export default function ClinicalSuitePage() {
               {PIPELINE_SUMMARY}
             </p>
             <p className="mt-2 font-mono text-xs font-black text-slate-950">
-              Active module ┬╖ {SUITE_TABS.find((t) => t.key === activeTab)?.label} ┬╖ tasks{' '}
+              Active module · {SUITE_TABS.find((t) => t.key === activeTab)?.label} · tasks{' '}
               {tasks.filter((t) => t.checked).length}/{tasks.length}
             </p>
           </div>
@@ -268,7 +268,7 @@ export default function ClinicalSuitePage() {
                     High-Risk Medicine Warning
                   </p>
                   <p className="mt-2 text-sm font-bold text-rose-950">
-                    Warfarin + NSAID co-prescription ┬╖ bleeding risk elevated ┬╖ review INR schedule ┬╖ sandbox alert
+                    Warfarin + NSAID co-prescription · bleeding risk elevated · review INR schedule · sandbox alert
                   </p>
                 </div>
                 <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)]">
@@ -342,7 +342,7 @@ export default function ClinicalSuitePage() {
                   <p className="text-sm font-black text-slate-950">
                     {CHAT_CHANNELS.find((c) => c.key === activeChannel)?.label}
                   </p>
-                  <p className="text-[10px] font-bold text-slate-800">Internal secure channel ┬╖ sandbox only</p>
+                  <p className="text-[10px] font-bold text-slate-800">Internal secure channel · sandbox only</p>
                 </div>
                 <div className="max-h-64 flex-1 space-y-2 overflow-y-auto p-4" role="log" aria-live="polite">
                   {chatLogs[activeChannel].map((msg) => (
@@ -360,7 +360,7 @@ export default function ClinicalSuitePage() {
                         {msg.text}
                       </div>
                       <span className="mt-0.5 text-[10px] font-bold text-slate-600">
-                        {msg.sender} ┬╖ {msg.timestamp}
+                        {msg.sender} · {msg.timestamp}
                       </span>
                     </div>
                   ))}
@@ -381,7 +381,7 @@ export default function ClinicalSuitePage() {
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), sendChatMessage())}
-                    placeholder="Type secure messageΓÇª"
+                    placeholder="Type secure message…"
                     aria-label="Chat input"
                   />
                   <button
@@ -407,7 +407,7 @@ export default function ClinicalSuitePage() {
                     type="button"
                     onClick={() => {
                       setSelectedTemplate(tpl);
-                      showNotice(`Template loaded ┬╖ ${tpl.title} ┬╖ preview sandbox`);
+                      showNotice(`Template loaded · ${tpl.title} · preview sandbox`);
                     }}
                     className={`rounded-xl border-2 p-4 text-left transition-all hover:scale-[1.02] ${
                       selectedTemplate?.id === tpl.id
@@ -425,15 +425,15 @@ export default function ClinicalSuitePage() {
                 <h2 className="text-sm font-black text-slate-950">Document Preview</h2>
                 {selectedTemplate ? (
                   <article className="mt-4 space-y-3 rounded-lg border-2 border-slate-200 bg-white p-4">
-                    <p className="text-xs font-black uppercase text-slate-800">Regal Clinical ┬╖ Sandbox</p>
+                    <p className="text-xs font-black uppercase text-slate-800">Regal Clinical · Sandbox</p>
                     <p className="text-lg font-black text-slate-950">{selectedTemplate.title}</p>
-                    <p className="text-sm font-bold text-slate-950">Patient ┬╖ P.N. ┬╖ UHID NX-2026-301882</p>
+                    <p className="text-sm font-bold text-slate-950">Patient · P.N. · UHID NX-2026-301882</p>
                     <p className="text-xs font-bold leading-relaxed text-slate-800">
                       This document is generated in standalone sandbox mode. Content blocks populate from
-                      clinical context. {selectedTemplate.description}. Date ┬╖ 13 Jul 2026.
+                      clinical context. {selectedTemplate.description}. Date · 13 Jul 2026.
                     </p>
                     <p className="border-t-2 border-slate-200 pt-3 text-[10px] font-bold text-slate-800">
-                      Authorized signatory ┬╖ Dr. Sandbox ┬╖ Registration NX-MD-00421
+                      Authorized signatory · Dr. Sandbox · Registration NX-MD-00421
                     </p>
                   </article>
                 ) : (

@@ -101,7 +101,7 @@ type DischargeSummaryRecord = {
 };
 
 const ARCHIVAL_SUMMARY =
-  'Isolated read-only vault ┬╖ single patient chart ┬╖ sandbox initials ┬╖ no cross-tester PII ┬╖ archival index NX-2026-301882 ┬╖ 13 Jul 2026';
+  'Isolated read-only vault · single patient chart · sandbox initials · no cross-tester PII · archival index NX-2026-301882 · 13 Jul 2026';
 
 const PATIENT = {
   initials: 'P.N.',
@@ -122,28 +122,28 @@ const PREVIOUS_VISITS: PreviousVisit[] = [
     id: 'v-1',
     date: '2026-06-12',
     department: 'General Medicine',
-    reason: 'Fever ┬╖ URI symptoms',
-    provider: 'Dr. Sandbox ┬╖ MD',
+    reason: 'Fever · URI symptoms',
+    provider: 'Dr. Sandbox · MD',
   },
   {
     id: 'v-2',
     date: '2026-03-04',
     department: 'Cardiology',
     reason: 'Hypertension follow-up',
-    provider: 'Dr. Sandbox ┬╖ MD',
+    provider: 'Dr. Sandbox · MD',
   },
   {
     id: 'v-3',
     date: '2025-11-18',
     department: 'Endocrinology',
-    reason: 'Diabetes review ┬╖ HbA1c',
-    provider: 'Dr. Sandbox ┬╖ MD',
+    reason: 'Diabetes review · HbA1c',
+    provider: 'Dr. Sandbox · MD',
   },
 ];
 
 const ALLERGIES: AllergyRecord[] = [
   { id: 'a-1', allergen: 'Penicillin', severity: 'Critical', reaction: 'Anaphylaxis risk' },
-  { id: 'a-2', allergen: 'Sulfa drugs', severity: 'Moderate', reaction: 'Rash ┬╖ urticaria' },
+  { id: 'a-2', allergen: 'Sulfa drugs', severity: 'Moderate', reaction: 'Rash · urticaria' },
 ];
 
 const VACCINATIONS: VaccinationRecord[] = [
@@ -153,8 +153,8 @@ const VACCINATIONS: VaccinationRecord[] = [
 ];
 
 const CHRONIC_DISEASES: ChronicDiseaseRecord[] = [
-  { id: 'c-1', condition: 'Type 2 Diabetes Mellitus', since: '2019', status: 'Active ┬╖ monitored' },
-  { id: 'c-2', condition: 'Essential Hypertension', since: '2021', status: 'Active ┬╖ controlled' },
+  { id: 'c-1', condition: 'Type 2 Diabetes Mellitus', since: '2019', status: 'Active · monitored' },
+  { id: 'c-2', condition: 'Essential Hypertension', since: '2021', status: 'Active · controlled' },
 ];
 
 const PRESCRIPTIONS: PrescriptionRecord[] = [
@@ -185,7 +185,7 @@ const SURGERIES: SurgeryRecord[] = [
   {
     id: 'sx-1',
     date: '2022-08-09',
-    procedure: 'Appendectomy ┬╖ laparoscopic',
+    procedure: 'Appendectomy · laparoscopic',
     facility: 'Regal Sandbox Surgical Unit',
   },
 ];
@@ -195,8 +195,8 @@ const ADMISSIONS: AdmissionRecord[] = [
     id: 'adm-1',
     admitDate: '2024-01-14',
     dischargeDate: '2024-01-18',
-    ward: 'General Ward ┬╖ 3A',
-    diagnosis: 'Acute gastroenteritis ┬╖ dehydration',
+    ward: 'General Ward · 3A',
+    diagnosis: 'Acute gastroenteritis · dehydration',
   },
 ];
 
@@ -212,14 +212,14 @@ const LAB_REPORTS: LabReportRecord[] = [
     id: 'lab-2',
     date: '2026-06-10',
     testName: 'Complete Blood Count',
-    result: 'Within reference ┬╖ Hb 12.8 g/dL',
+    result: 'Within reference · Hb 12.8 g/dL',
     status: 'Final',
   },
   {
     id: 'lab-3',
     date: '2026-03-01',
     testName: 'Lipid Panel',
-    result: 'LDL 118 mg/dL ┬╖ pending lifestyle review',
+    result: 'LDL 118 mg/dL · pending lifestyle review',
     status: 'Pending Review',
   },
 ];
@@ -228,14 +228,14 @@ const RADIOLOGY_REPORTS: RadiologyReportRecord[] = [
   {
     id: 'rad-1',
     date: '2025-09-22',
-    study: 'Chest X-Ray ┬╖ PA view',
+    study: 'Chest X-Ray · PA view',
     impression: 'No acute cardiopulmonary abnormality',
   },
   {
     id: 'rad-2',
     date: '2024-01-15',
     study: 'Abdominal Ultrasound',
-    impression: 'Unremarkable hepatobiliary study ┬╖ sandbox read',
+    impression: 'Unremarkable hepatobiliary study · sandbox read',
   },
 ];
 
@@ -243,15 +243,15 @@ const PROGRESS_NOTES: ProgressNoteRecord[] = [
   {
     id: 'pn-1',
     date: '2026-06-12',
-    author: 'Dr. Sandbox ┬╖ MD',
-    summary: 'OPD review ┬╖ URI ┬╖ vitals stable',
+    author: 'Dr. Sandbox · MD',
+    summary: 'OPD review · URI · vitals stable',
     body: 'Patient presented with 3-day fever and cough. Lungs clear. Advised hydration and symptomatic care. Sandbox narrative only.',
   },
   {
     id: 'pn-2',
     date: '2026-03-04',
-    author: 'Dr. Sandbox ┬╖ MD',
-    summary: 'Hypertension follow-up ┬╖ BP improved',
+    author: 'Dr. Sandbox · MD',
+    summary: 'Hypertension follow-up · BP improved',
     body: 'Home BP log reviewed. Continue amlodipine. Lifestyle counseling reinforced. No edema.',
   },
 ];
@@ -260,7 +260,7 @@ const DISCHARGE_SUMMARIES: DischargeSummaryRecord[] = [
   {
     id: 'dc-1',
     date: '2024-01-18',
-    title: 'Discharge Summary ┬╖ GEN-3A Admission',
+    title: 'Discharge Summary · GEN-3A Admission',
     snippet:
       'Admitted for acute gastroenteritis. IV fluids completed. Tolerating oral intake. Discharged stable with oral rehydration advice.',
   },
@@ -272,7 +272,7 @@ export default function EmrHistoricalVaultPage() {
   const [viewNotice, setViewNotice] = useState<string | null>(null);
 
   const showViewNotice = (label: string) => {
-    setViewNotice(`${label} ┬╖ read-only sandbox preview ┬╖ no file download in isolation mode`);
+    setViewNotice(`${label} · read-only sandbox preview · no file download in isolation mode`);
     window.setTimeout(() => setViewNotice(null), 4000);
   };
 
@@ -289,7 +289,7 @@ export default function EmrHistoricalVaultPage() {
               {ARCHIVAL_SUMMARY}
             </p>
             <p className="mt-2 font-mono text-xs font-black text-slate-950">
-              Active chart ┬╖ {PATIENT.initials} ┬╖ {PATIENT.uhid} ┬╖ {PATIENT.age} yrs ┬╖{' '}
+              Active chart · {PATIENT.initials} · {PATIENT.uhid} · {PATIENT.age} yrs ·{' '}
               {PATIENT.gender}
             </p>
           </div>
@@ -345,7 +345,7 @@ export default function EmrHistoricalVaultPage() {
                 <div>
                   <h2 className="text-lg font-black text-slate-950">Baseline Profile</h2>
                   <p className="text-xs font-medium text-slate-800">
-                    Allergies ┬╖ chronic conditions ┬╖ vaccination registry
+                    Allergies · chronic conditions · vaccination registry
                   </p>
                 </div>
 
@@ -380,7 +380,7 @@ export default function EmrHistoricalVaultPage() {
                         className="rounded-lg border-2 border-slate-300 bg-white p-3"
                       >
                         <p className="text-sm font-black text-slate-950">{item.condition}</p>
-                        <p className="mt-1 text-xs font-bold text-slate-800">Since ┬╖ {item.since}</p>
+                        <p className="mt-1 text-xs font-bold text-slate-800">Since · {item.since}</p>
                         <p className="mt-1 text-xs font-bold text-slate-950">{item.status}</p>
                       </article>
                     ))}
@@ -428,7 +428,7 @@ export default function EmrHistoricalVaultPage() {
                 <div>
                   <h2 className="text-lg font-black text-slate-950">Encounters</h2>
                   <p className="text-xs font-medium text-slate-800">
-                    Previous visits ┬╖ progress notes ┬╖ discharge summaries
+                    Previous visits · progress notes · discharge summaries
                   </p>
                 </div>
 
@@ -533,7 +533,7 @@ export default function EmrHistoricalVaultPage() {
                 <div>
                   <h2 className="text-lg font-black text-slate-950">Interventions</h2>
                   <p className="text-xs font-medium text-slate-800">
-                    Prescriptions ┬╖ surgeries ┬╖ admission history
+                    Prescriptions · surgeries · admission history
                   </p>
                 </div>
 
@@ -729,7 +729,7 @@ export default function EmrHistoricalVaultPage() {
 
                 <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800">
                   <Activity className="h-4 w-4 text-slate-950" aria-hidden />
-                  <span>Diagnostics index ┬╖ read-only ┬╖ sandbox isolation enforced</span>
+                  <span>Diagnostics index · read-only · sandbox isolation enforced</span>
                 </div>
               </div>
             )}

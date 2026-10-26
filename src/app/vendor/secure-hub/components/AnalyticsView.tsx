@@ -25,19 +25,19 @@ export default function AnalyticsView({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <KpiCard
           label="Cleared revenue"
-          value={`Γé╣${totalPaidRevenue.toLocaleString('en-IN')}`}
+          value={`₹${totalPaidRevenue.toLocaleString('en-IN')}`}
           hint="Paid invoices"
           accent="emerald"
         />
         <KpiCard
           label="Total billed"
-          value={`Γé╣${totalBilledAmount.toLocaleString('en-IN')}`}
+          value={`₹${totalBilledAmount.toLocaleString('en-IN')}`}
           hint="All generated invoices"
           accent="blue"
         />
         <KpiCard
           label="Outstanding"
-          value={`Γé╣${outstanding.toLocaleString('en-IN')}`}
+          value={`₹${outstanding.toLocaleString('en-IN')}`}
           hint="Awaiting settlement"
           accent="amber"
         />

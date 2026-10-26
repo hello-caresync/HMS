@@ -81,7 +81,7 @@ export default function SpatialCapacityTab() {
 
       <AdmPanel
         title="Dynamic Bed Availability Map"
-        subtitle="Real-time physical capacity layout ΓÇö General ┬╖ Semi-Private ┬╖ Private ┬╖ ICU"
+        subtitle="Real-time physical capacity layout — General · Semi-Private · Private · ICU"
         icon={LayoutGrid}
         headerRight={
           <div className="flex flex-wrap gap-1">
@@ -120,7 +120,7 @@ export default function SpatialCapacityTab() {
                   <div
                     key={bed.id}
                     className={`rounded border px-1.5 py-2 text-center ${BED_CELL_STYLES[bed.status]}`}
-                    title={bed.patientName ? `${bed.patientName} ┬╖ ${bed.uhid}` : bed.status}
+                    title={bed.patientName ? `${bed.patientName} · ${bed.uhid}` : bed.status}
                   >
                     <p className="text-[10px] font-bold">{bed.label}</p>
                     <p className="text-[8px] opacity-80">{bed.floor}</p>
@@ -139,14 +139,14 @@ export default function SpatialCapacityTab() {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <AdmPanel
           title="Patient Transfer Panel"
-          subtitle="Bed ┬╖ Room ┬╖ Ward ┬╖ ICU ┬╖ Department routing & approval"
+          subtitle="Bed · Room · Ward · ICU · Department routing & approval"
           icon={ArrowRightLeft}
           className="xl:col-span-7"
         >
           <table className="w-full min-w-[560px] text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
-                {['Transfer ID', 'Patient', 'From ΓåÆ To', 'Reason', 'Requested', 'Status'].map((h) => (
+                {['Transfer ID', 'Patient', 'From → To', 'Reason', 'Requested', 'Status'].map((h) => (
                   <th key={h} className="px-2 py-1.5 text-[9px] font-bold uppercase text-slate-500">
                     {h}
                   </th>
@@ -163,7 +163,7 @@ export default function SpatialCapacityTab() {
                   </td>
                   <td className="px-2 py-1.5 text-[9px] text-slate-600">
                     {t.fromLocation}
-                    <span className="mx-1 text-[#2563EB]">ΓåÆ</span>
+                    <span className="mx-1 text-[#2563EB]">→</span>
                     {t.toLocation}
                   </td>
                   <td className="max-w-[140px] truncate px-2 py-1.5 text-[9px] text-slate-500" title={t.reason}>

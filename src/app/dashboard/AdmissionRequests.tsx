@@ -34,7 +34,7 @@ const SEED_REQUESTS: AdmissionRequest[] = [
   },
   {
     id: 'AR-882',
-    patient: 'Unknown ΓÇö Trauma',
+    patient: 'Unknown — Trauma',
     source: 'Emergency',
     department: 'Emergency',
     status: 'Pending Approval',
@@ -100,7 +100,7 @@ export default function AdmissionRequests() {
         icon={ClipboardList}
       />
 
-      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search requestsΓÇª" />
+      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search requests…" />
 
       <MasterTabBar
         tabs={[
@@ -150,7 +150,7 @@ export default function AdmissionRequests() {
             ) : r.status === 'Approved' ? (
               <CheckCircle2 key="ok" className="h-4 w-4 text-emerald-500" />
             ) : (
-              'ΓÇö'
+              '—'
             ),
           ])}
         />

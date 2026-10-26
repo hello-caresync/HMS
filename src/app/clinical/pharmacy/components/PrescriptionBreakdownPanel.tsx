@@ -46,10 +46,10 @@ export default function PrescriptionBreakdownPanel({
 
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-800">
               <span>Qty: <strong className="text-slate-800">{line.quantityOrdered}</strong></span>
-              <span>Γé╣ {line.unitPrice.toFixed(2)}/unit</span>
+              <span>₹ {line.unitPrice.toFixed(2)}/unit</span>
               {line.batch && (
                 <span className="font-mono">
-                  Batch {line.batch.batchNumberCode} ┬╖ Exp {line.batch.expiryDate}
+                  Batch {line.batch.batchNumberCode} · Exp {line.batch.expiryDate}
                 </span>
               )}
             </div>
@@ -65,7 +65,7 @@ export default function PrescriptionBreakdownPanel({
                     <li key={alt}>
                       <button
                         type="button"
-                        onClick={() => onSwapAlternative(line.id, alt.split(' ┬╖ ')[0] ?? alt)}
+                        onClick={() => onSwapAlternative(line.id, alt.split(' · ')[0] ?? alt)}
                         className="flex w-full items-center gap-1 rounded border border-amber-200 bg-white px-2 py-1.5 text-left text-[11px] font-medium text-amber-900 hover:bg-amber-100"
                       >
                         <ArrowRightLeft className="h-3 w-3 shrink-0" />

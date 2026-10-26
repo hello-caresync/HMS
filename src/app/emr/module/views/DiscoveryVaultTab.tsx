@@ -23,7 +23,7 @@ export default function DiscoveryVaultTab({
 }: DiscoveryVaultTabProps) {
   return (
     <div className="grid grid-cols-1 gap-2 xl:grid-cols-12">
-      <EmrPanel title="Historical Record Index" icon={FolderTree} subtitle="Nested directory ΓÇö view-only folders" className="xl:col-span-4">
+      <EmrPanel title="Historical Record Index" icon={FolderTree} subtitle="Nested directory — view-only folders" className="xl:col-span-4">
         <ul className="space-y-0.5">
           {FOLDER_TREE.map((cat) => {
             const expanded = expandedCategories.has(cat.id);
@@ -158,12 +158,12 @@ export default function DiscoveryVaultTab({
         </EmrPanel>
 
         {selectedRecordId.startsWith('rad') && (
-          <EmrPanel title="PACS Image Viewer" icon={Monitor} subtitle="Radiology imaging ΓÇö view-only frame">
+          <EmrPanel title="PACS Image Viewer" icon={Monitor} subtitle="Radiology imaging — view-only frame">
             <div className="flex h-32 items-center justify-center rounded-md border-2 border-dashed border-violet-200 bg-violet-50/50">
               <div className="text-center">
                 <Monitor className="mx-auto mb-1 h-8 w-8 text-violet-400" />
-                <p className="text-[10px] font-bold text-violet-800">PACS Viewer ΓÇö Chest X-Ray PA</p>
-                <p className="text-[8px] text-slate-500">[DICOM study masked for security ΓÇö authenticated view only]</p>
+                <p className="text-[10px] font-bold text-violet-800">PACS Viewer — Chest X-Ray PA</p>
+                <p className="text-[8px] text-slate-500">[DICOM study masked for security — authenticated view only]</p>
                 <ViewOnlyBadge compact />
               </div>
             </div>

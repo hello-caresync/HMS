@@ -10,7 +10,7 @@ import { generateId, generatePoNumber, generateRfqNumber } from '../types';
 export const SEED_PURCHASE_REQUESTS: PurchaseRequest[] = [
   {
     id: 'pr-001',
-    itemName: 'IV Cannula 20G ΓÇö Sterile',
+    itemName: 'IV Cannula 20G — Sterile',
     requestingDepartment: 'Emergency Department',
     quantity: 500,
     unit: 'Pieces',
@@ -20,7 +20,7 @@ export const SEED_PURCHASE_REQUESTS: PurchaseRequest[] = [
   },
   {
     id: 'pr-002',
-    itemName: 'Surgical Gloves ΓÇö Size M',
+    itemName: 'Surgical Gloves — Size M',
     requestingDepartment: 'OT Complex',
     quantity: 120,
     unit: 'Boxes',
@@ -30,7 +30,7 @@ export const SEED_PURCHASE_REQUESTS: PurchaseRequest[] = [
   },
   {
     id: 'pr-003',
-    itemName: 'Portable Ventilator ΓÇö Hamilton C6',
+    itemName: 'Portable Ventilator — Hamilton C6',
     requestingDepartment: 'ICU',
     quantity: 2,
     unit: 'Units',
@@ -40,7 +40,7 @@ export const SEED_PURCHASE_REQUESTS: PurchaseRequest[] = [
   },
   {
     id: 'pr-004',
-    itemName: 'Paracetamol 650mg ΓÇö Dolo',
+    itemName: 'Paracetamol 650mg — Dolo',
     requestingDepartment: 'Pharmacy',
     quantity: 200,
     unit: 'Strips',
@@ -114,7 +114,7 @@ export const SEED_RFQS: RFQ[] = [
   {
     id: 'rfq-001',
     rfqNumber: 'RFQ-NEX-4421',
-    itemName: 'IV Cannula 20G ΓÇö Sterile',
+    itemName: 'IV Cannula 20G — Sterile',
     quantity: 500,
     unit: 'Pieces',
     department: 'Emergency Department',
@@ -125,7 +125,7 @@ export const SEED_RFQS: RFQ[] = [
   {
     id: 'rfq-002',
     rfqNumber: 'RFQ-NEX-4398',
-    itemName: 'Surgical Gloves ΓÇö Size M',
+    itemName: 'Surgical Gloves — Size M',
     quantity: 120,
     unit: 'Boxes',
     department: 'OT Complex',
@@ -136,7 +136,7 @@ export const SEED_RFQS: RFQ[] = [
   {
     id: 'rfq-003',
     rfqNumber: 'RFQ-NEX-4375',
-    itemName: 'Insulin Glargine ΓÇö Lantus Solostar',
+    itemName: 'Insulin Glargine — Lantus Solostar',
     quantity: 50,
     unit: 'Vials',
     department: 'Endocrinology',
@@ -153,7 +153,7 @@ export const SEED_PURCHASE_ORDERS: PurchaseOrder[] = [
     rfqId: 'rfq-legacy-001',
     vendorId: 'vnd-002',
     vendorName: 'PharmaLink Distributors',
-    itemName: 'Omeprazole 20mg ΓÇö Omez',
+    itemName: 'Omeprazole 20mg — Omez',
     quantity: 300,
     unit: 'Strips',
     unitPrice: 82,

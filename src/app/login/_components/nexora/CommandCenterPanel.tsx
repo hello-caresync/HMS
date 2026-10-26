@@ -127,7 +127,7 @@ export default function CommandCenterPanel({ reducedMotion }: { reducedMotion: b
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.55, ease: easeOut }} className="mt-2 rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
             <div className="mb-1.5 flex items-center justify-between text-[9px] font-bold tracking-[0.12em] text-[#94A3B8]">
               <span>LIVE SYSTEM SIGNAL</span>
-              <span className="font-mono text-[#10B981]">72 BPM ΓùÅ</span>
+              <span className="font-mono text-[#10B981]">72 BPM ●</span>
             </div>
             <div
               className="relative h-[clamp(2.5rem,4.5vh,3rem)] overflow-hidden rounded-lg border border-white/5"

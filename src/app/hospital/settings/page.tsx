@@ -4,7 +4,7 @@ import { SettingsWorkspace } from '@/components/nexora-hospital/workspaces/Setti
 
 function SettingsLoading() {
   return (
-    <div className="p-8 text-center text-sm text-stone-500">Loading settingsΓÇª</div>
+    <div className="p-8 text-center text-sm text-stone-500">Loading settings…</div>
   );
 }
 

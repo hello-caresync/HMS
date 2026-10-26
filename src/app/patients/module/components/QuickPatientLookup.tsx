@@ -23,7 +23,7 @@ export default function QuickPatientLookup({
             type="search"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Quick Patient Lookup ΓÇö UHID, Name, Phone, or Insurance ID"
+            placeholder="Quick Patient Lookup — UHID, Name, Phone, or Insurance ID"
             aria-label="Quick Patient Lookup"
             className="w-full rounded-md border border-slate-200 bg-[#F8FAFC] py-1.5 pl-8 pr-3 text-[11px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
           />

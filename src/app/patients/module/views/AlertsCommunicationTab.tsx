@@ -19,7 +19,7 @@ export default function AlertsCommunicationTab() {
         <PatientPanel
           title="Patient Alerts Hub"
           icon={AlertTriangle}
-          subtitle="Critical conditions ┬╖ infection alerts ┬╖ allergies ┬╖ special instructions"
+          subtitle="Critical conditions · infection alerts · allergies · special instructions"
         >
           <div className="space-y-1.5">
             {PATIENT_ALERTS_HUB.map((alert) => (
@@ -48,7 +48,7 @@ export default function AlertsCommunicationTab() {
         <PatientPanel
           title="Communication Logs"
           icon={MessageSquare}
-          subtitle="SMS ┬╖ Email ┬╖ WhatsApp ΓÇö appointment reminders & health campaigns"
+          subtitle="SMS · Email · WhatsApp — appointment reminders & health campaigns"
         >
           <div className="overflow-x-auto">
             <table className="w-full min-w-[320px] text-left">

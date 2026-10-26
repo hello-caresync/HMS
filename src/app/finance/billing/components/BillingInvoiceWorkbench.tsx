@@ -52,7 +52,7 @@ export default function BillingInvoiceWorkbench() {
             <div>
               <h1 className="text-lg font-black text-slate-900">Unified Billing &amp; GST Ledger</h1>
               <p className="text-xs text-slate-800">
-                Phase 5 ┬╖ Module 14 ┬╖ Invoice builder ┬╖ Indian GST compliance
+                Phase 5 · Module 14 · Invoice builder · Indian GST compliance
               </p>
             </div>
           </div>
@@ -79,7 +79,7 @@ export default function BillingInvoiceWorkbench() {
       {dispatched && (
         <div className="flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">
           <Send className="h-4 w-4" />
-          Invoice dispatched to cashier terminal ┬╖ Γé╣ {summary.grandTotal.toLocaleString('en-IN')}
+          Invoice dispatched to cashier terminal · ₹ {summary.grandTotal.toLocaleString('en-IN')}
         </div>
       )}
     </div>

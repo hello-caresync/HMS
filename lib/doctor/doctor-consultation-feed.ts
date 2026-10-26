@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { fetchDoctorConsultationHistory } from '@/lib/db/consultations';
-import { buildDoctorQueueOrFilter, isQueueDoneStatus } from '@/lib/doctor/command-center/supabase-service';
+import { fetchScopedAppointmentRecords, isQueueDoneStatus } from '@/lib/doctor/command-center/supabase-service';
 import { appointmentBelongsToDoctor, type DoctorSession } from '@/lib/doctor/session';
 import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 
@@ -127,22 +127,9 @@ export async function fetchDoctorConsultationFeed(
   supabase: SupabaseClient,
   session: DoctorSession,
 ): Promise<DoctorConsultationFeedItem[]> {
-  const orFilter = buildDoctorQueueOrFilter(session);
-  if (!orFilter) return [];
+  const data = await fetchScopedAppointmentRecords(supabase, session, { limit: 80 });
 
-  const { data, error } = await supabase
-    .from('appointments')
-    .select('*')
-    .or(orFilter)
-    .order('updated_at', { ascending: false })
-    .limit(80);
-
-  if (error) {
-    console.error('fetchDoctorConsultationFeed:', error.message);
-    return [];
-  }
-
-  const todayDoneRows = (data ?? [])
+  const todayDoneRows = data
     .map((row) => asRecord(row))
     .filter(
       (row) =>

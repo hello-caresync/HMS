@@ -21,8 +21,8 @@ export default function InvoiceLineItemsTable({ lineItems }: InvoiceLineItemsTab
               <th className="px-3 py-2 text-left text-[10px] font-black uppercase">Category</th>
               <th className="px-3 py-2 text-left text-[10px] font-black uppercase">Description</th>
               <th className="px-3 py-2 text-center text-[10px] font-black uppercase">Qty</th>
-              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Rate (Γé╣)</th>
-              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Amount (Γé╣)</th>
+              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Rate (₹)</th>
+              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Amount (₹)</th>
             </tr>
           </thead>
           <tbody>
@@ -55,7 +55,7 @@ export default function InvoiceLineItemsTable({ lineItems }: InvoiceLineItemsTab
                 Line Subtotal
               </td>
               <td className="px-3 py-2 text-right font-mono text-sm font-black tabular-nums">
-                Γé╣ {subtotal.toLocaleString('en-IN')}
+                ₹ {subtotal.toLocaleString('en-IN')}
               </td>
             </tr>
           </tfoot>

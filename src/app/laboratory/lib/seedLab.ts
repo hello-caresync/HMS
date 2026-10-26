@@ -22,7 +22,7 @@ export const LAB_TEST_CATALOG: LabTestDefinition[] = [
   {
     code: 'WBC',
     name: 'WBC Count',
-    unit: '├ù10┬│/┬╡L',
+    unit: '×10³/µL',
     refMin: 4.0,
     refMax: 11.0,
     criticalLow: 2.0,
@@ -31,7 +31,7 @@ export const LAB_TEST_CATALOG: LabTestDefinition[] = [
   {
     code: 'PLT',
     name: 'Platelet Count',
-    unit: '├ù10┬│/┬╡L',
+    unit: '×10³/µL',
     refMin: 150,
     refMax: 400,
     criticalLow: 50,

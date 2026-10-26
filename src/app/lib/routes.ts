@@ -1,4 +1,4 @@
-﻿/** Canonical app routes ΓÇö always use absolute paths from this module. */
+﻿/** Canonical app routes — always use absolute paths from this module. */
 export const APP_ROUTES = {
   home: '/',
   login: '/login',

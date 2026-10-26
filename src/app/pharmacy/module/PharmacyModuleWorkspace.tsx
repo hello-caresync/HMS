@@ -77,7 +77,7 @@ export default function PharmacyModuleWorkspace() {
           stage: next,
           chiefPharmacistSignature:
             next !== 'Pending Chief Pharmacist' && !n.chiefPharmacistSignature
-              ? 'Chief Pharm. Joseph M. ΓÇö ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+              ? 'Chief Pharm. Joseph M. — ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
               : n.chiefPharmacistSignature,
           auditLogged: next === 'Audit Logged',
         };

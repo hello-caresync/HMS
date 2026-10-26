@@ -44,7 +44,7 @@ export default function PatientProfileCard({ record, onSelect }: PatientProfileC
         <span className="flex items-center gap-1">
           <User className="h-3 w-3 text-slate-800" />
           {profile.gender}
-          {age != null && ` ┬╖ ${age}y`}
+          {age != null && ` · ${age}y`}
         </span>
         <span className="flex items-center gap-1">
           <Droplet className="h-3 w-3 text-slate-800" />

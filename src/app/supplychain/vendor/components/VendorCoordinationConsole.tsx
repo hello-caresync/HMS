@@ -37,7 +37,7 @@ export default function VendorCoordinationConsole() {
             <div>
               <h1 className="text-lg font-black text-slate-900">Vendor Coordination Console</h1>
               <p className="text-xs text-slate-800">
-                Phase 6 ┬╖ Module 19 ┬╖ Supplier agreements &amp; invoice settlement
+                Phase 6 · Module 19 · Supplier agreements &amp; invoice settlement
               </p>
             </div>
           </div>
@@ -46,7 +46,7 @@ export default function VendorCoordinationConsole() {
               <strong>{totals.active}</strong> active contracts
             </span>
             <span className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-amber-900">
-              Γé╣ {totals.outstanding.toLocaleString('en-IN')} outstanding
+              ₹ {totals.outstanding.toLocaleString('en-IN')} outstanding
             </span>
             {totals.overdue > 0 && (
               <span className="rounded border border-rose-300 bg-rose-50 px-2 py-1 text-rose-800">
@@ -62,7 +62,7 @@ export default function VendorCoordinationConsole() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search vendor ID, supplier nameΓÇª"
+          placeholder="Search vendor ID, supplier name…"
           className="w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100"
         />
       </div>
@@ -90,7 +90,7 @@ export default function VendorCoordinationConsole() {
                 <td className="px-3 py-2 text-xs font-bold text-slate-900">{vendor.supplierName}</td>
                 <td className="px-3 py-2 text-[10px] text-slate-950">{vendor.contactEmail}</td>
                 <td className="px-3 py-2 font-mono text-[10px] text-slate-950">
-                  {vendor.contractStart} ΓåÆ {vendor.contractEnd}
+                  {vendor.contractStart} → {vendor.contractEnd}
                 </td>
                 <td className="px-3 py-2 text-center">
                   <span
@@ -107,7 +107,7 @@ export default function VendorCoordinationConsole() {
                   </span>
                 </td>
                 <td className="px-3 py-2 text-right font-mono text-xs font-bold tabular-nums">
-                  Γé╣ {vendor.outstandingAmount.toLocaleString('en-IN')}
+                  ₹ {vendor.outstandingAmount.toLocaleString('en-IN')}
                 </td>
               </tr>
             ))}

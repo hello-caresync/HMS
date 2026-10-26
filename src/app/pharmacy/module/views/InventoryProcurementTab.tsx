@@ -17,7 +17,7 @@ export default function InventoryProcurementTab() {
   return (
     <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
       <div className="space-y-2">
-        <PharmPanel title="Stock & Batch Vault" subtitle="Medicine master ┬╖ lot quantities ┬╖ FEFO ┬╖ expiry ┬╖ recall" icon={Package}>
+        <PharmPanel title="Stock & Batch Vault" subtitle="Medicine master · lot quantities · FEFO · expiry · recall" icon={Package}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -60,7 +60,7 @@ export default function InventoryProcurementTab() {
           </table>
         </PharmPanel>
 
-        <PharmPanel title="FEFO Pick List ΓÇö Auto-Sorted" subtitle="First Expire First Out dispensing priority">
+        <PharmPanel title="FEFO Pick List — Auto-Sorted" subtitle="First Expire First Out dispensing priority">
           <ol className="space-y-1">
             {fefoSorted
               .filter((b) => !b.outOfStock && b.fefoRank <= 2)
@@ -71,7 +71,7 @@ export default function InventoryProcurementTab() {
                     {i + 1}. {b.medicineName}
                   </span>
                   <span className="font-mono text-[8px] text-slate-500">
-                    {b.batchNumber} ┬╖ Exp {b.expiryDate}
+                    {b.batchNumber} · Exp {b.expiryDate}
                   </span>
                 </li>
               ))}
@@ -80,7 +80,7 @@ export default function InventoryProcurementTab() {
       </div>
 
       <div className="space-y-2">
-        <PharmPanel title="Purchase Requests" subtitle="Active PRs ┬╖ approval workflow" icon={ShoppingCart}>
+        <PharmPanel title="Purchase Requests" subtitle="Active PRs · approval workflow" icon={ShoppingCart}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -112,7 +112,7 @@ export default function InventoryProcurementTab() {
           </table>
         </PharmPanel>
 
-        <PharmPanel title="Vendor Performance Scoring" subtitle="On-time delivery ┬╖ quality ┬╖ active POs">
+        <PharmPanel title="Vendor Performance Scoring" subtitle="On-time delivery · quality · active POs">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -139,7 +139,7 @@ export default function InventoryProcurementTab() {
           </table>
         </PharmPanel>
 
-        <PharmPanel title="Goods Receipt Notes (GRN)" subtitle="PO verification ┬╖ QC clearance fields" icon={Truck}>
+        <PharmPanel title="Goods Receipt Notes (GRN)" subtitle="PO verification · QC clearance fields" icon={Truck}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">

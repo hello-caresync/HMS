@@ -13,7 +13,7 @@ export function OrgConfigDrawer({ nodeId, onClose }: OrgConfigDrawerProps) {
   const config = ORG_CONFIG_DETAILS[nodeId];
 
   return (
-    <DrawerOverlay title={config.title} subtitle="Operational configuration ΓÇö read/write in admin scope" onClose={onClose}>
+    <DrawerOverlay title={config.title} subtitle="Operational configuration — read/write in admin scope" onClose={onClose}>
       <SecureAdminPlaceholder verified />
       <dl className="mt-3 space-y-2">
         {config.rows.map((row) => (

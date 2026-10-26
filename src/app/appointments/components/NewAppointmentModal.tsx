@@ -103,7 +103,7 @@ export default function NewAppointmentModal({ open, onClose }: NewAppointmentMod
             >
               {doctors.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.name} ┬╖ {d.specialization}
+                  {d.name} · {d.specialization}
                 </option>
               ))}
             </select>

@@ -59,7 +59,7 @@ export default function OperationsMainColumn({ data }: OperationsMainColumnProps
     <div className="space-y-2">
       <ExecutivePanel
         title="Real-Time Operations Control"
-        subtitle="OPD queue ┬╖ consultation flow ┬╖ wait times"
+        subtitle="OPD queue · consultation flow · wait times"
         icon={Activity}
         dense
       >
@@ -70,14 +70,14 @@ export default function OperationsMainColumn({ data }: OperationsMainColumnProps
           <MetricValue
             value={`${data.opdQueue.avgWaitMinutes}m`}
             label="Avg Wait Time"
-            sub={`Peak ${data.opdQueue.peakHour} ┬╖ ${data.opdQueue.roomsActive} rooms`}
+            sub={`Peak ${data.opdQueue.peakHour} · ${data.opdQueue.roomsActive} rooms`}
           />
         </div>
       </ExecutivePanel>
 
       <ExecutivePanel
         title="Core Department Metrics"
-        subtitle="Laboratory ┬╖ radiology ┬╖ pharmacy operational views"
+        subtitle="Laboratory · radiology · pharmacy operational views"
         icon={FlaskConical}
         dense
         headerRight={
@@ -185,14 +185,14 @@ export default function OperationsMainColumn({ data }: OperationsMainColumnProps
 
       <ExecutivePanel
         title="Performance Analytics & Trends"
-        subtitle="Revenue ┬╖ patient volume ┬╖ bed occupancy ΓÇö 7-day rolling"
+        subtitle="Revenue · patient volume · bed occupancy — 7-day rolling"
         icon={LineChart}
         dense
       >
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <div className="h-[140px]">
             <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
-              Revenue (Γé╣ Lakhs)
+              Revenue (₹ Lakhs)
             </p>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={combinedTrendData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -201,7 +201,7 @@ export default function OperationsMainColumn({ data }: OperationsMainColumnProps
                 <YAxis tick={{ fontSize: 9, fill: '#64748B' }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid #E2E8F0' }}
-                  formatter={(v: number) => [`Γé╣${v}L`, 'Revenue']}
+                  formatter={(v: number) => [`₹${v}L`, 'Revenue']}
                 />
                 <Area
                   type="monotone"
@@ -266,7 +266,7 @@ export default function OperationsMainColumn({ data }: OperationsMainColumnProps
 
       <ExecutivePanel
         title="Advanced AI Insights"
-        subtitle="Predictive warnings ┬╖ stock-outs ┬╖ operational recommendations"
+        subtitle="Predictive warnings · stock-outs · operational recommendations"
         icon={Brain}
         dense
       >
@@ -283,7 +283,7 @@ export default function OperationsMainColumn({ data }: OperationsMainColumnProps
                 </span>
               </div>
               <p className="mt-0.5 text-[10px] leading-snug text-slate-600">{insight.detail}</p>
-              <p className="mt-1 text-[9px] font-medium text-[#2563EB]">Horizon ┬╖ {insight.horizon}</p>
+              <p className="mt-1 text-[9px] font-medium text-[#2563EB]">Horizon · {insight.horizon}</p>
             </li>
           ))}
         </ul>

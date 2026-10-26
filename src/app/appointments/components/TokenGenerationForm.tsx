@@ -34,7 +34,7 @@ export default function TokenGenerationForm() {
     const apt = generateTokenCheckIn({
       patientName: patientName.trim(),
       uhid: uhid.trim(),
-      phone: phone.trim() || '+91 ΓÇö',
+      phone: phone.trim() || '+91 —',
       departmentId: selectedDepartmentId,
       doctorId: selectedDoctorId,
       appointmentType,
@@ -54,7 +54,7 @@ export default function TokenGenerationForm() {
           <Ticket className="h-4 w-4 text-primary" />
           Token Generation
         </h2>
-        <p className="text-[11px] text-slate-800">Quick check-in ┬╖ auto slot assignment</p>
+        <p className="text-[11px] text-slate-800">Quick check-in · auto slot assignment</p>
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-3 p-4">
@@ -170,7 +170,7 @@ export default function TokenGenerationForm() {
             <p className="mt-1 font-mono text-2xl font-bold text-slate-900">{lastToken}</p>
             <p className="mt-0.5 text-[11px] text-slate-800">
               {onWaitingList
-                ? `Capacity breached for ${dept?.name} ΓÇö patient queued dynamically`
+                ? `Capacity breached for ${dept?.name} — patient queued dynamically`
                 : `Proceed to ${dept?.roomLabel}`}
             </p>
           </div>

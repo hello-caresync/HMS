@@ -72,7 +72,7 @@ export default function IpdBedCensusPage() {
   return (
     <HospitalOpsShell
       title="Inpatient Department & Bed Census"
-      subtitle="Ward grid with real-time is_occupied toggle ┬╖ ICU ┬╖ General ┬╖ Private"
+      subtitle="Ward grid with real-time is_occupied toggle · ICU · General · Private"
     >
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className={`${hospitalOpsClasses.surface} p-4`}>

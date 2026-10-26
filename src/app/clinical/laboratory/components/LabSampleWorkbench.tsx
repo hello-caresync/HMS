@@ -73,7 +73,7 @@ export default function LabSampleWorkbench() {
             <div>
               <h1 className="text-lg font-black text-slate-900">Laboratory Sample Processing</h1>
               <p className="text-xs text-slate-800">
-                Phase 3 ┬╖ Module 8 ┬╖ Specimen intake ΓåÆ barcode ΓåÆ results
+                Phase 3 · Module 8 · Specimen intake → barcode → results
               </p>
             </div>
           </div>
@@ -83,7 +83,7 @@ export default function LabSampleWorkbench() {
                 key={status}
                 className={`rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1 ${LAB_STATUS_STYLES[status]}`}
               >
-                {status} ┬╖ {statusCounts[status] ?? 0}
+                {status} · {statusCounts[status] ?? 0}
               </span>
             ))}
           </div>
@@ -95,7 +95,7 @@ export default function LabSampleWorkbench() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search Order ID, patient, test nameΓÇª"
+          placeholder="Search Order ID, patient, test name…"
           className="w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100"
         />
       </div>
@@ -118,7 +118,7 @@ export default function LabSampleWorkbench() {
 
       <p className="flex items-center gap-1 text-[10px] text-slate-800">
         <Barcode className="h-3 w-3" />
-        Barcode stickers route to specimen tracking ┬╖ Results panel slides from right
+        Barcode stickers route to specimen tracking · Results panel slides from right
       </p>
     </div>
   );

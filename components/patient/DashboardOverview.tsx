@@ -16,6 +16,7 @@ import {
   Users,
 } from 'lucide-react';
 
+import { displayClinicalText } from '@/lib/clinical/clinical-text';
 import { MissedVisitRescheduleCard } from '@/components/patient/MissedVisitAlertBanner';
 
 import type { ConsultationBill } from '@/lib/hospital/operations/consultation-billing-sync';
@@ -183,8 +184,8 @@ function ActiveVisitCard({ visit }: { visit: DashboardVisit }) {
       </div>
 
       {visit.reason ? (
-        <p className="mt-3 rounded-lg border border-amber-100 bg-amber-50/80 px-3 py-2 text-[11px] text-amber-950">
-          <span className="font-bold">Reason:</span> {visit.reason}
+        <p className="mt-3 line-clamp-3 break-words rounded-lg border border-amber-100 bg-amber-50/80 px-3 py-2 text-[11px] text-amber-950">
+          <span className="font-bold">Reason:</span> {displayClinicalText(visit.reason)}
         </p>
       ) : null}
 
@@ -403,7 +404,9 @@ export function DashboardOverview({
                   <li key={rx.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
                     <div className="min-w-0">
                       <p className="truncate text-xs font-semibold text-[#2B1810]">{rx.doctor_name}</p>
-                      <p className="truncate text-[11px] text-stone-500">{rx.diagnosis}</p>
+                      <p className="line-clamp-2 break-words text-[11px] text-stone-500">
+                        {displayClinicalText(rx.diagnosis)}
+                      </p>
                       <p className="text-[10px] text-stone-400">{formatShortDate(rx.created_at)}</p>
                     </div>
                     <Link

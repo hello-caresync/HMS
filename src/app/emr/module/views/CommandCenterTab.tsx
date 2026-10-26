@@ -52,7 +52,7 @@ export default function CommandCenterTab({ onQuickAction }: CommandCenterTabProp
 
       <EmrPanel
         title="Comprehensive Patient Timeline"
-        subtitle="Registration ΓåÆ consultations ΓåÆ labs ΓåÆ imaging ΓåÆ procedures ΓåÆ pharmacy ΓåÆ financial clearance"
+        subtitle="Registration → consultations → labs → imaging → procedures → pharmacy → financial clearance"
         icon={Activity}
         headerRight={<ViewOnlyBadge compact />}
       >
@@ -74,7 +74,7 @@ export default function CommandCenterTab({ onQuickAction }: CommandCenterTabProp
                   </div>
                   <p className="mt-0.5 text-[9px] text-slate-600">{event.detail}</p>
                   <p className="mt-0.5 text-[8px] text-slate-400">
-                    {event.timestamp} ┬╖ {event.provider}
+                    {event.timestamp} · {event.provider}
                   </p>
                 </div>
               </li>
@@ -83,7 +83,7 @@ export default function CommandCenterTab({ onQuickAction }: CommandCenterTabProp
         </div>
       </EmrPanel>
 
-      <EmrPanel title="Quick Actions" icon={Zap} subtitle="Read-only export & verification ΓÇö no clinical mutation">
+      <EmrPanel title="Quick Actions" icon={Zap} subtitle="Read-only export & verification — no clinical mutation">
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-5">
           {[
             { id: 'print-record' as const, label: 'Print Medical Record', icon: Printer },

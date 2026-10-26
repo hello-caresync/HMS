@@ -15,7 +15,7 @@ const KPI_CARDS = [
   { label: "Today's Admissions", value: '24', delta: '+12% vs yesterday', icon: ClipboardList, tone: 'text-blue-600' },
   { label: 'Pending Requests', value: '7', delta: '3 emergency', icon: AlertTriangle, tone: 'text-amber-600' },
   { label: 'Inpatient Census', value: '186', delta: '84% capacity', icon: Users, tone: 'text-slate-800' },
-  { label: 'Beds Available', value: '42', delta: '16 ICU ┬╖ 26 General', icon: BedDouble, tone: 'text-emerald-600' },
+  { label: 'Beds Available', value: '42', delta: '16 ICU · 26 General', icon: BedDouble, tone: 'text-emerald-600' },
   { label: 'Emergency Flags', value: '3', delta: 'Red-zone active', icon: AlertTriangle, tone: 'text-rose-600' },
   { label: '7-Day Trend', value: '+8.4%', delta: 'Admissions up', icon: TrendingUp, tone: 'text-blue-600' },
 ];

@@ -27,7 +27,7 @@ export default function LifecycleOutcomesTab() {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <AptPanel title="Reschedule & Cancellation Hub" icon={RefreshCw} subtitle="Reasons ┬╖ auto-reschedule ┬╖ refund tracking">
+        <AptPanel title="Reschedule & Cancellation Hub" icon={RefreshCw} subtitle="Reasons · auto-reschedule · refund tracking">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[480px] text-left">
               <thead>
@@ -45,7 +45,7 @@ export default function LifecycleOutcomesTab() {
                     <td className="py-1.5 pr-2 font-mono text-[9px] text-slate-500">{c.originalSlot}</td>
                     <td className="py-1.5 pr-2 text-[10px] text-slate-600">{c.reason}</td>
                     <td className="py-1.5 pr-2"><StatusPill status={c.refundStatus} /></td>
-                    <td className="py-1.5 text-[9px] text-[#2563EB]">{c.suggestedReschedule ?? 'ΓÇö'}</td>
+                    <td className="py-1.5 text-[9px] text-[#2563EB]">{c.suggestedReschedule ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -60,7 +60,7 @@ export default function LifecycleOutcomesTab() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100">
-                {['Patient', 'From ΓåÆ To', 'Referred To', 'Status', 'Document'].map((h) => (
+                {['Patient', 'From → To', 'Referred To', 'Status', 'Document'].map((h) => (
                   <th key={h} className="pb-1.5 pr-2 text-[9px] font-bold uppercase text-slate-400">{h}</th>
                 ))}
               </tr>
@@ -69,7 +69,7 @@ export default function LifecycleOutcomesTab() {
               {MOCK_REFERRALS.map((r) => (
                 <tr key={r.id} className="border-b border-slate-50">
                   <td className="py-1.5 pr-2 text-[10px] font-semibold text-[#0F172A]">{r.patientName}</td>
-                  <td className="py-1.5 pr-2 text-[9px] text-slate-600">{r.fromDept} ΓåÆ {r.toDept}</td>
+                  <td className="py-1.5 pr-2 text-[9px] text-slate-600">{r.fromDept} → {r.toDept}</td>
                   <td className="py-1.5 pr-2 text-[10px] text-[#2563EB]">{r.referredTo}</td>
                   <td className="py-1.5 pr-2"><StatusPill status={r.status} /></td>
                   <td className="py-1.5 text-[9px] text-slate-500">{r.documentStatus}</td>
@@ -80,7 +80,7 @@ export default function LifecycleOutcomesTab() {
         </AptPanel>
       </div>
 
-      <AptPanel title="Clinical Communication Feed" icon={MessageSquare} subtitle="SMS ┬╖ WhatsApp ┬╖ Email reminder audit">
+      <AptPanel title="Clinical Communication Feed" icon={MessageSquare} subtitle="SMS · WhatsApp · Email reminder audit">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100">
@@ -103,7 +103,7 @@ export default function LifecycleOutcomesTab() {
         </table>
       </AptPanel>
 
-      <AptPanel title="Historical Analytics" icon={BarChart3} subtitle="Doctor utilization ┬╖ peak hours ┬╖ consultation duration">
+      <AptPanel title="Historical Analytics" icon={BarChart3} subtitle="Doctor utilization · peak hours · consultation duration">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           <div className="h-[160px]">
             <p className="mb-1 text-[9px] font-bold uppercase text-slate-400">Doctor-wise Utilization (%)</p>

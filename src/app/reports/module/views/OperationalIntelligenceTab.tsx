@@ -25,7 +25,7 @@ export default function OperationalIntelligenceTab({ selectedNode, onSelectNode 
   return (
     <div className="flex flex-col gap-2 xl:flex-row">
       <div className="w-full shrink-0 xl:w-[30%]">
-        <HbiPanel title="Modality & Performance Directory" subtitle="Patient ┬╖ OPD/IPD ┬╖ quality ┬╖ ancillary analytics tree" icon={FolderTree}>
+        <HbiPanel title="Modality & Performance Directory" subtitle="Patient · OPD/IPD · quality · ancillary analytics tree" icon={FolderTree}>
           <nav className="max-h-[520px] overflow-y-auto" aria-label="Analytics directory">
             {ANALYTICS_TREE.map((group) => (
               <div key={group.id} className="mb-1">
@@ -61,7 +61,7 @@ export default function OperationalIntelligenceTab({ selectedNode, onSelectNode 
       </div>
 
       <div className="min-w-0 flex-1">
-        <HbiPanel title="Selected Report Visualization Canvas" subtitle="Trend graphs ┬╖ heat maps ┬╖ performance analytics for active folder">
+        <HbiPanel title="Selected Report Visualization Canvas" subtitle="Trend graphs · heat maps · performance analytics for active folder">
           <AnalyticsVisualizationCanvas nodeId={selectedNode} />
         </HbiPanel>
       </div>

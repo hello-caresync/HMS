@@ -243,7 +243,7 @@ export function StaffProvisioningModal({
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
-              placeholder={isHospitalAdminScope ? 'e.g. Kavya S' : 'e.g. Dr. Meera Nambiar'}
+              placeholder="e.g. Full name"
             />
           </div>
 
@@ -320,7 +320,7 @@ export function StaffProvisioningModal({
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
-                placeholder={isHospitalAdminScope ? 'kavyaregaladmin@gmail.com' : undefined}
+                placeholder="name@email.com"
               />
             </div>
             {isDoctorRole && !isHospitalAdminScope ? (
@@ -368,7 +368,7 @@ export function StaffProvisioningModal({
                   value={form.staff_id_code}
                   onChange={(e) => setForm({ ...form, staff_id_code: e.target.value.toUpperCase() })}
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs"
-                  placeholder="RH-D42"
+                  placeholder="e.g. STAFF-01"
                 />
               </div>
             ) : null}
@@ -381,7 +381,7 @@ export function StaffProvisioningModal({
                 value={form.passcode_key}
                 onChange={(e) => setForm({ ...form, passcode_key: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
-                placeholder={isHospitalAdminScope ? 'REGAL#KAVYA@2026' : 'Used at /hospital/login'}
+                placeholder="e.g. HOSP#NAME@2026"
               />
             </div>
           </div>

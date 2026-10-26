@@ -21,7 +21,7 @@ export default function PaymentTrackerLedger() {
         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-800">
           B2B Payment Tracker Ledger
         </p>
-        <p className="text-xs font-bold text-white">Hospital Γåö Vendor financial state</p>
+        <p className="text-xs font-bold text-white">Hospital ↔ Vendor financial state</p>
       </div>
 
       <div className="flex flex-wrap items-end gap-3 border-b-2 border-slate-200 bg-slate-50/80 px-3 py-2">

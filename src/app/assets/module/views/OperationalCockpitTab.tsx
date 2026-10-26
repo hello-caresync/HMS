@@ -90,7 +90,7 @@ export default function OperationalCockpitTab({
 
       <AssetPanel
         title="Asset Requests & Procurement Integration Queue"
-        subtitle="Request ΓåÆ Manager Review ΓåÆ Finance ΓåÆ Procurement ΓåÆ Approved"
+        subtitle="Request → Manager Review → Finance → Procurement → Approved"
         icon={ClipboardList}
       >
         <SecureCompliancePlaceholder verified />
@@ -123,7 +123,7 @@ export default function OperationalCockpitTab({
         </table>
       </AssetPanel>
 
-      <AssetPanel title="Asset Allocation & Dynamic Location Tracker" subtitle="Building ┬╖ Floor ┬╖ Department ┬╖ Room ┬╖ Bed" icon={MapPin}>
+      <AssetPanel title="Asset Allocation & Dynamic Location Tracker" subtitle="Building · Floor · Department · Room · Bed" icon={MapPin}>
         <table className="w-full min-w-[920px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -156,7 +156,7 @@ export default function OperationalCockpitTab({
         </table>
       </AssetPanel>
 
-      <AssetPanel title="Quick Actions Matrix" subtitle="Register ┬╖ assign ┬╖ breakdown ┬╖ spare parts ┬╖ AMC ┬╖ labels ┬╖ audit" icon={Zap}>
+      <AssetPanel title="Quick Actions Matrix" subtitle="Register · assign · breakdown · spare parts · AMC · labels · audit" icon={Zap}>
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-7">
           {[
             { label: 'Register Asset', icon: Tag, action: 'register-asset' as const },

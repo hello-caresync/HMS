@@ -215,7 +215,9 @@ export function PatientsWorkspace() {
             max={120}
             placeholder="Age (1-120)"
             value={form.age}
-            onChange={(e) => setForm({ ...form, age: e.target.value })}
+            onChange={(e) => setForm({ ...form, age: e.target.value.replace(/\D/g, '').slice(0, 3) })}
+            inputMode="numeric"
+            maxLength={3}
           />
           <button
             type="button"

@@ -41,7 +41,7 @@ export default function DataQualityTab({ onQuickAction }: DataQualityTabProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <MdmPanel title="Hospital Organization Master" subtitle="Branch ┬╖ Building ┬╖ Floor ┬╖ Block ┬╖ Department ┬╖ Unit" icon={Building2}>
+        <MdmPanel title="Hospital Organization Master" subtitle="Branch · Building · Floor · Block · Department · Unit" icon={Building2}>
           <table className="w-full min-w-[480px] text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -63,7 +63,7 @@ export default function DataQualityTab({ onQuickAction }: DataQualityTabProps) {
           </table>
         </MdmPanel>
 
-        <MdmPanel title="Code & Numbering Master" subtitle="Patient UHID ┬╖ Invoice ┬╖ PR ┬╖ Lab ┬╖ Employee ID templates" icon={Hash} secure>
+        <MdmPanel title="Code & Numbering Master" subtitle="Patient UHID · Invoice · PR · Lab · Employee ID templates" icon={Hash} secure>
           <SecureLicensePlaceholder verified />
           <table className="mt-2 w-full text-left">
             <thead>
@@ -89,7 +89,7 @@ export default function DataQualityTab({ onQuickAction }: DataQualityTabProps) {
         </MdmPanel>
       </div>
 
-      <MdmPanel title="Quick Actions Matrix" subtitle="Create ┬╖ scan ┬╖ audit ┬╖ permissions ┬╖ charges ┬╖ sync" icon={Zap}>
+      <MdmPanel title="Quick Actions Matrix" subtitle="Create · scan · audit · permissions · charges · sync" icon={Zap}>
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-6">
           {[
             { label: 'New Master Record', icon: UserPlus, action: 'new-master-record' as const },

@@ -27,7 +27,7 @@ import { OtPanel, StatusPill } from '../components/otUi';
 export default function PostOpAnalyticsTab() {
   return (
     <div className="space-y-2">
-      <OtPanel title="Post-Operative & Discharge Flow Tracker" subtitle="Recovery ┬╖ ICU transfer ┬╖ ward handover" icon={Route}>
+      <OtPanel title="Post-Operative & Discharge Flow Tracker" subtitle="Recovery · ICU transfer · ward handover" icon={Route}>
         <table className="w-full min-w-[680px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -54,7 +54,7 @@ export default function PostOpAnalyticsTab() {
         </table>
       </OtPanel>
 
-      <OtPanel title="OT Accounting Summary" subtitle="Surgery ┬╖ anesthesia ┬╖ implant ledger" icon={Receipt}>
+      <OtPanel title="OT Accounting Summary" subtitle="Surgery · anesthesia · implant ledger" icon={Receipt}>
         <table className="w-full min-w-[640px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">

@@ -45,14 +45,14 @@ export default function IpdNursingWorkbench() {
             <div>
               <h1 className="text-lg font-black text-slate-900">IPD Nursing Dashboard &amp; MAR</h1>
               <p className="text-xs text-slate-800">
-                Phase 4 ┬╖ Module 11 ┬╖ {SEED_WARD_ASSIGNMENT.wardName} ┬╖{' '}
+                Phase 4 · Module 11 · {SEED_WARD_ASSIGNMENT.wardName} ·{' '}
                 {SEED_WARD_ASSIGNMENT.floorLabel}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs">
             <ClipboardCheck className="h-3.5 w-3.5 text-emerald-600" />
-            <span className="font-bold text-slate-900">Shift: Day ┬╖ 07:00ΓÇô19:00</span>
+            <span className="font-bold text-slate-900">Shift: Day · 07:00–19:00</span>
           </div>
         </div>
       </header>

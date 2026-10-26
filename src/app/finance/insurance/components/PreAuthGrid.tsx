@@ -21,7 +21,7 @@ export default function PreAuthGrid({ requests }: PreAuthGridProps) {
               <th className="px-3 py-2 text-left text-[10px] font-black uppercase">Policy</th>
               <th className="px-3 py-2 text-left text-[10px] font-black uppercase">TPA</th>
               <th className="px-3 py-2 text-left text-[10px] font-black uppercase">Procedure</th>
-              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Est. (Γé╣)</th>
+              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Est. (₹)</th>
               <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Co-Pay</th>
               <th className="px-3 py-2 text-left text-[10px] font-black uppercase">Status</th>
             </tr>
@@ -43,10 +43,10 @@ export default function PreAuthGrid({ requests }: PreAuthGridProps) {
                 <td className="px-3 py-2 text-right font-mono text-xs tabular-nums">
                   {req.estimatedAmount > 0
                     ? req.estimatedAmount.toLocaleString('en-IN')
-                    : 'ΓÇö'}
+                    : '—'}
                 </td>
                 <td className="px-3 py-2 text-right font-mono text-xs tabular-nums">
-                  Γé╣ {req.coPayAmount.toLocaleString('en-IN')}
+                  ₹ {req.coPayAmount.toLocaleString('en-IN')}
                 </td>
                 <td className="px-3 py-2">
                   <span

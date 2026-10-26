@@ -52,7 +52,7 @@ export default function TriageRegistrationForm({ onRegister }: TriageRegistratio
           required
           value={patientIdentifier}
           onChange={(e) => setPatientIdentifier(e.target.value)}
-          placeholder="Name ┬╖ UHID ┬╖ Unknown descriptor"
+          placeholder="Name · UHID · Unknown descriptor"
           className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
         />
       </label>

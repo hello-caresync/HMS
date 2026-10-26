@@ -10,6 +10,7 @@ import {
   UserRound,
 } from 'lucide-react';
 
+import { AuthSceneBackground } from '@/components/auth/AuthSceneBackground';
 import { AuthAlert, AuthButton, AuthInput } from './AuthShell';
 import { APP_ROUTES } from '@/src/app/lib/routes';
 import {
@@ -74,7 +75,8 @@ export default function InternalStaffLogin({
   };
 
   return (
-    <div className="flex min-h-screen bg-[#0f172a]">
+    <div className="relative isolate flex min-h-screen overflow-hidden bg-[#0f172a]">
+      <AuthSceneBackground tone="hospital" />
       <aside className="relative hidden w-[44%] flex-col justify-between overflow-hidden border-r border-slate-700/50 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0c4a6e] p-10 lg:flex">
         <div className="absolute inset-0 opacity-[0.07]">
           <div className="absolute -left-20 top-20 h-72 w-72 rounded-full bg-sky-400 blur-3xl" />
@@ -153,7 +155,7 @@ export default function InternalStaffLogin({
                 type="text"
                 value={identifier}
                 onChange={setIdentifier}
-                placeholder="Employee ID or work email"
+                placeholder="e.g. staff id or name@email.com"
                 autoComplete="off"
               />
 
@@ -163,7 +165,7 @@ export default function InternalStaffLogin({
                 type="password"
                 value={password}
                 onChange={setPassword}
-                placeholder="Enter security password"
+                placeholder="Enter your passcode"
                 autoComplete="new-password"
               />
 

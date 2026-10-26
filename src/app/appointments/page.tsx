@@ -33,7 +33,7 @@ type AppointmentRecord = {
 };
 
 const CHANNEL_DESCRIPTION =
-  'Isolated scheduling ledger ┬╖ Online teleconsult ┬╖ Walk-in desk ┬╖ Emergency intake ┬╖ sandbox initials only ┬╖ 13 Jul 2026';
+  'Isolated scheduling ledger · Online teleconsult · Walk-in desk · Emergency intake · sandbox initials only · 13 Jul 2026';
 
 const CALENDAR_SLOTS = [
   '08:00',
@@ -54,7 +54,7 @@ const SEED_APPOINTMENTS: AppointmentRecord[] = [
     tokenId: 'CAR-014',
     patientName: 'R.S.',
     channelType: 'Online',
-    slotDetails: '09:00 ┬╖ Cardiology ┬╖ Cabin C-12',
+    slotDetails: '09:00 · Cardiology · Cabin C-12',
     slotTime: '09:00',
     status: 'Completed',
   },
@@ -63,7 +63,7 @@ const SEED_APPOINTMENTS: AppointmentRecord[] = [
     tokenId: 'GEN-031',
     patientName: 'P.N.',
     channelType: 'Walk-in',
-    slotDetails: '09:30 ┬╖ General Medicine ┬╖ OPD-A',
+    slotDetails: '09:30 · General Medicine · OPD-A',
     slotTime: '09:30',
     status: 'Checked In',
   },
@@ -72,7 +72,7 @@ const SEED_APPOINTMENTS: AppointmentRecord[] = [
     tokenId: 'EMR-007',
     patientName: 'K.V.',
     channelType: 'Emergency',
-    slotDetails: '09:45 ┬╖ Emergency ┬╖ Trauma Bay',
+    slotDetails: '09:45 · Emergency · Trauma Bay',
     slotTime: '09:45',
     status: 'In Progress',
   },
@@ -81,7 +81,7 @@ const SEED_APPOINTMENTS: AppointmentRecord[] = [
     tokenId: 'ORT-022',
     patientName: 'M.J.',
     channelType: 'Online',
-    slotDetails: '10:00 ┬╖ Orthopedics ┬╖ Cabin O-04',
+    slotDetails: '10:00 · Orthopedics · Cabin O-04',
     slotTime: '10:00',
     status: 'Scheduled',
   },
@@ -90,7 +90,7 @@ const SEED_APPOINTMENTS: AppointmentRecord[] = [
     tokenId: 'PED-018',
     patientName: 'A.D.',
     channelType: 'Walk-in',
-    slotDetails: '10:15 ┬╖ Pediatrics ┬╖ Cabin P-07',
+    slotDetails: '10:15 · Pediatrics · Cabin P-07',
     slotTime: '10:15',
     status: 'Scheduled',
   },
@@ -99,7 +99,7 @@ const SEED_APPOINTMENTS: AppointmentRecord[] = [
     tokenId: 'CAR-015',
     patientName: 'L.I.',
     channelType: 'Online',
-    slotDetails: '10:30 ┬╖ Cardiology ┬╖ Cabin C-12',
+    slotDetails: '10:30 · Cardiology · Cabin C-12',
     slotTime: '10:30',
     status: 'Checked In',
   },
@@ -108,7 +108,7 @@ const SEED_APPOINTMENTS: AppointmentRecord[] = [
     tokenId: 'EMR-008',
     patientName: 'Unknown Male',
     channelType: 'Emergency',
-    slotDetails: '10:45 ┬╖ Emergency ┬╖ Resuscitation',
+    slotDetails: '10:45 · Emergency · Resuscitation',
     slotTime: '10:45',
     status: 'In Progress',
   },
@@ -117,7 +117,7 @@ const SEED_APPOINTMENTS: AppointmentRecord[] = [
     tokenId: 'GEN-032',
     patientName: 'S.G.',
     channelType: 'Walk-in',
-    slotDetails: '11:00 ┬╖ General Medicine ┬╖ OPD-A',
+    slotDetails: '11:00 · General Medicine · OPD-A',
     slotTime: '11:00',
     status: 'Scheduled',
   },
@@ -193,7 +193,7 @@ export default function StandaloneAppointmentManagementPage() {
   const handleReschedule = useCallback(
     (row: AppointmentRecord) => {
       showActionNote(
-        `Reschedule Appointment queued ┬╖ ${row.tokenId} ┬╖ ${row.patientName} ┬╖ isolated sandbox only`,
+        `Reschedule Appointment queued · ${row.tokenId} · ${row.patientName} · isolated sandbox only`,
       );
     },
     [showActionNote],
@@ -208,7 +208,7 @@ export default function StandaloneAppointmentManagementPage() {
       );
       const row = appointments.find((item) => item.id === id);
       showActionNote(
-        `Cancel Appointment ┬╖ ${row?.tokenId ?? id} ┬╖ removed from active ledger`,
+        `Cancel Appointment · ${row?.tokenId ?? id} · removed from active ledger`,
       );
     },
     [appointments, showActionNote],
@@ -275,7 +275,7 @@ export default function StandaloneAppointmentManagementPage() {
               type="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Filter scheduling ledger by patient name, token ID, or slot detailsΓÇª"
+              placeholder="Filter scheduling ledger by patient name, token ID, or slot details…"
               aria-label="Filter appointments by patient name"
               className="w-full rounded-lg border-2 border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm font-bold text-slate-950 placeholder:text-slate-500 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
@@ -420,7 +420,7 @@ export default function StandaloneAppointmentManagementPage() {
             <div className="mb-4">
               <h2 className="text-lg font-black text-slate-950">Calendar View</h2>
               <p className="text-xs font-medium text-slate-800">
-                Grid-based hourly layout ┬╖ filtered by search and channel tags
+                Grid-based hourly layout · filtered by search and channel tags
               </p>
             </div>
 
@@ -438,7 +438,7 @@ export default function StandaloneAppointmentManagementPage() {
                     <div className="grid w-full gap-2 sm:grid-cols-2 lg:grid-cols-3">
                       {entries.length === 0 ? (
                         <div className="rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-xs font-bold text-slate-800">
-                          Open slot ┬╖ no bookings scheduled
+                          Open slot · no bookings scheduled
                         </div>
                       ) : (
                         entries.map((row) => (

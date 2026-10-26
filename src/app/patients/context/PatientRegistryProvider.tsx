@@ -103,7 +103,7 @@ export function PatientRegistryProvider({ children }: { children: React.ReactNod
         dob: '',
         gender: data.gender,
         bloodGroup: 'Unknown',
-        phone: 'ΓÇö',
+        phone: '—',
         isTemporary: true,
         estimatedAge: data.estimatedAge,
         registeredAt: new Date().toISOString(),

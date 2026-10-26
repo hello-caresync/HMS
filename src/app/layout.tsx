@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { REGAL_HMS_DESCRIPTION } from "@/lib/regal/brand";
 import { AppProviders } from "./providers";
 import "./globals.css";
 
@@ -15,8 +16,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CareSync",
-  description: "Healthcare coordination platform",
+  title: {
+    default: "Regal Hospital",
+    template: "%s · Regal Hospital",
+  },
+  description: REGAL_HMS_DESCRIPTION,
+  applicationName: "Regal Hospital",
+  icons: {
+    icon: [{ url: "/regal-hospital-logo.png", type: "image/png" }],
+    apple: "/regal-hospital-logo.png",
+  },
 };
 
 export default function RootLayout({

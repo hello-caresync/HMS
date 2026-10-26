@@ -7,6 +7,7 @@ import {
   resolvePatientAppointmentContext,
 } from '@/lib/patient/my-appointments';
 import { readPatientPortalSession } from '@/lib/patient/portal-session';
+import { displayClinicalText } from '@/lib/clinical/clinical-text';
 import { supabase } from '@/lib/supabaseClient';
 
 export type PrescriptionMedicineItem = {
@@ -173,28 +174,33 @@ export function normalizePrescriptionRow(raw: Record<string, unknown>): Normaliz
   const medications = parseMedicinesField(raw.medications);
   const list = medicines.length > 0 ? medicines : medications;
 
-  const reportedSymptoms = String(
-    appointment?.symptoms ??
-      appointment?.reason_for_visit ??
-      appointment?.chief_complaint ??
-      appointment?.reason ??
-      raw.symptoms ??
-      '',
-  ).trim();
+  const reportedSymptoms = displayClinicalText(
+    String(
+      appointment?.symptoms ??
+        appointment?.reason_for_visit ??
+        appointment?.chief_complaint ??
+        appointment?.reason ??
+        raw.symptoms ??
+        '',
+    ),
+  );
 
-  const doctorAdvice = String(
-    raw.doctor_advice ??
-      raw.dietary_instructions ??
-      raw.doctor_instructions ??
-      raw.instructions ??
-      '',
-  ).trim();
+  const doctorAdvice = displayClinicalText(
+    String(
+      raw.doctor_advice ??
+        raw.dietary_instructions ??
+        raw.doctor_instructions ??
+        raw.instructions ??
+        '',
+    ),
+  );
 
-  const notes = raw.clinical_notes
+  const notesSource = raw.clinical_notes
     ? String(raw.clinical_notes)
     : raw.examination_findings
       ? String(raw.examination_findings)
-      : undefined;
+      : '';
+  const notes = displayClinicalText(notesSource) || undefined;
 
   return {
     id: String(raw.id ?? `${raw.appointment_id ?? 'rx'}-${raw.created_at ?? Date.now()}`),
@@ -217,7 +223,7 @@ export function normalizePrescriptionRow(raw: Record<string, unknown>): Normaliz
     hospital_name: raw.hospital_name
       ? String(raw.hospital_name)
       : 'Regal Hospital • Main Branch',
-    diagnosis: raw.diagnosis ? String(raw.diagnosis) : undefined,
+    diagnosis: displayClinicalText(raw.diagnosis ? String(raw.diagnosis) : '') || undefined,
     clinical_notes: notes,
     dietary_instructions: doctorAdvice || undefined,
     doctor_advice: doctorAdvice || undefined,
@@ -263,9 +269,10 @@ function normalizePendingAppointment(row: Record<string, unknown>): PendingConsu
     slot_time: String(row.slot_time ?? row.appointment_time ?? row.time_slot ?? '—'),
     doctor_name: String(row.doctor_name ?? 'Assigned clinician'),
     department: row.department ? String(row.department) : undefined,
-    reported_symptoms: String(
-      row.symptoms ?? row.reason_for_visit ?? row.chief_complaint ?? row.reason ?? '',
-    ).trim() || undefined,
+    reported_symptoms:
+      displayClinicalText(
+        String(row.symptoms ?? row.reason_for_visit ?? row.chief_complaint ?? row.reason ?? ''),
+      ) || undefined,
     status: row.status ? String(row.status) : row.queue_status ? String(row.queue_status) : undefined,
     created_at: row.created_at ? String(row.created_at) : undefined,
   };

@@ -28,9 +28,9 @@ export type OrgTreeNodeId =
   | 'dept-service-setup';
 
 export const ADMINISTRATION_WORKSPACE_TABS: { id: AdministrationWorkspaceTab; label: string; description: string }[] = [
-  { id: 'governance', label: 'Governance Cockpit & Operations', description: 'Admin KPIs ┬╖ live monitoring ┬╖ quick actions' },
-  { id: 'organization', label: 'Organizational Structure, Access & Workforce', description: 'Hierarchy tree ┬╖ RBAC ┬╖ user profiles ┬╖ shift rosters' },
-  { id: 'compliance', label: 'Quality, Compliance, Incidents & AI Intelligence', description: 'Complaints ┬╖ incidents ┬╖ NABH ┬╖ audits ┬╖ AI forecasting' },
+  { id: 'governance', label: 'Governance Cockpit & Operations', description: 'Admin KPIs · live monitoring · quick actions' },
+  { id: 'organization', label: 'Organizational Structure, Access & Workforce', description: 'Hierarchy tree · RBAC · user profiles · shift rosters' },
+  { id: 'compliance', label: 'Quality, Compliance, Incidents & AI Intelligence', description: 'Complaints · incidents · NABH · audits · AI forecasting' },
 ];
 
 export type OrgTreeGroup = {

@@ -57,7 +57,7 @@ export function normalizePurchaseOrder(raw: unknown, index: number): EnterpriseP
       po.urgency === 'Urgent' || po.urgency === 'Critical'
         ? po.urgency
         : 'Normal',
-    expectedDeliveryDate: po.expectedDeliveryDate ?? 'ΓÇö',
+    expectedDeliveryDate: po.expectedDeliveryDate ?? '—',
     status: normalizeStatus(po.status),
     dateReceived: po.dateReceived ?? new Date().toISOString().split('T')[0],
     courierTrackingId: po.courierTrackingId,
@@ -81,7 +81,7 @@ export function normalizeInvoice(raw: unknown, index: number): GeneratedInvoice 
 
   return {
     id: inv.id ?? `INV-SYNC-${index + 1}`,
-    poReferenceId: inv.poReferenceId ?? 'ΓÇö',
+    poReferenceId: inv.poReferenceId ?? '—',
     hospitalName: inv.hospitalName ?? 'Unknown Hospital',
     baseAmount,
     gstAmount,
@@ -102,7 +102,7 @@ export function normalizeReturnRequest(raw: unknown, index: number): ReturnReque
   const ret = (raw ?? {}) as Partial<ReturnRequest>;
   return {
     id: ret.id ?? `RET-SYNC-${index + 1}`,
-    poReferenceId: ret.poReferenceId ?? 'ΓÇö',
+    poReferenceId: ret.poReferenceId ?? '—',
     hospitalName: ret.hospitalName ?? 'Unknown Hospital',
     itemName: ret.itemName ?? 'Item Cargo Manifest',
     quantityToReturn: Number(ret.quantityToReturn) || 0,

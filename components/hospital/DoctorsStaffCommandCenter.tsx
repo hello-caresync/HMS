@@ -14,8 +14,8 @@ import {
 import {
   createHospitalStaffMember,
   fetchCommandCenterPersonnel,
+  saveDirectoryProfile,
   toDashboardStaffRow,
-  updateHospitalStaffMember,
   type HospitalStaffMember,
   type StaffDirectoryDraft,
   type StaffRole,
@@ -37,6 +37,9 @@ const EMPTY_DRAFT: StaffDirectoryDraft = {
   department: '',
   qualification: '',
   consultation_fee: 500,
+  specialization: '',
+  experience: '',
+  timings: '',
   is_active: true,
 };
 
@@ -44,10 +47,6 @@ function roleLabel(role: StaffRole): string {
   if (role === 'admin') return 'Admin';
   if (role === 'staff') return 'Staff';
   return 'Doctor';
-}
-
-function staffRecordId(member: HospitalStaffMember): string | null {
-  return member.staff_record_id ?? member.id ?? null;
 }
 
 function roleKey(member: HospitalStaffMember): string {
@@ -199,6 +198,9 @@ export function DoctorsStaffCommandCenter({
       department: member.department,
       qualification: member.qualification,
       consultation_fee: member.consultation_fee,
+      specialization: member.specialization || '',
+      experience: member.experience || '',
+      timings: member.timings || '',
       is_active: member.is_active,
     });
     setEditor(member);
@@ -220,15 +222,9 @@ export function DoctorsStaffCommandCenter({
     if (!supabase || isSaving) return;
     setIsSaving(true);
     try {
-      const recordId = editor && editor !== 'create' ? staffRecordId(editor) : null;
-      if (editor && editor !== 'create' && !recordId) {
-        toast.error('No linked hospital_staff record — provision this account from the Staff Credentials Vault.');
-        return;
-      }
-
       const result =
-        editor && editor !== 'create' && recordId
-          ? await updateHospitalStaffMember(supabase, nodeId, recordId, draft)
+        editor && editor !== 'create'
+          ? await saveDirectoryProfile(supabase, nodeId, editor, draft)
           : await createHospitalStaffMember(supabase, nodeId, draft);
       if (!result.ok) {
         toast.error(result.error || 'Could not save staff record');
@@ -313,7 +309,7 @@ export function DoctorsStaffCommandCenter({
         </button>
       </div>
 
-      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+      <section className="min-w-0 space-y-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
             {(['all', 'doctor', 'staff', 'admin'] as const).map((id) => (
@@ -423,15 +419,16 @@ export function DoctorsStaffCommandCenter({
                 placeholder="Email"
                 className="rounded-xl border border-slate-200 px-3 py-2.5"
               />
-              <div className="relative">
+              <label className="relative block font-bold uppercase text-slate-500">
+                Password
                 <input
                   type="text"
                   name="passcode_key"
                   disabled={isSaving}
                   value={draft.passcode_key || ''}
                   onChange={(e) => setDraft((prev) => ({ ...prev, passcode_key: e.target.value }))}
-                  placeholder="Auto-generated passcode"
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-10 pl-3 font-mono text-sm font-bold text-slate-800 focus:border-cyan-500 focus:outline-none disabled:opacity-60"
+                  placeholder="Portal password"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-10 pl-3 font-mono text-sm font-bold normal-case text-slate-800 focus:border-cyan-500 focus:outline-none disabled:opacity-60"
                 />
                 <button
                   type="button"
@@ -443,11 +440,11 @@ export function DoctorsStaffCommandCenter({
                       passcode_key: generateSecurePasscode(passcodePrefixForStaffRole(prev.role)),
                     }))
                   }
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-cyan-600 disabled:opacity-50"
+                  className="absolute right-2.5 bottom-2.5 rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-cyan-600 disabled:opacity-50"
                 >
                   <RefreshCw className="h-4 w-4" />
                 </button>
-              </div>
+              </label>
               <input
                 disabled={isSaving}
                 value={draft.department}
@@ -457,9 +454,31 @@ export function DoctorsStaffCommandCenter({
               />
               <input
                 disabled={isSaving}
+                value={draft.specialization || ''}
+                onChange={(e) => setDraft((prev) => ({ ...prev, specialization: e.target.value }))}
+                placeholder="Specialization"
+                className="col-span-2 rounded-xl border border-slate-200 px-3 py-2.5"
+              />
+              <input
+                disabled={isSaving}
                 value={draft.qualification}
                 onChange={(e) => setDraft((prev) => ({ ...prev, qualification: e.target.value }))}
-                placeholder="Qualification"
+                placeholder="Qualifications"
+                className="rounded-xl border border-slate-200 px-3 py-2.5"
+              />
+              <input
+                disabled={isSaving}
+                value={draft.experience || ''}
+                onChange={(e) => setDraft((prev) => ({ ...prev, experience: e.target.value }))}
+                placeholder="Experience (e.g. 22 Years)"
+                className="rounded-xl border border-slate-200 px-3 py-2.5"
+              />
+              <textarea
+                disabled={isSaving}
+                value={draft.timings || ''}
+                onChange={(e) => setDraft((prev) => ({ ...prev, timings: e.target.value }))}
+                placeholder="Timings (leave blank for On Appointment)"
+                rows={2}
                 className="col-span-2 rounded-xl border border-slate-200 px-3 py-2.5"
               />
               {draft.role === 'doctor' && (

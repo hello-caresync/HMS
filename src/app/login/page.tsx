@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { hospitalDeskLoginUrl } from '@/lib/auth/hospital-desk-session';
 
 /**
- * Legacy `/login` shim ΓÇö client redirect avoids Next.js dev Performance.measure
+ * Legacy `/login` shim — client redirect avoids Next.js dev Performance.measure
  * errors from instant server-side redirect() on this route.
  */
 function LegacyLoginRedirectInner() {
@@ -26,7 +26,7 @@ function LegacyLoginRedirectInner() {
     <div className="flex min-h-screen items-center justify-center bg-[#0a2e47]">
       <div className="flex flex-col items-center gap-3 text-cyan-100">
         <Loader2 className="h-7 w-7 animate-spin text-cyan-300" aria-hidden />
-        <p className="text-sm font-semibold tracking-wide">Redirecting to hospital loginΓÇª</p>
+        <p className="text-sm font-semibold tracking-wide">Redirecting to hospital login…</p>
       </div>
     </div>
   );

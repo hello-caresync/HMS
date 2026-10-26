@@ -75,7 +75,7 @@ export default function VendorView() {
         <Panel title="Payment History Ledger">
           <DataTable
             columns={['Payment', 'Vendor', 'Amount', 'Date']}
-            rows={[['PAY-771', 'MedSupply Co.', 'Γé╣2,40,000', '2026-07-10']]}
+            rows={[['PAY-771', 'MedSupply Co.', '₹2,40,000', '2026-07-10']]}
           />
         </Panel>
       )}

@@ -66,7 +66,7 @@ export default function CommandCenterTab({ lookupQuery, orders, onAdvancePipelin
         ))}
       </div>
 
-      <RadPanel title="Imaging Order & Scan Queue" subtitle="Modality ┬╖ priority ┬╖ machine allocation ┬╖ patient readiness" icon={ClipboardList}>
+      <RadPanel title="Imaging Order & Scan Queue" subtitle="Modality · priority · machine allocation · patient readiness" icon={ClipboardList}>
         <table className="w-full min-w-[980px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -120,7 +120,7 @@ export default function CommandCenterTab({ lookupQuery, orders, onAdvancePipelin
         </table>
       </RadPanel>
 
-      <RadPanel title="Quick Actions" icon={Zap} subtitle="Scheduling ┬╖ check-in ┬╖ PACS upload ┬╖ report release">
+      <RadPanel title="Quick Actions" icon={Zap} subtitle="Scheduling · check-in · PACS upload · report release">
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-6">
           {[
             { id: 'schedule-scan' as const, label: 'Schedule Scan', icon: Calendar },

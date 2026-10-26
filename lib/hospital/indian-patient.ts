@@ -17,6 +17,32 @@ export function isTenDigitPhone(value: string): boolean {
   return TEN_DIGIT_PHONE_RE.test(sanitizePhoneDigits(value));
 }
 
+/** Age entry: digits only, at most 3 characters. */
+export function sanitizeAgeDigits(value: string): string {
+  return digitsOnly(value).slice(0, 3);
+}
+
+export function blockExtraAgeDigit(event: {
+  key: string;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  preventDefault: () => void;
+  target?: EventTarget | null;
+}): void {
+  const controlKeys = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+  if (controlKeys.includes(event.key)) return;
+  if (event.ctrlKey || event.metaKey) return;
+  if (!/^\d$/.test(event.key)) {
+    event.preventDefault();
+    return;
+  }
+  const input = event.target instanceof HTMLInputElement ? event.target : null;
+  if (!input) return;
+  const digits = sanitizeAgeDigits(input.value);
+  const selection = (input.selectionEnd ?? 0) - (input.selectionStart ?? 0);
+  if (digits.length >= 3 && selection === 0) event.preventDefault();
+}
+
 export function resolveOptionalPhone(value: string): string | null {
   const digits = sanitizePhoneDigits(value);
   if (!digits) return null;
@@ -43,11 +69,40 @@ export function blockNonDigitPhoneKey(event: {
   ctrlKey?: boolean;
   metaKey?: boolean;
   preventDefault: () => void;
+  target?: EventTarget | null;
 }): void {
   const controlKeys = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
   if (controlKeys.includes(event.key)) return;
   if (event.ctrlKey || event.metaKey) return;
-  if (!/^\d$/.test(event.key)) event.preventDefault();
+  if (!/^\d$/.test(event.key)) {
+    event.preventDefault();
+    return;
+  }
+  const input = event.target instanceof HTMLInputElement ? event.target : null;
+  if (!input) return;
+  const digits = sanitizePhoneDigits(input.value);
+  const selection = (input.selectionEnd ?? 0) - (input.selectionStart ?? 0);
+  if (digits.length >= 10 && selection === 0) event.preventDefault();
+}
+
+/** Person names: letters, spaces, and . ' - . Digits and other symbols are removed. */
+export function sanitizePersonName(value: string): string {
+  return String(value ?? '')
+    .replace(/[^\p{L}\s.'-]/gu, '')
+    .replace(/^\s+/, '');
+}
+
+export function blockNonLetterNameKey(event: {
+  key: string;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  preventDefault: () => void;
+}): void {
+  const controlKeys = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End', ' '];
+  if (controlKeys.includes(event.key)) return;
+  if (event.ctrlKey || event.metaKey) return;
+  if (event.key.length !== 1) return;
+  if (!/^[\p{L}.'-]$/u.test(event.key)) event.preventDefault();
 }
 
 export function normalizeIndianMobile(value: string): string {

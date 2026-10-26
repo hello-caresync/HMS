@@ -149,7 +149,7 @@ export function StatusPill({ status }: { status: string }) {
   const styles: Record<string, string> = {
     Cleared: 'bg-emerald-100 text-emerald-800',
     Pending: 'bg-amber-100 text-amber-800',
-    'Positive ΓÇö Contraindicated': 'bg-red-100 text-red-800',
+    'Positive — Contraindicated': 'bg-red-100 text-red-800',
     'No Known Allergy': 'bg-emerald-100 text-emerald-800',
     Premedicated: 'bg-sky-100 text-sky-800',
     'Allergy Documented': 'bg-red-100 text-red-800',

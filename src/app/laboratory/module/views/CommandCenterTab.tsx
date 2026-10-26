@@ -68,7 +68,7 @@ export default function CommandCenterTab({
         ))}
       </div>
 
-      <LabPanel title="Test Order & Sample Collection Queue" subtitle="Priority ┬╖ barcode ┬╖ collection ┬╖ pipeline status" icon={ClipboardList}>
+      <LabPanel title="Test Order & Sample Collection Queue" subtitle="Priority · barcode · collection · pipeline status" icon={ClipboardList}>
         <table className="w-full min-w-[920px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -107,7 +107,7 @@ export default function CommandCenterTab({
         </table>
       </LabPanel>
 
-      <LabPanel title="Quick Actions" icon={Zap} subtitle="Sample intake ┬╖ verification ┬╖ critical escalation">
+      <LabPanel title="Quick Actions" icon={Zap} subtitle="Sample intake · verification · critical escalation">
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-6">
           {[
             { id: 'collect-sample' as const, label: 'Collect Sample', icon: Droplets },

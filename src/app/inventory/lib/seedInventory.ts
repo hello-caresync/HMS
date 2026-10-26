@@ -31,7 +31,7 @@ export const SEED_INVENTORY: InventoryItem[] = [
   {
     id: 'inv-med-003',
     category: 'Medicine Stock',
-    itemName: 'Insulin Glargine ΓÇö Lantus',
+    itemName: 'Insulin Glargine — Lantus',
     sku: 'NEX-MED-4001',
     batchNumber: 'LT2026-H1',
     location: 'Pharmacy Store',
@@ -44,7 +44,7 @@ export const SEED_INVENTORY: InventoryItem[] = [
   {
     id: 'inv-med-004',
     category: 'Medicine Stock',
-    itemName: 'Amoxicillin 500mg ΓÇö Mox',
+    itemName: 'Amoxicillin 500mg — Mox',
     sku: 'NEX-MED-3001',
     batchNumber: 'MX2026-F4',
     location: 'Central Warehouse',
@@ -57,7 +57,7 @@ export const SEED_INVENTORY: InventoryItem[] = [
   {
     id: 'inv-eq-001',
     category: 'Capital Equipment',
-    itemName: 'Portable Ventilator ΓÇö Hamilton C6',
+    itemName: 'Portable Ventilator — Hamilton C6',
     sku: 'NEX-EQ-5001',
     location: 'Biomedical Engineering',
     department: 'ICU',
@@ -69,7 +69,7 @@ export const SEED_INVENTORY: InventoryItem[] = [
   {
     id: 'inv-eq-002',
     category: 'Capital Equipment',
-    itemName: 'Infusion Pump ΓÇö B Braun Space',
+    itemName: 'Infusion Pump — B Braun Space',
     sku: 'NEX-EQ-5002',
     location: 'Biomedical Engineering',
     department: 'General Ward',
@@ -81,7 +81,7 @@ export const SEED_INVENTORY: InventoryItem[] = [
   {
     id: 'inv-eq-003',
     category: 'Capital Equipment',
-    itemName: 'Defibrillator ΓÇö Philips HeartStart',
+    itemName: 'Defibrillator — Philips HeartStart',
     sku: 'NEX-EQ-5003',
     location: 'Central Warehouse',
     department: 'Emergency',
@@ -93,7 +93,7 @@ export const SEED_INVENTORY: InventoryItem[] = [
   {
     id: 'inv-con-001',
     category: 'Clinical Consumables',
-    itemName: 'Surgical Gloves ΓÇö Size M (Powder-free)',
+    itemName: 'Surgical Gloves — Size M (Powder-free)',
     sku: 'NEX-CON-7001',
     batchNumber: 'SG2026-M1',
     location: 'Central Warehouse',
@@ -148,7 +148,7 @@ export const SEED_TRANSFERS: InternalTransfer[] = [
   {
     id: generateTransferId(),
     itemId: 'inv-con-001',
-    itemName: 'Surgical Gloves ΓÇö Size M (Powder-free)',
+    itemName: 'Surgical Gloves — Size M (Powder-free)',
     batchNumber: 'SG2026-M1',
     sourceLocation: 'Central Warehouse',
     targetDepartment: 'OT Complex',

@@ -81,7 +81,7 @@ export default function DispensingConsoleTab({
       </div>
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-[1fr_280px]">
-        <PharmPanel title="Prescription Management Queue" subtitle="OPD ┬╖ IPD ┬╖ ER orders ┬╖ verification ┬╖ batch ┬╖ barcode" icon={ClipboardList}>
+        <PharmPanel title="Prescription Management Queue" subtitle="OPD · IPD · ER orders · verification · batch · barcode" icon={ClipboardList}>
           <table className="w-full min-w-[900px] text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -146,7 +146,7 @@ export default function DispensingConsoleTab({
           </table>
         </PharmPanel>
 
-        <PharmPanel title="Pharmacy Queue Manager" subtitle="Token ┬╖ wait time ┬╖ triage priority" icon={Users}>
+        <PharmPanel title="Pharmacy Queue Manager" subtitle="Token · wait time · triage priority" icon={Users}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -179,7 +179,7 @@ export default function DispensingConsoleTab({
         </PharmPanel>
       </div>
 
-      <PharmPanel title="Quick Actions" icon={Zap} subtitle="Dispense ┬╖ search ┬╖ procurement ┬╖ stock ┬╖ billing">
+      <PharmPanel title="Quick Actions" icon={Zap} subtitle="Dispense · search · procurement · stock · billing">
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-6">
           {[
             { id: 'dispense' as const, label: 'Dispense Medicine', icon: Pill },

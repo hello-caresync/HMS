@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { displayClinicalText } from '@/lib/clinical/clinical-text';
+
 import {
   bypassToNextWaiting,
   callNextPatientInQueue,
@@ -148,7 +150,7 @@ export default function DoctorQueuePage() {
             </span>
           </div>
           <p className="mt-0.5 text-xs text-slate-500">
-            Interleaved appointments and walk-ins ┬╖ Emergency override ┬╖ 10-minute slot buffer
+            Interleaved appointments and walk-ins · Emergency override · 10-minute slot buffer
           </p>
         </div>
 
@@ -195,7 +197,7 @@ export default function DoctorQueuePage() {
                   Waiting
                 </span>
                 <span className="text-base font-bold text-slate-800">
-                  {loading ? 'ΓÇö' : waitingQueue.length}
+                  {loading ? '—' : waitingQueue.length}
                 </span>
               </div>
             </div>
@@ -221,7 +223,7 @@ export default function DoctorQueuePage() {
                   Done
                 </span>
                 <span className="text-base font-bold text-slate-800">
-                  {loading ? 'ΓÇö' : completedQueue.length}
+                  {loading ? '—' : completedQueue.length}
                 </span>
               </div>
             </div>
@@ -278,7 +280,9 @@ export default function DoctorQueuePage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-400">{item.chief_complaint}</p>
+                      <p className="line-clamp-2 break-words text-xs text-slate-400">
+                        {displayClinicalText(item.chief_complaint || '')}
+                      </p>
                     </div>
                   </div>
                   <span className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
@@ -384,9 +388,9 @@ export default function DoctorQueuePage() {
                 </span>
               </div>
               <h4 className="text-lg font-bold text-slate-900">{activePatient.patient_name}</h4>
-              <p className="mt-1 text-xs text-slate-500">
-                {activePatient.age ?? 'ΓÇö'} Yrs ┬╖ {activePatient.gender ?? 'ΓÇö'} ┬╖ Chief Complaint:{' '}
-                {activePatient.chief_complaint}
+              <p className="mt-1 line-clamp-3 break-words text-xs text-slate-500">
+                {activePatient.age ?? '—'} Yrs · {activePatient.gender ?? '—'} · Chief Complaint:{' '}
+                {displayClinicalText(activePatient.chief_complaint || '') || '—'}
               </p>
               <div className="mt-3 flex justify-end border-t border-teal-100/80 pt-3">
                 <button
@@ -409,7 +413,7 @@ export default function DoctorQueuePage() {
                 <Stethoscope className="h-6 w-6" />
               </div>
               <h4 className="text-sm font-bold text-slate-800">
-                No Patient On Deck ΓÇö Queue is clear for today
+                No Patient On Deck — Queue is clear for today
               </h4>
               <p className="mt-1 max-w-xs text-xs leading-relaxed text-slate-400">
                 Patient bookings from the app will appear automatically. Click &quot;Call Next

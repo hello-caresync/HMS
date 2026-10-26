@@ -1,4 +1,4 @@
-﻿/** Internal hospital back-office staff roles ΓÇö ERP only (no external portal roles). */
+﻿/** Internal hospital back-office staff roles — ERP only (no external portal roles). */
 
 export const INTERNAL_STAFF_ROLES = [
   'hospital_admin',

@@ -76,7 +76,7 @@ export default function GoodsReceivingView({
                 >
                   <span>{item.name}</span>
                   <span className={monoDataClassName}>
-                    Req {item.quantityRequested.toLocaleString('en-IN')} ┬╖ Rcv{' '}
+                    Req {item.quantityRequested.toLocaleString('en-IN')} · Rcv{' '}
                     {(item.quantityReceived ?? 0).toLocaleString('en-IN')}
                   </span>
                 </div>
@@ -89,7 +89,7 @@ export default function GoodsReceivingView({
                 onClick={() => onConfirmReceipt(po.id)}
                 className={btnSuccessClassName}
               >
-                Γ£ô Confirm Dock Receipt
+                ✓ Confirm Dock Receipt
               </button>
             )}
           </article>

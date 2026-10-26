@@ -32,7 +32,7 @@ export default function PathologistApprovalQueue() {
               <div>
                 <p className="text-sm font-semibold text-slate-900">{order.patientName}</p>
                 <p className="font-mono text-[10px] text-slate-800">
-                  {order.uhid} ┬╖ {order.barcode}
+                  {order.uhid} · {order.barcode}
                 </p>
               </div>
               {hasCritical && (
@@ -73,7 +73,7 @@ export default function PathologistApprovalQueue() {
                           {r.value} {test.unit}
                         </td>
                         <td className="px-2 py-1.5 text-right text-slate-950">
-                          {test.refMin}ΓÇô{test.refMax}
+                          {test.refMin}–{test.refMax}
                         </td>
                         <td className="px-2 py-1.5 text-center">
                           {outOfRange ? (

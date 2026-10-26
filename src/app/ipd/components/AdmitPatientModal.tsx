@@ -43,7 +43,7 @@ export default function AdmitPatientModal({ bed, open, onClose }: AdmitPatientMo
     <Sheet
       open={open}
       title="Admit Patient"
-      description={`${bed.bedLabel} ┬╖ ${ward?.name ?? ''}`}
+      description={`${bed.bedLabel} · ${ward?.name ?? ''}`}
       onClose={handleClose}
       width="md"
     >
@@ -62,7 +62,7 @@ export default function AdmitPatientModal({ bed, open, onClose }: AdmitPatientMo
           >
             {PATIENT_OPTIONS.map((p) => (
               <option key={p.patientId} value={p.patientId}>
-                {p.name} ┬╖ {p.uhid}
+                {p.name} · {p.uhid}
               </option>
             ))}
           </select>

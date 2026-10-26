@@ -4,7 +4,7 @@ import { SecureIdentityPlaceholder, inputClass, ModalOverlay } from './inventory
 
 export function RegisterItemModal({ onClose }: { onClose: () => void }) {
   return (
-    <ModalOverlay title="Register New Item ΓÇö Item Master" onClose={onClose} wide>
+    <ModalOverlay title="Register New Item — Item Master" onClose={onClose} wide>
       <input className={inputClass} placeholder="Item code" defaultValue="MED-NEW-001" />
       <input className={`${inputClass} mt-2`} placeholder="Item name" defaultValue="Ceftriaxone 1g Injection" />
       <select className={`${inputClass} mt-2`}>
@@ -15,7 +15,7 @@ export function RegisterItemModal({ onClose }: { onClose: () => void }) {
       </select>
       <select className={`${inputClass} mt-2`}>
         <option>Ambient</option>
-        <option>Cold Chain 2-8┬░C</option>
+        <option>Cold Chain 2-8°C</option>
         <option>Controlled Room</option>
       </select>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">
@@ -40,7 +40,7 @@ export function CreatePurchaseRequestModal({ onClose }: { onClose: () => void })
         <option>High</option>
         <option>Normal</option>
       </select>
-      <input className={inputClass} placeholder="Items & quantities" defaultValue="Ceftriaxone 1g ├ù 500 vials" />
+      <input className={inputClass} placeholder="Items & quantities" defaultValue="Ceftriaxone 1g × 500 vials" />
       <SecureIdentityPlaceholder verified />
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">
         Submit PR
@@ -58,7 +58,7 @@ export function GeneratePoModal({ onClose }: { onClose: () => void }) {
         <option>Apollo Pharma Distribution</option>
         <option>Cipla Healthcare Logistics</option>
       </select>
-      <p className="mt-2 text-[10px] text-slate-600">Total value: Γé╣4,28,000 ┬╖ Items: Azithromycin + Insulin Glargine</p>
+      <p className="mt-2 text-[10px] text-slate-600">Total value: ₹4,28,000 · Items: Azithromycin + Insulin Glargine</p>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-emerald-600 py-2 text-[10px] font-bold text-white">
         Generate & Send PO
       </button>
@@ -92,7 +92,7 @@ export function IssueStockModal({ onClose }: { onClose: () => void }) {
         <option>OT Store</option>
         <option>Emergency Store</option>
       </select>
-      <input className={inputClass} placeholder="Item code / batch" defaultValue="MED-NOR-004 ┬╖ NOR-8841-A" />
+      <input className={inputClass} placeholder="Item code / batch" defaultValue="MED-NOR-004 · NOR-8841-A" />
       <input className={`${inputClass} mt-2`} type="number" placeholder="Quantity" defaultValue="24" />
       <SecureIdentityPlaceholder verified />
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">
@@ -106,14 +106,14 @@ export function TransferStockModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Transfer Stock Between Stores" onClose={onClose} wide>
       <select className={`${inputClass} mb-2`}>
-        <option>Main Store ΓåÆ Pharmacy Store</option>
-        <option>Main Store ΓåÆ ICU Store</option>
-        <option>OT Store ΓåÆ Emergency Store</option>
+        <option>Main Store → Pharmacy Store</option>
+        <option>Main Store → ICU Store</option>
+        <option>OT Store → Emergency Store</option>
       </select>
-      <input className={inputClass} placeholder="Item & batch" defaultValue="Amoxicillin 500mg ┬╖ AMX-8841-A" />
+      <input className={inputClass} placeholder="Item & batch" defaultValue="Amoxicillin 500mg · AMX-8841-A" />
       <input className={`${inputClass} mt-2`} type="number" placeholder="Quantity" defaultValue="200" />
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-violet-600 py-2 text-[10px] font-bold text-white">
-        Initiate Transfer ΓÇö In Transit
+        Initiate Transfer — In Transit
       </button>
     </ModalOverlay>
   );

@@ -39,13 +39,13 @@ export default function MedicineMasterView() {
           <Pill className="h-4 w-4 text-primary" />
           Medicine Master
         </h2>
-        <p className="text-[11px] text-slate-800">Pharmacy SKU catalog ┬╖ HSN ┬╖ GST ┬╖ vendor linkage</p>
+        <p className="text-[11px] text-slate-800">Pharmacy SKU catalog · HSN · GST · vendor linkage</p>
       </div>
 
       <MasterToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search brand, generic, HSN, vendorΓÇª"
+        searchPlaceholder="Search brand, generic, HSN, vendor…"
         recordCount={filtered.length}
         recordLabel="SKUs"
         onAdd={() => setSheet({ type: 'add' })}

@@ -64,22 +64,46 @@ export function isHospitalScopedUhid(uhid: string, hospitalId: string): boolean 
   return value.startsWith(hospitalUhidPrefix(hospitalId));
 }
 
-/** Atomically mint sequential UHID via Postgres RPC (falls back for dev without migration). */
+function nextUnusedSeriesNumber(used: number[]): number {
+  const taken = new Set(used.filter((value) => Number.isFinite(value) && value > 0));
+  let next = 1;
+  while (taken.has(next)) next += 1;
+  return next;
+}
+
+function readPrefixedSeriesNumber(value: unknown, prefix: string): number {
+  const text = String(value ?? '').trim().toUpperCase();
+  const head = prefix.toUpperCase();
+  if (!text.startsWith(head)) return 0;
+  const parsed = Number(text.slice(head.length));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+/** Next unused `HOSP-01-P-0001` style UHID. Never draws a random number. */
+export async function peekNextHospitalUhid(
+  supabase: SupabaseClient,
+  hospitalId: string = REGAL_HOSPITAL_CODE,
+): Promise<string> {
+  const prefix = hospitalUhidPrefix(hospitalId);
+  const used: number[] = [];
+
+  for (const table of ['patients', 'hospital_patients', 'appointments'] as const) {
+    const { data, error } = await supabase.from(table).select('uhid').ilike('uhid', `${prefix}%`);
+    if (error || !data) continue;
+    for (const row of data) {
+      used.push(readPrefixedSeriesNumber((row as { uhid?: unknown }).uhid, prefix));
+    }
+  }
+
+  return `${prefix}${String(nextUnusedSeriesNumber(used)).padStart(4, '0')}`;
+}
+
+/** Next permanent UHID in a continuous series for this hospital. */
 export async function mintHospitalScopedUhid(
   supabase: SupabaseClient,
   hospitalId: string = REGAL_HOSPITAL_CODE,
 ): Promise<string> {
-  const { data, error } = await supabase.rpc('generate_hospital_uhid', {
-    p_hospital_id: hospitalId,
-  });
-
-  if (!error && data) {
-    return String(data).trim();
-  }
-
-  const prefix = hospitalId.replace(/\s/g, '');
-  const suffix = String(Math.floor(1000 + Math.random() * 9000));
-  return `${prefix}-P-${suffix}`;
+  return peekNextHospitalUhid(supabase, hospitalId);
 }
 
 export async function resolvePatientUhidForSave(

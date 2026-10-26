@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   LOGIN_FORM_AUTOCOMPLETE,
@@ -19,7 +19,13 @@ import {
   resolveCredentialHospitalName,
 } from '@/lib/recordStaffLogin';
 import { resolveLoginRedirect } from '@/lib/auth/safe-redirect';
-import { getSupabaseConfigStatus } from '@/lib/supabase/client';
+import { getSupabaseConfigStatus, supabase } from '@/lib/supabase/client';
+import {
+  fetchRegisteredHospitals,
+  formatRegisteredHospitalLabel,
+  type RegisteredHospitalOption,
+} from '@/lib/patient/registered-hospitals';
+import { AuthSceneBackground } from '@/components/auth/AuthSceneBackground';
 import { RegalHospitalLogo } from '@/components/common/RegalHospitalLogo';
 import {
   AlertCircle,
@@ -40,6 +46,9 @@ export default function DoctorLoginPortal() {
     ['/doctor'],
   );
 
+  const [hospitals, setHospitals] = useState<RegisteredHospitalOption[]>([]);
+  const [hospitalsLoading, setHospitalsLoading] = useState(true);
+  const [selectedHospitalId, setSelectedHospitalId] = useState('');
   const [identifier, setIdentifier] = useState('');
   const [passcode, setPasscode] = useState('');
   const [showPasscode, setShowPasscode] = useState(false);
@@ -47,6 +56,26 @@ export default function DoctorLoginPortal() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const result = await fetchRegisteredHospitals(supabase);
+      if (cancelled) return;
+      setHospitals(result.hospitals);
+      setSelectedHospitalId((current) =>
+        current && result.hospitals.some((hospital) => hospital.id === current)
+          ? current
+          : result.hospitals[0]?.id ?? '',
+      );
+      setHospitalsLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedHospital = hospitals.find((hospital) => hospital.id === selectedHospitalId) ?? null;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +85,11 @@ export default function DoctorLoginPortal() {
     try {
       const cleanInput = identifier.trim();
       const cleanPasscode = passcode.trim();
+
+      if (hospitals.length > 0 && !selectedHospital) {
+        setErrorMessage('Choose the hospital you are signing in to.');
+        return;
+      }
 
       if (!cleanInput || !cleanPasscode) {
         setErrorMessage('Enter your hospital-issued Doctor ID and security PIN.');
@@ -68,11 +102,16 @@ export default function DoctorLoginPortal() {
         return;
       }
 
-      const loginResponse = await fetch('/api/doctor/auth/login', {
+      const loginResponse = await fetch('/api/doctor/auth/login/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ identifier: cleanInput, passcode: cleanPasscode }),
+        body: JSON.stringify({
+          identifier: cleanInput,
+          passcode: cleanPasscode,
+          hospitalId: selectedHospital?.id,
+          hospitalCode: selectedHospital?.code,
+        }),
       });
 
       const loginPayload = (await loginResponse.json()) as {
@@ -211,8 +250,9 @@ export default function DoctorLoginPortal() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-slate-900/95 p-4 font-sans">
-      <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-2xl">
+    <div className="relative isolate flex min-h-screen w-full items-center justify-center overflow-hidden p-4 font-sans">
+      <AuthSceneBackground tone="doctor" />
+      <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-2xl">
         <div className="mb-8 flex flex-col items-center text-center">
           <RegalHospitalLogo heightClass="h-10" framed className="mb-5" />
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Clinician Login</h1>
@@ -235,11 +275,38 @@ export default function DoctorLoginPortal() {
             </div>
             <div>
               <p className="text-base font-bold text-slate-900">Identity Verified</p>
-              <p className="mt-1 text-xs text-slate-500">Opening your workstationΓÇª</p>
+              <p className="mt-1 text-xs text-slate-500">Opening your workstation…</p>
             </div>
           </div>
         ) : (
           <form onSubmit={handleLogin} autoComplete={LOGIN_FORM_AUTOCOMPLETE} className="space-y-5">
+            <div>
+              <label
+                htmlFor="doctor-portal-hospital"
+                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Healthcare facility
+              </label>
+              <select
+                id="doctor-portal-hospital"
+                value={selectedHospitalId}
+                onChange={(event) => setSelectedHospitalId(event.target.value)}
+                disabled={hospitalsLoading || hospitals.length === 0}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20"
+              >
+                {hospitalsLoading ? (
+                  <option value="">Loading hospitals...</option>
+                ) : hospitals.length === 0 ? (
+                  <option value="">No registered hospitals found</option>
+                ) : (
+                  hospitals.map((hospital) => (
+                    <option key={hospital.id} value={hospital.id}>
+                      {formatRegisteredHospitalLabel(hospital)}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
             <div>
               <label
                 htmlFor="doctor-portal-identifier"
@@ -255,9 +322,9 @@ export default function DoctorLoginPortal() {
                   name="doctor-portal-identifier"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="Doctor ID or hospital email"
                   required
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm font-medium text-slate-900 outline-none transition-all focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20"
+                  placeholder="e.g. doctor@hospital.com"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20"
                   {...LOGIN_IDENTIFIER_INPUT_PROPS}
                 />
               </div>
@@ -278,9 +345,9 @@ export default function DoctorLoginPortal() {
                   name="doctor-portal-passcode"
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter your security PIN"
                   required
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-11 text-sm font-medium text-slate-900 outline-none transition-all focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20"
+                  placeholder="Enter your passcode"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-11 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20"
                   {...LOGIN_PASSWORD_INPUT_PROPS}
                 />
                 <button
@@ -312,7 +379,7 @@ export default function DoctorLoginPortal() {
               {isLoading ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  VerifyingΓÇª
+                  Verifying...
                 </>
               ) : (
                 <>

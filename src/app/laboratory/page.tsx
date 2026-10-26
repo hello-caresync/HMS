@@ -47,7 +47,7 @@ type CriticalAlert = {
 };
 
 const ROUTING_SUMMARY =
-  'Standalone diagnostic routing ┬╖ sandbox initials ┬╖ order ┬╖ queue ┬╖ trend analytics ┬╖ 13 Jul 2026';
+  'Standalone diagnostic routing · sandbox initials · order · queue · trend analytics · 13 Jul 2026';
 
 const TEST_PACKAGES = [
   'Full Executive Panel',
@@ -103,7 +103,7 @@ const COMPLETED_REPORTS: CompletedReport[] = [
     patientInitials: 'P.N.',
     testName: 'Serum Creatinine',
     completedAt: '2026-07-12',
-    resultSummary: '1.1 mg/dL ┬╖ within reference',
+    resultSummary: '1.1 mg/dL · within reference',
     flag: 'Normal',
   },
   {
@@ -112,7 +112,7 @@ const COMPLETED_REPORTS: CompletedReport[] = [
     patientInitials: 'K.V.',
     testName: 'Electrolyte Panel',
     completedAt: '2026-07-11',
-    resultSummary: 'K+ 2.8 mEq/L ┬╖ CRITICAL LOW',
+    resultSummary: 'K+ 2.8 mEq/L · CRITICAL LOW',
     flag: 'Critical',
   },
   {
@@ -121,7 +121,7 @@ const COMPLETED_REPORTS: CompletedReport[] = [
     patientInitials: 'P.N.',
     testName: 'HbA1c',
     completedAt: '2026-06-10',
-    resultSummary: '7.2 % ┬╖ borderline control',
+    resultSummary: '7.2 % · borderline control',
     flag: 'Borderline',
   },
 ];
@@ -131,13 +131,13 @@ const CRITICAL_ALERTS: CriticalAlert[] = [
     id: 'crit-1',
     analyte: 'Potassium',
     value: '2.8 mEq/L',
-    detail: 'CRITICAL LOW ┬╖ K.V. ┬╖ immediate clinical review',
+    detail: 'CRITICAL LOW · K.V. · immediate clinical review',
   },
   {
     id: 'crit-2',
     analyte: 'Hemoglobin',
     value: '7.1 g/dL',
-    detail: 'CRITICAL LOW ┬╖ flagged on CBC delta check',
+    detail: 'CRITICAL LOW · flagged on CBC delta check',
   },
 ];
 
@@ -219,12 +219,12 @@ export default function LaboratoryDiagnosticsPage() {
   }, []);
 
   const handleOrderTest = (testName: string) => {
-    showNotice(`Lab order queued ┬╖ ${testName} ┬╖ sandbox routing ┬╖ P.N. ┬╖ ${testName}`);
+    showNotice(`Lab order queued · ${testName} · sandbox routing · P.N. · ${testName}`);
   };
 
   const handleCompareReports = (report: CompletedReport) => {
     showNotice(
-      `Compare old reports ┬╖ ${report.testName} ┬╖ ${report.orderId} ┬╖ historical delta sandbox view`,
+      `Compare old reports · ${report.testName} · ${report.orderId} · historical delta sandbox view`,
     );
   };
 
@@ -300,7 +300,7 @@ export default function LaboratoryDiagnosticsPage() {
           </p>
         )}
 
-        {/* Utility grid ΓÇö order + critical panel */}
+        {/* Utility grid — order + critical panel */}
         <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
           <section className="w-full space-y-4 rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4 shadow-sm sm:p-5">
             <h2 className="text-base font-black text-slate-950">Order Lab Tests</h2>
@@ -313,7 +313,7 @@ export default function LaboratoryDiagnosticsPage() {
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search individual tests or panelsΓÇª"
+                placeholder="Search individual tests or panels…"
                 className={`${INPUT_CLASS} pl-10`}
               />
             </div>
@@ -381,7 +381,7 @@ export default function LaboratoryDiagnosticsPage() {
 
         {/* Main canvas split */}
         <div className="grid w-full grid-cols-1 gap-5 xl:grid-cols-2">
-          {/* Left ΓÇö queue & reports */}
+          {/* Left — queue & reports */}
           <section className="w-full space-y-5 rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4 shadow-sm sm:p-5">
             <h2 className="text-base font-black text-slate-950">Queue &amp; Report Ledger</h2>
 
@@ -493,7 +493,7 @@ export default function LaboratoryDiagnosticsPage() {
             )}
           </section>
 
-          {/* Right ΓÇö trend analytics */}
+          {/* Right — trend analytics */}
           <section className="w-full rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -501,7 +501,7 @@ export default function LaboratoryDiagnosticsPage() {
                   Trend Graphs &amp; Compare Previous Scans
                 </h2>
                 <p className="text-xs font-medium text-slate-800">
-                  Pure layout simulation ┬╖ no external chart libraries
+                  Pure layout simulation · no external chart libraries
                 </p>
               </div>
               <div className="flex gap-2">
@@ -524,7 +524,7 @@ export default function LaboratoryDiagnosticsPage() {
 
             <div className="rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4">
               <p className="text-sm font-black text-slate-950">{activeTrend.label}</p>
-              <p className="text-xs font-bold text-slate-800">Unit ┬╖ {activeTrend.unit}</p>
+              <p className="text-xs font-bold text-slate-800">Unit · {activeTrend.unit}</p>
 
               <div className="mt-6 flex h-48 items-end justify-between gap-3 border-b-2 border-slate-300 px-2 pb-2">
                 {activeTrend.points.map((point) => (
@@ -562,7 +562,7 @@ export default function LaboratoryDiagnosticsPage() {
 
             <div className="mt-4 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800">
               <TestTube2 className="h-4 w-4 text-slate-950" aria-hidden />
-              <span>Historical trend sandbox ┬╖ P.N. ┬╖ compare prior intervals before final sign-off</span>
+              <span>Historical trend sandbox · P.N. · compare prior intervals before final sign-off</span>
             </div>
           </section>
         </div>

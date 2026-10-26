@@ -12,7 +12,7 @@ export default function AutoBidsView({ smartAlerts, onBidSubmit }: AutoBidsViewP
       {smartAlerts.map((alertItem) => (
         <div key={alertItem.alertId} className="bg-[#EBF1F1] border border-[#CBD6D6] rounded-2xl p-5 shadow-xs space-y-4 relative overflow-hidden">
           <div>
-            <span className="text-[10px] font-mono font-black uppercase text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">ΓÜí Low-Stock Signal</span>
+            <span className="text-[10px] font-mono font-black uppercase text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">⚡ Low-Stock Signal</span>
             <h3 className="text-base font-black text-[#2C393A] mt-2">{alertItem.hospitalName}</h3>
             <p className="text-xs text-slate-800 font-bold mt-0.5">Deficit Target: <span className="text-[#4A5D5E]">{alertItem.itemNeeded}</span></p>
           </div>
@@ -21,7 +21,7 @@ export default function AutoBidsView({ smartAlerts, onBidSubmit }: AutoBidsViewP
             {!alertItem.fillSubmitted ? (
               <button onClick={() => onBidSubmit(alertItem.alertId, 3.25)} className="bg-[#4A5D5E] text-white text-[11px] font-black px-4 py-2 rounded-xl shadow-xs cursor-pointer">Transmit Quote (1-Click)</button>
             ) : (
-              <span className="text-emerald-700 font-black bg-white border border-emerald-200 px-3 py-1 rounded text-[11px] uppercase tracking-wider">Γ£ô Transmitted</span>
+              <span className="text-emerald-700 font-black bg-white border border-emerald-200 px-3 py-1 rounded text-[11px] uppercase tracking-wider">✓ Transmitted</span>
             )}
           </div>
         </div>

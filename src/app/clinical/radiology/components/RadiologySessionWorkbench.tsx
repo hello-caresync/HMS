@@ -53,7 +53,7 @@ export default function RadiologySessionWorkbench() {
           <div>
             <h1 className="text-lg font-black text-slate-900">Radiology Imaging Sessions</h1>
             <p className="text-xs text-slate-800">
-              Phase 3 ┬╖ Module 9 ┬╖ Slot routing ┬╖ image payload ┬╖ technician notes
+              Phase 3 · Module 9 · Slot routing · image payload · technician notes
             </p>
           </div>
         </div>
@@ -64,7 +64,7 @@ export default function RadiologySessionWorkbench() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search session, room, studyΓÇª"
+          placeholder="Search session, room, study…"
           className="w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100"
         />
       </div>

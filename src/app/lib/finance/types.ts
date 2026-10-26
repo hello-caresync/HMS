@@ -1,4 +1,4 @@
-﻿/** Phase 5 ΓÇö Finance workflow types (Modules 14ΓÇô16) */
+﻿/** Phase 5 — Finance workflow types (Modules 14–16) */
 
 export type ExpenseCategory =
   | 'Consultation Fees'

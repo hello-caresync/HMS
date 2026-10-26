@@ -47,7 +47,20 @@ export function normalizeSlotTime(raw: string): string {
   const value = String(raw ?? '').trim();
   if (!value) return '';
 
-  const parsed = parseSlotOnDate(todayIsoDate(), value);
+  if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
+    const stamped = new Date(value);
+    if (!Number.isNaN(stamped.getTime())) {
+      return stamped.toLocaleTimeString('en-IN', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    }
+  }
+
+  const leading = value.match(/^(\d{1,2}(?::\d{2})?\s*(?:AM|PM)|\d{1,2}:\d{2})/i);
+  const candidate = leading ? leading[1] : value;
+  const parsed = parseSlotOnDate(todayIsoDate(), candidate);
   if (!parsed) return value;
 
   return parsed.toLocaleTimeString('en-IN', {

@@ -47,7 +47,7 @@ export default function EmergencyTriageBoard({
               <p className="text-xs font-bold text-white">{unit.unitId}</p>
               <p className="mt-0.5 text-[10px] text-slate-800">
                 {unit.status}
-                {unit.status === 'En Route' && ` ┬╖ ETA ${unit.etaMinutes} min`}
+                {unit.status === 'En Route' && ` · ETA ${unit.etaMinutes} min`}
               </p>
               <p className="text-[10px] text-slate-800">{unit.patientCount} patient(s)</p>
             </div>

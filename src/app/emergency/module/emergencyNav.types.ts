@@ -10,9 +10,9 @@ export type EmergencyModalType =
   | null;
 
 export const EMERGENCY_WORKSPACE_TABS: { id: EmergencyWorkspaceTab; label: string; description: string }[] = [
-  { id: 'command', label: 'ER Command Center & Triage', description: 'Census ┬╖ live triage ┬╖ ER beds ┬╖ quick actions' },
-  { id: 'logistics', label: 'Logistics & Care Coordination', description: 'Urgent orders ┬╖ procedures ┬╖ ambulance fleet' },
-  { id: 'disposition', label: 'Disposition, Compliance & Codes', description: 'MLC ledger ┬╖ transfers ┬╖ billing ┬╖ analytics' },
+  { id: 'command', label: 'ER Command Center & Triage', description: 'Census · live triage · ER beds · quick actions' },
+  { id: 'logistics', label: 'Logistics & Care Coordination', description: 'Urgent orders · procedures · ambulance fleet' },
+  { id: 'disposition', label: 'Disposition, Compliance & Codes', description: 'MLC ledger · transfers · billing · analytics' },
 ];
 
 export type TriagePriority = 'Critical' | 'Emergent' | 'Urgent' | 'Non-Urgent';

@@ -29,11 +29,11 @@ export function OnboardHospitalModal({
   open,
   onClose,
   onSuccess,
-  defaultHospitalCode = 'HOSP-02',
+  defaultHospitalCode = '',
 }: OnboardHospitalModalProps) {
   const [hospitalCode, setHospitalCode] = useState(defaultHospitalCode);
   const [hospitalName, setHospitalName] = useState('');
-  const [city, setCity] = useState('Bengaluru');
+  const [city, setCity] = useState('');
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPasscode, setAdminPasscode] = useState('');
@@ -88,13 +88,14 @@ export function OnboardHospitalModal({
       const { data: hosp, error: hospitalError } = await supabase
         .from('hospitals')
         .insert({
+          id: code,
           name,
           hospital_code: code,
           city: location,
           status: 'Active',
           is_active: true,
         })
-        .select('id, hospital_code, name')
+        .select('id, hospital_code, name, city, status')
         .single();
 
       if (hospitalError) {
@@ -118,6 +119,7 @@ export function OnboardHospitalModal({
           passcode_key: passcode,
           role: 'Admin',
           department: HOSPITAL_ADMIN_DEPARTMENT,
+          consultation_fee: 0,
           is_active: true,
         })
         .select('id')
@@ -129,6 +131,20 @@ export function OnboardHospitalModal({
           throw new Error('That admin email is already assigned to another credential.');
         }
         throw adminError;
+      }
+
+      const { error: tenantMirrorError } = await supabase.from('hospital_tenants').upsert(
+        {
+          hospital_id: hosp.id,
+          hospital_name: name,
+          hospital_code: code,
+          city: location,
+          status: 'Active',
+        },
+        { onConflict: 'hospital_id' },
+      );
+      if (tenantMirrorError) {
+        console.warn('[onboard] hospital_tenants mirror skipped:', tenantMirrorError.message);
       }
 
       toast.success(`${name} onboarded with Hospital Admin credentials.`);
@@ -186,7 +202,7 @@ export function OnboardHospitalModal({
               value={hospitalName}
               onChange={(e) => setHospitalName(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
-              placeholder="e.g. Regal Hospital"
+              placeholder="e.g. City Hospital"
               required
             />
           </div>
@@ -198,7 +214,7 @@ export function OnboardHospitalModal({
                 value={hospitalCode}
                 onChange={(e) => setHospitalCode(e.target.value.toUpperCase())}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs"
-                placeholder="HOSP-01"
+                placeholder="e.g. HOSP-00"
                 required
               />
             </div>
@@ -208,7 +224,7 @@ export function OnboardHospitalModal({
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
-                placeholder="Bengaluru"
+                placeholder="e.g. City name"
                 required
               />
             </div>
@@ -230,7 +246,7 @@ export function OnboardHospitalModal({
               value={adminName}
               onChange={(e) => setAdminName(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
-              placeholder="e.g. Kavya S"
+              placeholder="e.g. Full name"
               required
             />
           </div>
@@ -242,7 +258,7 @@ export function OnboardHospitalModal({
               value={adminEmail}
               onChange={(e) => setAdminEmail(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
-              placeholder="kavyaregaladmin@gmail.com"
+              placeholder="name@email.com"
               required
             />
           </div>
@@ -255,7 +271,7 @@ export function OnboardHospitalModal({
                 value={adminPasscode}
                 onChange={(e) => setAdminPasscode(e.target.value)}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs"
-                placeholder="REGAL#KAVYA@2026"
+                placeholder="e.g. HOSP#NAME@2026"
                 required
               />
               <button

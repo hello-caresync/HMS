@@ -61,7 +61,7 @@ export default function HospitalSidebar({
           Supplier gateway
         </Link>
         <p className="text-center font-mono text-xs font-semibold text-slate-200">
-          node ┬╖ curasync-hospital
+          node · curasync-hospital
         </p>
       </div>
     </aside>

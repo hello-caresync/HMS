@@ -179,7 +179,7 @@ export default function BedAllocationView() {
         {selectedBed && (
           <div className="space-y-4">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
-              <p className="font-semibold text-slate-800">{selectedBed.ward} ┬╖ {selectedBed.wardType}</p>
+              <p className="font-semibold text-slate-800">{selectedBed.ward} · {selectedBed.wardType}</p>
               <p className="mt-1 text-slate-500">
                 Status: <span className="font-bold text-blue-600">{selectedBed.state}</span>
               </p>
@@ -226,7 +226,7 @@ export default function BedAllocationView() {
             {selectedBed.state === 'Maintenance' && (
               <p className="flex items-center gap-2 text-xs text-amber-700">
                 <Wrench className="h-4 w-4" />
-                Bed blocked for maintenance ΓÇö not allocatable.
+                Bed blocked for maintenance — not allocatable.
               </p>
             )}
           </div>

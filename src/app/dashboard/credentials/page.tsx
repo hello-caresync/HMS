@@ -23,7 +23,7 @@ type CredentialProfile = {
 };
 
 const MANIFEST_SUMMARY =
-  'Standalone credential manifest ┬╖ sandbox routing ┬╖ role-based access tiers ┬╖ read-only vault ┬╖ 13 Jul 2026';
+  'Standalone credential manifest · sandbox routing · role-based access tiers · read-only vault · 13 Jul 2026';
 
 const CREDENTIAL_LEDGER: CredentialProfile[] = [
   {
@@ -82,7 +82,7 @@ const CREDENTIAL_LEDGER: CredentialProfile[] = [
   },
 ];
 
-const MASKED_KEY = 'ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó';
+const MASKED_KEY = '••••••••';
 
 const INPUT_CLASS =
   'w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-950 placeholder:text-slate-500 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200';
@@ -125,13 +125,13 @@ export default function CredentialsVaultPage() {
 
   const handleResetToken = (profile: CredentialProfile) => {
     showNotice(
-      `Reset token simulated ┬╖ ${profile.systemRole} ┬╖ ${profile.username} ┬╖ sandbox only ┬╖ no backend write`,
+      `Reset token simulated · ${profile.systemRole} · ${profile.username} · sandbox only · no backend write`,
     );
   };
 
   const handleModifyScope = (profile: CredentialProfile) => {
     showNotice(
-      `Modify scope queued ┬╖ ${profile.systemRole} ┬╖ tier ${profile.authorizationTier} ┬╖ sandbox routing`,
+      `Modify scope queued · ${profile.systemRole} · tier ${profile.authorizationTier} · sandbox routing`,
     );
   };
 
@@ -148,7 +148,7 @@ export default function CredentialsVaultPage() {
               {MANIFEST_SUMMARY}
             </p>
             <p className="mt-2 font-mono text-xs font-black text-slate-950">
-              Active profiles ┬╖ {filteredLedger.length}/{CREDENTIAL_LEDGER.length} ┬╖ 2FA deployed ┬╖{' '}
+              Active profiles · {filteredLedger.length}/{CREDENTIAL_LEDGER.length} · 2FA deployed ·{' '}
               {CREDENTIAL_LEDGER.filter((r) => r.twoFactorStatus === 'Active').length}/
               {CREDENTIAL_LEDGER.length}
             </p>
@@ -194,7 +194,7 @@ export default function CredentialsVaultPage() {
                 className={`${INPUT_CLASS} pl-10`}
                 value={filterQuery}
                 onChange={(e) => setFilterQuery(e.target.value)}
-                placeholder="Search role, staff name, username, tierΓÇª"
+                placeholder="Search role, staff name, username, tier…"
                 aria-label="Filter credentials"
               />
             </div>
@@ -287,7 +287,7 @@ export default function CredentialsVaultPage() {
                           <span
                             className={`inline-flex rounded-md px-2 py-0.5 text-[10px] uppercase ${TFA_STYLES[profile.twoFactorStatus]}`}
                           >
-                            2FA ┬╖ {profile.twoFactorStatus}
+                            2FA · {profile.twoFactorStatus}
                           </span>
                         </td>
                         <td className="px-4 py-3.5">
@@ -325,7 +325,7 @@ export default function CredentialsVaultPage() {
         <div className="flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-800">
           <KeyRound className="h-4 w-4 shrink-0 text-slate-950" aria-hidden />
           <span>
-            Sandbox credential vault ┬╖ read-only manifest ┬╖ no live IAM integration ┬╖ force password
+            Sandbox credential vault · read-only manifest · no live IAM integration · force password
             rotation before production
           </span>
         </div>

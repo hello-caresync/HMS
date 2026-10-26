@@ -4,7 +4,7 @@
   description: string;
 }
 
-/** Mock ICD-10 lookup table ΓÇö substring match on clinical terms */
+/** Mock ICD-10 lookup table — substring match on clinical terms */
 export const ICD10_CATALOG: Icd10Match[] = [
   { term: 'Essential Hypertension', code: 'I10', description: 'Essential (primary) hypertension' },
   { term: 'Hypertension', code: 'I10', description: 'Essential (primary) hypertension' },

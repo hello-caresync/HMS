@@ -20,9 +20,9 @@ export default function FinanceAccountingView() {
       />
       <KpiGrid
         items={[
-          { label: 'Net Collections MTD', value: 'Γé╣18.4L', icon: DollarSign, tone: 'emerald' },
-          { label: 'Accounts Payable', value: 'Γé╣4.2L', icon: Receipt, tone: 'amber' },
-          { label: 'Accounts Receivable', value: 'Γé╣6.8L', icon: Landmark, tone: 'cyan' },
+          { label: 'Net Collections MTD', value: '₹18.4L', icon: DollarSign, tone: 'emerald' },
+          { label: 'Accounts Payable', value: '₹4.2L', icon: Receipt, tone: 'amber' },
+          { label: 'Accounts Receivable', value: '₹6.8L', icon: Landmark, tone: 'cyan' },
           { label: 'Budget Utilization', value: '72%', icon: PieChart, tone: 'indigo' },
         ]}
       />
@@ -43,8 +43,8 @@ export default function FinanceAccountingView() {
           <DataTable
             columns={['Account', 'Debit', 'Credit', 'Balance']}
             rows={[
-              ['Cash & Bank', 'Γé╣4,82,900', 'ΓÇö', 'Γé╣12.4L'],
-              ['Revenue ΓÇö OPD', 'ΓÇö', 'Γé╣2,10,000', 'Γé╣8.2L'],
+              ['Cash & Bank', '₹4,82,900', '—', '₹12.4L'],
+              ['Revenue — OPD', '—', '₹2,10,000', '₹8.2L'],
             ]}
           />
         </Panel>
@@ -54,8 +54,8 @@ export default function FinanceAccountingView() {
           <DataTable
             columns={['Line Item', 'MTD', 'YTD']}
             rows={[
-              ['Revenue', 'Γé╣18.4L', 'Γé╣1.02Cr'],
-              ['Operating Expense', 'Γé╣12.1L', 'Γé╣68L'],
+              ['Revenue', '₹18.4L', '₹1.02Cr'],
+              ['Operating Expense', '₹12.1L', '₹68L'],
               ['Net Margin', '34%', '33%'],
             ]}
           />
@@ -66,8 +66,8 @@ export default function FinanceAccountingView() {
           <DataTable
             columns={['Party', 'Type', 'Outstanding']}
             rows={[
-              ['MedSupply Co.', 'AP', 'Γé╣1.2L'],
-              ['Star Health TPA', 'AR', 'Γé╣2.4L'],
+              ['MedSupply Co.', 'AP', '₹1.2L'],
+              ['Star Health TPA', 'AR', '₹2.4L'],
             ]}
           />
         </Panel>
@@ -77,8 +77,8 @@ export default function FinanceAccountingView() {
           <DataTable
             columns={['Department', 'Budget', 'Spent', 'Variance']}
             rows={[
-              ['Radiology', 'Γé╣8L', 'Γé╣5.6L', '-Γé╣2.4L'],
-              ['Pharmacy', 'Γé╣12L', 'Γé╣11.2L', '-Γé╣0.8L'],
+              ['Radiology', '₹8L', '₹5.6L', '-₹2.4L'],
+              ['Pharmacy', '₹12L', '₹11.2L', '-₹0.8L'],
             ]}
           />
         </Panel>
@@ -87,7 +87,7 @@ export default function FinanceAccountingView() {
         <Panel title="Tax / GST Summary Tools">
           <div className="flex items-center gap-2 text-xs text-slate-300">
             <Calculator className="h-4 w-4 text-cyan-400" />
-            Output GST MTD: Γé╣1.84L | Input GST: Γé╣1.12L | Net payable: Γé╣72,000
+            Output GST MTD: ₹1.84L | Input GST: ₹1.12L | Net payable: ₹72,000
           </div>
         </Panel>
       )}

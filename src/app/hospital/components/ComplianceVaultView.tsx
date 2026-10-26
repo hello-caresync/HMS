@@ -50,7 +50,7 @@ export default function ComplianceVaultView({
               </span>
               <h4 className={`${featureHeaderClassName} mt-0.5`}>{doc.title}</h4>
               <p className={bodyTextClassName}>
-                {doc.vendorName} ┬╖ {doc.documentType}
+                {doc.vendorName} · {doc.documentType}
               </p>
             </div>
             <StatusBadge label={doc.status} />

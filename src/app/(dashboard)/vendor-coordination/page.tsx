@@ -1,7 +1,7 @@
 ﻿import VendorCoordinationConsole from '../../supplychain/vendor/components/VendorCoordinationConsole';
 
 export const metadata = {
-  title: 'Vendor Coordination ┬╖ CuraSync ERP',
+  title: 'Vendor Coordination · CuraSync ERP',
   description: 'Supplier agreements and invoice settlement tracking',
 };
 

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 function HospitalLayoutFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50">
-      <p className="text-sm font-medium text-stone-500">Loading hospital workspaceΓÇª</p>
+      <p className="text-sm font-medium text-stone-500">Loading hospital workspace…</p>
     </div>
   );
 }

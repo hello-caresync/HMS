@@ -196,7 +196,7 @@ export function VendorDetailDrawer({ vendorName, category, rating, onClose }: { 
         <SecureSupplierPlaceholder verified />
         <div className="rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-2 text-[9px] text-slate-600">
           <p className="font-bold uppercase text-slate-500">Commercial Credentials</p>
-          <p className="mt-1">GST ┬╖ PAN ┬╖ Drug License ┬╖ MSME ┬╖ Bank ΓÇö [Supplier Documents Verified/Masked for Security]</p>
+          <p className="mt-1">GST · PAN · Drug License · MSME · Bank — [Supplier Documents Verified/Masked for Security]</p>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {[

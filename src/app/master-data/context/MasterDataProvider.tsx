@@ -138,12 +138,12 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const getDepartmentName = useCallback(
-    (id: string) => data.departments.find((d) => d.id === id)?.name ?? 'ΓÇö',
+    (id: string) => data.departments.find((d) => d.id === id)?.name ?? '—',
     [data.departments],
   );
 
   const getVendorName = useCallback(
-    (id: string) => data.vendors.find((v) => v.id === id)?.vendorName ?? 'ΓÇö',
+    (id: string) => data.vendors.find((v) => v.id === id)?.vendorName ?? '—',
     [data.vendors],
   );
 

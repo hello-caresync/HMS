@@ -227,7 +227,7 @@ export default function PatientPortalPage() {
       if (error) throw error;
 
       toast.success(
-        `Booked ${selectedDoctor.full_name} ┬╖ ${formatConsultationFee(selectedDoctor.consultation_fee)}`,
+        `Booked ${selectedDoctor.full_name} · ${formatConsultationFee(selectedDoctor.consultation_fee)}`,
       );
       setPatientName(session?.patient_name || '');
       setPatientPhone(sanitizePhoneDigits(session?.phone ?? ''));
@@ -299,7 +299,7 @@ export default function PatientPortalPage() {
         <div className="sm:text-right">
           <h1 className="text-2xl font-black text-[#0E2924]">SmartQ Patient Booking</h1>
           <p className="text-xs font-bold text-[#227B6B]">
-            {HOSPITAL_DEPARTMENTS.length} departments ┬╖ {doctorList.length} specialists
+            {HOSPITAL_DEPARTMENTS.length} departments · {doctorList.length} specialists
           </p>
         </div>
       </div>
@@ -307,7 +307,7 @@ export default function PatientPortalPage() {
       {offeredAppointment ? (
         <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 space-y-4">
           <div>
-            <h2 className="text-sm font-black text-amber-900">Queue delay ΓÇö reschedule offered</h2>
+            <h2 className="text-sm font-black text-amber-900">Queue delay — reschedule offered</h2>
             <p className="mt-1 text-xs text-amber-800">
               Your {offeredAppointment.slot_time || 'current'} slot with {offeredAppointment.doctor_name} has waited past 45 minutes.
               Keep waiting, cancel, or move to the next open slot. Consultation fees will not be re-charged.
@@ -336,7 +336,7 @@ export default function PatientPortalPage() {
               onClick={() => void handleRescheduleChoice('rebook')}
               className="rounded-2xl bg-[#113831] py-2.5 text-[11px] font-black uppercase text-white disabled:opacity-50"
             >
-              {isResolvingReschedule ? 'UpdatingΓÇª' : 'Rebook next slot'}
+              {isResolvingReschedule ? 'Updating…' : 'Rebook next slot'}
             </button>
           </div>
         </div>
@@ -367,7 +367,9 @@ export default function PatientPortalPage() {
               max={120}
               disabled={isBookingAppointment}
               value={age}
-              onChange={(e) => setAge(e.target.value)}
+              onChange={(e) => setAge(e.target.value.replace(/\D/g, '').slice(0, 3))}
+              inputMode="numeric"
+              maxLength={3}
               placeholder="Enter age"
               className="mt-1 w-full rounded-2xl border border-[#D5E8E3] p-3 text-xs font-bold text-[#0E2924]"
             />
@@ -430,7 +432,7 @@ export default function PatientPortalPage() {
             className="mt-1 w-full rounded-2xl border border-[#D5E8E3] p-3 text-xs font-black text-[#113831]"
           >
             {isLoadingDoctors ? (
-              <option value="">Loading specialistsΓÇª</option>
+              <option value="">Loading specialists…</option>
             ) : doctorsInDepartment.length === 0 ? (
               <option value="" disabled>
                 No doctors assigned to {selectedDepartment}
@@ -460,7 +462,7 @@ export default function PatientPortalPage() {
           {isBookingAppointment ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              BookingΓÇª
+              Booking…
             </>
           ) : (
             'Confirm appointment'

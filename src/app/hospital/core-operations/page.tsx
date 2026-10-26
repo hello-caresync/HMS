@@ -126,13 +126,13 @@ const SCHEDULING_QUEUE = [
 const BED_MATRIX: BedAllocation[] = [
   { id: 'bed-01', uhid: 'UHID-NXR-IPD-01', ward: 'Med-Surg A', bed: 'A-204', patient: 'A.P.', status: 'Occupied' },
   { id: 'bed-02', uhid: 'UHID-NXR-IPD-02', ward: 'ICU Wing', bed: 'ICU-A-06', patient: 'M.J.', status: 'Transfer Pending' },
-  { id: 'bed-03', uhid: 'UHID-NXR-IPD-03', ward: 'Med-Surg B', bed: 'B-118', patient: 'ΓÇö', status: 'Available' },
+  { id: 'bed-03', uhid: 'UHID-NXR-IPD-03', ward: 'Med-Surg B', bed: 'B-118', patient: '—', status: 'Available' },
   { id: 'bed-04', uhid: 'UHID-NXR-IPD-04', ward: 'Pediatrics', bed: 'P-12', patient: 'L.N.', status: 'Occupied' },
 ];
 
 const TRIAGE_BOARD: TriageEntry[] = [
-  { id: 'er-01', token: 'ER-088', level: 'Red', complaint: 'Polytrauma ┬╖ MVC', arrivalTime: '14:38' },
-  { id: 'er-02', token: 'ER-089', level: 'Red', complaint: 'Chest pain ┬╖ STEMI protocol', arrivalTime: '14:35' },
+  { id: 'er-01', token: 'ER-088', level: 'Red', complaint: 'Polytrauma · MVC', arrivalTime: '14:38' },
+  { id: 'er-02', token: 'ER-089', level: 'Red', complaint: 'Chest pain · STEMI protocol', arrivalTime: '14:35' },
   { id: 'er-03', token: 'ER-090', level: 'Yellow', complaint: 'Abdominal pain', arrivalTime: '14:29' },
   { id: 'er-04', token: 'ER-091', level: 'Green', complaint: 'Minor laceration', arrivalTime: '14:22' },
 ];
@@ -142,7 +142,7 @@ const OT_SCHEDULE: OtScheduleEntry[] = [
     id: 'ot-01',
     theatre: 'OT-2',
     surgeon: 'Dr. Khan',
-    procedure: 'Open reduction ┬╖ femur',
+    procedure: 'Open reduction · femur',
     startTime: '13:45',
     status: 'In Progress',
   },
@@ -150,7 +150,7 @@ const OT_SCHEDULE: OtScheduleEntry[] = [
     id: 'ot-02',
     theatre: 'OT-4',
     surgeon: 'Dr. Sharma',
-    procedure: 'CABG ┬╖ pre-op prep',
+    procedure: 'CABG · pre-op prep',
     startTime: '15:00',
     status: 'Pre-Op',
   },
@@ -158,7 +158,7 @@ const OT_SCHEDULE: OtScheduleEntry[] = [
     id: 'ot-03',
     theatre: 'OT-1',
     surgeon: 'Dr. Iyer',
-    procedure: 'Appendectomy ┬╖ recovery',
+    procedure: 'Appendectomy · recovery',
     startTime: '12:30',
     status: 'Recovery',
   },
@@ -171,7 +171,7 @@ const BILLING_LEDGER: BillingLineItem[] = [
     patient: 'R.K.',
     identityRef: '[Identity Data Redacted]',
     serviceLine: 'OPD Consultation + Lab Panel',
-    amount: 'Γé╣ 4,850',
+    amount: '₹ 4,850',
     status: 'Settled',
   },
   {
@@ -179,8 +179,8 @@ const BILLING_LEDGER: BillingLineItem[] = [
     uhid: 'UHID-NXR-20260714-B3C9',
     patient: 'S.M.',
     identityRef: '[Verification Omitted]',
-    serviceLine: 'IPD Ward ┬╖ Cardiology ┬╖ 3 days',
-    amount: 'Γé╣ 68,200',
+    serviceLine: 'IPD Ward · Cardiology · 3 days',
+    amount: '₹ 68,200',
     status: 'TPA Hold',
   },
   {
@@ -189,7 +189,7 @@ const BILLING_LEDGER: BillingLineItem[] = [
     patient: 'A.P.',
     identityRef: '[Identity Data Redacted]',
     serviceLine: 'OT Procedure + Pharmacy dispense',
-    amount: 'Γé╣ 1,42,500',
+    amount: '₹ 1,42,500',
     status: 'Pending',
   },
 ];
@@ -265,7 +265,7 @@ export default function CoreOperationsTerminalPage() {
             Patient Lifecycle Transactional Pipeline
           </h1>
           <p className="mt-1 max-w-3xl text-base font-medium text-slate-500">
-            11-stage sequential clinical workflow ┬╖ reactive stage routing ┬╖ integrated back-office dispatch
+            11-stage sequential clinical workflow · reactive stage routing · integrated back-office dispatch
           </p>
         </div>
 
@@ -280,10 +280,10 @@ export default function CoreOperationsTerminalPage() {
         </div>
       </header>
 
-      {/* 2. Interactive clinical workflow timeline tracker ΓÇö 11 stages */}
+      {/* 2. Interactive clinical workflow timeline tracker — 11 stages */}
       <section className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
         <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          Sequential Processing Route ┬╖ Stage {activeStageMeta.step} of 11
+          Sequential Processing Route · Stage {activeStageMeta.step} of 11
         </p>
         <div className="custom-scrollbar flex gap-1 overflow-x-auto pb-1">
           {PIPELINE_STAGES.map((stage, idx) => {
@@ -331,7 +331,7 @@ export default function CoreOperationsTerminalPage() {
           {activeStageMeta.step < 11 ? (
             <>
               {' '}
-              Γ₧ö Next:{' '}
+              ➔ Next:{' '}
               <span className="font-bold text-[#008588]">
                 {PIPELINE_STAGES[activeStageMeta.step]?.label ?? 'Complete'}
               </span>
@@ -342,7 +342,7 @@ export default function CoreOperationsTerminalPage() {
 
       {/* 3. Dense transactional data stage workspaces */}
       <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
-        {/* Stage 1 ΓÇö Patient Management */}
+        {/* Stage 1 — Patient Management */}
         {activeStage === 'patient-mgmt' ? (
           <div>
             <StageWorkspaceHeader
@@ -376,12 +376,12 @@ export default function CoreOperationsTerminalPage() {
           </div>
         ) : null}
 
-        {/* Stage 2 ΓÇö Scheduling */}
+        {/* Stage 2 — Scheduling */}
         {activeStage === 'scheduling' ? (
           <div>
             <StageWorkspaceHeader
               title="Appointment Scheduling Dispatch"
-              description="Token allocation ┬╖ provider blocks ┬╖ slot confirmation"
+              description="Token allocation · provider blocks · slot confirmation"
             />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {SCHEDULING_QUEUE.map((row, idx) => (
@@ -399,7 +399,7 @@ export default function CoreOperationsTerminalPage() {
           </div>
         ) : null}
 
-        {/* Stages 3 & 4 ΓÇö OPD Consultation & EMR */}
+        {/* Stages 3 & 4 — OPD Consultation & EMR */}
         {activeStage === 'opd-consultation' || activeStage === 'emr-updated' ? (
           <div>
             <StageWorkspaceHeader
@@ -408,7 +408,7 @@ export default function CoreOperationsTerminalPage() {
                   ? 'OPD Consultation Workspace'
                   : 'EMR Clinical Documentation Workspace'
               }
-              description="Live vitals capture ┬╖ consultation notes ┬╖ automated utility dispatch routing"
+              description="Live vitals capture · consultation notes · automated utility dispatch routing"
             />
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
               <div className="space-y-4 lg:col-span-5">
@@ -446,7 +446,7 @@ export default function CoreOperationsTerminalPage() {
                     </div>
                     <div>
                       <label htmlFor="vital-temp" className={LABEL_CLASS}>
-                        Temperature (┬░F)
+                        Temperature (°F)
                       </label>
                       <input
                         id="vital-temp"
@@ -458,7 +458,7 @@ export default function CoreOperationsTerminalPage() {
                     </div>
                     <div>
                       <label htmlFor="vital-spo2" className={LABEL_CLASS}>
-                        SpOΓéé (%)
+                        SpO₂ (%)
                       </label>
                       <input
                         id="vital-spo2"
@@ -517,7 +517,7 @@ export default function CoreOperationsTerminalPage() {
                 {activeStage === 'emr-updated' ? (
                   <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-[#00A481]">
                     <FileText className="h-3.5 w-3.5" aria-hidden />
-                    EMR chart sync ready ┬╖ vitals locked to encounter REF-OPD-102
+                    EMR chart sync ready · vitals locked to encounter REF-OPD-102
                   </p>
                 ) : null}
               </div>
@@ -525,12 +525,12 @@ export default function CoreOperationsTerminalPage() {
           </div>
         ) : null}
 
-        {/* Stage 5 ΓÇö Lab/Rad/Pharmacy */}
+        {/* Stage 5 — Lab/Rad/Pharmacy */}
         {activeStage === 'lab-rad-pharmacy' ? (
           <div>
             <StageWorkspaceHeader
               title="Diagnostics & Pharmacy Utility Dispatch"
-              description="Cross-department order routing ┬╖ result synchronizer status"
+              description="Cross-department order routing · result synchronizer status"
             />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {DISPATCH_UTILITIES.map((util, idx) => {
@@ -548,7 +548,7 @@ export default function CoreOperationsTerminalPage() {
                     <Icon className={`h-5 w-5 ${util.color}`} aria-hidden />
                     <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-slate-700">{util.label}</p>
                     <p className="mt-1 text-base font-medium text-slate-500">
-                      {active ? 'Order dispatched ┬╖ awaiting result sync' : 'No active dispatch'}
+                      {active ? 'Order dispatched · awaiting result sync' : 'No active dispatch'}
                     </p>
                     <span
                       className={`mt-2 inline-flex rounded-md px-2 py-0.5 text-xs font-semibold uppercase ${
@@ -566,16 +566,16 @@ export default function CoreOperationsTerminalPage() {
           </div>
         ) : null}
 
-        {/* Stages 6 & 7 ΓÇö Admission & IPD */}
+        {/* Stages 6 & 7 — Admission & IPD */}
         {activeStage === 'admission-trigger' || activeStage === 'ipd-care' ? (
           <div className="space-y-5">
             <StageWorkspaceHeader
               title={
                 activeStage === 'admission-trigger'
                   ? 'Admission Trigger & Routing Gate'
-                  : 'IPD Care ┬╖ Bed Allocation Matrix'
+                  : 'IPD Care · Bed Allocation Matrix'
               }
-              description="Ward transfer telemetry ┬╖ occupancy synchronizer ┬╖ conditional discharge routing"
+              description="Ward transfer telemetry · occupancy synchronizer · conditional discharge routing"
             />
 
             {activeStage === 'admission-trigger' ? (
@@ -594,7 +594,7 @@ export default function CoreOperationsTerminalPage() {
                         : 'border-slate-200/80 bg-white text-slate-600 hover:border-[#008588]/40'
                     }`}
                   >
-                    Yes ΓåÆ IPD Management Wing
+                    Yes → IPD Management Wing
                   </button>
                   <button
                     type="button"
@@ -605,7 +605,7 @@ export default function CoreOperationsTerminalPage() {
                         : 'border-slate-200/80 bg-white text-slate-600 hover:border-[#00A481]/40'
                     }`}
                   >
-                    No ΓåÆ Discharge Desk
+                    No → Discharge Desk
                   </button>
                 </div>
                 {admissionRequired !== null ? (
@@ -615,8 +615,8 @@ export default function CoreOperationsTerminalPage() {
                       Routing visualizer:{' '}
                       <span className="font-bold text-[#00758C]">
                         {admissionRequired
-                          ? 'Stage 7 ┬╖ IPD Care ΓåÆ Bed Allocation Matrix'
-                          : 'Stage 10 ┬╖ Discharge Desk ΓåÆ Final clearance'}
+                          ? 'Stage 7 · IPD Care → Bed Allocation Matrix'
+                          : 'Stage 10 · Discharge Desk → Final clearance'}
                       </span>
                     </p>
                   </div>
@@ -657,14 +657,14 @@ export default function CoreOperationsTerminalPage() {
           </div>
         ) : null}
 
-        {/* Stages 8 & 9 ΓÇö Emergency & OT */}
+        {/* Stages 8 & 9 — Emergency & OT */}
         {activeStage === 'emergency-casualty' || activeStage === 'ot-coordination' ? (
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             {activeStage === 'emergency-casualty' ? (
               <div>
                 <StageWorkspaceHeader
-                  title="Emergency Casualty ┬╖ Triage Telemetry"
-                  description="High-priority casualty intake ┬╖ triage level distribution"
+                  title="Emergency Casualty · Triage Telemetry"
+                  description="High-priority casualty intake · triage level distribution"
                 />
                 <ul className="space-y-2">
                   {TRIAGE_BOARD.map((entry, idx) => (
@@ -687,8 +687,8 @@ export default function CoreOperationsTerminalPage() {
             {activeStage === 'ot-coordination' ? (
               <div className="xl:col-span-2">
                 <StageWorkspaceHeader
-                  title="OT Coordination ┬╖ Surgical Theatre Log"
-                  description="Active surgeon schedules ┬╖ theatre timing matrix"
+                  title="OT Coordination · Surgical Theatre Log"
+                  description="Active surgeon schedules · theatre timing matrix"
                 />
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px] border-collapse text-left text-sm">
@@ -746,12 +746,12 @@ export default function CoreOperationsTerminalPage() {
           </div>
         ) : null}
 
-        {/* Stage 10 ΓÇö Discharge Desk */}
+        {/* Stage 10 — Discharge Desk */}
         {activeStage === 'discharge-desk' ? (
           <div>
             <StageWorkspaceHeader
-              title="Discharge Desk ┬╖ Clearance Pipeline"
-              description="Final clinical clearance ┬╖ pharmacy reconciliation ┬╖ billing handoff trigger"
+              title="Discharge Desk · Clearance Pipeline"
+              description="Final clinical clearance · pharmacy reconciliation · billing handoff trigger"
             />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
@@ -771,12 +771,12 @@ export default function CoreOperationsTerminalPage() {
           </div>
         ) : null}
 
-        {/* Stage 11 ΓÇö Integrated Billing */}
+        {/* Stage 11 — Integrated Billing */}
         {activeStage === 'integrated-billing' ? (
           <div>
             <StageWorkspaceHeader
-              title="Integrated Billing Desk ┬╖ Invoice Ledger"
-              description="Accumulated patient costs ┬╖ TPA settlement tracking ┬╖ redacted identity mapping"
+              title="Integrated Billing Desk · Invoice Ledger"
+              description="Accumulated patient costs · TPA settlement tracking · redacted identity mapping"
             />
             <div className="overflow-x-auto">
               <table className="w-full min-w-[880px] border-collapse text-left text-sm">

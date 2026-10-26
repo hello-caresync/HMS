@@ -27,7 +27,7 @@ export default function GenericReportPanel() {
               Operational Summary
             </p>
             <p className="text-[11px] font-bold text-slate-900">
-              {DIMENSION_LABELS[activeDimension]} ┬╖ Detail Ledger
+              {DIMENSION_LABELS[activeDimension]} · Detail Ledger
             </p>
           </div>
         </div>
@@ -81,7 +81,7 @@ export default function GenericReportPanel() {
       <div className="grid gap-2 sm:grid-cols-2">
         <SummaryCard
           title="Data Freshness"
-          value="Live ┬╖ 30s sync"
+          value="Live · 30s sync"
           detail="Last ETL pipeline run: 09 Jul 2026 16:28 IST"
         />
         <SummaryCard

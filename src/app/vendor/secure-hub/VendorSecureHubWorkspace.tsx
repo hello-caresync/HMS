@@ -230,7 +230,7 @@ export default function VendorSecureHubWorkspace() {
 
     const newInv: GeneratedInvoice = {
       id: `INV-CURA-${Math.floor(2000 + Math.random() * 7000)}`,
-      poReferenceId: po.id ?? 'ΓÇö',
+      poReferenceId: po.id ?? '—',
       hospitalName: po.hospitalName ?? 'Unknown Hospital',
       baseAmount: base,
       gstAmount: gst,
@@ -376,21 +376,21 @@ export default function VendorSecureHubWorkspace() {
               href={APP_ROUTES.vendorGateway}
               className="text-xs font-semibold text-white/70 transition-colors hover:text-white"
             >
-              ΓåÉ Supplier gateway
+              ← Supplier gateway
             </Link>
-            <span className="hidden text-white/30 sm:inline">┬╖</span>
+            <span className="hidden text-white/30 sm:inline">·</span>
             <Link
               href={APP_ROUTES.hospital}
               className="text-xs font-semibold text-white/70 transition-colors hover:text-white"
             >
-              Hospital procurement console ΓåÆ
+              Hospital procurement console →
             </Link>
-            <span className="hidden text-white/30 sm:inline">┬╖</span>
+            <span className="hidden text-white/30 sm:inline">·</span>
             <Link
               href={APP_ROUTES.patient}
               className="text-xs font-semibold text-white/70 transition-colors hover:text-white"
             >
-              Patient prescription console ΓåÆ
+              Patient prescription console →
             </Link>
           </div>
         </div>

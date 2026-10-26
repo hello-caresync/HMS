@@ -76,7 +76,7 @@ export default function EmergencyView() {
           <DataTable
             columns={['Field', 'Value']}
             rows={[
-              ['Mechanism', 'RTA ΓÇö high velocity impact'],
+              ['Mechanism', 'RTA — high velocity impact'],
               ['GCS on arrival', '13'],
               ['Primary survey', 'Airway patent, breathing labored'],
               ['Team lead', 'Dr. Vikram Menon'],
@@ -109,7 +109,7 @@ export default function EmergencyView() {
             rows={[
               ['AMB-07', 'En route', '6 min', 'ER Bay 2'],
               ['AMB-12', 'At scene', '14 min', 'ER Bay 1'],
-              ['AMB-03', 'Available', 'ΓÇö', 'Standby'],
+              ['AMB-03', 'Available', '—', 'Standby'],
             ]}
           />
         </Panel>
@@ -119,11 +119,11 @@ export default function EmergencyView() {
           <ul className="space-y-2 text-xs">
             <li className="flex items-center gap-2 rounded border border-rose-900/40 bg-rose-500/10 p-2 text-rose-300">
               <ShieldAlert className="h-4 w-4" />
-              Penicillin allergy ΓÇö ER-01
+              Penicillin allergy — ER-01
             </li>
             <li className="flex items-center gap-2 rounded border border-amber-900/40 bg-amber-500/10 p-2 text-amber-300">
               <Clock className="h-4 w-4" />
-              Anticoagulant therapy ΓÇö ER-02
+              Anticoagulant therapy — ER-02
             </li>
           </ul>
         </Panel>

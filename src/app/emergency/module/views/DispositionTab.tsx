@@ -20,7 +20,7 @@ import { ErPanel, SecureIdentityPlaceholder, StatusPill } from '../components/em
 export default function DispositionTab() {
   return (
     <div className="space-y-2">
-      <ErPanel title="Medico-Legal Cases (MLC) Ledger" subtitle="Police notifications ┬╖ incident logs ┬╖ chain of custody" icon={FileWarning}>
+      <ErPanel title="Medico-Legal Cases (MLC) Ledger" subtitle="Police notifications · incident logs · chain of custody" icon={FileWarning}>
         <SecureIdentityPlaceholder verified />
         <div className="mt-2 space-y-2">
           {MOCK_MLC_CASES.map((mlc) => (
@@ -28,7 +28,7 @@ export default function DispositionTab() {
               <div className="mb-1 flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="text-[11px] font-bold text-[#0F172A]">
-                    {mlc.caseNumber} ┬╖ {mlc.patientName}
+                    {mlc.caseNumber} · {mlc.patientName}
                   </p>
                   <p className="font-mono text-[8px] text-slate-500">
                     {mlc.uhid.startsWith('TMP') ? 'Temporary ID Generated' : mlc.uhid}
@@ -48,11 +48,11 @@ export default function DispositionTab() {
         </div>
       </ErPanel>
 
-      <ErPanel title="Transfer & Emergency Billing" subtitle="Admit IPD ┬╖ ICU ┬╖ OT ┬╖ discharge ┬╖ charge collection" icon={Receipt}>
+      <ErPanel title="Transfer & Emergency Billing" subtitle="Admit IPD · ICU · OT · discharge · charge collection" icon={Receipt}>
         <table className="w-full min-w-[680px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
-              {['Transfer ID', 'Patient', 'Disposition', 'From ΓåÆ To', 'Status', 'Emergency Charges'].map((h) => (
+              {['Transfer ID', 'Patient', 'Disposition', 'From → To', 'Status', 'Emergency Charges'].map((h) => (
                 <th key={h} className="px-1.5 py-1 text-[8px] font-bold uppercase text-slate-500">{h}</th>
               ))}
             </tr>
@@ -67,7 +67,7 @@ export default function DispositionTab() {
                 </td>
                 <td className="px-1.5 py-1 text-[8px] font-medium text-violet-700">{t.disposition}</td>
                 <td className="px-1.5 py-1 text-[8px] text-slate-600">
-                  {t.fromLocation} ΓåÆ {t.toLocation}
+                  {t.fromLocation} → {t.toLocation}
                 </td>
                 <td className="px-1.5 py-1"><StatusPill status={t.status} /></td>
                 <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums">{formatInr(t.charges)}</td>

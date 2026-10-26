@@ -252,10 +252,10 @@ export const MOCK_BED_ASSETS: BedAsset[] = [
 ];
 
 export const MOCK_NURSE_ASSIGNMENTS: NurseAssignment[] = [
-  { id: 'na1', nurseName: 'Sister Meera Iyer', station: 'NS-3A East', shift: 'Day ┬╖ 07:00ΓÇô15:00', patientsAssigned: 8, ward: 'Cardiology 3A' },
-  { id: 'na2', nurseName: 'Sister Susan Joseph', station: 'NS-ICU Central', shift: 'Day ┬╖ 07:00ΓÇô19:00', patientsAssigned: 4, ward: 'ICU-4' },
-  { id: 'na3', nurseName: 'Sister Lakshmi N.', station: 'NS-6B West', shift: 'Day ┬╖ 07:00ΓÇô15:00', patientsAssigned: 10, ward: 'Orthopedics 6B' },
-  { id: 'na4', nurseName: 'Sister Priya Menon', station: 'NS-2C North', shift: 'Evening ┬╖ 15:00ΓÇô23:00', patientsAssigned: 9, ward: 'General Medicine 2C' },
+  { id: 'na1', nurseName: 'Sister Meera Iyer', station: 'NS-3A East', shift: 'Day · 07:00–15:00', patientsAssigned: 8, ward: 'Cardiology 3A' },
+  { id: 'na2', nurseName: 'Sister Susan Joseph', station: 'NS-ICU Central', shift: 'Day · 07:00–19:00', patientsAssigned: 4, ward: 'ICU-4' },
+  { id: 'na3', nurseName: 'Sister Lakshmi N.', station: 'NS-6B West', shift: 'Day · 07:00–15:00', patientsAssigned: 10, ward: 'Orthopedics 6B' },
+  { id: 'na4', nurseName: 'Sister Priya Menon', station: 'NS-2C North', shift: 'Evening · 15:00–23:00', patientsAssigned: 9, ward: 'General Medicine 2C' },
 ];
 
 export const MOCK_SHIFT_HANDOVERS: ShiftHandover[] = [
@@ -272,26 +272,26 @@ export const MOCK_MED_CHECKS: MedAdminCheck[] = [
 ];
 
 export const MOCK_VITALS: VitalRecord[] = [
-  { id: 'v1', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', lastRecorded: '2026-07-18 09:00', bp: '128/82', pulse: '76', temp: '98.4┬░F', spo2: '97%', compliance: 'Compliant' },
-  { id: 'v2', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', lastRecorded: '2026-07-18 09:15', bp: '168/102', pulse: '92', temp: '99.1┬░F', spo2: '94%', compliance: 'Due Soon' },
-  { id: 'v3', patientName: 'Sanjay Rao', uhid: 'NX-2026-000365', lastRecorded: '2026-07-18 06:30', bp: '142/88', pulse: '84', temp: '100.4┬░F', spo2: '96%', compliance: 'Overdue' },
+  { id: 'v1', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', lastRecorded: '2026-07-18 09:00', bp: '128/82', pulse: '76', temp: '98.4°F', spo2: '97%', compliance: 'Compliant' },
+  { id: 'v2', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', lastRecorded: '2026-07-18 09:15', bp: '168/102', pulse: '92', temp: '99.1°F', spo2: '94%', compliance: 'Due Soon' },
+  { id: 'v3', patientName: 'Sanjay Rao', uhid: 'NX-2026-000365', lastRecorded: '2026-07-18 06:30', bp: '142/88', pulse: '84', temp: '100.4°F', spo2: '96%', compliance: 'Overdue' },
 ];
 
 export const MOCK_CARE_ALERTS: CareAlert[] = [
-  { id: 'ca1', patientName: 'Sanjay Rao', type: 'Fall Risk', detail: 'Morse Fall Scale 65 ΓÇö high risk, bed alarm active', severity: 'High', status: 'Active' },
-  { id: 'ca2', patientName: 'Deepa Singh', type: 'Infection Control', detail: 'Contact isolation ΓÇö MRSA screen positive', severity: 'High', status: 'Acknowledged' },
-  { id: 'ca3', patientName: 'Arjun Das', type: 'Diet Order', detail: 'Diabetic soft diet ΓÇö lunch pending kitchen dispatch', severity: 'Medium', status: 'Active' },
+  { id: 'ca1', patientName: 'Sanjay Rao', type: 'Fall Risk', detail: 'Morse Fall Scale 65 — high risk, bed alarm active', severity: 'High', status: 'Active' },
+  { id: 'ca2', patientName: 'Deepa Singh', type: 'Infection Control', detail: 'Contact isolation — MRSA screen positive', severity: 'High', status: 'Acknowledged' },
+  { id: 'ca3', patientName: 'Arjun Das', type: 'Diet Order', detail: 'Diabetic soft diet — lunch pending kitchen dispatch', severity: 'Medium', status: 'Active' },
 ];
 
 export const MOCK_DIET_ORDERS: DietOrder[] = [
   { id: 'do1', patientName: 'Rahul Sharma', dietType: 'Cardiac Low-Sodium', mealSlot: 'Lunch', status: 'Served' },
   { id: 'do2', patientName: 'Arjun Das', dietType: 'Diabetic Soft', mealSlot: 'Lunch', status: 'Pending' },
-  { id: 'do3', patientName: 'Meera Krishnan', dietType: 'NPO ΓÇö ICU', mealSlot: 'All Meals', status: 'NPO' },
+  { id: 'do3', patientName: 'Meera Krishnan', dietType: 'NPO — ICU', mealSlot: 'All Meals', status: 'NPO' },
 ];
 
 export const INITIAL_MOVEMENTS: PatientMovement[] = [
-  { id: 'mv1', patientName: 'Arjun Das', uhid: 'NX-2026-000377', type: 'Diagnostic Transfer', fromLocation: 'Ward 6B Bed 08', toLocation: 'Radiology ΓÇö MRI Suite', status: 'Scheduled', scheduledAt: '2026-07-18T10:30:00' },
-  { id: 'mv2', patientName: 'Somnath Reddy', uhid: 'NX-2026-000419', type: 'OT Transfer', fromLocation: 'Ward 6B Bed 10', toLocation: 'OT-3 ΓÇö Orthopedic Theatre', status: 'In Transit', scheduledAt: '2026-07-18T09:45:00' },
+  { id: 'mv1', patientName: 'Arjun Das', uhid: 'NX-2026-000377', type: 'Diagnostic Transfer', fromLocation: 'Ward 6B Bed 08', toLocation: 'Radiology — MRI Suite', status: 'Scheduled', scheduledAt: '2026-07-18T10:30:00' },
+  { id: 'mv2', patientName: 'Somnath Reddy', uhid: 'NX-2026-000419', type: 'OT Transfer', fromLocation: 'Ward 6B Bed 10', toLocation: 'OT-3 — Orthopedic Theatre', status: 'In Transit', scheduledAt: '2026-07-18T09:45:00' },
   { id: 'mv3', patientName: 'Sanjay Rao', uhid: 'NX-2026-000365', type: 'ICU Transfer', fromLocation: 'Ward 2C Bed 04', toLocation: 'ICU-4 Bed 05', status: 'Pending Approval', scheduledAt: '2026-07-18T11:00:00' },
   { id: 'mv4', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', type: 'Ward Transfer', fromLocation: 'ER Hold T-4', toLocation: 'ICU-4 Bed 02', status: 'Completed', scheduledAt: '2026-07-18T06:15:00' },
 ];
@@ -330,7 +330,7 @@ export const INITIAL_DISCHARGE_CLEARANCE: DischargeClearance[] = [
       { name: 'Medical Clearance', status: 'Under Review', owner: 'Dr. Kapoor' },
       { name: 'Nursing Clearance', status: 'Pending', owner: 'Sister Lakshmi N.' },
       { name: 'Pharmacy Clearance', status: 'Pending', owner: 'Pharmacy Desk' },
-      { name: 'Billing Clearance', status: 'Blocked', owner: 'Outstanding Γé╣8,400' },
+      { name: 'Billing Clearance', status: 'Blocked', owner: 'Outstanding ₹8,400' },
       { name: 'Final Bill Status', status: 'Pending', owner: 'Finance' },
     ],
   },

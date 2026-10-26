@@ -52,7 +52,7 @@ export default function CentralPharmacyPage() {
             quantity: qty,
           }),
       );
-      toast.success('Prescription dispensed ΓÇö patient notified');
+      toast.success('Prescription dispensed — patient notified');
       setSelectedRx(null);
       setSelectedItem(null);
       void load();
@@ -64,7 +64,7 @@ export default function CentralPharmacyPage() {
   return (
     <HospitalOpsShell
       title="Central Pharmacy Workstation"
-      subtitle="Ingest Doctor App prescriptions ┬╖ validate stock ┬╖ batch/expiry check ┬╖ decrement inventory"
+      subtitle="Ingest Doctor App prescriptions · validate stock · batch/expiry check · decrement inventory"
       actions={
         <button type="button" className={hospitalOpsClasses.btnPrimary} onClick={() => void dispense()}>
           Dispense Selected
@@ -122,7 +122,7 @@ export default function CentralPharmacyPage() {
                     </span>
                   </div>
                   <p className="text-[10px] text-[#52796F] mt-1">
-                    Batch {item.batch_number ?? 'ΓÇö'} ┬╖ Exp {item.expiry_date ?? 'ΓÇö'}
+                    Batch {item.batch_number ?? '—'} · Exp {item.expiry_date ?? '—'}
                   </p>
                 </button>
               );

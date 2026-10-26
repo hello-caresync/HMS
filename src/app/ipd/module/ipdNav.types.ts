@@ -11,9 +11,9 @@ export type IpdModalType =
   | null;
 
 export const IPD_WORKSPACE_TABS: { id: IpdWorkspaceTab; label: string; description: string }[] = [
-  { id: 'console', label: 'Operational Console & Census', description: 'Census KPIs ┬╖ inpatient directory ┬╖ quick actions' },
-  { id: 'ward', label: 'Ward Capacity & Nursing Stations', description: 'Bed map ┬╖ nursing ┬╖ vitals ┬╖ movement tracker' },
-  { id: 'discharge', label: 'Discharge Coordination & Finance', description: 'Billing ledger ┬╖ clearance matrix ┬╖ analytics' },
+  { id: 'console', label: 'Operational Console & Census', description: 'Census KPIs · inpatient directory · quick actions' },
+  { id: 'ward', label: 'Ward Capacity & Nursing Stations', description: 'Bed map · nursing · vitals · movement tracker' },
+  { id: 'discharge', label: 'Discharge Coordination & Finance', description: 'Billing ledger · clearance matrix · analytics' },
 ];
 
 export type DirectoryGroupBy = 'ward' | 'room' | 'bed';

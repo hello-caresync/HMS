@@ -20,14 +20,14 @@ export default function ThreeWayMatchView({ po }: ThreeWayMatchViewProps) {
 
   const columns = [
     {
-      title: '1 ┬╖ Purchase Order',
+      title: '1 · Purchase Order',
       subtitle: po.poNumber,
       qty: poQty,
       editable: false,
       value: poQty,
     },
     {
-      title: '2 ┬╖ Goods Receipt (GRN)',
+      title: '2 · Goods Receipt (GRN)',
       subtitle: 'Receiving dock count',
       qty: grnQty,
       editable: true,
@@ -35,7 +35,7 @@ export default function ThreeWayMatchView({ po }: ThreeWayMatchViewProps) {
       onChange: (v: number) => updateGrnQuantity(po.id, v),
     },
     {
-      title: '3 ┬╖ Vendor Invoice',
+      title: '3 · Vendor Invoice',
       subtitle: po.vendorName,
       qty: invQty,
       editable: true,
@@ -52,7 +52,7 @@ export default function ThreeWayMatchView({ po }: ThreeWayMatchViewProps) {
         </p>
         <p className="text-xs font-bold text-white">{po.itemName}</p>
         <p className="font-mono text-[10px] text-slate-800">
-          {po.poNumber} ┬╖ {po.vendorName}
+          {po.poNumber} · {po.vendorName}
         </p>
       </div>
 
@@ -60,7 +60,7 @@ export default function ThreeWayMatchView({ po }: ThreeWayMatchViewProps) {
         <div className="flex items-center gap-2 border-b border-emerald-200 bg-emerald-50 px-3 py-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           <p className="text-xs font-bold text-emerald-800">
-            Three-way match confirmed ΓÇö PO, GRN, and invoice quantities align
+            Three-way match confirmed — PO, GRN, and invoice quantities align
           </p>
         </div>
       )}
@@ -69,7 +69,7 @@ export default function ThreeWayMatchView({ po }: ThreeWayMatchViewProps) {
         <div className="flex items-center gap-2 border-b border-rose-300 bg-rose-50 px-3 py-2">
           <AlertTriangle className="h-4 w-4 text-rose-600" />
           <p className="text-xs font-bold text-rose-800">
-            Mismatch detected ΓÇö verify under-shipment or vendor overbilling before payment release
+            Mismatch detected — verify under-shipment or vendor overbilling before payment release
           </p>
         </div>
       )}
@@ -101,7 +101,7 @@ export default function ThreeWayMatchView({ po }: ThreeWayMatchViewProps) {
               <p className="mt-1 text-[10px] text-slate-800">{po.unit}</p>
 
               <div className="mt-2 flex items-center gap-1">
-                {matchesPo && col.title !== '1 ┬╖ Purchase Order' ? (
+                {matchesPo && col.title !== '1 · Purchase Order' ? (
                   <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-800">
                     <CheckCircle2 className="h-3 w-3" />
                     Matches PO
@@ -121,7 +121,7 @@ export default function ThreeWayMatchView({ po }: ThreeWayMatchViewProps) {
 
       <div className="border-t border-slate-200 bg-slate-50/80 px-3 py-2">
         <p className="font-mono text-[10px] text-slate-800">
-          PO: {poQty} ┬╖ GRN: {grnQty} ┬╖ Invoice: {invQty} ┬╖ Status:{' '}
+          PO: {poQty} · GRN: {grnQty} · Invoice: {invQty} · Status:{' '}
           <strong className={allMatch ? 'text-emerald-700' : mismatch ? 'text-rose-700' : 'text-slate-900'}>
             {po.matchStatus}
           </strong>

@@ -53,7 +53,7 @@ type PreOpMedRow = {
 };
 
 const TRACKING_SUMMARY =
-  'Standalone OT suite ┬╖ active room tracking ┬╖ procedural documentation ┬╖ safety checklist ┬╖ 13 Jul 2026';
+  'Standalone OT suite · active room tracking · procedural documentation · safety checklist · 13 Jul 2026';
 
 const TODAY_OT_SCHEDULE: OtScheduleEntry[] = [
   {
@@ -68,7 +68,7 @@ const TODAY_OT_SCHEDULE: OtScheduleEntry[] = [
     id: 'ot-2',
     otRoom: 'OT-01',
     patientName: 'K.V.',
-    procedure: 'Total Knee Replacement ┬╖ Right',
+    procedure: 'Total Knee Replacement · Right',
     scheduledStart: '11:00',
     status: 'Scheduled',
   },
@@ -76,7 +76,7 @@ const TODAY_OT_SCHEDULE: OtScheduleEntry[] = [
     id: 'ot-3',
     otRoom: 'OT-02',
     patientName: 'R.S.',
-    procedure: 'Inguinal Hernia Repair ┬╖ Mesh',
+    procedure: 'Inguinal Hernia Repair · Mesh',
     scheduledStart: '13:45',
     status: 'Scheduled',
   },
@@ -84,7 +84,7 @@ const TODAY_OT_SCHEDULE: OtScheduleEntry[] = [
     id: 'ot-4',
     otRoom: 'OT-04',
     patientName: 'M.A.',
-    procedure: 'Cataract Extraction ┬╖ Phaco',
+    procedure: 'Cataract Extraction · Phaco',
     scheduledStart: '07:15',
     status: 'Completed',
   },
@@ -184,7 +184,7 @@ function ClearanceToggle({
           : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
       }`}
     >
-      {checked ? 'Γ£ô' : 'Γùï'} {label}
+      {checked ? '✓' : '○'} {label}
     </button>
   );
 }
@@ -208,7 +208,7 @@ function RichTextOperativeEditor({ value, onChange }: { value: string; onChange:
         {[
           { label: 'Bold', action: () => wrap('**', '**') },
           { label: 'Italic', action: () => wrap('_', '_') },
-          { label: 'Bullet', action: () => wrap('\nΓÇó ', '') },
+          { label: 'Bullet', action: () => wrap('\n• ', '') },
         ].map((t) => (
           <button
             key={t.label}
@@ -225,7 +225,7 @@ function RichTextOperativeEditor({ value, onChange }: { value: string; onChange:
         className={`${INPUT_CLASS} min-h-[160px] resize-y font-normal leading-relaxed`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Operative findings ┬╖ technique ┬╖ complications ┬╖ hemostasisΓÇª"
+        placeholder="Operative findings · technique · complications · hemostasis…"
       />
     </div>
   );
@@ -263,14 +263,14 @@ export default function SurgeryWorkspacePage() {
     incisionTime: '08:42',
     closureTime: '10:05',
     ebl: '120 mL',
-    specimens: 'Gallbladder ΓåÆ Pathology ┬╖ routine histology',
+    specimens: 'Gallbladder → Pathology · routine histology',
     operativeFindings: '',
   });
 
   const [postOp, setPostOp] = useState({
-    recoveryDirections: 'PACU ┬╖ monitor vitals q15min ┬╖ oral fluids when awake',
-    painManagement: 'Paracetamol 1g IV q6h PRN ┬╖ avoid NSAIDs if renal concern',
-    followUpPlan: 'Surgical OPD day 7 ┬╖ suture/staple review day 10ΓÇô14',
+    recoveryDirections: 'PACU · monitor vitals q15min · oral fluids when awake',
+    painManagement: 'Paracetamol 1g IV q6h PRN · avoid NSAIDs if renal concern',
+    followUpPlan: 'Surgical OPD day 7 · suture/staple review day 10–14',
   });
 
   const showNotice = useCallback((message: string) => {
@@ -299,16 +299,16 @@ export default function SurgeryWorkspacePage() {
 
   const handleFinalize = () => {
     if (!checklistComplete) {
-      showNotice('Cannot finalize ┬╖ complete WHO surgical safety checklist first');
+      showNotice('Cannot finalize · complete WHO surgical safety checklist first');
       return;
     }
     showNotice(
-      `Operative record finalized ┬╖ ${selectedOt.otRoom} ┬╖ ${selectedOt.patientName} ┬╖ ${activeStage} ┬╖ sandbox only`,
+      `Operative record finalized · ${selectedOt.otRoom} · ${selectedOt.patientName} · ${activeStage} · sandbox only`,
     );
   };
 
   const handlePrint = () => {
-    showNotice(`OT summary sent to print queue ┬╖ ${selectedOt.procedure}`);
+    showNotice(`OT summary sent to print queue · ${selectedOt.procedure}`);
     if (typeof window !== 'undefined') window.print();
   };
 
@@ -434,8 +434,8 @@ export default function SurgeryWorkspacePage() {
                         [
                           { key: 'bp' as const, label: 'BP', unit: 'mmHg' },
                           { key: 'hr' as const, label: 'HR', unit: 'bpm' },
-                          { key: 'spo2' as const, label: 'SpOΓéé', unit: '%' },
-                          { key: 'temp' as const, label: 'Temp', unit: '┬░C' },
+                          { key: 'spo2' as const, label: 'SpO₂', unit: '%' },
+                          { key: 'temp' as const, label: 'Temp', unit: '°C' },
                         ] as const
                       ).map(({ key, label, unit }) => (
                         <label

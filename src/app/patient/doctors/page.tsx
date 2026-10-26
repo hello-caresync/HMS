@@ -116,7 +116,7 @@ export default function DoctorsDirectoryPage() {
         <div>
           <h1 className="text-2xl font-black text-[#0E2924]">Clinician & Doctor Directory</h1>
           <p className="text-xs font-bold text-[#b08968]">
-            Admin-verified consultants only ΓÇö {doctors.length} specialist
+            Admin-verified consultants only — {doctors.length} specialist
             {doctors.length === 1 ? '' : 's'} available to book.
           </p>
         </div>

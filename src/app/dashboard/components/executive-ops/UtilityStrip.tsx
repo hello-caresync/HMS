@@ -33,7 +33,7 @@ export default function UtilityStrip({ data, onQuickAction }: UtilityStripProps)
     <div className="grid grid-cols-1 gap-2 xl:grid-cols-12">
       <ExecutivePanel
         title="Live Notifications"
-        subtitle="Critical lab ┬╖ emergency ┬╖ equipment ┬╖ inventory ┬╖ patient load"
+        subtitle="Critical lab · emergency · equipment · inventory · patient load"
         icon={BellRing}
         className="xl:col-span-7"
         dense
@@ -55,7 +55,7 @@ export default function UtilityStrip({ data, onQuickAction }: UtilityStripProps)
                 <p className="text-base font-semibold text-slate-900">
                   {alert.category}
                   <span className="ml-2 font-normal text-sm text-slate-600">
-                    ┬╖ {formatEventTime(alert.timestamp)}
+                    · {formatEventTime(alert.timestamp)}
                   </span>
                 </p>
                 <p className="mt-1 text-sm text-slate-600">{alert.message}</p>

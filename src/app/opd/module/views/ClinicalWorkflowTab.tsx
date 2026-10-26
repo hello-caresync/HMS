@@ -120,7 +120,7 @@ export default function ClinicalWorkflowTab({ onRecommendAdmission }: ClinicalWo
       </div>
 
       <div className="space-y-3 xl:col-span-7">
-        <OpdPanel title="Minor Procedures Console" subtitle="Dressing ┬╖ Injection ┬╖ Nebulization ┬╖ ECG" icon={Scissors}>
+        <OpdPanel title="Minor Procedures Console" subtitle="Dressing · Injection · Nebulization · ECG" icon={Scissors}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -151,7 +151,7 @@ export default function ClinicalWorkflowTab({ onRecommendAdmission }: ClinicalWo
 
         <OpdPanel
           title="Recommendation Engine"
-          subtitle="Referrals ┬╖ internal routing ┬╖ critical IPD transfers"
+          subtitle="Referrals · internal routing · critical IPD transfers"
           icon={Sparkles}
           headerRight={
             <button
@@ -170,10 +170,10 @@ export default function ClinicalWorkflowTab({ onRecommendAdmission }: ClinicalWo
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="text-[10px] font-semibold text-[#0F172A]">
-                      {rec.patientName} ┬╖ <span className="font-mono text-[#2563EB]">{rec.uhid}</span>
+                      {rec.patientName} · <span className="font-mono text-[#2563EB]">{rec.uhid}</span>
                     </p>
                     <p className="text-[9px] text-slate-600">
-                      <strong>{rec.type}</strong> ΓåÆ {rec.target}
+                      <strong>{rec.type}</strong> → {rec.target}
                     </p>
                     <p className="mt-0.5 text-[9px] text-slate-500">{rec.reason}</p>
                   </div>

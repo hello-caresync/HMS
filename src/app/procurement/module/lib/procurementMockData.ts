@@ -134,7 +134,7 @@ export const INITIAL_PURCHASE_REQUESTS: PurchaseRequest[] = [
     id: 'pr1',
     prNumber: 'PR-2026-5501',
     department: 'ICU',
-    items: 'Norepinephrine 4mg/4mL ├ù 200 amp ┬╖ IV Extension Sets ├ù 500',
+    items: 'Norepinephrine 4mg/4mL × 200 amp · IV Extension Sets × 500',
     priority: 'Emergency',
     requiredDate: '2026-07-19',
     stockAvailability: 'Out of Stock',
@@ -150,7 +150,7 @@ export const INITIAL_PURCHASE_REQUESTS: PurchaseRequest[] = [
     id: 'pr2',
     prNumber: 'PR-2026-5505',
     department: 'OT',
-    items: 'Surgical Gloves Size 7 ├ù 2000 ┬╖ Ethicon Suture Kit ├ù 150',
+    items: 'Surgical Gloves Size 7 × 2000 · Ethicon Suture Kit × 150',
     priority: 'Critical',
     requiredDate: '2026-07-22',
     stockAvailability: 'Low Stock',
@@ -166,7 +166,7 @@ export const INITIAL_PURCHASE_REQUESTS: PurchaseRequest[] = [
     id: 'pr3',
     prNumber: 'PR-2026-5510',
     department: 'Pharmacy',
-    items: 'Azithromycin 500mg ├ù 5000 ┬╖ Insulin Glargine ├ù 50 pens',
+    items: 'Azithromycin 500mg × 5000 · Insulin Glargine × 50 pens',
     priority: 'Critical',
     requiredDate: '2026-07-20',
     stockAvailability: 'Out of Stock',
@@ -182,7 +182,7 @@ export const INITIAL_PURCHASE_REQUESTS: PurchaseRequest[] = [
     id: 'pr4',
     prNumber: 'PR-2026-5512',
     department: 'Emergency',
-    items: 'Crash Cart Refill Bundle ┬╖ Adrenaline ┬╖ Atropine ┬╖ Amiodarone',
+    items: 'Crash Cart Refill Bundle · Adrenaline · Atropine · Amiodarone',
     priority: 'Emergency',
     requiredDate: '2026-07-18',
     stockAvailability: 'Low Stock',
@@ -198,7 +198,7 @@ export const INITIAL_PURCHASE_REQUESTS: PurchaseRequest[] = [
     id: 'pr5',
     prNumber: 'PR-2026-5515',
     department: 'Laboratory',
-    items: 'CBC Reagent Kit ├ù 12 ┬╖ Troponin-I Reagent ├ù 8 ┬╖ QC Controls',
+    items: 'CBC Reagent Kit × 12 · Troponin-I Reagent × 8 · QC Controls',
     priority: 'Normal',
     requiredDate: '2026-07-28',
     stockAvailability: 'In Stock',
@@ -214,7 +214,7 @@ export const INITIAL_PURCHASE_REQUESTS: PurchaseRequest[] = [
     id: 'pr6',
     prNumber: 'PR-2026-5498',
     department: 'Radiology',
-    items: 'Iohexol 350 mgI/mL ├ù 48 vials ┬╖ Gadoterate ├ù 20 syringes',
+    items: 'Iohexol 350 mgI/mL × 48 vials · Gadoterate × 20 syringes',
     priority: 'Normal',
     requiredDate: '2026-07-25',
     stockAvailability: 'In Stock',
@@ -244,34 +244,34 @@ export const MOCK_VENDORS: VendorProfile[] = [
 ];
 
 export const MOCK_QUOTATIONS: QuotationComparison[] = [
-  { id: 'qc1', rfqNumber: 'RFQ-2026-881', itemDescription: 'Norepinephrine 4mg/4mL ├ù 200 ampoules', vendorA: 'MedSupply India', priceA: 485000, deliveryDaysA: 2, vendorB: 'Apollo Pharma', priceB: 512000, deliveryDaysB: 3, vendorC: 'Sun Pharma', priceC: 498000, deliveryDaysC: 4, recommended: 'MedSupply India', rfqStatus: 'Evaluating' },
-  { id: 'qc2', rfqNumber: 'RFQ-2026-885', itemDescription: 'Hamilton C6 Ventilator ΓÇö Capital', vendorA: 'Hamilton Medical India', priceA: 4200000, deliveryDaysA: 45, vendorB: 'Drager India', priceB: 3950000, deliveryDaysB: 60, vendorC: 'Philips Healthcare', priceC: 4500000, deliveryDaysC: 30, recommended: 'Drager India', rfqStatus: 'Open' },
-  { id: 'qc3', rfqNumber: 'RFQ-2026-878', itemDescription: 'Surgical Gloves Size 7 ├ù 2000 pairs', vendorA: 'MedSupply India', priceA: 98000, deliveryDaysA: 5, vendorB: 'Apollo Pharma', priceB: 105000, deliveryDaysB: 3, vendorC: 'Local MedEquip', priceC: 92000, deliveryDaysC: 7, recommended: 'Apollo Pharma', rfqStatus: 'Awarded' },
+  { id: 'qc1', rfqNumber: 'RFQ-2026-881', itemDescription: 'Norepinephrine 4mg/4mL × 200 ampoules', vendorA: 'MedSupply India', priceA: 485000, deliveryDaysA: 2, vendorB: 'Apollo Pharma', priceB: 512000, deliveryDaysB: 3, vendorC: 'Sun Pharma', priceC: 498000, deliveryDaysC: 4, recommended: 'MedSupply India', rfqStatus: 'Evaluating' },
+  { id: 'qc2', rfqNumber: 'RFQ-2026-885', itemDescription: 'Hamilton C6 Ventilator — Capital', vendorA: 'Hamilton Medical India', priceA: 4200000, deliveryDaysA: 45, vendorB: 'Drager India', priceB: 3950000, deliveryDaysB: 60, vendorC: 'Philips Healthcare', priceC: 4500000, deliveryDaysC: 30, recommended: 'Drager India', rfqStatus: 'Open' },
+  { id: 'qc3', rfqNumber: 'RFQ-2026-878', itemDescription: 'Surgical Gloves Size 7 × 2000 pairs', vendorA: 'MedSupply India', priceA: 98000, deliveryDaysA: 5, vendorB: 'Apollo Pharma', priceB: 105000, deliveryDaysB: 3, vendorC: 'Local MedEquip', priceC: 92000, deliveryDaysC: 7, recommended: 'Apollo Pharma', rfqStatus: 'Awarded' },
 ];
 
 export const MOCK_TENDERS: TenderRecord[] = [
-  { id: 't1', tenderId: 'TND-2026-042', title: 'MRI Suite 2 ΓÇö 1.5T Scanner Replacement', capitalBudget: 85000000, bidsReceived: 4, status: 'Evaluation', closingDate: '2026-07-25', leadingVendor: 'Philips Healthcare' },
-  { id: 't2', tenderId: 'TND-2026-038', title: 'Central Sterile Supply Department ΓÇö Autoclave Bank', capitalBudget: 12000000, bidsReceived: 6, status: 'Awarded', closingDate: '2026-07-10', leadingVendor: 'Getinge India' },
-  { id: 't3', tenderId: 'TND-2026-045', title: 'Hospital-wide PPE Annual Rate Contract', capitalBudget: 4500000, bidsReceived: 8, status: 'Published', closingDate: '2026-08-05', leadingVendor: 'ΓÇö' },
+  { id: 't1', tenderId: 'TND-2026-042', title: 'MRI Suite 2 — 1.5T Scanner Replacement', capitalBudget: 85000000, bidsReceived: 4, status: 'Evaluation', closingDate: '2026-07-25', leadingVendor: 'Philips Healthcare' },
+  { id: 't2', tenderId: 'TND-2026-038', title: 'Central Sterile Supply Department — Autoclave Bank', capitalBudget: 12000000, bidsReceived: 6, status: 'Awarded', closingDate: '2026-07-10', leadingVendor: 'Getinge India' },
+  { id: 't3', tenderId: 'TND-2026-045', title: 'Hospital-wide PPE Annual Rate Contract', capitalBudget: 4500000, bidsReceived: 8, status: 'Published', closingDate: '2026-08-05', leadingVendor: '—' },
 ];
 
 export const MOCK_THREE_WAY_MATCH: ThreeWayMatchRecord[] = [
   { id: 'tw1', poNumber: 'PO-2026-7798', grnNumber: 'GRN-2026-9901', invoiceNumber: 'INV-MSI-8841', vendor: 'Sun Pharma Wholesale', poAmount: 562000, grnAmount: 562000, invoiceAmount: 562000, variance: 0, matchStatus: 'Approved for Payment' },
   { id: 'tw2', poNumber: 'PO-2026-7792', grnNumber: 'GRN-2026-9904', invoiceNumber: 'INV-APD-7720', vendor: 'Apollo Pharma Distribution', poAmount: 312000, grnAmount: 309000, invoiceAmount: 312000, variance: 3000, matchStatus: 'Variance' },
-  { id: 'tw3', poNumber: 'PO-2026-7795', grnNumber: 'ΓÇö', invoiceNumber: 'INV-CIP-6633', vendor: 'Cipla Healthcare Logistics', poAmount: 428000, grnAmount: 0, invoiceAmount: 428000, variance: 428000, matchStatus: 'Pending' },
+  { id: 'tw3', poNumber: 'PO-2026-7795', grnNumber: '—', invoiceNumber: 'INV-CIP-6633', vendor: 'Cipla Healthcare Logistics', poAmount: 428000, grnAmount: 0, invoiceAmount: 428000, variance: 428000, matchStatus: 'Pending' },
   { id: 'tw4', poNumber: 'PO-2026-7788', grnNumber: 'GRN-2026-9895', invoiceNumber: 'INV-MSI-8840', vendor: 'MedSupply India Pvt Ltd', poAmount: 485000, grnAmount: 485000, invoiceAmount: 485000, variance: 0, matchStatus: 'Matched' },
 ];
 
 export const MOCK_PURCHASE_RETURNS: PurchaseReturnNote[] = [
-  { id: 'prn1', prnNumber: 'PRN-2026-441', poReference: 'PO-2026-7792', vendor: 'Apollo Pharma Distribution', reason: 'Damaged packaging ΓÇö 20 glove pairs rejected at QC', creditNoteValue: 1050, status: 'Credit Issued' },
-  { id: 'prn2', prnNumber: 'PRN-2026-438', poReference: 'PO-2026-7785', vendor: 'Sun Pharma Wholesale', reason: 'Batch RAN-3300-G ΓÇö manufacturer recall', creditNoteValue: 42000, status: 'Pending Credit' },
+  { id: 'prn1', prnNumber: 'PRN-2026-441', poReference: 'PO-2026-7792', vendor: 'Apollo Pharma Distribution', reason: 'Damaged packaging — 20 glove pairs rejected at QC', creditNoteValue: 1050, status: 'Credit Issued' },
+  { id: 'prn2', prnNumber: 'PRN-2026-438', poReference: 'PO-2026-7785', vendor: 'Sun Pharma Wholesale', reason: 'Batch RAN-3300-G — manufacturer recall', creditNoteValue: 42000, status: 'Pending Credit' },
 ];
 
 export const INITIAL_AI_INSIGHTS: AiProcurementInsight[] = [
-  { id: 'ai1', insightType: 'Demand Forecast', title: 'Monsoon Dengue Surge Kit', detail: 'Historical Jul-Aug pattern ΓÇö NS1 kits, platelet support consumables', suggestedAction: 'Pre-order Dengue NS1 ├ù 200 kits ┬╖ IV fluids +15%', estimatedImpact: 'Prevent stockout during 28% case surge', confidence: 91, status: 'Pending Review' },
-  { id: 'ai2', insightType: 'Vendor Recommendation', title: 'Delayed Delivery Risk ΓÇö PO-7788', detail: 'MedSupply India OTD dropped to 82% over 30 days', suggestedAction: 'Split PO to Apollo Pharma for 40% backup quantity', estimatedImpact: 'Reduce ICU stockout risk by 65%', confidence: 86, status: 'Pending Review' },
-  { id: 'ai3', insightType: 'Stock Optimization', title: 'N95 Mask Overstock', detail: '45-day supply vs optimal 21-day ΓÇö consumption declining', suggestedAction: 'Defer PR-5518 ┬╖ negotiate return with vendor', estimatedImpact: 'Free Γé╣1.2L budget for critical ICU reagents', confidence: 84, status: 'Accepted' },
-  { id: 'ai4', insightType: 'Demand Forecast', title: 'Respiratory Season Antibiotics', detail: 'OPD respiratory volume Γåæ 18% ΓÇö Azithromycin out-of-stock', suggestedAction: 'Emergency PO via Cipla rate contract ┬╖ 5000 tabs', estimatedImpact: 'Restore formulary availability within 48h', confidence: 94, status: 'Pending Review' },
+  { id: 'ai1', insightType: 'Demand Forecast', title: 'Monsoon Dengue Surge Kit', detail: 'Historical Jul-Aug pattern — NS1 kits, platelet support consumables', suggestedAction: 'Pre-order Dengue NS1 × 200 kits · IV fluids +15%', estimatedImpact: 'Prevent stockout during 28% case surge', confidence: 91, status: 'Pending Review' },
+  { id: 'ai2', insightType: 'Vendor Recommendation', title: 'Delayed Delivery Risk — PO-7788', detail: 'MedSupply India OTD dropped to 82% over 30 days', suggestedAction: 'Split PO to Apollo Pharma for 40% backup quantity', estimatedImpact: 'Reduce ICU stockout risk by 65%', confidence: 86, status: 'Pending Review' },
+  { id: 'ai3', insightType: 'Stock Optimization', title: 'N95 Mask Overstock', detail: '45-day supply vs optimal 21-day — consumption declining', suggestedAction: 'Defer PR-5518 · negotiate return with vendor', estimatedImpact: 'Free ₹1.2L budget for critical ICU reagents', confidence: 84, status: 'Accepted' },
+  { id: 'ai4', insightType: 'Demand Forecast', title: 'Respiratory Season Antibiotics', detail: 'OPD respiratory volume ↑ 18% — Azithromycin out-of-stock', suggestedAction: 'Emergency PO via Cipla rate contract · 5000 tabs', estimatedImpact: 'Restore formulary availability within 48h', confidence: 94, status: 'Pending Review' },
 ];
 
 export const SPENDING_TREND = [
@@ -306,7 +306,7 @@ export function formatTime(iso: string): string {
 }
 
 export function formatCr(amount: number): string {
-  if (amount >= 10000000) return `Γé╣${(amount / 10000000).toFixed(2)} Cr`;
+  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
   return formatInr(amount);
 }
 

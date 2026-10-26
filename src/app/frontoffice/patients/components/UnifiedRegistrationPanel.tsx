@@ -30,7 +30,7 @@ const INPUT_CLASS =
 
 const INSURANCE_OPTIONS = [
   'Self Pay / Cash',
-  'Star Health ┬╖ Medi Assist',
+  'Star Health · Medi Assist',
   'HDFC ERGO',
   'ICICI Lombard',
   'Government Scheme',
@@ -84,7 +84,7 @@ export default function UnifiedRegistrationPanel() {
         <div className="mt-4 flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-white p-4">
           <MockQrCode value={success.uhid} size={140} />
           <p className="text-[10px] font-medium uppercase tracking-wider text-slate-800">
-            Scannable patient wristband QR ┬╖ simulation
+            Scannable patient wristband QR · simulation
           </p>
         </div>
 
@@ -108,7 +108,7 @@ export default function UnifiedRegistrationPanel() {
             <h1 className="text-lg font-black text-slate-900">
               Unified Registration &amp; Verification
             </h1>
-            <p className="text-xs text-slate-800">Phase 2 ┬╖ Module 5 ┬╖ Front Office Intake</p>
+            <p className="text-xs text-slate-800">Phase 2 · Module 5 · Front Office Intake</p>
           </div>
         </div>
       </header>
@@ -125,7 +125,7 @@ export default function UnifiedRegistrationPanel() {
               value={draft.fullName}
               onChange={(e) => setDraft((d) => ({ ...d, fullName: e.target.value }))}
               className={INPUT_CLASS}
-              placeholder="Patient legal name ┬╖ e.g. P.N."
+              placeholder="Patient legal name · e.g. P.N."
             />
           </label>
           <label className="block space-y-1">
@@ -188,7 +188,7 @@ export default function UnifiedRegistrationPanel() {
                 setDraft((d) => ({ ...d, emergencyContact: e.target.value }))
               }
               className={INPUT_CLASS}
-              placeholder="Name ┬╖ relationship ┬╖ phone"
+              placeholder="Name · relationship · phone"
             />
           </label>
         </div>
@@ -250,7 +250,7 @@ export default function UnifiedRegistrationPanel() {
             {!idFocused && (
               <p className="flex items-center gap-1 text-[10px] font-bold text-slate-800">
                 <ShieldCheck className="h-3 w-3 text-emerald-700" />
-                Sandbox isolation ┬╖ national ID / passport strings are never persisted across testers
+                Sandbox isolation · national ID / passport strings are never persisted across testers
               </p>
             )}
           </label>

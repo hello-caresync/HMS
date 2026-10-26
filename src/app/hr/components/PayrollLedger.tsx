@@ -27,7 +27,7 @@ export default function PayrollLedger() {
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-800">
                 Payroll Run
               </p>
-              <p className="text-xs font-bold text-white">July 2026 ┬╖ Monthly disbursement</p>
+              <p className="text-xs font-bold text-white">July 2026 · Monthly disbursement</p>
             </div>
           </div>
           {payrollLocked && (

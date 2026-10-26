@@ -14,7 +14,7 @@ export type BloodGroup =
 
 export type BillingType = 'Self' | 'Corporate' | 'Insurance';
 
-// ΓöÇΓöÇΓöÇ Core profile ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Core profile ───────────────────────────────────────────────────────────
 
 export interface PatientProfile {
   id: string;
@@ -33,7 +33,7 @@ export interface PatientProfile {
   registeredAt: string;
 }
 
-// ΓöÇΓöÇΓöÇ Related entities (FK ΓåÆ patientId) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Related entities (FK → patientId) ──────────────────────────────────────
 
 export interface Address {
   patientId: string;
@@ -59,7 +59,7 @@ export interface InsuranceDetails {
   validityDate?: string; // ISO date
 }
 
-/** Normalized relational aggregate ΓÇö simulates joined DB row */
+/** Normalized relational aggregate — simulates joined DB row */
 export interface PatientRecord {
   profile: PatientProfile;
   address: Address | null;
@@ -67,7 +67,7 @@ export interface PatientRecord {
   insurance: InsuranceDetails | null;
 }
 
-// ΓöÇΓöÇΓöÇ Form DTOs ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Form DTOs ──────────────────────────────────────────────────────────────
 
 export type DemographicsFormData = {
   firstName: string;

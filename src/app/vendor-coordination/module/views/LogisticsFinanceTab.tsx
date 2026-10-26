@@ -37,11 +37,11 @@ export default function LogisticsFinanceTab({ deliveryRecords, onAdvanceDelivery
       {expiredLicenses > 0 && (
         <div className="flex items-center gap-2 rounded-md border-2 border-red-500 bg-red-600 px-3 py-1.5 text-white animate-pulse">
           <Shield className="h-4 w-4" />
-          <span className="text-[10px] font-bold uppercase">{expiredLicenses} Vendor License Expired ΓÇö Compliance action required</span>
+          <span className="text-[10px] font-bold uppercase">{expiredLicenses} Vendor License Expired — Compliance action required</span>
         </div>
       )}
 
-      <VrmPanel title="Delivery Tracking & Invoice Settlement Ledger" subtitle="Fulfillment pipeline ┬╖ three-way match ┬╖ payment approvals" icon={Truck}>
+      <VrmPanel title="Delivery Tracking & Invoice Settlement Ledger" subtitle="Fulfillment pipeline · three-way match · payment approvals" icon={Truck}>
         <table className="w-full min-w-[900px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -59,7 +59,7 @@ export default function LogisticsFinanceTab({ deliveryRecords, onAdvanceDelivery
                 <td className="px-1.5 py-1 font-mono text-[7px] text-slate-500">{d.trackingRef}</td>
                 <td className="px-1.5 py-1 text-[8px] text-slate-500">{d.expectedDelivery}</td>
                 <td className="px-1.5 py-1 font-mono text-[7px] text-slate-600">{d.invoiceNumber}</td>
-                <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums">{d.invoiceAmount ? formatInr(d.invoiceAmount) : 'ΓÇö'}</td>
+                <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums">{d.invoiceAmount ? formatInr(d.invoiceAmount) : '—'}</td>
                 <td className="px-1.5 py-1"><PaymentPill status={d.paymentStatus} /></td>
                 <td className="px-1.5 py-1">
                   {d.stage !== 'Delivered' && (
@@ -100,7 +100,7 @@ export default function LogisticsFinanceTab({ deliveryRecords, onAdvanceDelivery
           </table>
         </VrmPanel>
 
-        <VrmPanel title="Regulatory License Compliance Log" subtitle="Drug license ┬╖ device registration ┬╖ audit dates" icon={Shield} critical={expiredLicenses > 0}>
+        <VrmPanel title="Regulatory License Compliance Log" subtitle="Drug license · device registration · audit dates" icon={Shield} critical={expiredLicenses > 0}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -125,7 +125,7 @@ export default function LogisticsFinanceTab({ deliveryRecords, onAdvanceDelivery
         </VrmPanel>
       </div>
 
-      <VrmPanel title="AI-Based Vendor Intelligence & Compliance Hub" subtitle="Smart recommendations ┬╖ cost optimization ┬╖ risk predictions" icon={Brain} secure>
+      <VrmPanel title="AI-Based Vendor Intelligence & Compliance Hub" subtitle="Smart recommendations · cost optimization · risk predictions" icon={Brain} secure>
         <table className="w-full min-w-[860px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -167,7 +167,7 @@ export default function LogisticsFinanceTab({ deliveryRecords, onAdvanceDelivery
             <BarChart data={OUTSTANDING_BALANCE_TREND} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
               <XAxis dataKey="week" tick={{ fontSize: 8, fill: '#64748B' }} />
-              <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `Γé╣${(v / 100000).toFixed(1)}L`} />
+              <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `₹${(v / 100000).toFixed(1)}L`} />
               <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid #E2E8F0' }} formatter={(v: number) => formatInr(v)} />
               <Legend wrapperStyle={{ fontSize: 9 }} />
               <Bar dataKey="outstanding" fill="#DC2626" name="Outstanding" radius={[2, 2, 0, 0]} />

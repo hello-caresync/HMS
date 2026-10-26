@@ -8,7 +8,7 @@ export function PrintFullEmrModal({ onClose, patient }: { onClose: () => void; p
     <ModalOverlay title="Print Full EMR Record" onClose={onClose} wide>
       <SecureIdentityPlaceholder verified={patient.identityVerified} />
       <p className="mt-2 text-[11px] text-[#0F172A]">
-        <strong>{patient.name}</strong> ┬╖ {patient.uhid}
+        <strong>{patient.name}</strong> · {patient.uhid}
       </p>
       <p className="mt-1 text-[10px] text-slate-600">Certified print bundle includes all audited folders, timeline, and compliance watermark. No clinical edits permitted from this module.</p>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">Generate Print Job</button>
@@ -21,9 +21,9 @@ export function ExportSummaryModal({ onClose, patient }: { onClose: () => void; 
     <ModalOverlay title="Export Certified Clinical Summary" onClose={onClose} wide>
       <SecureIdentityPlaceholder verified={patient.identityVerified} />
       <select className="mt-2 w-full rounded-md border border-[#E2E8F0] px-2 py-1.5 text-[10px]">
-        <option>PDF ΓÇö NABH Certified Format</option>
-        <option>PDF ΓÇö Insurance TPA Summary</option>
-        <option>HL7 FHIR Bundle ΓÇö Read Only</option>
+        <option>PDF — NABH Certified Format</option>
+        <option>PDF — Insurance TPA Summary</option>
+        <option>HL7 FHIR Bundle — Read Only</option>
       </select>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">Export with Audit Stamp</button>
     </ModalOverlay>
@@ -52,7 +52,7 @@ export function ShareRecordModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Share Record (Authorized)" onClose={onClose} wide>
       <SecureIdentityPlaceholder verified />
-      <input className="mt-2 w-full rounded-md border border-[#E2E8F0] px-2 py-1.5 text-[10px]" placeholder="Authorized recipient ΓÇö facility or clinician" />
+      <input className="mt-2 w-full rounded-md border border-[#E2E8F0] px-2 py-1.5 text-[10px]" placeholder="Authorized recipient — facility or clinician" />
       <p className="mt-2 text-[9px] italic text-slate-500">Sharing requires active consent and RBAC approval. All shares logged.</p>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">Request Authorized Share</button>
     </ModalOverlay>

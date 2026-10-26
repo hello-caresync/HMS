@@ -29,16 +29,16 @@ type Service = {
 };
 
 const SEED_SERVICES: Service[] = [
-  { id: 'S01', category: 'Consultation', name: 'Senior Consultant OPD Fee', standardRate: 'Γé╣800', panelRate: 'Γé╣650' },
-  { id: 'S02', category: 'Consultation', name: 'Super Specialist Review', standardRate: 'Γé╣1,200', panelRate: 'Γé╣950' },
-  { id: 'S03', category: 'Lab', name: 'Complete Blood Count (CBC)', standardRate: 'Γé╣350', panelRate: 'Γé╣280' },
-  { id: 'S04', category: 'Lab', name: 'Liver Function Panel', standardRate: 'Γé╣620', panelRate: 'Γé╣490' },
-  { id: 'S05', category: 'Radiology', name: 'Chest X-Ray PA View', standardRate: 'Γé╣600', panelRate: 'Γé╣480' },
-  { id: 'S06', category: 'Radiology', name: 'CT Brain Plain', standardRate: 'Γé╣4,800', panelRate: 'Γé╣4,200' },
-  { id: 'S07', category: 'Procedure', name: 'Wound Dressing ΓÇö Major', standardRate: 'Γé╣450', panelRate: 'Γé╣380' },
-  { id: 'S08', category: 'Admission', name: 'General Ward ΓÇö Daily Tariff', standardRate: 'Γé╣2,200', panelRate: 'Γé╣1,850' },
-  { id: 'S09', category: 'OT', name: 'Minor OT Surgeon Charges', standardRate: 'Γé╣4,500', panelRate: 'Γé╣3,900' },
-  { id: 'S10', category: 'Ambulance', name: 'Basic Life Support Transfer (10 km)', standardRate: 'Γé╣1,500', panelRate: 'Γé╣1,200' },
+  { id: 'S01', category: 'Consultation', name: 'Senior Consultant OPD Fee', standardRate: '₹800', panelRate: '₹650' },
+  { id: 'S02', category: 'Consultation', name: 'Super Specialist Review', standardRate: '₹1,200', panelRate: '₹950' },
+  { id: 'S03', category: 'Lab', name: 'Complete Blood Count (CBC)', standardRate: '₹350', panelRate: '₹280' },
+  { id: 'S04', category: 'Lab', name: 'Liver Function Panel', standardRate: '₹620', panelRate: '₹490' },
+  { id: 'S05', category: 'Radiology', name: 'Chest X-Ray PA View', standardRate: '₹600', panelRate: '₹480' },
+  { id: 'S06', category: 'Radiology', name: 'CT Brain Plain', standardRate: '₹4,800', panelRate: '₹4,200' },
+  { id: 'S07', category: 'Procedure', name: 'Wound Dressing — Major', standardRate: '₹450', panelRate: '₹380' },
+  { id: 'S08', category: 'Admission', name: 'General Ward — Daily Tariff', standardRate: '₹2,200', panelRate: '₹1,850' },
+  { id: 'S09', category: 'OT', name: 'Minor OT Surgeon Charges', standardRate: '₹4,500', panelRate: '₹3,900' },
+  { id: 'S10', category: 'Ambulance', name: 'Basic Life Support Transfer (10 km)', standardRate: '₹1,500', panelRate: '₹1,200' },
 ];
 
 const CATEGORY_TABS: ServiceCategory[] = [
@@ -75,7 +75,7 @@ export default function MasterServicesView() {
         icon={ClipboardList}
       />
 
-      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search tariff line itemsΓÇª" />
+      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search tariff line items…" />
 
       <MasterTabBar
         tabs={CATEGORY_TABS.map((c) => ({ id: c, label: c }))}
@@ -106,7 +106,7 @@ export default function MasterServicesView() {
           rows={filtered.map((s) => {
             const std = parseInt(s.standardRate.replace(/\D/g, ''), 10) || 0;
             const panel = parseInt(s.panelRate.replace(/\D/g, ''), 10) || 0;
-            const diff = std > 0 ? `${Math.round(((std - panel) / std) * 100)}%` : 'ΓÇö';
+            const diff = std > 0 ? `${Math.round(((std - panel) / std) * 100)}%` : '—';
             return [
               <span key="n" className="font-semibold text-slate-800">
                 {s.name}
@@ -121,7 +121,7 @@ export default function MasterServicesView() {
                 key="diff"
                 className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700"
               >
-                ΓêÆ{diff}
+                −{diff}
               </span>,
             ];
           })}

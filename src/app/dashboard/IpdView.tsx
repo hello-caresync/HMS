@@ -95,10 +95,10 @@ export default function IpdView() {
             <ul className="space-y-2 text-xs text-slate-300">
               <li className="rounded border border-slate-800 bg-slate-900/40 p-2">
                 <Activity className="mr-1 inline h-3.5 w-3.5 text-cyan-400" />
-                Rahul Sharma ΓÇö vitals stable, ambulating with assistance.
+                Rahul Sharma — vitals stable, ambulating with assistance.
               </li>
               <li className="rounded border border-slate-800 bg-slate-900/40 p-2">
-                Meera Krishnan ΓÇö pain score 2/10, oral intake improving.
+                Meera Krishnan — pain score 2/10, oral intake improving.
               </li>
             </ul>
           </Panel>

@@ -1,4 +1,4 @@
-﻿/** High-contrast status badge suffix ΓÇö pair with ERP_BADGE_BASE */
+﻿/** High-contrast status badge suffix — pair with ERP_BADGE_BASE */
 
 export const STATUS_BADGE_EMERALD = 'bg-emerald-100 text-emerald-950 border border-emerald-400 font-bold';
 export const STATUS_BADGE_AMBER = 'bg-amber-100 text-amber-950 border border-amber-400 font-bold';

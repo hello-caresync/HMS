@@ -35,7 +35,7 @@ export default function InsuranceTpaConsole() {
         submittedAt: new Date().toISOString(),
       };
       setRequests((prev) => [entry, ...prev]);
-      setFiledMessage(`Claim bundle filed ┬╖ ${entry.requestId} ┬╖ ${draft.tpaCompany}`);
+      setFiledMessage(`Claim bundle filed · ${entry.requestId} · ${draft.tpaCompany}`);
       window.setTimeout(() => setFiledMessage(null), 5000);
     },
     [],
@@ -49,7 +49,7 @@ export default function InsuranceTpaConsole() {
           <div>
             <h1 className="text-lg font-black text-slate-900">Insurance Pre-Auth &amp; Claims</h1>
             <p className="text-xs text-slate-800">
-              Phase 5 ┬╖ Module 16 ┬╖ TPA settlement &amp; corporate claims console
+              Phase 5 · Module 16 · TPA settlement &amp; corporate claims console
             </p>
           </div>
         </div>

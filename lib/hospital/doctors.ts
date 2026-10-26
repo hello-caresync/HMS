@@ -10,7 +10,7 @@ import { isHospitalUuid, resolveHospitalUuid } from '@/lib/hospital/resolve-hosp
 import { HOSPITAL_TENANT_ID } from '@/lib/regal/constants';
 
 export const DOCTOR_BOOKING_SELECT =
-  'doctor_id, doctor_code, employee_id, registration_number, id, full_name, name, doctor_name, department, specialization, specialty, qualification, room_number, consultation_fee, fee, is_active, is_available, status, hospital_id, hospital_code, experience';
+  'doctor_id, doctor_code, employee_id, registration_number, full_name, name, doctor_name, department, specialization, specialty, qualification, room_number, consultation_fee, fee, is_active, is_available, status, hospital_id, hospital_code, experience';
 
 export type BookableDoctorRecord = {
   doctor_id: string;

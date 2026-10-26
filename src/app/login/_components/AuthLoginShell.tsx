@@ -428,7 +428,7 @@ export default function AuthLoginShell({
 
         <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-slate-400 font-semibold">
           <ShieldCheck className="w-4 h-4 text-emerald-400 animate-pulse" />
-          <span>Movable Quantum Interface ΓÇó 256-Bit Guard Active</span>
+          <span>Movable Quantum Interface • 256-Bit Guard Active</span>
         </div>
       </div>
     </div>

@@ -43,9 +43,9 @@ export type AiAssetInsightStatus = 'Active' | 'Acknowledged' | 'Dismissed';
 export type DisposalWorkflowStatus = 'Pending' | 'Finance Review' | 'Approved' | 'Completed';
 
 export const ASSET_WORKSPACE_TABS: { id: AssetWorkspaceTab; label: string; description: string }[] = [
-  { id: 'cockpit', label: 'Operational Cockpit & Logistics Pipeline', description: 'ALM KPIs ┬╖ requisition queue ┬╖ location tracker ┬╖ quick actions' },
-  { id: 'maintenance', label: 'Asset Master, Maintenance & Calibration', description: 'Master register ┬╖ PM/AMC ┬╖ breakdown ┬╖ spare parts ┬╖ calibration' },
-  { id: 'financial', label: 'Financial Governance, Audits & AI Intelligence', description: 'TCO ┬╖ depreciation ┬╖ warranty ┬╖ audits ┬╖ predictive maintenance AI' },
+  { id: 'cockpit', label: 'Operational Cockpit & Logistics Pipeline', description: 'ALM KPIs · requisition queue · location tracker · quick actions' },
+  { id: 'maintenance', label: 'Asset Master, Maintenance & Calibration', description: 'Master register · PM/AMC · breakdown · spare parts · calibration' },
+  { id: 'financial', label: 'Financial Governance, Audits & AI Intelligence', description: 'TCO · depreciation · warranty · audits · predictive maintenance AI' },
 ];
 
 export const REQUEST_APPROVAL_FLOW: RequestApprovalStage[] = ['Request', 'Manager Review', 'Finance', 'Procurement', 'Approved'];

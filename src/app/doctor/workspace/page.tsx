@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-/** Legacy isolated patient list ΓÇö clinicians now work in the live dashboard. */
+/** Legacy isolated patient list — clinicians now work in the live dashboard. */
 export default function DoctorWorkspacePage() {
   const router = useRouter();
 

@@ -39,13 +39,13 @@ export default function ExecutiveDashboard({ metrics = DASHBOARD_METRICS }: Exec
               <Radio className="h-3 w-3 animate-pulse" />
               Live Operations
             </span>
-            <span className="text-[10px] font-medium text-slate-800">Module 1 ┬╖ Executive Dashboard</span>
+            <span className="text-[10px] font-medium text-slate-800">Module 1 · Executive Dashboard</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 2xl:text-3xl">
             Regal Central Hospital
           </h1>
           <p className="mt-0.5 text-sm text-slate-800">
-            Enterprise command center ┬╖ clinical, commercial & governance cockpit
+            Enterprise command center · clinical, commercial & governance cockpit
           </p>
         </div>
 
@@ -69,7 +69,7 @@ export default function ExecutiveDashboard({ metrics = DASHBOARD_METRICS }: Exec
       {/* 1. Operational Strip */}
       <OperationalStrip metrics={metrics.executive.operational} />
 
-      {/* 2 + 3. Commercial analytics + AI governance ΓÇö ultra-wide split */}
+      {/* 2 + 3. Commercial analytics + AI governance — ultra-wide split */}
       <div className="grid grid-cols-1 gap-5 2xl:grid-cols-12 2xl:gap-6">
         <div className="2xl:col-span-8">
           <CommercialAnalyticsPanel metrics={metrics.executive.commercial} />
@@ -87,7 +87,7 @@ export default function ExecutiveDashboard({ metrics = DASHBOARD_METRICS }: Exec
               Operational Metrics
             </h2>
             <p className="text-xs text-slate-800">
-              Customizable widget grid ┬╖ toggle visibility above
+              Customizable widget grid · toggle visibility above
             </p>
           </div>
         </div>

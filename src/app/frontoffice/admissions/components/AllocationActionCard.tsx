@@ -51,7 +51,7 @@ export default function AllocationActionCard({
           <div className="rounded border border-slate-200 bg-slate-50 p-2 col-span-2">
             <dt className="text-[9px] font-bold uppercase text-slate-800">Deposit Collected</dt>
             <dd className="font-mono text-sm font-black text-emerald-700">
-              Γé╣ {draft.depositAmount.toLocaleString('en-IN')}
+              ₹ {draft.depositAmount.toLocaleString('en-IN')}
             </dd>
           </div>
           <div className="rounded border border-slate-200 bg-slate-50 p-2 col-span-2">
@@ -61,7 +61,7 @@ export default function AllocationActionCard({
         </dl>
 
         <p className="mt-3 text-[11px] text-slate-800">
-          Operational placeholder ΓÇö confirms allocation handshake with IPD census and billing
+          Operational placeholder — confirms allocation handshake with IPD census and billing
           deposit ledger.
         </p>
 

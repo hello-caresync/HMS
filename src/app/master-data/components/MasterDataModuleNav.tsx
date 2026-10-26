@@ -27,7 +27,7 @@ export default function MasterDataModuleNav() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-800">
-            Phase 1 ┬╖ Module 4
+            Phase 1 · Module 4
           </p>
           <h1 className="text-lg font-black tracking-tight text-slate-900">Master Data Catalog</h1>
         </div>

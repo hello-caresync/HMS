@@ -12,7 +12,7 @@ export default function LaboratoryView() {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([
     { test: 'Hemoglobin', value: '11.2 g/dL', ref: '13-17', flag: 'Low' },
-    { test: 'WBC', value: '8.4 x10┬│', ref: '4-11', flag: 'Normal' },
+    { test: 'WBC', value: '8.4 x10³', ref: '4-11', flag: 'Normal' },
   ]);
 
   return (
@@ -80,7 +80,7 @@ export default function LaboratoryView() {
           <button
             type="button"
             onClick={() =>
-              setResults((rows) => [...rows, { test: 'Platelet', value: '210 x10┬│', ref: '150-400', flag: 'Normal' }])
+              setResults((rows) => [...rows, { test: 'Platelet', value: '210 x10³', ref: '150-400', flag: 'Normal' }])
             }
             className="mt-3 rounded-lg bg-cyan-600 px-3 py-2 text-xs font-semibold text-white"
           >
@@ -92,7 +92,7 @@ export default function LaboratoryView() {
         <Panel title="Critical Value Alert Ticker">
           <ul className="space-y-2 text-xs text-rose-300">
             <li className="animate-pulse rounded border border-rose-900/40 bg-rose-500/10 p-2">
-              K+ 6.2 mmol/L ΓÇö NX-415 ΓÇö physician ack pending
+              K+ 6.2 mmol/L — NX-415 — physician ack pending
             </li>
           </ul>
         </Panel>
@@ -102,8 +102,8 @@ export default function LaboratoryView() {
           <DataTable
             columns={['Report', 'Pathologist', 'Status']}
             rows={[
-              ['CBC ΓÇö NX-412', 'Dr. Sinha', 'Awaiting sign'],
-              ['LFT ΓÇö NX-413', 'Dr. Sinha', 'Signed'],
+              ['CBC — NX-412', 'Dr. Sinha', 'Awaiting sign'],
+              ['LFT — NX-413', 'Dr. Sinha', 'Signed'],
             ]}
           />
         </Panel>

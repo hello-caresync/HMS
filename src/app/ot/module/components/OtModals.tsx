@@ -72,7 +72,7 @@ export function RequestBloodModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Request Blood / Blood Products" onClose={onClose}>
       <input className={`${inputClass} mb-2`} placeholder="Case / Patient UHID" defaultValue="OT-2026-0415" />
-      <select className={inputClass}><option>PRBC ΓÇö 2 units</option><option>FFP ΓÇö 4 units</option><option>Platelets ΓÇö 1 unit</option></select>
+      <select className={inputClass}><option>PRBC — 2 units</option><option>FFP — 4 units</option><option>Platelets — 1 unit</option></select>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">Submit to Blood Bank</button>
     </ModalOverlay>
   );
@@ -80,14 +80,14 @@ export function RequestBloodModal({ onClose }: { onClose: () => void }) {
 
 export function PrintScheduleModal({ onClose }: { onClose: () => void }) {
   return (
-    <ModalOverlay title="OT Schedule ΓÇö Today" onClose={onClose} wide>
+    <ModalOverlay title="OT Schedule — Today" onClose={onClose} wide>
       <div className="rounded-lg border-2 border-[#0F172A] p-3 text-[10px]">
-        <p className="text-center text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS ΓÇö OT Daily Schedule</p>
-        <p className="mt-2 text-center font-bold">2026-07-18 ┬╖ 18 Cases ┬╖ 72% Utilization</p>
+        <p className="text-center text-[8px] font-bold uppercase tracking-widest text-slate-400">Regal Health HMS — OT Daily Schedule</p>
+        <p className="mt-2 text-center font-bold">2026-07-18 · 18 Cases · 72% Utilization</p>
         <ul className="mt-2 space-y-1">
-          <li>08:00 OT-3 ΓÇö Arjun Das ΓÇö TKR Left ΓÇö Dr. Kapoor</li>
-          <li>09:30 OT-1 ΓÇö Vikram Patel ΓÇö Craniotomy ΓÇö Dr. Meera Iyer [EMERGENCY]</li>
-          <li>11:00 OT-5 ΓÇö Somnath Reddy ΓÇö Lap Chole ΓÇö Dr. Anita Roy</li>
+          <li>08:00 OT-3 — Arjun Das — TKR Left — Dr. Kapoor</li>
+          <li>09:30 OT-1 — Vikram Patel — Craniotomy — Dr. Meera Iyer [EMERGENCY]</li>
+          <li>11:00 OT-5 — Somnath Reddy — Lap Chole — Dr. Anita Roy</li>
         </ul>
       </div>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">Print Schedule</button>

@@ -200,56 +200,56 @@ export const HP_CENSUS: HpCensus = {
 };
 
 export const INITIAL_ACTIVITY_FEED: ActivityFeedItem[] = [
-  { id: 'af-1', timestamp: '2026-07-18T08:12:00', category: 'Emergency', message: 'Trauma bay activated ΓÇö MVA polytrauma, GCS 13, ortho & neuro consult requested', actor: 'Dr. Meera Iyer', department: 'Emergency' },
-  { id: 'af-2', timestamp: '2026-07-18T08:05:00', category: 'Clinical', message: 'Post-op ICU transfer completed ΓÇö CABG patient to ICU-4, ventilator settings verified', actor: 'Nurse Priya Nair', department: 'OT / ICU' },
-  { id: 'af-3', timestamp: '2026-07-18T07:48:00', category: 'Finance', message: 'Corporate tie-up pre-auth approved ΓÇö Tata AIG package NX-CORP-882 for IPD admission', actor: 'Finance Desk', department: 'Billing' },
-  { id: 'af-4', timestamp: '2026-07-18T07:30:00', category: 'Administrative', message: 'Morning census sync ΓÇö 312 active inpatients, 28 pending discharges flagged for MD review', actor: 'Admin Console', department: 'Admissions' },
-  { id: 'af-5', timestamp: '2026-07-18T07:15:00', category: 'Supply', message: 'Critical stock alert ΓÇö Piperacillin-Tazobactam 4.5g below reorder point, PR auto-generated', actor: 'Inventory System', department: 'Pharmacy' },
-  { id: 'af-6', timestamp: '2026-07-18T06:55:00', category: 'Clinical', message: 'Lab critical value escalated ΓÇö Potassium 6.2 mEq/L, nephrology callback initiated', actor: 'LIMS Auto-Router', department: 'Laboratory' },
+  { id: 'af-1', timestamp: '2026-07-18T08:12:00', category: 'Emergency', message: 'Trauma bay activated — MVA polytrauma, GCS 13, ortho & neuro consult requested', actor: 'Dr. Meera Iyer', department: 'Emergency' },
+  { id: 'af-2', timestamp: '2026-07-18T08:05:00', category: 'Clinical', message: 'Post-op ICU transfer completed — CABG patient to ICU-4, ventilator settings verified', actor: 'Nurse Priya Nair', department: 'OT / ICU' },
+  { id: 'af-3', timestamp: '2026-07-18T07:48:00', category: 'Finance', message: 'Corporate tie-up pre-auth approved — Tata AIG package NX-CORP-882 for IPD admission', actor: 'Finance Desk', department: 'Billing' },
+  { id: 'af-4', timestamp: '2026-07-18T07:30:00', category: 'Administrative', message: 'Morning census sync — 312 active inpatients, 28 pending discharges flagged for MD review', actor: 'Admin Console', department: 'Admissions' },
+  { id: 'af-5', timestamp: '2026-07-18T07:15:00', category: 'Supply', message: 'Critical stock alert — Piperacillin-Tazobactam 4.5g below reorder point, PR auto-generated', actor: 'Inventory System', department: 'Pharmacy' },
+  { id: 'af-6', timestamp: '2026-07-18T06:55:00', category: 'Clinical', message: 'Lab critical value escalated — Potassium 6.2 mEq/L, nephrology callback initiated', actor: 'LIMS Auto-Router', department: 'Laboratory' },
 ];
 
 export const INITIAL_WORK_QUEUE: WorkQueueItem[] = [
-  { id: 'wq-1', title: 'Emergency consult ΓÇö chest pain triage', priority: 'Emergency', status: 'Pending', queueType: 'Doctor Consultation', assignedRole: 'Doctor', department: 'Emergency', dueAt: '2026-07-18T08:30:00', patientRef: 'NX-2026-004821' },
-  { id: 'wq-2', title: 'Medication reconciliation ΓÇö post-admission', priority: 'High', status: 'In Progress', queueType: 'Nurse Medication Checklist', assignedRole: 'Nurse', department: 'IPD Ward B', dueAt: '2026-07-18T09:00:00', patientRef: 'NX-2026-004798' },
-  { id: 'wq-3', title: 'Discharge summary sign-off ΓÇö orthopedics', priority: 'High', status: 'Pending', queueType: 'Doctor Consultation', assignedRole: 'Doctor', department: 'Orthopedics', dueAt: '2026-07-18T10:00:00', patientRef: 'NX-2026-004755' },
-  { id: 'wq-4', title: 'Purchase request approval ΓÇö surgical consumables', priority: 'Normal', status: 'Pending', queueType: 'Procurement Routing', assignedRole: 'Procurement', department: 'Supply Chain', dueAt: '2026-07-18T14:00:00' },
-  { id: 'wq-5', title: 'Insurance document verification ΓÇö pre-auth packet', priority: 'High', status: 'In Progress', queueType: 'Finance Validation', assignedRole: 'Finance', department: 'Billing', dueAt: '2026-07-18T11:30:00', patientRef: 'NX-2026-004812' },
-  { id: 'wq-6', title: 'Bed turnover sanitization ΓÇö Ward C Room 412', priority: 'Normal', status: 'Verified', queueType: 'Housekeeping Task', assignedRole: 'Staff', department: 'Facilities', dueAt: '2026-07-18T08:45:00' },
+  { id: 'wq-1', title: 'Emergency consult — chest pain triage', priority: 'Emergency', status: 'Pending', queueType: 'Doctor Consultation', assignedRole: 'Doctor', department: 'Emergency', dueAt: '2026-07-18T08:30:00', patientRef: 'NX-2026-004821' },
+  { id: 'wq-2', title: 'Medication reconciliation — post-admission', priority: 'High', status: 'In Progress', queueType: 'Nurse Medication Checklist', assignedRole: 'Nurse', department: 'IPD Ward B', dueAt: '2026-07-18T09:00:00', patientRef: 'NX-2026-004798' },
+  { id: 'wq-3', title: 'Discharge summary sign-off — orthopedics', priority: 'High', status: 'Pending', queueType: 'Doctor Consultation', assignedRole: 'Doctor', department: 'Orthopedics', dueAt: '2026-07-18T10:00:00', patientRef: 'NX-2026-004755' },
+  { id: 'wq-4', title: 'Purchase request approval — surgical consumables', priority: 'Normal', status: 'Pending', queueType: 'Procurement Routing', assignedRole: 'Procurement', department: 'Supply Chain', dueAt: '2026-07-18T14:00:00' },
+  { id: 'wq-5', title: 'Insurance document verification — pre-auth packet', priority: 'High', status: 'In Progress', queueType: 'Finance Validation', assignedRole: 'Finance', department: 'Billing', dueAt: '2026-07-18T11:30:00', patientRef: 'NX-2026-004812' },
+  { id: 'wq-6', title: 'Bed turnover sanitization — Ward C Room 412', priority: 'Normal', status: 'Verified', queueType: 'Housekeeping Task', assignedRole: 'Staff', department: 'Facilities', dueAt: '2026-07-18T08:45:00' },
 ];
 
 export const CHAT_THREADS: ChatThread[] = [
-  { id: 'ch-1', channel: '#emergency-handover', lastMessage: 'Trauma bay 2 ΓÇö blood products cross-matched, awaiting neuro clearance', participants: 'ER Team ┬╖ ICU ┬╖ Blood Bank', unread: 4, updatedAt: '2026-07-18T08:10:00' },
-  { id: 'ch-2', channel: '#ipd-ward-b', lastMessage: 'Insulin sliding scale updated for Bed 14 ΓÇö pharmacy notified', participants: 'Nursing ┬╖ Pharmacy', unread: 0, updatedAt: '2026-07-18T07:55:00' },
-  { id: 'ch-3', channel: '#procurement-urgent', lastMessage: 'PO-2026-11842 expedited ΓÇö vendor confirmed dispatch by 14:00', participants: 'Procurement ┬╖ OT Stores', unread: 2, updatedAt: '2026-07-18T07:40:00' },
+  { id: 'ch-1', channel: '#emergency-handover', lastMessage: 'Trauma bay 2 — blood products cross-matched, awaiting neuro clearance', participants: 'ER Team · ICU · Blood Bank', unread: 4, updatedAt: '2026-07-18T08:10:00' },
+  { id: 'ch-2', channel: '#ipd-ward-b', lastMessage: 'Insulin sliding scale updated for Bed 14 — pharmacy notified', participants: 'Nursing · Pharmacy', unread: 0, updatedAt: '2026-07-18T07:55:00' },
+  { id: 'ch-3', channel: '#procurement-urgent', lastMessage: 'PO-2026-11842 expedited — vendor confirmed dispatch by 14:00', participants: 'Procurement · OT Stores', unread: 2, updatedAt: '2026-07-18T07:40:00' },
 ];
 
 export const SHARED_DOCUMENTS: SharedDocument[] = [
-  { id: 'doc-1', title: 'Infection Control Protocol ΓÇö Monsoon Season 2026', department: 'Quality', version: 'v3.2', updatedAt: '2026-07-15', accessLevel: 'Internal' },
-  { id: 'doc-2', title: 'OT Scheduling Matrix ΓÇö Week 29', department: 'OT Coordination', version: 'v1.0', updatedAt: '2026-07-17', accessLevel: 'Department' },
-  { id: 'doc-3', title: 'Corporate Insurance Tariff Sheet ΓÇö Q3 2026', department: 'Billing', version: 'v2.1', updatedAt: '2026-07-10', accessLevel: 'Restricted' },
+  { id: 'doc-1', title: 'Infection Control Protocol — Monsoon Season 2026', department: 'Quality', version: 'v3.2', updatedAt: '2026-07-15', accessLevel: 'Internal' },
+  { id: 'doc-2', title: 'OT Scheduling Matrix — Week 29', department: 'OT Coordination', version: 'v1.0', updatedAt: '2026-07-17', accessLevel: 'Department' },
+  { id: 'doc-3', title: 'Corporate Insurance Tariff Sheet — Q3 2026', department: 'Billing', version: 'v2.1', updatedAt: '2026-07-10', accessLevel: 'Restricted' },
 ];
 
 export const MEETING_AGENDAS: MeetingAgenda[] = [
-  { id: 'mtg-1', title: 'Daily Clinical Governance Huddle', datetime: '2026-07-18T09:30:00', attendees: 'HODs ┬╖ Nursing Superintendent ┬╖ Admin', location: 'Conference Room A', status: 'Scheduled' },
-  { id: 'mtg-2', title: 'ICU Capacity Review ΓÇö Surge Planning', datetime: '2026-07-18T11:00:00', attendees: 'Critical Care ┬╖ Admissions ┬╖ Finance', location: 'Virtual ΓÇö Teams', status: 'Scheduled' },
-  { id: 'mtg-3', title: 'Pharmacy Formulary Committee', datetime: '2026-07-17T15:00:00', attendees: 'Pharmacy ┬╖ Clinical Pharmacology ┬╖ Procurement', location: 'Board Room', status: 'Completed' },
+  { id: 'mtg-1', title: 'Daily Clinical Governance Huddle', datetime: '2026-07-18T09:30:00', attendees: 'HODs · Nursing Superintendent · Admin', location: 'Conference Room A', status: 'Scheduled' },
+  { id: 'mtg-2', title: 'ICU Capacity Review — Surge Planning', datetime: '2026-07-18T11:00:00', attendees: 'Critical Care · Admissions · Finance', location: 'Virtual — Teams', status: 'Scheduled' },
+  { id: 'mtg-3', title: 'Pharmacy Formulary Committee', datetime: '2026-07-17T15:00:00', attendees: 'Pharmacy · Clinical Pharmacology · Procurement', location: 'Board Room', status: 'Completed' },
 ];
 
 export const ACTIVE_PATIENTS: ActivePatientSummary[] = [
-  { id: 'pt-1', uhid: 'NX-2026-004821', name: 'Rajesh Kulkarni', age: 58, gender: 'M', ward: 'Emergency ┬╖ Trauma Bay 2', attendingPhysician: 'Dr. Meera Iyer', admissionDate: '2026-07-18', diagnosis: 'Polytrauma ΓÇö MVA, rib fractures, suspected TBI', allergies: ['Penicillin', 'Sulfa drugs'], identityVerified: true },
-  { id: 'pt-2', uhid: 'NX-2026-004798', name: 'Anita Deshmukh', age: 67, gender: 'F', ward: 'IPD Ward B ┬╖ Bed 14', attendingPhysician: 'Dr. Vikram Patil', admissionDate: '2026-07-16', diagnosis: 'NSTEMI ΓÇö post-PCI, on dual antiplatelet therapy', allergies: ['None documented'], identityVerified: true },
-  { id: 'pt-3', uhid: 'NX-2026-004755', name: 'Suresh Menon', age: 45, gender: 'M', ward: 'Orthopedics ┬╖ Bed 208', attendingPhysician: 'Dr. Arjun Rao', admissionDate: '2026-07-14', diagnosis: 'Right femur ORIF ΓÇö planned discharge today', allergies: ['Latex ΓÇö mild contact dermatitis'], identityVerified: true },
+  { id: 'pt-1', uhid: 'NX-2026-004821', name: 'Rajesh Kulkarni', age: 58, gender: 'M', ward: 'Emergency · Trauma Bay 2', attendingPhysician: 'Dr. Meera Iyer', admissionDate: '2026-07-18', diagnosis: 'Polytrauma — MVA, rib fractures, suspected TBI', allergies: ['Penicillin', 'Sulfa drugs'], identityVerified: true },
+  { id: 'pt-2', uhid: 'NX-2026-004798', name: 'Anita Deshmukh', age: 67, gender: 'F', ward: 'IPD Ward B · Bed 14', attendingPhysician: 'Dr. Vikram Patil', admissionDate: '2026-07-16', diagnosis: 'NSTEMI — post-PCI, on dual antiplatelet therapy', allergies: ['None documented'], identityVerified: true },
+  { id: 'pt-3', uhid: 'NX-2026-004755', name: 'Suresh Menon', age: 45, gender: 'M', ward: 'Orthopedics · Bed 208', attendingPhysician: 'Dr. Arjun Rao', admissionDate: '2026-07-14', diagnosis: 'Right femur ORIF — planned discharge today', allergies: ['Latex — mild contact dermatitis'], identityVerified: true },
 ];
 
 export const MEDICAL_HISTORY: Record<string, MedicalHistoryEvent[]> = {
   'pt-1': [
-    { id: 'mh-1', date: '2026-07-18', type: 'Admission', summary: 'Emergency admission via ambulance ΓÇö trauma activation', provider: 'Dr. Meera Iyer' },
-    { id: 'mh-2', date: '2026-07-18', type: 'Lab', summary: 'CBC, BMP, coagulation panel ΓÇö hemoglobin 11.2 g/dL', provider: 'Central Lab' },
+    { id: 'mh-1', date: '2026-07-18', type: 'Admission', summary: 'Emergency admission via ambulance — trauma activation', provider: 'Dr. Meera Iyer' },
+    { id: 'mh-2', date: '2026-07-18', type: 'Lab', summary: 'CBC, BMP, coagulation panel — hemoglobin 11.2 g/dL', provider: 'Central Lab' },
   ],
   'pt-2': [
-    { id: 'mh-3', date: '2026-07-16', type: 'Admission', summary: 'Chest pain ΓÇö troponin elevated, cath lab activated', provider: 'Dr. Vikram Patil' },
-    { id: 'mh-4', date: '2026-07-16', type: 'Procedure', summary: 'PCI with drug-eluting stent ΓÇö LAD 90% lesion', provider: 'Cath Lab Team' },
-    { id: 'mh-5', date: '2026-07-17', type: 'Prescription', summary: 'DAPT initiated ΓÇö Aspirin 75mg + Ticagrelor 90mg BD', provider: 'Dr. Vikram Patil' },
+    { id: 'mh-3', date: '2026-07-16', type: 'Admission', summary: 'Chest pain — troponin elevated, cath lab activated', provider: 'Dr. Vikram Patil' },
+    { id: 'mh-4', date: '2026-07-16', type: 'Procedure', summary: 'PCI with drug-eluting stent — LAD 90% lesion', provider: 'Cath Lab Team' },
+    { id: 'mh-5', date: '2026-07-17', type: 'Prescription', summary: 'DAPT initiated — Aspirin 75mg + Ticagrelor 90mg BD', provider: 'Dr. Vikram Patil' },
   ],
 };
 
@@ -260,10 +260,10 @@ export const PRESCRIPTIONS: PrescriptionStatus[] = [
 ];
 
 export const MEDICAL_ORDERS: MedicalOrder[] = [
-  { id: 'mo-1', orderType: 'Imaging', details: 'CT Head without contrast ΓÇö trauma protocol', status: 'In Progress', orderedAt: '2026-07-18T08:15:00', priority: 'Emergency' },
+  { id: 'mo-1', orderType: 'Imaging', details: 'CT Head without contrast — trauma protocol', status: 'In Progress', orderedAt: '2026-07-18T08:15:00', priority: 'Emergency' },
   { id: 'mo-2', orderType: 'Lab', details: 'Repeat BMP + coagulation in 4 hours', status: 'Ordered', orderedAt: '2026-07-18T08:20:00', priority: 'High' },
-  { id: 'mo-3', orderType: 'Consult', details: 'Neurosurgery evaluation ΓÇö GCS monitoring', status: 'Ordered', orderedAt: '2026-07-18T08:18:00', priority: 'Emergency' },
-  { id: 'mo-4', orderType: 'Nursing', details: 'Neuro checks Q1H ├ù 24 hours', status: 'In Progress', orderedAt: '2026-07-18T08:22:00', priority: 'High' },
+  { id: 'mo-3', orderType: 'Consult', details: 'Neurosurgery evaluation — GCS monitoring', status: 'Ordered', orderedAt: '2026-07-18T08:18:00', priority: 'Emergency' },
+  { id: 'mo-4', orderType: 'Nursing', details: 'Neuro checks Q1H × 24 hours', status: 'In Progress', orderedAt: '2026-07-18T08:22:00', priority: 'High' },
 ];
 
 export const DEPARTMENT_CAPACITY: DepartmentCapacity[] = [
@@ -284,25 +284,25 @@ export const BED_AVAILABILITY: BedAvailability[] = [
 ];
 
 export const ON_DUTY_SHIFTS: OnDutyShift[] = [
-  { id: 'sh-1', staffName: 'Dr. Meera Iyer', role: 'Emergency Physician', department: 'Emergency', shift: 'Morning', coverage: 'Trauma ┬╖ Triage' },
+  { id: 'sh-1', staffName: 'Dr. Meera Iyer', role: 'Emergency Physician', department: 'Emergency', shift: 'Morning', coverage: 'Trauma · Triage' },
   { id: 'sh-2', staffName: 'Nurse Priya Nair', role: 'Charge Nurse', department: 'ICU', shift: 'Morning', coverage: 'ICU 1-4' },
-  { id: 'sh-3', staffName: 'Dr. Vikram Patil', role: 'Cardiologist', department: 'Cardiology', shift: 'Morning', coverage: 'Cath Lab ┬╖ Ward rounds' },
+  { id: 'sh-3', staffName: 'Dr. Vikram Patil', role: 'Cardiologist', department: 'Cardiology', shift: 'Morning', coverage: 'Cath Lab · Ward rounds' },
   { id: 'sh-4', staffName: 'Raj Malhotra', role: 'OT Technician', department: 'OT', shift: 'Morning', coverage: 'Theatre 1-3' },
-  { id: 'sh-5', staffName: 'Anjali Shah', role: 'Pharmacist', department: 'Pharmacy', shift: 'Morning', coverage: 'IPD dispensing ┬╖ IV admixture' },
+  { id: 'sh-5', staffName: 'Anjali Shah', role: 'Pharmacist', department: 'Pharmacy', shift: 'Morning', coverage: 'IPD dispensing · IV admixture' },
 ];
 
 export const EQUIPMENT_MAINTENANCE: EquipmentMaintenance[] = [
-  { id: 'eq-1', equipment: 'GE Optima CT660 ΓÇö CT Scanner', location: 'Radiology Block B', status: 'Operational', nextService: '2026-08-12' },
-  { id: 'eq-2', equipment: 'Dr├ñger Evita V300 ΓÇö Ventilator', location: 'ICU-3', status: 'Scheduled Maintenance', nextService: '2026-07-20' },
-  { id: 'eq-3', equipment: 'Philips IntelliVue MX800 ΓÇö Monitor', location: 'Emergency Bay 1', status: 'Operational', nextService: '2026-09-01' },
-  { id: 'eq-4', equipment: 'Steris V-PRO ΓÇö Low Temp Sterilizer', location: 'CSSD', status: 'Out of Service', nextService: '2026-07-19' },
+  { id: 'eq-1', equipment: 'GE Optima CT660 — CT Scanner', location: 'Radiology Block B', status: 'Operational', nextService: '2026-08-12' },
+  { id: 'eq-2', equipment: 'Dräger Evita V300 — Ventilator', location: 'ICU-3', status: 'Scheduled Maintenance', nextService: '2026-07-20' },
+  { id: 'eq-3', equipment: 'Philips IntelliVue MX800 — Monitor', location: 'Emergency Bay 1', status: 'Operational', nextService: '2026-09-01' },
+  { id: 'eq-4', equipment: 'Steris V-PRO — Low Temp Sterilizer', location: 'CSSD', status: 'Out of Service', nextService: '2026-07-19' },
 ];
 
 export const INITIAL_APPROVALS: ApprovalRequest[] = [
-  { id: 'ap-1', type: 'Purchase Approval', requester: 'OT Stores', summary: 'Surgical suture kit replenishment ΓÇö Ethicon Vicryl assortment', amount: 84200, status: 'Pending', submittedAt: '2026-07-18T07:00:00', department: 'Procurement' },
-  { id: 'ap-2', type: 'Leave Request', requester: 'Nurse Kavita Joshi', summary: 'Annual leave ΓÇö 5 days, Ward C coverage arranged', status: 'Under Review', submittedAt: '2026-07-17T16:30:00', department: 'Nursing' },
-  { id: 'ap-3', type: 'Discount Adjustment', requester: 'Billing Desk', summary: 'Senior citizen concession ΓÇö IPD consolidated bill', amount: 12500, status: 'Pending', submittedAt: '2026-07-18T06:45:00', department: 'Billing' },
-  { id: 'ap-4', type: 'Insurance Pre-Auth', requester: 'Admissions', summary: 'Star Health package ΓÇö CABG post-operative IPD extension', amount: 285000, status: 'Under Review', submittedAt: '2026-07-17T14:00:00', department: 'Insurance' },
+  { id: 'ap-1', type: 'Purchase Approval', requester: 'OT Stores', summary: 'Surgical suture kit replenishment — Ethicon Vicryl assortment', amount: 84200, status: 'Pending', submittedAt: '2026-07-18T07:00:00', department: 'Procurement' },
+  { id: 'ap-2', type: 'Leave Request', requester: 'Nurse Kavita Joshi', summary: 'Annual leave — 5 days, Ward C coverage arranged', status: 'Under Review', submittedAt: '2026-07-17T16:30:00', department: 'Nursing' },
+  { id: 'ap-3', type: 'Discount Adjustment', requester: 'Billing Desk', summary: 'Senior citizen concession — IPD consolidated bill', amount: 12500, status: 'Pending', submittedAt: '2026-07-18T06:45:00', department: 'Billing' },
+  { id: 'ap-4', type: 'Insurance Pre-Auth', requester: 'Admissions', summary: 'Star Health package — CABG post-operative IPD extension', amount: 285000, status: 'Under Review', submittedAt: '2026-07-17T14:00:00', department: 'Insurance' },
 ];
 
 export const SHIFT_COMPLIANCE: ShiftComplianceRecord[] = [
@@ -312,15 +312,15 @@ export const SHIFT_COMPLIANCE: ShiftComplianceRecord[] = [
 ];
 
 export const INITIAL_AI_INSIGHTS: AiHospitalInsight[] = [
-  { id: 'ai-1', category: 'Capacity', message: 'ICU occupancy may exceed 95% capacity tomorrow ΓÇö 3 pending admissions flagged for step-down review', severity: 'Warning', status: 'Active', generatedAt: '2026-07-18T08:00:00' },
-  { id: 'ai-2', category: 'Inventory', message: 'Piperacillin-Tazobactam, Enoxaparin, and Normal Saline 500mL below reorder thresholds ΓÇö auto PR queued', severity: 'Critical', status: 'Active', generatedAt: '2026-07-18T07:45:00' },
-  { id: 'ai-3', category: 'Operational', message: 'OPD no-show rate elevated 18% vs baseline ΓÇö consider SMS reminder cadence adjustment', severity: 'Info', status: 'Active', generatedAt: '2026-07-18T07:30:00' },
+  { id: 'ai-1', category: 'Capacity', message: 'ICU occupancy may exceed 95% capacity tomorrow — 3 pending admissions flagged for step-down review', severity: 'Warning', status: 'Active', generatedAt: '2026-07-18T08:00:00' },
+  { id: 'ai-2', category: 'Inventory', message: 'Piperacillin-Tazobactam, Enoxaparin, and Normal Saline 500mL below reorder thresholds — auto PR queued', severity: 'Critical', status: 'Active', generatedAt: '2026-07-18T07:45:00' },
+  { id: 'ai-3', category: 'Operational', message: 'OPD no-show rate elevated 18% vs baseline — consider SMS reminder cadence adjustment', severity: 'Info', status: 'Active', generatedAt: '2026-07-18T07:30:00' },
 ];
 
 export const AUDIT_LOGS: AuditLogEntry[] = [
-  { id: 'au-1', timestamp: '2026-07-18T08:08:00', user: 'Dr. Meera Iyer', action: 'Viewed EMR ΓÇö trauma patient', module: 'EMR', ipMasked: '[Network Address Masked]', result: 'Success' },
-  { id: 'au-2', timestamp: '2026-07-18T07:52:00', user: 'Finance Desk', action: 'Approved discount ΓÇö policy SC-2026', module: 'Billing', ipMasked: '[Network Address Masked]', result: 'Success' },
-  { id: 'au-3', timestamp: '2026-07-18T07:35:00', user: 'Unknown Proxy', action: 'Bulk export attempt ΓÇö patient demographics', module: 'Reports', ipMasked: '[Network Address Masked]', result: 'Denied' },
+  { id: 'au-1', timestamp: '2026-07-18T08:08:00', user: 'Dr. Meera Iyer', action: 'Viewed EMR — trauma patient', module: 'EMR', ipMasked: '[Network Address Masked]', result: 'Success' },
+  { id: 'au-2', timestamp: '2026-07-18T07:52:00', user: 'Finance Desk', action: 'Approved discount — policy SC-2026', module: 'Billing', ipMasked: '[Network Address Masked]', result: 'Success' },
+  { id: 'au-3', timestamp: '2026-07-18T07:35:00', user: 'Unknown Proxy', action: 'Bulk export attempt — patient demographics', module: 'Reports', ipMasked: '[Network Address Masked]', result: 'Denied' },
   { id: 'au-4', timestamp: '2026-07-18T07:20:00', user: 'Procurement Bot', action: 'Auto-generated PR-2026-11842', module: 'Procurement', ipMasked: '[Network Address Masked]', result: 'Success' },
 ];
 
@@ -333,7 +333,7 @@ export const PERFORMANCE_KPIS: PerformanceKpi[] = [
 
 export const AI_SAMPLE_RESPONSES: { query: string; response: string }[] = [
   { query: 'Which medicines are running low?', response: 'Critical stock alerts: Piperacillin-Tazobactam 4.5g (12 vials, reorder 50), Enoxaparin 40mg (8 syringes, reorder 100), Normal Saline 500mL (45 units, reorder 200). Auto PR-2026-11842 queued for procurement review.' },
-  { query: 'ICU capacity forecast for tomorrow?', response: 'Current ICU census 28/32 (87.5%). Projected admissions: 3 (cardiac surgery ├ù2, sepsis ├ù1). Discharges planned: 1. Forecast occupancy 94% ΓÇö recommend activating surge protocol and step-down bed allocation in Ward B.' },
+  { query: 'ICU capacity forecast for tomorrow?', response: 'Current ICU census 28/32 (87.5%). Projected admissions: 3 (cardiac surgery ×2, sepsis ×1). Discharges planned: 1. Forecast occupancy 94% — recommend activating surge protocol and step-down bed allocation in Ward B.' },
 ];
 
 export const OCCUPANCY_TREND = [
@@ -345,14 +345,14 @@ export const OCCUPANCY_TREND = [
 ];
 
 export const UNIVERSAL_SEARCH_INDEX: UniversalSearchResult[] = [
-  { type: 'Patient', id: 'NX-2026-004821', label: 'Rajesh Kulkarni', subtitle: 'Emergency ┬╖ Trauma Bay 2' },
-  { type: 'Patient', id: 'NX-2026-004798', label: 'Anita Deshmukh', subtitle: 'IPD Ward B ┬╖ Bed 14' },
-  { type: 'Doctor', id: 'DOC-0042', label: 'Dr. Meera Iyer', subtitle: 'Emergency Medicine ┬╖ On duty' },
-  { type: 'Doctor', id: 'DOC-0018', label: 'Dr. Vikram Patil', subtitle: 'Cardiology ┬╖ Cath Lab' },
-  { type: 'Staff', id: 'STF-0881', label: 'Nurse Priya Nair', subtitle: 'ICU Charge Nurse ┬╖ Morning shift' },
-  { type: 'Invoice', id: 'INV-2026-44201', label: 'INV-2026-44201', subtitle: 'Rahul Sharma ┬╖ OPD ┬╖ Pending Γé╣18,400' },
-  { type: 'Lab', id: 'LAB-2026-88102', label: 'LAB-2026-88102', subtitle: 'BMP + Coagulation ┬╖ Critical K+ flagged' },
-  { type: 'Purchase Order', id: 'PO-2026-11842', label: 'PO-2026-11842', subtitle: 'Surgical consumables ┬╖ Expedited dispatch' },
+  { type: 'Patient', id: 'NX-2026-004821', label: 'Rajesh Kulkarni', subtitle: 'Emergency · Trauma Bay 2' },
+  { type: 'Patient', id: 'NX-2026-004798', label: 'Anita Deshmukh', subtitle: 'IPD Ward B · Bed 14' },
+  { type: 'Doctor', id: 'DOC-0042', label: 'Dr. Meera Iyer', subtitle: 'Emergency Medicine · On duty' },
+  { type: 'Doctor', id: 'DOC-0018', label: 'Dr. Vikram Patil', subtitle: 'Cardiology · Cath Lab' },
+  { type: 'Staff', id: 'STF-0881', label: 'Nurse Priya Nair', subtitle: 'ICU Charge Nurse · Morning shift' },
+  { type: 'Invoice', id: 'INV-2026-44201', label: 'INV-2026-44201', subtitle: 'Rahul Sharma · OPD · Pending ₹18,400' },
+  { type: 'Lab', id: 'LAB-2026-88102', label: 'LAB-2026-88102', subtitle: 'BMP + Coagulation · Critical K+ flagged' },
+  { type: 'Purchase Order', id: 'PO-2026-11842', label: 'PO-2026-11842', subtitle: 'Surgical consumables · Expedited dispatch' },
 ];
 
 export function formatTime(iso: string): string {

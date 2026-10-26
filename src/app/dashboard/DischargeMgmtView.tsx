@@ -62,7 +62,7 @@ export default function DischargeMgmtView() {
       {discharged && (
         <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
           <CheckCircle2 className="h-5 w-5" />
-          Discharge processed ΓÇö bed released and follow-up logged.
+          Discharge processed — bed released and follow-up logged.
         </div>
       )}
 
@@ -105,7 +105,7 @@ export default function DischargeMgmtView() {
           <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
             <span className="flex items-center gap-2 text-sm text-slate-800">
               <Wallet className="h-4 w-4 text-blue-600" />
-              Pending balance: Γé╣12,400
+              Pending balance: ₹12,400
             </span>
             <button
               type="button"

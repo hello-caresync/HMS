@@ -97,7 +97,7 @@ export default function OPDReceptionPage() {
             </div>
             <div>
               <p className="text-xs font-bold text-[#004D56]">{selectedDoctor.full_name}</p>
-              <p className="text-[10px] text-slate-500 font-medium">{selectedDoctor.department} ΓÇó {selectedDoctor.room_no || 'OPD'}</p>
+              <p className="text-[10px] text-slate-500 font-medium">{selectedDoctor.department} • {selectedDoctor.room_no || 'OPD'}</p>
             </div>
           </div>
         )}
@@ -161,10 +161,10 @@ export default function OPDReceptionPage() {
                       <div className="flex-1 min-w-0">
                         <h4 className="font-extrabold text-xs text-slate-900 truncate">{doc.full_name}</h4>
                         <p className="text-[11px] text-slate-500 font-medium truncate">
-                          {doc.department} {doc.specialization ? `┬╖ ${doc.specialization}` : ''}
+                          {doc.department} {doc.specialization ? `· ${doc.specialization}` : ''}
                         </p>
                         <p className="text-[11px] font-bold text-slate-700 mt-0.5">
-                          Γé╣{doc.consultation_fee} ┬╖ {doc.room_no || 'OPD Desk'}
+                          ₹{doc.consultation_fee} · {doc.room_no || 'OPD Desk'}
                         </p>
                       </div>
 
@@ -185,7 +185,7 @@ export default function OPDReceptionPage() {
               <h3 className="font-extrabold text-sm text-[#004D56]">{selectedDoctor.full_name}</h3>
               <div className="text-xs text-slate-600 font-medium space-y-1">
                 <p>Department: <span className="font-bold text-slate-900">{selectedDoctor.department}</span></p>
-                <p>Consultation Fee: <span className="font-bold text-emerald-700">Γé╣{selectedDoctor.consultation_fee}</span></p>
+                <p>Consultation Fee: <span className="font-bold text-emerald-700">₹{selectedDoctor.consultation_fee}</span></p>
                 <p>Assigned Location: <span className="font-bold text-slate-900">{selectedDoctor.room_no || 'Room 1'}</span></p>
               </div>
             </div>
@@ -221,6 +221,8 @@ export default function OPDReceptionPage() {
             <input
               type="number"
               placeholder="Age"
+              inputMode="numeric"
+              maxLength={3}
               className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#007B8A]"
             />
           </div>

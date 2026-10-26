@@ -78,7 +78,7 @@ function PipelineStepper({ status }: { status: POExtendedStatus }) {
               {stage}
             </span>
             {index < PIPELINE_STAGES.length - 1 && (
-              <span className="text-slate-900">ΓåÆ</span>
+              <span className="text-slate-900">→</span>
             )}
           </React.Fragment>
         );
@@ -122,13 +122,13 @@ export default function LogisticsView({
         <KpiCard
           label="Warehouse lane"
           value={warehouseCount}
-          hint="Accepted ┬╖ Processing ┬╖ Packed"
+          hint="Accepted · Processing · Packed"
           accent="indigo"
         />
         <KpiCard
           label="In transit"
           value={inTransitCount}
-          hint="Dispatched ┬╖ En route"
+          hint="Dispatched · En route"
           accent="amber"
         />
         <KpiCard
@@ -158,7 +158,7 @@ export default function LogisticsView({
                   <div>
                     <p className={overlineClassName}>Fulfillment record</p>
                     <p className="font-mono text-xs font-black text-slate-950">
-                      {po?.id ?? 'ΓÇö'}
+                      {po?.id ?? '—'}
                     </p>
                     <h3 className={`${sectionTitleClassName} mt-1`}>
                       {po?.hospitalName ?? 'Unknown Hospital'}
@@ -180,7 +180,7 @@ export default function LogisticsView({
                   <div>
                     <p className={overlineClassName}>Drop node</p>
                     <p className="mt-1 text-sm text-slate-900">
-                      {po?.deliveryLocation ?? 'ΓÇö'}
+                      {po?.deliveryLocation ?? '—'}
                     </p>
                   </div>
                 </div>
@@ -223,7 +223,7 @@ export default function LogisticsView({
                         onClick={() => po?.id && updatePOStatus(po.id, 'Dispatched')}
                         className={`${btnPrimaryClassName} shrink-0`}
                       >
-                        ≡ƒÜÇ GPRS Dispatch Hook
+                        🚀 GPRS Dispatch Hook
                       </button>
                     </div>
                   )}
@@ -238,7 +238,7 @@ export default function LogisticsView({
                   )}
                   {po?.courierTrackingId && (
                     <span className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800">
-                      Tracking ┬╖{' '}
+                      Tracking ·{' '}
                       <span className="ml-1 font-mono font-black text-slate-900">
                         {po.courierTrackingId}
                       </span>

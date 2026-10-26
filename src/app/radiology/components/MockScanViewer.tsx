@@ -44,7 +44,7 @@ export default function MockScanViewer({ type, label, fileName, className = '' }
 
         {/* Corner metadata */}
         <div className="absolute left-2 top-2 font-mono text-[9px] text-cyan-400/80">
-          WW: 400 ┬╖ WL: 40
+          WW: 400 · WL: 40
         </div>
         <div className="absolute bottom-2 right-2 font-mono text-[9px] text-slate-800">
           {fileName ?? 'NO IMAGE LOADED'}
@@ -74,7 +74,7 @@ function ChestXrayPlaceholder() {
       {/* Clavicles */}
       <path d="M80 80 Q140 60 200 75 Q260 60 320 80" fill="none" stroke="#3a5060" strokeWidth="1.2" opacity="0.5" />
       <text x="200" y="280" textAnchor="middle" fill="#4a6080" fontSize="10" fontFamily="monospace">
-        CHEST PA ΓÇö SIMULATED
+        CHEST PA — SIMULATED
       </text>
     </svg>
   );
@@ -94,7 +94,7 @@ function BrainMriPlaceholder() {
       {/* Bright lesion dot (mock finding) */}
       <circle cx="220" cy="120" r="8" fill="#6080a0" opacity="0.5" />
       <text x="200" y="280" textAnchor="middle" fill="#4a6080" fontSize="10" fontFamily="monospace">
-        BRAIN MRI T2 ΓÇö SIMULATED
+        BRAIN MRI T2 — SIMULATED
       </text>
     </svg>
   );

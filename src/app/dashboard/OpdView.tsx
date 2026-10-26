@@ -37,7 +37,7 @@ export default function OpdView() {
       uhid: "NX-2026-000412",
       patientName: "Rahul Sharma",
       ageGender: "38M",
-      vitals: { bp: "130/85 mmHg", pulse: "78 bpm", temp: "98.6 ┬░F", spo2: "98%" },
+      vitals: { bp: "130/85 mmHg", pulse: "78 bpm", temp: "98.6 °F", spo2: "98%" },
       assessment: "Patient presents with progressive non-productive cough and mild exertional dyspnea over 4 days.",
       clinicalNotes: "Bilateral vesicular breath sounds heard. No crepitations. Heart sounds regular.",
       diagnoses: [{ code: "J40", description: "Bronchitis, not specified as acute or chronic" }],
@@ -53,7 +53,7 @@ export default function OpdView() {
       uhid: "NX-2026-000413",
       patientName: "Priya Patel",
       ageGender: "31F",
-      vitals: { bp: "115/70 mmHg", pulse: "72 bpm", temp: "100.2 ┬░F", spo2: "99%" },
+      vitals: { bp: "115/70 mmHg", pulse: "72 bpm", temp: "100.2 °F", spo2: "99%" },
       assessment: "Acute onset epigastric burning pain radiating to back, accompanied by nausea.",
       clinicalNotes: "Abdomen soft, localized epigastric tenderness present. Bowel sounds normal.",
       diagnoses: [{ code: "K29.7", description: "Gastritis, unspecified" }],
@@ -152,7 +152,7 @@ export default function OpdView() {
             onClick={() => { setActiveWorkflow('queue'); setSelectedCase(null); }}
             className="text-xs border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3.5 py-1.5 rounded-lg text-slate-300 transition-colors"
           >
-            ΓåÉ Return to Triage Queue
+            ← Return to Triage Queue
           </button>
         )}
       </div>
@@ -370,7 +370,7 @@ export default function OpdView() {
                   <div className="bg-slate-900/50 rounded-lg border border-slate-800 p-2 divide-y divide-slate-800 text-[11px] font-mono">
                     {selectedCase.prescriptions.map((med, idx) => (
                       <div key={idx} className="py-2 flex justify-between px-2 text-slate-300 first:pt-0 last:pb-0">
-                        <span>≡ƒÆè <strong className="text-white">{med.medicine}</strong> ΓÇö {med.dosage} ({med.frequency})</span>
+                        <span>💊 <strong className="text-white">{med.medicine}</strong> — {med.dosage} ({med.frequency})</span>
                         <span className="text-slate-500">{med.duration}</span>
                       </div>
                     ))}

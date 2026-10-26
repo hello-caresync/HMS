@@ -47,9 +47,9 @@ export type IntegrationLogId =
   | 'sms-webhook';
 
 export const SETTINGS_WORKSPACE_TABS: { id: SettingsWorkspaceTab; label: string; description: string }[] = [
-  { id: 'control', label: 'ERP Control Dashboard & Access Management', description: 'System health ┬╖ user provisioning ┬╖ RBAC ┬╖ quick actions' },
-  { id: 'workflow', label: 'Functional Sub-Module Architecture & Workflow Builder', description: 'Master registries ┬╖ module toggles ┬╖ process customizer ┬╖ approval rules' },
-  { id: 'integrations', label: 'Healthcare Integrations, Security & Compliance', description: 'HL7 ┬╖ FHIR ┬╖ PACS ┬╖ LIS ┬╖ security ┬╖ AI ┬╖ audit logs' },
+  { id: 'control', label: 'ERP Control Dashboard & Access Management', description: 'System health · user provisioning · RBAC · quick actions' },
+  { id: 'workflow', label: 'Functional Sub-Module Architecture & Workflow Builder', description: 'Master registries · module toggles · process customizer · approval rules' },
+  { id: 'integrations', label: 'Healthcare Integrations, Security & Compliance', description: 'HL7 · FHIR · PACS · LIS · security · AI · audit logs' },
 ];
 
 export type RegistryTreeGroup = {
@@ -65,7 +65,7 @@ export const REGISTRY_CONFIG_TREE: RegistryTreeGroup[] = [
     children: [
       { id: 'hospital-general', label: 'Institutional Profile & Branding' },
       { id: 'branch-credentials', label: 'Multi-Branch Credentials' },
-      { id: 'localization', label: 'Localization ΓÇö INR ┬╖ DD-MM-YYYY' },
+      { id: 'localization', label: 'Localization — INR · DD-MM-YYYY' },
     ],
   },
   {
@@ -85,7 +85,7 @@ export const REGISTRY_CONFIG_TREE: RegistryTreeGroup[] = [
     children: [
       { id: 'appointment-slots', label: 'Appointment Slot Limits' },
       { id: 'billing-tax', label: 'Billing & Tax Rules (GST/CGST)' },
-      { id: 'pharmacy-lab-radiology', label: 'Pharmacy ┬╖ Lab ┬╖ Radiology Criteria' },
+      { id: 'pharmacy-lab-radiology', label: 'Pharmacy · Lab · Radiology Criteria' },
       { id: 'scm-triggers', label: 'SCM Automated Tracking Triggers' },
       { id: 'workflow-approvals', label: 'Workflow & Approval Rules' },
     ],

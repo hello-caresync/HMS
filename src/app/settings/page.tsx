@@ -29,7 +29,7 @@ type NotificationPrefs = {
 };
 
 const CONFIG_SUMMARY =
-  'Standalone system preferences ┬╖ theme ┬╖ notifications ┬╖ security ┬╖ device registry ┬╖ 13 Jul 2026';
+  'Standalone system preferences · theme · notifications · security · device registry · 13 Jul 2026';
 
 const SECTIONS: { key: SettingsSection; label: string; icon: typeof Settings }[] = [
   { key: 'general', label: 'General Configuration', icon: Settings },
@@ -43,29 +43,29 @@ const LANGUAGES = ['English (US)', 'English (UK)', 'Hindi', 'Tamil', 'Telugu'];
 const LOGIN_DEVICES: LoginDevice[] = [
   {
     id: 'dev-1',
-    deviceName: 'Windows Desktop ┬╖ Chrome',
-    location: 'Chennai, IN ┬╖ sandbox',
+    deviceName: 'Windows Desktop · Chrome',
+    location: 'Chennai, IN · sandbox',
     lastActive: 'Active now',
     isActive: true,
   },
   {
     id: 'dev-2',
-    deviceName: 'iPhone 15 ┬╖ Safari',
-    location: 'Chennai, IN ┬╖ sandbox',
+    deviceName: 'iPhone 15 · Safari',
+    location: 'Chennai, IN · sandbox',
     lastActive: '2 hours ago',
     isActive: true,
   },
   {
     id: 'dev-3',
-    deviceName: 'MacBook Pro ┬╖ Firefox',
-    location: 'Bangalore, IN ┬╖ sandbox',
+    deviceName: 'MacBook Pro · Firefox',
+    location: 'Bangalore, IN · sandbox',
     lastActive: 'Yesterday 18:22',
     isActive: false,
   },
   {
     id: 'dev-4',
-    deviceName: 'Android Tablet ┬╖ Chrome',
-    location: 'Chennai, IN ┬╖ sandbox',
+    deviceName: 'Android Tablet · Chrome',
+    location: 'Chennai, IN · sandbox',
     lastActive: '3 days ago',
     isActive: false,
   },
@@ -116,14 +116,14 @@ export default function SettingsPage() {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
-    showNotice('Password change simulated ┬╖ sandbox only ┬╖ no backend write');
+    showNotice('Password change simulated · sandbox only · no backend write');
   };
 
   const handleRevokeSession = (deviceId: string) => {
     setDevices((prev) =>
       prev.map((d) => (d.id === deviceId ? { ...d, isActive: false, lastActive: 'Revoked' } : d)),
     );
-    showNotice('Session revoked ┬╖ sandbox device registry updated');
+    showNotice('Session revoked · sandbox device registry updated');
   };
 
   const notificationItems: { key: keyof NotificationPrefs; label: string }[] = [
@@ -259,7 +259,7 @@ export default function SettingsPage() {
                     aria-checked={twoFactorEnabled}
                     onClick={() => {
                       setTwoFactorEnabled((p) => {
-                        showNotice(p ? '2FA disabled ┬╖ sandbox' : '2FA enabled ┬╖ sandbox authenticator simulated');
+                        showNotice(p ? '2FA disabled · sandbox' : '2FA enabled · sandbox authenticator simulated');
                         return !p;
                       });
                     }}
@@ -323,7 +323,7 @@ export default function SettingsPage() {
             {activeSection === 'devices' && (
               <div className="space-y-4">
                 <h2 className="text-base font-black text-slate-950">Device Registry</h2>
-                <p className="text-xs font-bold text-slate-800">Active login devices ┬╖ revoke sessions for security</p>
+                <p className="text-xs font-bold text-slate-800">Active login devices · revoke sessions for security</p>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[560px] border-collapse text-sm">
                     <thead>

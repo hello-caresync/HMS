@@ -15,7 +15,7 @@ export default function StaffReceptionPage() {
             <p className="text-[10px] font-bold tracking-widest text-violet-600 uppercase">Front Desk</p>
             <h1 className="mt-2 text-3xl font-black text-slate-900">Reception & Patient Intake</h1>
             <p className="mt-2 text-sm text-slate-500">
-              Receptionist: {session?.full_name ?? 'Staff'} ΓÇó {session?.hospital_name}
+              Receptionist: {session?.full_name ?? 'Staff'} • {session?.hospital_name}
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">

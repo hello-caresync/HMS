@@ -11,9 +11,9 @@ export type EmrModalType =
   | null;
 
 export const EMR_WORKSPACE_TABS: { id: EmrWorkspaceTab; label: string; description: string }[] = [
-  { id: 'command', label: 'EMR Command Center & Timeline', description: 'Census ┬╖ chronological journey ┬╖ quick actions' },
-  { id: 'discovery', label: 'Audited Clinical Discovery Vault', description: 'Historical folders ┬╖ immutable record panels' },
-  { id: 'compliance', label: 'Compliance & Security Audit Trails', description: 'Access logs ┬╖ consent ┬╖ NABH checkpoints ┬╖ analytics' },
+  { id: 'command', label: 'EMR Command Center & Timeline', description: 'Census · chronological journey · quick actions' },
+  { id: 'discovery', label: 'Audited Clinical Discovery Vault', description: 'Historical folders · immutable record panels' },
+  { id: 'compliance', label: 'Compliance & Security Audit Trails', description: 'Access logs · consent · NABH checkpoints · analytics' },
 ];
 
 export type FolderCategory =

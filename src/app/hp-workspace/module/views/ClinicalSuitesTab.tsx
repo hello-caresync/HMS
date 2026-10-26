@@ -32,7 +32,7 @@ export default function ClinicalSuitesTab({ selectedPatientId, onSelectPatient, 
   return (
     <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
       <div className="space-y-2">
-        <HpPanel title="Patient & Clinical Workspace" subtitle="Active census ┬╖ history ┬╖ allergies ┬╖ orders ┬╖ EMR shortcut" icon={Stethoscope}>
+        <HpPanel title="Patient & Clinical Workspace" subtitle="Active census · history · allergies · orders · EMR shortcut" icon={Stethoscope}>
           <SecureIdentityPlaceholder verified={patient.identityVerified} />
           <div className="mt-2 flex gap-1 overflow-x-auto pb-1">
             {ACTIVE_PATIENTS.map((p) => (
@@ -49,7 +49,7 @@ export default function ClinicalSuitesTab({ selectedPatientId, onSelectPatient, 
           <div className="mt-2 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-2">
             <p className="text-[11px] font-bold text-[#0F172A]">{patient.name}</p>
             <p className="font-mono text-[8px] text-slate-500">{patient.uhid}</p>
-            <p className="text-[9px] text-slate-600">{patient.age}y {patient.gender} ┬╖ {patient.ward}</p>
+            <p className="text-[9px] text-slate-600">{patient.age}y {patient.gender} · {patient.ward}</p>
             <p className="text-[9px] text-slate-600">Attending: {patient.attendingPhysician}</p>
             <p className="text-[9px] text-slate-600">Admitted: {patient.admissionDate}</p>
             <p className="mt-1 text-[9px] font-semibold text-slate-700">{patient.diagnosis}</p>
@@ -103,7 +103,7 @@ export default function ClinicalSuitesTab({ selectedPatientId, onSelectPatient, 
       </div>
 
       <div className="space-y-2">
-        <HpPanel title="Department Capacity Monitor" subtitle="OPD ┬╖ IPD ┬╖ ICU ┬╖ Emergency ┬╖ OT ┬╖ Pharmacy" icon={Users}>
+        <HpPanel title="Department Capacity Monitor" subtitle="OPD · IPD · ICU · Emergency · OT · Pharmacy" icon={Users}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -116,8 +116,8 @@ export default function ClinicalSuitesTab({ selectedPatientId, onSelectPatient, 
               {DEPARTMENT_CAPACITY.map((d) => (
                 <tr key={d.department} className={`border-b border-slate-50 ${d.status === 'Critical' ? 'bg-red-50/30' : ''}`}>
                   <td className="px-1.5 py-1 text-[9px] font-semibold">{d.department}</td>
-                  <td className="px-1.5 py-1 text-[9px] tabular-nums">{d.department === 'Pharmacy' ? 'ΓÇö' : d.occupied}</td>
-                  <td className="px-1.5 py-1 text-[9px] tabular-nums">{d.department === 'Pharmacy' ? 'ΓÇö' : d.total}</td>
+                  <td className="px-1.5 py-1 text-[9px] tabular-nums">{d.department === 'Pharmacy' ? '—' : d.occupied}</td>
+                  <td className="px-1.5 py-1 text-[9px] tabular-nums">{d.department === 'Pharmacy' ? '—' : d.total}</td>
                   <td className="px-1.5 py-1 text-[9px] tabular-nums text-amber-700">{d.waitlist}</td>
                   <td className="px-1.5 py-1"><CapacityStatusPill status={d.status} /></td>
                 </tr>
@@ -126,7 +126,7 @@ export default function ClinicalSuitesTab({ selectedPatientId, onSelectPatient, 
           </table>
         </HpPanel>
 
-        <HpPanel title="Bed Availability Map" subtitle="Ward-level census ┬╖ isolation ┬╖ step-down" icon={BedDouble}>
+        <HpPanel title="Bed Availability Map" subtitle="Ward-level census · isolation · step-down" icon={BedDouble}>
           <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
             {BED_AVAILABILITY.map((b) => (
               <div key={b.ward} className="rounded border border-slate-100 p-2">
@@ -138,13 +138,13 @@ export default function ClinicalSuitesTab({ selectedPatientId, onSelectPatient, 
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
                   <div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${((b.total - b.available) / b.total) * 100}%` }} />
                 </div>
-                <p className="mt-1 text-[7px] text-slate-500">Isolation: {b.isolation}{b.icuStepDown ? ' ┬╖ Step-down' : ''}</p>
+                <p className="mt-1 text-[7px] text-slate-500">Isolation: {b.isolation}{b.icuStepDown ? ' · Step-down' : ''}</p>
               </div>
             ))}
           </div>
         </HpPanel>
 
-        <HpPanel title="On-Duty Staff Shifts" subtitle="Morning ┬╖ Evening ┬╖ Night coverage" icon={Users}>
+        <HpPanel title="On-Duty Staff Shifts" subtitle="Morning · Evening · Night coverage" icon={Users}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -167,7 +167,7 @@ export default function ClinicalSuitesTab({ selectedPatientId, onSelectPatient, 
           </table>
         </HpPanel>
 
-        <HpPanel title="Medical Equipment Maintenance" subtitle="Operational status ┬╖ scheduled service" icon={Cpu}>
+        <HpPanel title="Medical Equipment Maintenance" subtitle="Operational status · scheduled service" icon={Cpu}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">

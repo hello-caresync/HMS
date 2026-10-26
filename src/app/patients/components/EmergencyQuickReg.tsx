@@ -67,7 +67,7 @@ export default function EmergencyQuickReg({ open, onClose, onRegistered }: Emerg
             </span>
             <div>
               <h2 className="text-sm font-bold text-slate-900">Emergency Quick-Reg</h2>
-              <p className="text-[10px] text-rose-600">Instant temporary UHID ┬╖ 3 fields only</p>
+              <p className="text-[10px] text-rose-600">Instant temporary UHID · 3 fields only</p>
             </div>
           </div>
           <button type="button" onClick={handleClose} className="rounded-lg p-1 text-slate-800 hover:bg-slate-100">

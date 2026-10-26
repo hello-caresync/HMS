@@ -71,7 +71,7 @@ export default function VendorDirectoryView({
             <p className={bodyTextClassName}>
               Outstanding:{' '}
               <span className="font-mono font-bold text-rose-600">
-                Γé╣{vendor.outstandingDues.toLocaleString('en-IN')}
+                ₹{vendor.outstandingDues.toLocaleString('en-IN')}
               </span>
             </p>
           </div>

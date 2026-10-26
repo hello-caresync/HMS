@@ -122,7 +122,7 @@ export default function SuperAdminDashboardPage() {
 
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <Building2 className="h-4 w-4" />
-          Regal Platform Root ΓÇó Secured Operations Layer
+          Regal Platform Root • Secured Operations Layer
         </div>
       </div>
     </div>

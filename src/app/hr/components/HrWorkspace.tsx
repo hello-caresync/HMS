@@ -40,7 +40,7 @@ export default function HrWorkspace() {
           <UserCog className="h-4 w-4 text-teal-400" />
           <div>
             <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-800">
-              Phase 16 ┬╖ HR
+              Phase 16 · HR
             </p>
             <h1 className="text-sm font-bold leading-tight text-white">Workforce Command Center</h1>
           </div>

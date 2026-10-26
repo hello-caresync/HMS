@@ -64,7 +64,7 @@ export default function DiagnosticsLabPage() {
   return (
     <HospitalOpsShell
       title="Diagnostics & Pathology Lab"
-      subtitle="Ingest doctor lab orders ┬╖ track sample collection ┬╖ release results"
+      subtitle="Ingest doctor lab orders · track sample collection · release results"
     >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className={`${hospitalOpsClasses.surface} p-4`}>
@@ -92,20 +92,20 @@ export default function DiagnosticsLabPage() {
             {loading ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-[#84A98C] font-semibold">
-                  Loading lab ordersΓÇª
+                  Loading lab orders…
                 </td>
               </tr>
             ) : orders.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-[#84A98C] font-semibold">
-                  No lab orders ΓÇö doctors can order tests from the consultation workspace
+                  No lab orders — doctors can order tests from the consultation workspace
                 </td>
               </tr>
             ) : (
               orders.map((order, index) => {
                 const tests = Array.isArray(order.test_names)
                   ? order.test_names.join(', ')
-                  : String(order.test_names ?? 'ΓÇö');
+                  : String(order.test_names ?? '—');
                 const status = order.status ?? 'ORDERED';
                 const currentIdx = STATUSES.indexOf(status as (typeof STATUSES)[number]);
                 const nextStatus = STATUSES[Math.min(currentIdx + 1, STATUSES.length - 1)];
@@ -113,7 +113,7 @@ export default function DiagnosticsLabPage() {
 
                 return (
                   <tr key={rowKey} className="border-b border-[#CAD2C5]/50">
-                    <td className="py-2.5 px-3 font-mono text-[10px]">{order.id.slice(0, 8)}ΓÇª</td>
+                    <td className="py-2.5 px-3 font-mono text-[10px]">{order.id.slice(0, 8)}…</td>
                     <td className="py-2.5 px-3 font-bold max-w-[240px] truncate">{tests}</td>
                     <td className="py-2.5 px-3">
                       <span className={`rounded px-2 py-0.5 text-[10px] font-black ${hospitalOpsClasses.badgeDefault}`}>
@@ -121,7 +121,7 @@ export default function DiagnosticsLabPage() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-[#52796F]">
-                      {order.created_at ? new Date(order.created_at).toLocaleString() : 'ΓÇö'}
+                      {order.created_at ? new Date(order.created_at).toLocaleString() : '—'}
                     </td>
                     <td className="py-2.5 px-3 text-right">
                       {status !== 'COMPLETED' ? (
@@ -130,7 +130,7 @@ export default function DiagnosticsLabPage() {
                           className={hospitalOpsClasses.btnPrimary}
                           onClick={() => void updateStatus(order.id, nextStatus)}
                         >
-                          ΓåÆ {nextStatus.replace('_', ' ')}
+                          → {nextStatus.replace('_', ' ')}
                         </button>
                       ) : (
                         <span className="text-[#84A98C]">Done</span>

@@ -167,10 +167,12 @@ function normalizeCredential(row: Record<string, unknown>): StaffCredential {
 }
 
 type SuperAdminHospitalBlocksDashboardProps = {
-  /** Route param or deep-link identifier ΓÇö UUID or hospital_code such as HOSP-01. */
+  /** Route param or deep-link identifier — UUID or hospital_code such as HOSP-01. */
   initialTenantIdentifier?: string;
   /** Super Vault: hide platform root identity from local hospital staff rosters. */
   excludeGlobalSuperAdminFromRoster?: boolean;
+  /** Optional vault lock control shown on the platform root header. */
+  onLockTerminal?: () => void;
 };
 
 function excludePlatformRootFromRoster(
@@ -184,6 +186,7 @@ function excludePlatformRootFromRoster(
 export function SuperAdminHospitalBlocksDashboard({
   initialTenantIdentifier,
   excludeGlobalSuperAdminFromRoster = false,
+  onLockTerminal,
 }: SuperAdminHospitalBlocksDashboardProps = {}) {
   const searchParams = useSearchParams();
   const [hospitals, setHospitals] = useState<SuperAdminHospitalTenant[]>([]);
@@ -215,30 +218,32 @@ export function SuperAdminHospitalBlocksDashboard({
       return;
     }
 
-    const { data, error } = await supabase
-      .from('hospital_staff')
-      .select('*')
-      .eq('hospital_id', tenant.id);
+    const { data, error } = await supabase.from('hospital_staff').select('*');
 
-    let rows = data ?? [];
-
-    if ((error || rows.length === 0) && tenant.hospital_code !== tenant.id) {
-      const secondary = await supabase
-        .from('hospital_staff')
-        .select('*')
-        .eq('hospital_id', tenant.hospital_code);
-      if (!secondary.error && secondary.data?.length) {
-        rows = secondary.data;
-      }
-    }
-
-    if (error && rows.length === 0) {
+    if (error) {
       console.error('Failed to fetch staff credentials:', error.message);
+      setTenantCredentials([]);
+      return;
     }
 
-    const localStaffRows = excludeGlobalSuperAdminFromRoster
-      ? rows.filter((row) => !isGlobalSuperAdminStaffRecord(row as Record<string, unknown>))
-      : rows;
+    const isRegalNode =
+      tenant.hospital_code === REGAL_HOSPITAL_CODE || tenant.id === REGAL_HOSPITAL_CODE;
+
+    const localStaffRows = (data ?? []).filter((row) => {
+      const record = row as Record<string, unknown>;
+      if (excludeGlobalSuperAdminFromRoster && isGlobalSuperAdminStaffRecord(record)) return false;
+
+      const hospitalId = String(record.hospital_id ?? '').trim();
+      if (!hospitalId && isRegalNode) return true;
+
+      return credentialBelongsToTenant(
+        {
+          hospital_id: hospitalId,
+          hospital_name: String(record.hospital_name ?? ''),
+        },
+        tenant,
+      );
+    });
 
     setTenantCredentials(
       localStaffRows.map((row) => normalizeCredential(row as Record<string, unknown>)),
@@ -270,8 +275,8 @@ export function SuperAdminHospitalBlocksDashboard({
             .filter((row) => row.status.toLowerCase() !== 'inactive'),
         ).filter(isVisibleSuperAdminTenant);
 
-        if (tenantRows.length === 0) {
-          tenantRows = [FALLBACK_HOSPITAL];
+        if (!tenantRows.some((tenant) => tenant.hospital_code === REGAL_HOSPITAL_CODE || tenant.id === REGAL_HOSPITAL_CODE)) {
+          tenantRows = [FALLBACK_HOSPITAL, ...tenantRows];
         }
 
         let matchedTenant: SuperAdminHospitalTenant | null = null;
@@ -390,9 +395,19 @@ export function SuperAdminHospitalBlocksDashboard({
   };
 
   const handleDeleteStaffCredential = async (staff: StaffCredential) => {
-    const confirmed = window.confirm(
-      `Revoke and delete credentials for ${staff.full_name} (${staff.email})?`,
-    );
+    if (
+      isGlobalSuperAdminStaffRecord({
+        email: staff.email,
+        role: staff.staff_type,
+        staff_type: staff.staff_type,
+      }) ||
+      /platform root/i.test(staff.full_name)
+    ) {
+      toast.error('The super admin login stays in the vault. Remove a hospital credential instead.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Remove the login for ${staff.full_name}?`);
     if (!confirmed) return;
 
     if (!supabase) {
@@ -547,6 +562,15 @@ export function SuperAdminHospitalBlocksDashboard({
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
+            {onLockTerminal ? (
+              <button
+                type="button"
+                onClick={onLockTerminal}
+                className="px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/15 text-white text-xs font-bold cursor-pointer hover:bg-white/20"
+              >
+                Lock
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -554,11 +578,15 @@ export function SuperAdminHospitalBlocksDashboard({
         {selectedHospital === null ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-purple-600"/>
-                Connected Hospital Tenants ({hospitals.length})
-              </h2>
-              <span className="text-xs text-slate-400">Click any block to open credential vault</span>
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-purple-600"/>
+                  Active Hospital Blocks ({hospitals.length})
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Select any hospital cluster below to inspect tenant access logs, personnel credentials, and node status.
+                </p>
+              </div>
             </div>
 
             {isLoading ? (
@@ -666,19 +694,19 @@ export function SuperAdminHospitalBlocksDashboard({
                 onClick={returnToTenantDirectory}
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
               >
-                ΓåÉ Back to All Hospital Blocks
+                ← Back to All Hospital Blocks
               </button>
 
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-slate-500">Credential Audit ΓÇö</span>
+                <span className="text-xs font-bold text-slate-500">Credential Audit —</span>
                 <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-black">
                   {selectedHospital?.name ?? 'Unknown'} (
-                  {selectedHospital ? formatHospitalTenantBadge(selectedHospital) : 'ΓÇö'})
+                  {selectedHospital ? formatHospitalTenantBadge(selectedHospital) : '—'})
                 </span>
                 <span className="text-[11px] font-medium text-slate-500">
                   {excludeGlobalSuperAdminFromRoster
-                    ? 'Local hospital staff only ┬╖ platform root identity excluded'
-                    : 'Read-only roster ┬╖ staff created from Hospital App syncs here'}
+                    ? 'Local hospital staff only · platform root identity excluded'
+                    : 'Read-only roster · staff created from Hospital App syncs here'}
                 </span>
               </div>
             </div>
@@ -698,7 +726,7 @@ export function SuperAdminHospitalBlocksDashboard({
                       <span className="font-semibold text-purple-700">
                         {formatHospitalTenantBadge(selectedHospital)}
                       </span>{' '}
-                      is no longer available ΓÇö it may have been purged or never existed.
+                      is no longer available — it may have been purged or never existed.
                     </>
                   ) : null}
                 </p>
@@ -809,7 +837,7 @@ export function SuperAdminHospitalBlocksDashboard({
                                   {staff.department}
                                 </span>
                                 <span className="text-[9px] font-bold font-mono text-purple-700">
-                                  ΓùÅ {staff.staff_type}
+                                  {staff.staff_type}
                                 </span>
                               </div>
                             </td>
@@ -825,7 +853,7 @@ export function SuperAdminHospitalBlocksDashboard({
                                     ? 'bg-purple-50 text-purple-900 border-purple-200' 
                                     : 'bg-slate-100 text-slate-400 border-slate-200'
                                 }`}>
-                                  {isVisible ? staff.temporary_passcode : 'ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó'}
+                                  {isVisible ? staff.temporary_passcode : '••••••••'}
                                 </span>
                                 <button
                                   type="button"
@@ -934,7 +962,7 @@ export function SuperAdminHospitalBlocksDashboard({
 
               <div className="p-4 rounded-2xl bg-slate-900 text-white font-mono text-xs space-y-2 border border-slate-800">
                 <div className="text-purple-300 font-bold border-b border-slate-800 pb-1.5">
-                  ≡ƒÅÑ {createdPacket.hospital_name}
+                  {createdPacket.hospital_name}
                 </div>
                 <div className="text-slate-300">Admin Name: <span className="text-white font-bold">{createdPacket.full_name}</span></div>
                 <div className="text-slate-300">Official Login: <span className="text-white font-bold">{createdPacket.email}</span></div>
@@ -974,7 +1002,7 @@ export function SuperAdminHospitalBlocksDashboard({
 function SuperAdminHospitalBlocksDashboardFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm font-semibold text-slate-500">
-      Syncing Super Admin tenant directoryΓÇª
+      Syncing Super Admin tenant directory…
     </div>
   );
 }

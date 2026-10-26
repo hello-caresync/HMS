@@ -39,7 +39,7 @@ export default function ActiveQueueMonitor({
           <Monitor className="h-4 w-4" />
           <div>
             <h2 className="text-sm font-black">Active Monitor Wall</h2>
-            <p className="text-[10px] text-slate-900">Today&apos;s live queue ┬╖ auto refresh</p>
+            <p className="text-[10px] text-slate-900">Today&apos;s live queue · auto refresh</p>
           </div>
         </div>
         <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold">

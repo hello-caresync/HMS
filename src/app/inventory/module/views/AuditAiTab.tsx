@@ -34,14 +34,14 @@ export default function AuditAiTab({ aiSuggestions, onUpdateAiStatus }: AuditAiT
           <div className="flex items-center gap-2">
             <Brain className="h-5 w-5" />
             <span className="text-[11px] font-bold uppercase">
-              AI Inventory Intelligence ΓÇö {pendingAi.length} restocking suggestion{pendingAi.length !== 1 ? 's' : ''} pending review
+              AI Inventory Intelligence — {pendingAi.length} restocking suggestion{pendingAi.length !== 1 ? 's' : ''} pending review
             </span>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <InvPanel title="Physical Stock Audit & Adjustment Grid" subtitle="System vs actual ┬╖ variance ┬╖ damage ┬╖ theft ┬╖ expiry logs" icon={ClipboardCheck}>
+        <InvPanel title="Physical Stock Audit & Adjustment Grid" subtitle="System vs actual · variance · damage · theft · expiry logs" icon={ClipboardCheck}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -58,7 +58,7 @@ export default function AuditAiTab({ aiSuggestions, onUpdateAiStatus }: AuditAiT
                   <td className="px-1.5 py-1 text-[8px] text-slate-500">{a.scheduledDate}</td>
                   <td className="px-1.5 py-1"><AuditPill status={a.status} /></td>
                   <td className="px-1.5 py-1 text-[9px] tabular-nums">{a.systemCount}</td>
-                  <td className="px-1.5 py-1 text-[9px] tabular-nums">{a.actualCount || 'ΓÇö'}</td>
+                  <td className="px-1.5 py-1 text-[9px] tabular-nums">{a.actualCount || '—'}</td>
                   <td className={`px-1.5 py-1 text-[9px] font-bold tabular-nums ${a.variance < 0 ? 'text-red-600' : a.variance > 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
                     {a.variance !== 0 ? a.variance : '0'}
                   </td>
@@ -92,7 +92,7 @@ export default function AuditAiTab({ aiSuggestions, onUpdateAiStatus }: AuditAiT
           </table>
         </InvPanel>
 
-        <InvPanel title="Biomedical Equipment Asset Registry" subtitle="Serial ┬╖ warranty ┬╖ AMC ┬╖ maintenance ┬╖ calibration" icon={Wrench}>
+        <InvPanel title="Biomedical Equipment Asset Registry" subtitle="Serial · warranty · AMC · maintenance · calibration" icon={Wrench}>
           <SecureIdentityPlaceholder verified />
           <table className="mt-2 w-full text-left">
             <thead>
@@ -120,7 +120,7 @@ export default function AuditAiTab({ aiSuggestions, onUpdateAiStatus }: AuditAiT
         </InvPanel>
       </div>
 
-      <InvPanel title="AI-Based Inventory Intelligence Panel" subtitle="Demand predictions ┬╖ auto-reorder ┬╖ overstock & wastage optimization" icon={Brain} secure>
+      <InvPanel title="AI-Based Inventory Intelligence Panel" subtitle="Demand predictions · auto-reorder · overstock & wastage optimization" icon={Brain} secure>
         <table className="w-full min-w-[860px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -162,8 +162,8 @@ export default function AuditAiTab({ aiSuggestions, onUpdateAiStatus }: AuditAiT
             <AreaChart data={CONSUMPTION_TREND} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
               <XAxis dataKey="day" tick={{ fontSize: 8, fill: '#64748B' }} />
-              <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `Γé╣${(v / 1000).toFixed(0)}k`} />
-              <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid #E2E8F0' }} formatter={(v: number) => [`Γé╣${v.toLocaleString('en-IN')}`, 'Consumption']} />
+              <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+              <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid #E2E8F0' }} formatter={(v: number) => [`₹${v.toLocaleString('en-IN')}`, 'Consumption']} />
               <Area type="monotone" dataKey="value" stroke="#2563EB" fill="#2563EB" fillOpacity={0.15} strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>

@@ -1,4 +1,4 @@
-﻿/** Phase 4 ΓÇö Patient Care Operations types (Modules 11ΓÇô13) */
+﻿/** Phase 4 — Patient Care Operations types (Modules 11–13) */
 
 export type DietTag =
   | 'NPO / Nil Per Os'

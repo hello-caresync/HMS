@@ -57,10 +57,10 @@ const TRIAGE_STYLES: Record<TriageColor, string> = {
 export function TriageBadge({ priority, pulse }: { priority: TriagePriority; pulse?: boolean }) {
   const color = triageToColor(priority);
   const labels: Record<TriagePriority, string> = {
-    Critical: 'RED ΓÇö Critical',
-    Emergent: 'ORANGE ΓÇö Emergent',
-    Urgent: 'YELLOW ΓÇö Urgent',
-    'Non-Urgent': 'GREEN ΓÇö Non-Urgent',
+    Critical: 'RED — Critical',
+    Emergent: 'ORANGE — Emergent',
+    Urgent: 'YELLOW — Urgent',
+    'Non-Urgent': 'GREEN — Non-Urgent',
   };
   return (
     <span
@@ -76,13 +76,13 @@ export function CodeBlueBanner({ active }: { active: boolean }) {
   return (
     <div className="mb-2 flex items-center gap-2 rounded-md border-2 border-red-600 bg-red-600 px-3 py-1.5 text-white animate-pulse">
       <AlertOctagon className="h-4 w-4" />
-      <span className="text-[10px] font-bold uppercase tracking-wider">Code Blue Active ΓÇö Resuscitation Bay</span>
+      <span className="text-[10px] font-bold uppercase tracking-wider">Code Blue Active — Resuscitation Bay</span>
     </div>
   );
 }
 
 export function MlcFlag({ active }: { active: boolean }) {
-  if (!active) return <span className="text-[8px] text-slate-300">ΓÇö</span>;
+  if (!active) return <span className="text-[8px] text-slate-300">—</span>;
   return (
     <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[8px] font-bold uppercase text-white">MLC</span>
   );

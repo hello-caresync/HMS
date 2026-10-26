@@ -70,7 +70,7 @@ export default function NotificationCenter({
             <div>
               <h2 className="text-base font-semibold text-slate-900">Notifications</h2>
               <p className="text-xs text-slate-800">
-                {unreadCount} unread ┬╖ {notifications.length} total
+                {unreadCount} unread · {notifications.length} total
               </p>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function NotificationCenter({
                     <p className="mt-0.5 text-xs leading-relaxed text-slate-800">{n.message}</p>
                     <div className="mt-2 flex items-center justify-between">
                       <span className="text-[10px] font-medium uppercase tracking-wider text-slate-800">
-                        {n.module} ┬╖ {formatTime(n.timestamp)}
+                        {n.module} · {formatTime(n.timestamp)}
                       </span>
                       {!n.read && (
                         <button

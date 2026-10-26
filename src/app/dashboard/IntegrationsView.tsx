@@ -66,7 +66,7 @@ export default function IntegrationsView() {
             columns={['Device', 'Location', 'Last Reading']}
             rows={[
               ['Bed Monitor BM-12', 'ICU-A', 'HR 88 | SpO2 97%'],
-              ['Env Sensor ES-04', 'OT-2', 'Temp 21┬░C | RH 45%'],
+              ['Env Sensor ES-04', 'OT-2', 'Temp 21°C | RH 45%'],
             ]}
           />
         </Panel>

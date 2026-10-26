@@ -21,7 +21,7 @@ export interface OpdSlot {
 
 export type OpdTimings = OpdSlot[];
 
-// ΓöÇΓöÇΓöÇ Department ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Department ─────────────────────────────────────────────────────────────
 
 export interface Department {
   id: string;
@@ -34,7 +34,7 @@ export type DepartmentName =
   | 'Pediatrics'
   | 'General Medicine';
 
-// ΓöÇΓöÇΓöÇ Doctor ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Doctor ─────────────────────────────────────────────────────────────────
 
 export interface Doctor {
   id: string;
@@ -44,7 +44,7 @@ export interface Doctor {
   opdTimings: OpdTimings;
 }
 
-// ΓöÇΓöÇΓöÇ Service Master ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Service Master ─────────────────────────────────────────────────────────
 
 export type ServiceCategory =
   | 'Consultation'
@@ -61,7 +61,7 @@ export interface ServiceMaster {
   basePrice: number;
 }
 
-// ΓöÇΓöÇΓöÇ Medicine Master ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Medicine Master ────────────────────────────────────────────────────────
 
 export type MedicineUnit = 'Strip' | 'Vial' | 'Bottle' | 'Tube' | 'Box' | 'Ampoule';
 
@@ -78,7 +78,7 @@ export interface MedicineMaster {
   vendorId: string;
 }
 
-// ΓöÇΓöÇΓöÇ Vendor Master ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Vendor Master ──────────────────────────────────────────────────────────
 
 export type SupplyCategory =
   | 'Pharmaceuticals'
@@ -96,7 +96,7 @@ export interface VendorMaster {
   active: boolean;
 }
 
-// ΓöÇΓöÇΓöÇ Room / Bed Master ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Room / Bed Master ──────────────────────────────────────────────────────
 
 export type RoomType = 'General' | 'Private' | 'ICU';
 
@@ -109,7 +109,7 @@ export interface RoomBedMaster {
   availabilityStatus: BedAvailability;
 }
 
-// ΓöÇΓöÇΓöÇ Master Data aggregate (for store / API payloads) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Master Data aggregate (for store / API payloads) ───────────────────────
 
 export interface MasterDataRegistry {
   departments: Department[];
@@ -137,7 +137,7 @@ export const MASTER_DATA_TABS: { id: MasterDataTab; label: string; description: 
   { id: 'roomBeds', label: 'Room & Bed Master', description: 'Bed inventory & availability' },
 ];
 
-/** Default empty OPD template ΓÇö one row per day */
+/** Default empty OPD template — one row per day */
 export function createDefaultOpdTimings(): OpdTimings {
   const days: DayOfWeek[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   return days.map((day) => ({

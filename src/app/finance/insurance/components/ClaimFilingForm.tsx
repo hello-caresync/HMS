@@ -74,7 +74,7 @@ export default function ClaimFilingForm({ onFileClaim }: ClaimFilingFormProps) {
 
         <label className="block space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-800">
-            Co-Pay (Γé╣)
+            Co-Pay (₹)
           </span>
           <input
             type="number"

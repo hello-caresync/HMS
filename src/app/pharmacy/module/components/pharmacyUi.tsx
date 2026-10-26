@@ -162,7 +162,7 @@ export function ControlledAlertBanner({ count }: { count: number }) {
     <div className="mb-2 flex items-center gap-2 rounded-md border-2 border-violet-600 bg-violet-700 px-3 py-1.5 text-white">
       <AlertTriangle className="h-4 w-4 animate-pulse" />
       <span className="text-[10px] font-bold uppercase tracking-wide">
-        {count} Controlled Drug Alert{count !== 1 ? 's' : ''} ΓÇö Chief Pharmacist Authorization Required
+        {count} Controlled Drug Alert{count !== 1 ? 's' : ''} — Chief Pharmacist Authorization Required
       </span>
     </div>
   );
@@ -174,7 +174,7 @@ export function OutOfStockBanner({ count }: { count: number }) {
     <div className="mb-2 flex items-center gap-2 rounded-md border-2 border-red-500 bg-red-600 px-3 py-1.5 text-white animate-pulse">
       <AlertTriangle className="h-4 w-4" />
       <span className="text-[10px] font-bold uppercase tracking-wide">
-        {count} Out-of-Stock Item{count !== 1 ? 's' : ''} ΓÇö Purchase Request Recommended
+        {count} Out-of-Stock Item{count !== 1 ? 's' : ''} — Purchase Request Recommended
       </span>
     </div>
   );

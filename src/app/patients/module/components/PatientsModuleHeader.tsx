@@ -20,7 +20,7 @@ export default function PatientsModuleHeader({
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-base font-bold text-[#0F172A]">Patients Management</h1>
-          <p className="text-[10px] text-slate-500">Front office workspace ┬╖ registration ┬╖ directory ┬╖ alerts</p>
+          <p className="text-[10px] text-slate-500">Front office workspace · registration · directory · alerts</p>
         </div>
         <button
           type="button"
@@ -38,7 +38,7 @@ export default function PatientsModuleHeader({
             type="search"
             value={lookupValue}
             onChange={(e) => onLookupChange(e.target.value)}
-            placeholder="Quick Patient Lookup ΓÇö UHID, Name, Phone, or Insurance ID"
+            placeholder="Quick Patient Lookup — UHID, Name, Phone, or Insurance ID"
             aria-label="Quick Patient Lookup"
             className="w-full rounded-md border border-slate-200 bg-[#F8FAFC] py-2 pl-8 pr-3 text-[11px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
           />

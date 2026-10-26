@@ -84,7 +84,7 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
         setToasts((prev) =>
           pushToast(
             prev,
-            `[Biomedical Engineering] Critical breakdown ΓÇö ${asset.name} (${asset.assetId}) flagged Under Repair`,
+            `[Biomedical Engineering] Critical breakdown — ${asset.name} (${asset.assetId}) flagged Under Repair`,
             'alert',
           ),
         );
@@ -135,7 +135,7 @@ export function AssetsProvider({ children }: { children: React.ReactNode }) {
       setToasts((prev) =>
         pushToast(
           prev,
-          `Calibration logged ┬╖ ${asset.name} ┬╖ Ref ${technicianRef.trim()} ┬╖ Next due ${nextCal}`,
+          `Calibration logged · ${asset.name} · Ref ${technicianRef.trim()} · Next due ${nextCal}`,
           'success',
         ),
       );

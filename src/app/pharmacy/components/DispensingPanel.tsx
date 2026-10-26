@@ -49,7 +49,7 @@ export default function DispensingPanel({ order }: DispensingPanelProps) {
       window.setTimeout(() => {
         const ok = verifyLineItem(order.id, lineId);
         setScanState((prev) => ({ ...prev, [lineId]: 'idle' }));
-        if (!ok) setError(`Scan failed ΓÇö check stock for ${line.brandName}`);
+        if (!ok) setError(`Scan failed — check stock for ${line.brandName}`);
         else setError(null);
       }, 700);
     },
@@ -74,7 +74,7 @@ export default function DispensingPanel({ order }: DispensingPanelProps) {
             </p>
             <h2 className="text-sm font-bold text-slate-900">{order.patientName}</h2>
             <p className="font-mono text-[10px] text-slate-800">
-              {order.uhid} ┬╖ {order.prescribingDoctor}
+              {order.uhid} · {order.prescribingDoctor}
             </p>
           </div>
           <div className="text-right">
@@ -113,7 +113,7 @@ export default function DispensingPanel({ order }: DispensingPanelProps) {
                     <span className="font-normal text-slate-800">({line.genericName})</span>
                   </p>
                   <p className="mt-0.5 text-[10px] text-slate-800">
-                    {line.dosage} ┬╖ {line.frequency} ┬╖ {line.duration} ┬╖ Qty{' '}
+                    {line.dosage} · {line.frequency} · {line.duration} · Qty{' '}
                     <span className="font-semibold">{line.quantity}</span>
                   </p>
                 </div>
@@ -125,7 +125,7 @@ export default function DispensingPanel({ order }: DispensingPanelProps) {
                 ) : scanning ? (
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white">
                     <Loader2 className="h-3 w-3 animate-spin" />
-                    ScanningΓÇª
+                    Scanning…
                   </span>
                 ) : null}
               </div>
@@ -160,7 +160,7 @@ export default function DispensingPanel({ order }: DispensingPanelProps) {
               {insufficient && !line.verified && (
                 <p className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-rose-600">
                   <AlertTriangle className="h-3 w-3" />
-                  Insufficient stock ΓÇö try Smart Substitution
+                  Insufficient stock — try Smart Substitution
                 </p>
               )}
 
@@ -177,7 +177,7 @@ export default function DispensingPanel({ order }: DispensingPanelProps) {
                     }`}
                   >
                     <Barcode className="h-3.5 w-3.5" />
-                    {scanning ? 'MatchingΓÇª' : 'Scan Pack Barcode'}
+                    {scanning ? 'Matching…' : 'Scan Pack Barcode'}
                   </button>
                   <button
                     type="button"
@@ -218,7 +218,7 @@ export default function DispensingPanel({ order }: DispensingPanelProps) {
             <div>
               <p className="text-xs font-bold text-emerald-800">Dispensed & locked</p>
               <p className="text-[10px] text-emerald-600">
-                EMR updated ┬╖ {order.dispensedAt ? new Date(order.dispensedAt).toLocaleString() : 'ΓÇö'}
+                EMR updated · {order.dispensedAt ? new Date(order.dispensedAt).toLocaleString() : '—'}
               </p>
             </div>
           </div>

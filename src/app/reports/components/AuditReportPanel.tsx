@@ -90,10 +90,10 @@ export default function AuditReportPanel() {
                     className={`px-3 py-2 text-right font-mono tabular-nums ${impactStyle(entry.impactValue)}`}
                   >
                     {entry.impactValue === 0
-                      ? 'ΓÇö'
+                      ? '—'
                       : entry.impactValue > 0
                         ? `+${formatCurrency(entry.impactValue)}`
-                        : `ΓêÆ${formatCurrency(Math.abs(entry.impactValue))}`}
+                        : `−${formatCurrency(Math.abs(entry.impactValue))}`}
                   </td>
                 </tr>
               );

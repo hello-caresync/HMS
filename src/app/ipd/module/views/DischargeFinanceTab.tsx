@@ -32,7 +32,7 @@ type DischargeFinanceTabProps = {
 export default function DischargeFinanceTab({ clearances, onAdvanceClearanceStep }: DischargeFinanceTabProps) {
   return (
     <div className="space-y-3">
-      <IpdPanel title="Billing Coordination Grid" subtitle="Room ┬╖ nursing ┬╖ procedure fees ┬╖ insurance validation" icon={Receipt}>
+      <IpdPanel title="Billing Coordination Grid" subtitle="Room · nursing · procedure fees · insurance validation" icon={Receipt}>
         <SecureIdentityPlaceholder verified />
         <table className="mt-2 w-full min-w-[760px] text-left">
           <thead>
@@ -64,7 +64,7 @@ export default function DischargeFinanceTab({ clearances, onAdvanceClearanceStep
 
       <IpdPanel
         title="Multi-Department Discharge Clearance Matrix"
-        subtitle="Medical ┬╖ nursing ┬╖ pharmacy ┬╖ billing ┬╖ final bill ΓÇö click status to advance"
+        subtitle="Medical · nursing · pharmacy · billing · final bill — click status to advance"
         icon={ShieldCheck}
       >
         <div className="space-y-2">
@@ -77,7 +77,7 @@ export default function DischargeFinanceTab({ clearances, onAdvanceClearanceStep
                 <div>
                   <p className="text-[11px] font-bold text-[#0F172A]">{dc.patientName}</p>
                   <p className="font-mono text-[9px] text-[#2563EB]">
-                    {dc.uhid} ┬╖ {dc.ward} ┬╖ {dc.bed}
+                    {dc.uhid} · {dc.ward} · {dc.bed}
                   </p>
                 </div>
                 {dc.bedReleaseReady ? (
@@ -136,7 +136,7 @@ export default function DischargeFinanceTab({ clearances, onAdvanceClearanceStep
 
 function OpdAnalyticsPanel({ className }: { className?: string }) {
   return (
-    <IpdPanel title="Census Reports & Analytics" subtitle="Ward utilization ┬╖ ICU capacity curves" icon={BarChart3} className={className}>
+    <IpdPanel title="Census Reports & Analytics" subtitle="Ward utilization · ICU capacity curves" icon={BarChart3} className={className}>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <div className="h-40">
           <p className="mb-1 text-[8px] font-bold uppercase text-slate-500">Ward Utilization Trend (%)</p>

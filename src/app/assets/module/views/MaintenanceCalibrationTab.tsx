@@ -37,7 +37,7 @@ export default function MaintenanceCalibrationTab({
 }: MaintenanceCalibrationTabProps) {
   return (
     <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-      <AssetPanel title="Central Asset Master Register" subtitle="Medical equipment ┬╖ infrastructure ┬╖ IT ┬╖ QR/RFID tags" icon={Cpu}>
+      <AssetPanel title="Central Asset Master Register" subtitle="Medical equipment · infrastructure · IT · QR/RFID tags" icon={Cpu}>
         <SecureCompliancePlaceholder verified />
         <table className="mt-2 w-full min-w-[480px] text-left">
           <thead>
@@ -70,7 +70,7 @@ export default function MaintenanceCalibrationTab({
       </AssetPanel>
 
       <div className="space-y-2">
-        <AssetPanel title="Preventive Maintenance Matrix" subtitle="Monthly ┬╖ Quarterly ┬╖ Yearly routines" icon={Settings}>
+        <AssetPanel title="Preventive Maintenance Matrix" subtitle="Monthly · Quarterly · Yearly routines" icon={Settings}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -99,7 +99,7 @@ export default function MaintenanceCalibrationTab({
           </table>
         </AssetPanel>
 
-        <AssetPanel title="Corrective Breakdown Tickets" subtitle="Downtime tracking ┬╖ engineer assignment" icon={Wrench} critical>
+        <AssetPanel title="Corrective Breakdown Tickets" subtitle="Downtime tracking · engineer assignment" icon={Wrench} critical>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -128,7 +128,7 @@ export default function MaintenanceCalibrationTab({
           </table>
         </AssetPanel>
 
-        <AssetPanel title="AMC Service Level Agreements" subtitle="Response ┬╖ resolution SLA ┬╖ contract status" icon={Settings}>
+        <AssetPanel title="AMC Service Level Agreements" subtitle="Response · resolution SLA · contract status" icon={Settings}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -152,7 +152,7 @@ export default function MaintenanceCalibrationTab({
           </table>
         </AssetPanel>
 
-        <AssetPanel title="Equipment Calibration Register" subtitle="Lab machines ┬╖ ECGs ┬╖ monitors ┬╖ regulatory due dates" icon={Cpu} secure>
+        <AssetPanel title="Equipment Calibration Register" subtitle="Lab machines · ECGs · monitors · regulatory due dates" icon={Cpu} secure>
           <SecureCompliancePlaceholder verified />
           <table className="mt-2 w-full text-left">
             <thead>
@@ -176,7 +176,7 @@ export default function MaintenanceCalibrationTab({
           </table>
         </AssetPanel>
 
-        <AssetPanel title="Spare Parts Inventory Reconciliation" subtitle="Linked assets ┬╖ stock vs reorder levels" icon={Settings}>
+        <AssetPanel title="Spare Parts Inventory Reconciliation" subtitle="Linked assets · stock vs reorder levels" icon={Settings}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">

@@ -36,7 +36,7 @@ export default function PreSurgeryChecklistModal({
             <div>
               <p className="text-sm font-black">Pre-Surgery Instrument Checklist</p>
               <p className="text-[10px] text-slate-900">
-                {slot.procedureType} ┬╖ {slot.patientName}
+                {slot.procedureType} · {slot.patientName}
               </p>
             </div>
           </div>
@@ -47,7 +47,7 @@ export default function PreSurgeryChecklistModal({
 
         <div className="max-h-[360px] overflow-y-auto p-4">
           <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-800">
-            Sterilization validation ┬╖ {verifiedCount}/{items.length} confirmed
+            Sterilization validation · {verifiedCount}/{items.length} confirmed
           </p>
           <table className="w-full border-collapse text-sm">
             <thead>
@@ -102,7 +102,7 @@ export default function PreSurgeryChecklistModal({
             onClick={onConfirm}
             className="w-full rounded-lg bg-indigo-700 py-2.5 text-sm font-black text-white hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Confirm Checklist ┬╖ Advance to In Surgery
+            Confirm Checklist · Advance to In Surgery
           </button>
           {!allVerified && (
             <p className="mt-2 text-center text-[10px] text-amber-700">

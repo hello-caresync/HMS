@@ -11,9 +11,9 @@ export type PharmacyModalType =
   | null;
 
 export const PHARMACY_WORKSPACE_TABS: { id: PharmacyWorkspaceTab; label: string; description: string }[] = [
-  { id: 'dispensing', label: 'Dispensing Console & Live Queue', description: 'Census ┬╖ prescription queue ┬╖ patient tokens ┬╖ quick actions' },
-  { id: 'inventory', label: 'Drug Inventory, Expiry & Procurement', description: 'Batch vault ┬╖ FEFO ┬╖ purchase requests ┬╖ GRN ┬╖ vendors' },
-  { id: 'compliance', label: 'Regulatory Compliance & Billing', description: 'Narcotic register ┬╖ audit log ┬╖ billing ┬╖ drug information' },
+  { id: 'dispensing', label: 'Dispensing Console & Live Queue', description: 'Census · prescription queue · patient tokens · quick actions' },
+  { id: 'inventory', label: 'Drug Inventory, Expiry & Procurement', description: 'Batch vault · FEFO · purchase requests · GRN · vendors' },
+  { id: 'compliance', label: 'Regulatory Compliance & Billing', description: 'Narcotic register · audit log · billing · drug information' },
 ];
 
 export type PrescriptionSource = 'OPD' | 'IPD' | 'Emergency';

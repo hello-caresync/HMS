@@ -85,7 +85,7 @@ export default function OverviewMetricsRow({ data }: OverviewMetricsRowProps) {
                 key={a.department}
                 className="rounded border border-amber-200/80 bg-amber-50/80 px-2 py-1 text-[9px] text-amber-900"
               >
-                <span className="font-bold">{a.department}</span> ΓÇö {a.gap} short ┬╖ {a.shift}
+                <span className="font-bold">{a.department}</span> — {a.gap} short · {a.shift}
               </li>
             ))}
           </ul>

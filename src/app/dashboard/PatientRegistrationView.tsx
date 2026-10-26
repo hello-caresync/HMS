@@ -60,8 +60,8 @@ export default function PatientRegistrationView() {
     const uhid = generateUhid();
     setGeneratedUhid(uhid);
     setEhrLog([
-      `[${new Date().toLocaleTimeString()}] EHR chart provisioned ΓÇö empty clinical record initialized`,
-      `[${new Date().toLocaleTimeString()}] Demographics indexed ┬╖ payer: ${form.primaryPayer}`,
+      `[${new Date().toLocaleTimeString()}] EHR chart provisioned — empty clinical record initialized`,
+      `[${new Date().toLocaleTimeString()}] Demographics indexed · payer: ${form.primaryPayer}`,
       `[${new Date().toLocaleTimeString()}] Next of kin contact linked`,
     ]);
     setToast({ message: 'Patient registered successfully. UHID assigned.', uhid });
@@ -131,7 +131,7 @@ export default function PatientRegistrationView() {
                   className={masterInputClass}
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  placeholder="+91 ΓÇª"
+                  placeholder="+91 …"
                 />
               </MasterField>
               <MasterField label="Primary Payer">
@@ -158,7 +158,7 @@ export default function PatientRegistrationView() {
                   className={masterInputClass}
                   value={form.nextOfKin}
                   onChange={(e) => setForm((f) => ({ ...f, nextOfKin: e.target.value }))}
-                  placeholder="Name ┬╖ relationship ┬╖ contact"
+                  placeholder="Name · relationship · contact"
                 />
               </MasterField>
             </div>

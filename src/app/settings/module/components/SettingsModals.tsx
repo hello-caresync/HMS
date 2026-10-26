@@ -21,8 +21,8 @@ export function ConfigureRoleModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Configure Role" onClose={onClose} wide>
       <input className={inputClass} placeholder="Role name" defaultValue="Laboratory Supervisor" />
-      <textarea className={`${inputClass} mt-3`} rows={3} placeholder="Module permissions" defaultValue="Lab ┬╖ Inventory View ┬╖ Reports Read ┬╖ No Billing Write" />
-      <label className={`mt-3 flex items-center gap-2 ${settingsType.body}`}><input type="checkbox" defaultChecked className="h-4 w-4" /> Field-level masking ΓÇö patient identifiers</label>
+      <textarea className={`${inputClass} mt-3`} rows={3} placeholder="Module permissions" defaultValue="Lab · Inventory View · Reports Read · No Billing Write" />
+      <label className={`mt-3 flex items-center gap-2 ${settingsType.body}`}><input type="checkbox" defaultChecked className="h-4 w-4" /> Field-level masking — patient identifiers</label>
       <button type="button" onClick={onClose} className={btnSecondary}>Save Role Configuration</button>
     </ModalOverlay>
   );
@@ -42,8 +42,8 @@ export function AddDepartmentModal({ onClose }: { onClose: () => void }) {
 export function SetupIntegrationModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Setup Integration" onClose={onClose} wide>
-      <select className={inputClass}><option>HL7 v2.5 ΓÇö ADT Feed</option><option>FHIR R4 ΓÇö Patient Registry</option><option>DICOM ΓÇö PACS Linkage</option><option>REST ΓÇö Payment Gateway</option></select>
-      <input className={`${inputClass} mt-3`} placeholder="Endpoint URL" defaultValue="Internal gateway ΓÇö TLS 1.3" />
+      <select className={inputClass}><option>HL7 v2.5 — ADT Feed</option><option>FHIR R4 — Patient Registry</option><option>DICOM — PACS Linkage</option><option>REST — Payment Gateway</option></select>
+      <input className={`${inputClass} mt-3`} placeholder="Endpoint URL" defaultValue="Internal gateway — TLS 1.3" />
       <div className="mt-3"><SecureParameterBlock verified /></div>
       <input className={`${inputClass} mt-3`} placeholder="Rate limit" defaultValue="500 requests/min" />
       <button type="button" onClick={onClose} className={`${btnPrimary} bg-violet-600`}>Deploy Integration Endpoint</button>
@@ -54,7 +54,7 @@ export function SetupIntegrationModal({ onClose }: { onClose: () => void }) {
 export function ManageNotificationsModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Manage Notifications" onClose={onClose} wide>
-      <p className={`${settingsType.body} font-semibold text-slate-600`}>Channel routing ΓÇö SMS ┬╖ Email ┬╖ In-App ┬╖ Pager</p>
+      <p className={`${settingsType.body} font-semibold text-slate-600`}>Channel routing — SMS · Email · In-App · Pager</p>
       <div className="mt-3 space-y-2">
         {['Critical Lab Values', 'Bed Availability Alerts', 'Backup Failure Warnings', 'Security Login Anomalies'].map((n) => (
           <label key={n} className={`flex items-center justify-between rounded-lg border border-slate-100 px-4 py-3 ${settingsType.body}`}>
@@ -71,8 +71,8 @@ export function ManageNotificationsModal({ onClose }: { onClose: () => void }) {
 export function BackupSystemModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Backup System" onClose={onClose} wide alert>
-      <select className={inputClass}><option>Full Database Snapshot</option><option>Incremental Transaction Log</option><option>Document Storage ΓÇö DMS</option><option>Offsite DR Replication</option></select>
-      <p className={`mt-3 ${settingsType.bodyMuted}`}>Last full backup: 18-Jul-2026 03:00 IST ┬╖ Retention 30 days</p>
+      <select className={inputClass}><option>Full Database Snapshot</option><option>Incremental Transaction Log</option><option>Document Storage — DMS</option><option>Offsite DR Replication</option></select>
+      <p className={`mt-3 ${settingsType.bodyMuted}`}>Last full backup: 18-Jul-2026 03:00 IST · Retention 30 days</p>
       <div className="mt-3"><SecureParameterBlock verified /></div>
       <button type="button" onClick={onClose} className={`${btnPrimary} bg-emerald-600`}>Trigger Manual Backup Now</button>
     </ModalOverlay>

@@ -2,6 +2,7 @@
 
 import { Download, Printer, Stethoscope } from 'lucide-react';
 
+import { displayClinicalText } from '@/lib/clinical/clinical-text';
 import type { NormalizedPrescription } from '@/lib/patient/prescriptions-feed';
 import { formatHospitalBadge } from '@/lib/utils/formatters';
 
@@ -67,7 +68,9 @@ export function PrescriptionSheet({ rx }: PrescriptionSheetProps) {
           <p className="text-[10px] font-bold uppercase tracking-wider text-[#8C5A3C]">
             Reported symptoms
           </p>
-          <p className="mt-1 text-xs font-medium leading-relaxed text-[#2B1810]">{reportedSymptoms}</p>
+          <p className="mt-1 line-clamp-4 break-words text-xs font-medium leading-relaxed text-[#2B1810]">
+            {displayClinicalText(reportedSymptoms)}
+          </p>
         </div>
       ) : null}
 
@@ -112,7 +115,9 @@ export function PrescriptionSheet({ rx }: PrescriptionSheetProps) {
           <p className="text-[10px] font-bold uppercase tracking-wider text-[#8C5A3C]">
             Doctor&apos;s advice
           </p>
-          <p className="mt-1 text-xs font-medium leading-relaxed text-[#2B1810]">{doctorAdvice}</p>
+          <p className="mt-1 line-clamp-4 break-words text-xs font-medium leading-relaxed text-[#2B1810]">
+            {displayClinicalText(doctorAdvice, 280)}
+          </p>
         </div>
       ) : null}
 

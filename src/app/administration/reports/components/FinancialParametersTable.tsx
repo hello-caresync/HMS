@@ -31,8 +31,8 @@ export default function FinancialParametersTable({
           <thead>
             <tr className="border-b-2 border-slate-200 bg-slate-800 text-white">
               <th className="px-3 py-2 text-left text-[10px] font-black uppercase">Department</th>
-              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Revenue (Γé╣)</th>
-              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Expenses (Γé╣)</th>
+              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Revenue (₹)</th>
+              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Expenses (₹)</th>
               <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Net Margin %</th>
               <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Transactions</th>
             </tr>
@@ -63,12 +63,12 @@ export default function FinancialParametersTable({
             <tr className="border-t-2 border-slate-300 bg-slate-100 font-bold">
               <td className="px-3 py-2 text-xs">Totals</td>
               <td className="px-3 py-2 text-right font-mono text-xs tabular-nums">
-                Γé╣ {totals.revenue.toLocaleString('en-IN')}
+                ₹ {totals.revenue.toLocaleString('en-IN')}
               </td>
               <td className="px-3 py-2 text-right font-mono text-xs tabular-nums">
-                Γé╣ {totals.expenses.toLocaleString('en-IN')}
+                ₹ {totals.expenses.toLocaleString('en-IN')}
               </td>
-              <td className="px-3 py-2 text-right font-mono text-xs tabular-nums">ΓÇö</td>
+              <td className="px-3 py-2 text-right font-mono text-xs tabular-nums">—</td>
               <td className="px-3 py-2 text-right font-mono text-xs tabular-nums">
                 {totals.transactions.toLocaleString('en-IN')}
               </td>

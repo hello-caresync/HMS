@@ -33,7 +33,7 @@ const SEED_MEDICINES: Medicine[] = [
     hsn: '30049061',
     gst: '12%',
     unit: 'Tablets',
-    mrp: 'Γé╣32.00',
+    mrp: '₹32.00',
     batchVerified: true,
   },
   {
@@ -43,7 +43,7 @@ const SEED_MEDICINES: Medicine[] = [
     hsn: '30041010',
     gst: '12%',
     unit: 'Tablets',
-    mrp: 'Γé╣204.50',
+    mrp: '₹204.50',
     batchVerified: true,
   },
   {
@@ -53,7 +53,7 @@ const SEED_MEDICINES: Medicine[] = [
     hsn: '30043100',
     gst: '5%',
     unit: 'Vials',
-    mrp: 'Γé╣1,842.00',
+    mrp: '₹1,842.00',
     batchVerified: false,
   },
   {
@@ -63,7 +63,7 @@ const SEED_MEDICINES: Medicine[] = [
     hsn: '30049099',
     gst: '12%',
     unit: 'Capsules',
-    mrp: 'Γé╣118.00',
+    mrp: '₹118.00',
     batchVerified: true,
   },
 ];
@@ -108,7 +108,7 @@ export default function MasterMedicinesView() {
         hsn: form.hsn.trim() || '[HSN Pending]',
         gst: form.gst,
         unit: form.unit,
-        mrp: form.mrp.trim() ? `Γé╣${form.mrp.trim()}` : 'Γé╣0.00',
+        mrp: form.mrp.trim() ? `₹${form.mrp.trim()}` : '₹0.00',
         batchVerified: false,
       },
     ]);
@@ -130,7 +130,7 @@ export default function MasterMedicinesView() {
         }
       />
 
-      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search generic, brand, HSNΓÇª" />
+      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search generic, brand, HSN…" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -170,7 +170,7 @@ export default function MasterMedicinesView() {
         </ul>
       </MasterPanel>
 
-      <MasterPanel title="Enterprise Medicine Registry" description="Generic ┬╖ Brand ┬╖ HSN ┬╖ GST ┬╖ Unit ┬╖ MRP">
+      <MasterPanel title="Enterprise Medicine Registry" description="Generic · Brand · HSN · GST · Unit · MRP">
         <MasterDataTable
           columns={['Brand', 'Generic', 'HSN', 'GST', 'Unit', 'MRP', 'Batch']}
           rows={filtered.map((m) => [
@@ -249,7 +249,7 @@ export default function MasterMedicinesView() {
               </select>
             </MasterField>
           </div>
-          <MasterField label="MRP (Γé╣)">
+          <MasterField label="MRP (₹)">
             <input
               className={masterInputClass}
               value={form.mrp}

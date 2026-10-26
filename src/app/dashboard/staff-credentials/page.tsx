@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { isHospitalAppRole, readHospitalAppSession } from '@/lib/auth/ecosystem-sessions';
+import { isGlobalSuperAdminStaffRecord } from '@/lib/auth/superAdminAuth';
 import { canManageStaffCredentials } from '@/lib/auth/hospital-rbac';
 import { supabase } from '@/lib/supabase';
 import {
@@ -74,7 +75,7 @@ interface DirectoryEntity {
   createdAt: string;
 }
 
-const MASKED_PASSCODE = 'ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó';
+const MASKED_PASSCODE = '••••••••••';
 
 function AdminPasscodeField({
   value,
@@ -302,7 +303,15 @@ export default function IdentityAccessGovernanceVault() {
         });
       }
 
-      setItems([...unifiedStaff, ...Array.from(vendorByEmail.values())]);
+      setItems(
+        [...unifiedStaff, ...Array.from(vendorByEmail.values())].filter(
+          (item) =>
+            !isGlobalSuperAdminStaffRecord({
+              email: item.email,
+              role: item.rawRole || item.roleOrType,
+            }) && !/platform root/i.test(item.name),
+        ),
+      );
 
       if (errors.length > 0 && unifiedStaff.length === 0 && vendorByEmail.size === 0) {
         toast.error('Could not load governance directory');
@@ -371,7 +380,7 @@ export default function IdentityAccessGovernanceVault() {
   const handleToggleStatus = async (item: DirectoryEntity) => {
     try {
       if (item.isVendor) {
-        toast.info('Vendor suspend/resume is not available ΓÇö use Revoke to remove a supplier.');
+        toast.info('Vendor suspend/resume is not available — use Revoke to remove a supplier.');
         return;
       } else {
         if (item.credentialId) {
@@ -400,10 +409,19 @@ export default function IdentityAccessGovernanceVault() {
   };
 
   const handleRevokeAccess = async (item: DirectoryEntity) => {
-    const label = item.isVendor ? 'vendor supplier' : 'personnel credential';
-    const confirmed = window.confirm(
-      `Revoke and permanently delete this ${label}?\n\n${item.name} (${item.code})\n\nThis removes portal access and linked directory records.`,
-    );
+    if (
+      isGlobalSuperAdminStaffRecord({
+        email: item.email,
+        role: item.rawRole || item.roleOrType,
+      }) ||
+      /platform root/i.test(item.name)
+    ) {
+      toast.error('The super admin login stays in the vault. Remove a hospital credential instead.');
+      return;
+    }
+
+    const label = item.isVendor ? 'vendor supplier' : 'staff login';
+    const confirmed = window.confirm(`Remove this ${label} for ${item.name}?`);
     if (!confirmed) return;
 
     setRevokingId(item.id);
@@ -551,7 +569,7 @@ export default function IdentityAccessGovernanceVault() {
                   Staff & Vendor Access Governance Vault
                 </h1>
                 <p className="text-xs text-slate-500">
-                  Regal Hospital (Node HOSP-01) ΓÇó Identity credential matrix & supplier privilege control
+                  Regal Hospital (Node HOSP-01) • Identity credential matrix & supplier privilege control
                 </p>
               </div>
             </div>
@@ -583,7 +601,7 @@ export default function IdentityAccessGovernanceVault() {
       </div>
 
       <div className="p-8 max-w-[1400px] mx-auto space-y-6">
-        {/* Metric Cards ΓÇö unified teal/slate palette; color reserved for health % only */}
+        {/* Metric Cards — unified teal/slate palette; color reserved for health % only */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
           {(
             [
@@ -779,7 +797,7 @@ export default function IdentityAccessGovernanceVault() {
                   <td colSpan={7} className="py-12 text-center text-slate-500">
                     <p className="text-sm font-semibold text-slate-700">
                       No records match &ldquo;{activeTab}&rdquo;
-                      {search.trim() ? ` for ΓÇ£${search.trim()}ΓÇ¥` : ''}
+                      {search.trim() ? ` for “${search.trim()}”` : ''}
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
                       Try another tab, clear the search box, or click Sync Directory to refresh credentials.

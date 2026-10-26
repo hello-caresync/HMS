@@ -25,7 +25,7 @@ export default function ClinicalShiftConsole() {
         <div>
           <h2 className="text-sm font-bold text-slate-900">Clinical Shift Console</h2>
           <p className="text-[11px] text-slate-800">
-            {admission.patientName} ┬╖ {admission.uhid} ┬╖ {admission.admittingDoctor}
+            {admission.patientName} · {admission.uhid} · {admission.admittingDoctor}
           </p>
         </div>
         <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-indigo-800">
@@ -104,7 +104,7 @@ function ClinicalTimeline({ admission }: { admission: IPDAdmission }) {
                   hour: '2-digit',
                   minute: '2-digit',
                 }).format(new Date(note.timestamp))}
-                {' ┬╖ '}
+                {' · '}
                 {note.author}
               </p>
               <p className="mt-0.5 text-xs leading-relaxed text-slate-900">{note.note}</p>
@@ -185,7 +185,7 @@ function MarLedger({
       </div>
 
       <p className="mt-3 text-[10px] text-slate-800">
-        Tap unchecked slots to verify administration ┬╖ timestamp auto-recorded
+        Tap unchecked slots to verify administration · timestamp auto-recorded
       </p>
     </div>
   );

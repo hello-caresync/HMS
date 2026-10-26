@@ -59,7 +59,7 @@ export default function BedTransferModal({ fromBed, open, onClose }: BedTransfer
     <Sheet
       open={open}
       title="Ward Transfer / Room Upgrade"
-      description={`${admission.patientName} ┬╖ ${fromBed.bedLabel}`}
+      description={`${admission.patientName} · ${fromBed.bedLabel}`}
       onClose={handleClose}
       width="lg"
     >
@@ -67,7 +67,7 @@ export default function BedTransferModal({ fromBed, open, onClose }: BedTransfer
         <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
           <p className="text-[10px] font-bold uppercase text-slate-800">Current Bed</p>
           <p className="text-sm font-bold text-slate-900">
-            {fromBed.bedLabel} ΓÇö {fromWard?.name}
+            {fromBed.bedLabel} — {fromWard?.name}
           </p>
           <p className="font-mono text-[10px] text-slate-800">
             Rate: {formatCurrency(fromWard?.dailyRate ?? 0)}/day
@@ -86,12 +86,12 @@ export default function BedTransferModal({ fromBed, open, onClose }: BedTransfer
             }}
             className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
           >
-            <option value="">Select vacant bedΓÇª</option>
+            <option value="">Select vacant bed…</option>
             {vacantTargets.map((b) => {
               const w = wards.find((wd) => wd.id === b.wardId);
               return (
                 <option key={b.id} value={b.id}>
-                  {w?.name} ┬╖ {b.bedLabel} ({formatCurrency(w?.dailyRate ?? 0)}/day)
+                  {w?.name} · {b.bedLabel} ({formatCurrency(w?.dailyRate ?? 0)}/day)
                 </option>
               );
             })}
@@ -123,7 +123,7 @@ export default function BedTransferModal({ fromBed, open, onClose }: BedTransfer
                 </p>
                 <p className="text-xs font-bold text-slate-200">{fromWard.name}</p>
                 <p className="font-mono text-[10px] text-sky-400">
-                  {formatCurrency(fromWard.dailyRate)}/day ┬╖ ends at transfer
+                  {formatCurrency(fromWard.dailyRate)}/day · ends at transfer
                 </p>
               </div>
               <ArrowRight className="h-4 w-4 shrink-0 text-slate-800" />
@@ -134,7 +134,7 @@ export default function BedTransferModal({ fromBed, open, onClose }: BedTransfer
                 </p>
                 <p className="text-xs font-bold text-emerald-100">{targetWard.name}</p>
                 <p className="font-mono text-[10px] text-emerald-400">
-                  {formatCurrency(targetWard.dailyRate)}/day ┬╖ from transfer
+                  {formatCurrency(targetWard.dailyRate)}/day · from transfer
                 </p>
               </div>
             </div>

@@ -1,4 +1,4 @@
-﻿/** Phase 1 Core Foundation ΓÇö system definition types (Modules 3 & 4) */
+﻿/** Phase 1 Core Foundation — system definition types (Modules 3 & 4) */
 
 export interface TaxGstParameters {
   defaultGstPercent: number;

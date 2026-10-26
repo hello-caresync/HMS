@@ -43,7 +43,7 @@ export default function FinanceAiTab({ aiInsights, onUpdateAiStatus }: FinanceAi
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <HbiPanel title="Procurement & Vendor Pricing Variance" subtitle="Quoted vs invoiced ┬╖ supply chain intelligence" icon={Package}>
+        <HbiPanel title="Procurement & Vendor Pricing Variance" subtitle="Quoted vs invoiced · supply chain intelligence" icon={Package}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -66,7 +66,7 @@ export default function FinanceAiTab({ aiInsights, onUpdateAiStatus }: FinanceAi
           </table>
         </HbiPanel>
 
-        <HbiPanel title="Inventory Consumption vs Wastage Index" subtitle="Pharmacy ┬╖ blood bank ┬╖ contrast ┬╖ consumables" icon={Package}>
+        <HbiPanel title="Inventory Consumption vs Wastage Index" subtitle="Pharmacy · blood bank · contrast · consumables" icon={Package}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -139,7 +139,7 @@ export default function FinanceAiTab({ aiInsights, onUpdateAiStatus }: FinanceAi
         </HbiPanel>
       </div>
 
-      <HbiPanel title="Revenue Forecasting Trend (Γé╣ Lakhs)" subtitle="Actual vs AI-projected monthly revenue" icon={DollarSign}>
+      <HbiPanel title="Revenue Forecasting Trend (₹ Lakhs)" subtitle="Actual vs AI-projected monthly revenue" icon={DollarSign}>
         <div className="h-[180px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={REVENUE_FORECAST}>
@@ -154,7 +154,7 @@ export default function FinanceAiTab({ aiInsights, onUpdateAiStatus }: FinanceAi
         </div>
       </HbiPanel>
 
-      <HbiPanel title="AI Hospital Intelligence Hub" subtitle="Predictive capacity ┬╖ demand surge ┬╖ revenue ┬╖ resource optimization" icon={Bot}>
+      <HbiPanel title="AI Hospital Intelligence Hub" subtitle="Predictive capacity · demand surge · revenue · resource optimization" icon={Bot}>
         <div className="space-y-1">
           {aiInsights.map((ins) => (
             <div key={ins.id} className={`flex items-start justify-between gap-2 rounded border px-2 py-1.5 ${ins.severity === 'Critical' ? 'border-red-200 bg-red-50/40' : 'border-slate-100'}`}>

@@ -14,7 +14,7 @@ export default function VendorCoordinationModuleHeader({ lookupValue, onLookupCh
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-base font-bold text-[#0F172A]">Vendor Coordination (VRM)</h1>
-          <p className="text-[9px] text-slate-500">Onboarding ┬╖ PO coordination ┬╖ catalogues ┬╖ RFQ ┬╖ fulfillment ┬╖ invoices ┬╖ compliance ┬╖ AI intelligence</p>
+          <p className="text-[9px] text-slate-500">Onboarding · PO coordination · catalogues · RFQ · fulfillment · invoices · compliance · AI intelligence</p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-md border border-teal-200 bg-teal-50 px-2 py-1 text-[9px] font-bold uppercase text-teal-800">
           <Handshake className="h-3.5 w-3.5" />
@@ -27,7 +27,7 @@ export default function VendorCoordinationModuleHeader({ lookupValue, onLookupCh
           type="search"
           value={lookupValue}
           onChange={(e) => onLookupChange(e.target.value)}
-          placeholder="Search vendors ΓÇö name, request ID, category, or contact"
+          placeholder="Search vendors — name, request ID, category, or contact"
           aria-label="Search vendor coordination"
           className="w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] py-1.5 pl-8 pr-3 text-[10px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
         />

@@ -76,7 +76,7 @@ export default function SecurityAuthenticationWorkspace() {
         </div>
         {isPending ? (
           <span className="inline-flex items-center gap-2 text-xs font-bold text-slate-500">
-            <Loader2 className="h-4 w-4 animate-spin" /> ApplyingΓÇª
+            <Loader2 className="h-4 w-4 animate-spin" /> Applying…
           </span>
         ) : null}
       </div>
@@ -192,7 +192,7 @@ export default function SecurityAuthenticationWorkspace() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-800">{log.event}</p>
-                      <p className="text-xs font-semibold text-slate-400 mt-0.5">{log.time} ┬╖ {log.user}</p>
+                      <p className="text-xs font-semibold text-slate-400 mt-0.5">{log.time} · {log.user}</p>
                     </div>
                   </div>
                 ))}

@@ -125,7 +125,7 @@ export default function HospitalHub() {
             Patient command center
           </Link>
           <p className="text-center font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
-            Deep oceanic lane ┬╖ v2
+            Deep oceanic lane · v2
           </p>
         </div>
       </aside>
@@ -157,7 +157,7 @@ export default function HospitalHub() {
             <p className="font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
               Settlement
             </p>
-            <p className="mt-2 font-mono text-2xl font-bold text-[#0A4174]">Γé╣4.18L</p>
+            <p className="mt-2 font-mono text-2xl font-bold text-[#0A4174]">₹4.18L</p>
             <p className="mt-1 text-sm font-medium text-[#49769F]">Pending invoice clearance</p>
           </article>
 
@@ -166,7 +166,7 @@ export default function HospitalHub() {
               Inventory value
             </p>
             <p className="mt-2 font-mono text-2xl font-bold text-[#001D39]">
-              Γé╣{activeInventoryValue.toLocaleString('en-IN')}
+              ₹{activeInventoryValue.toLocaleString('en-IN')}
             </p>
             <p className="mt-1 text-sm font-medium text-[#49769F]">
               Active on-hand stock valuation
@@ -191,7 +191,7 @@ export default function HospitalHub() {
             <input
               type="text"
               autoComplete="off"
-              placeholder="Type product name or HSNΓÇª"
+              placeholder="Type product name or HSN…"
               value={searchQuery}
               onChange={(event) => {
                 setSearchQuery(event.target.value);
@@ -208,7 +208,7 @@ export default function HospitalHub() {
                   <p className="px-4 py-3 text-xs font-medium text-[#49769F]">
                     {searchQuery.trim().length > 0
                       ? `No catalog matches for "${searchQuery.trim()}"`
-                      : 'Start typing to filter the catalogΓÇª'}
+                      : 'Start typing to filter the catalog…'}
                   </p>
                 ) : (
                   filteredCatalog.map((product) => (
@@ -222,7 +222,7 @@ export default function HospitalHub() {
                     >
                       <span className="block font-semibold text-[#001D39]">{product.name}</span>
                       <span className="mt-0.5 block font-mono text-xs text-[#49769F]">
-                        HSN {product.hsn} ┬╖ {product.sku} ┬╖ Γé╣{product.rate}/unit
+                        HSN {product.hsn} · {product.sku} · ₹{product.rate}/unit
                       </span>
                     </button>
                   ))
@@ -233,7 +233,7 @@ export default function HospitalHub() {
 
           {selectedProduct && (
             <p className="mt-3 text-xs font-semibold text-[#0A4174]">
-              Selected: {selectedProduct.sku} ┬╖ HSN {selectedProduct.hsn} ┬╖ Γé╣
+              Selected: {selectedProduct.sku} · HSN {selectedProduct.hsn} · ₹
               {selectedProduct.rate}/unit
             </p>
           )}

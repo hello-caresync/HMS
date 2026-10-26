@@ -1,4 +1,4 @@
-﻿/** Hospital portal typography ΓÇö Tailwind scale only (no arbitrary text sizes). */
+﻿/** Hospital portal typography — Tailwind scale only (no arbitrary text sizes). */
 
 /** Status badges, timestamps, micro metadata, uppercase field group headers */
 export const typoBadge = 'text-xs font-semibold uppercase tracking-wider';

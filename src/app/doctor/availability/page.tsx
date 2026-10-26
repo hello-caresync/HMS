@@ -265,7 +265,7 @@ export default function DoctorAvailabilityPage() {
     const overlap = findOverlappingSlot(slots, startTime, resolvedEndTime);
     if (overlap) {
       setErrorMessage(
-        `This slot overlaps with ${formatTimeDisplay(overlap.start_time)} ΓÇô ${formatTimeDisplay(overlap.end_time)}.`,
+        `This slot overlaps with ${formatTimeDisplay(overlap.start_time)} – ${formatTimeDisplay(overlap.end_time)}.`,
       );
       return;
     }
@@ -499,7 +499,7 @@ export default function DoctorAvailabilityPage() {
               ) : (
                 <Sun className="h-4 w-4" />
               )}
-              + Add Morning Shift 9 AM ΓÇô 1 PM
+              + Add Morning Shift 9 AM – 1 PM
             </button>
             <button
               type="button"
@@ -512,7 +512,7 @@ export default function DoctorAvailabilityPage() {
               ) : (
                 <Sunset className="h-4 w-4" />
               )}
-              + Add Evening Shift 4 PM ΓÇô 8 PM
+              + Add Evening Shift 4 PM – 8 PM
             </button>
           </div>
         </div>
@@ -522,7 +522,7 @@ export default function DoctorAvailabilityPage() {
         <div className="mb-5 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
             <Clock className="h-4 w-4 text-emerald-600" />
-            Slot Grid ΓÇö {selectedDateStr}
+            Slot Grid — {selectedDateStr}
           </h2>
           <span className="text-xs font-medium text-slate-500">{slots.length} slot(s)</span>
         </div>
@@ -553,7 +553,7 @@ export default function DoctorAvailabilityPage() {
                   <div className="mb-3 flex items-start justify-between gap-2">
                     <div>
                       <p className="text-sm font-bold text-slate-900">
-                        {formatTimeDisplay(slot.start_time)} ΓÇô {formatTimeDisplay(slot.end_time)}
+                        {formatTimeDisplay(slot.start_time)} – {formatTimeDisplay(slot.end_time)}
                       </p>
                       <p className="mt-1 text-[11px] text-slate-500">
                         Capacity {slot.booked_count ?? 0}/{slot.max_capacity ?? 1}

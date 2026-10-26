@@ -18,7 +18,7 @@ export const SEED_TRANSACTIONS: LedgerTransaction[] = [
     amount: 1622,
     status: 'Settled',
     invoiceNumber: 'NEX-INV-2026-4421',
-    itemsSummary: 'Consultation ┬╖ CBC ┬╖ Pharmacy consumables',
+    itemsSummary: 'Consultation · CBC · Pharmacy consumables',
     timestamp: '2026-07-09T09:12:00Z',
   },
   {
@@ -29,7 +29,7 @@ export const SEED_TRANSACTIONS: LedgerTransaction[] = [
     amount: 2450,
     status: 'Settled',
     invoiceNumber: 'NEX-INV-2026-4398',
-    itemsSummary: 'Consultation ┬╖ X-Ray ┬╖ Medicines',
+    itemsSummary: 'Consultation · X-Ray · Medicines',
     timestamp: '2026-07-09T09:28:00Z',
   },
   {
@@ -40,7 +40,7 @@ export const SEED_TRANSACTIONS: LedgerTransaction[] = [
     amount: 8900,
     status: 'Settled',
     invoiceNumber: 'NEX-INV-2026-4387',
-    itemsSummary: 'MRI ┬╖ Lab panel ┬╖ IPD deposit',
+    itemsSummary: 'MRI · Lab panel · IPD deposit',
     timestamp: '2026-07-09T10:05:00Z',
   },
   {
@@ -62,9 +62,9 @@ export const SEED_TRANSACTIONS: LedgerTransaction[] = [
     amount: 450,
     status: 'Refunded',
     invoiceNumber: 'NEX-INV-2026-4362',
-    itemsSummary: 'CBC ΓÇö duplicate charge reversal',
+    itemsSummary: 'CBC — duplicate charge reversal',
     timestamp: '2026-07-09T08:45:00Z',
-    refundReason: 'Duplicate lab charge ΓÇö doctor cancelled order',
+    refundReason: 'Duplicate lab charge — doctor cancelled order',
     refundedAt: '2026-07-09T09:00:00Z',
   },
   {
@@ -75,12 +75,12 @@ export const SEED_TRANSACTIONS: LedgerTransaction[] = [
     amount: 3200,
     status: 'Settled',
     invoiceNumber: 'NEX-INV-2026-4355',
-    itemsSummary: 'Cardiology consult ┬╖ ECG ┬╖ Pharmacy',
+    itemsSummary: 'Cardiology consult · ECG · Pharmacy',
     timestamp: '2026-07-09T11:10:00Z',
   },
 ];
 
-/** Active shift preset for demo ΓÇö user can close and reopen via wizard */
+/** Active shift preset for demo — user can close and reopen via wizard */
 export function createActiveShift(openingFloat: number): CashierShift {
   return {
     id: generateShiftId(),

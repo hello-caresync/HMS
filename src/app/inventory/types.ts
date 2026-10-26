@@ -63,7 +63,7 @@ export const SOURCE_LOCATIONS = [
 
 export const TARGET_DEPARTMENTS = [
   'ICU Nursing Station',
-  'General Ward ΓÇö East',
+  'General Ward — East',
   'Emergency Department',
   'Laboratory',
   'Radiology Suite',

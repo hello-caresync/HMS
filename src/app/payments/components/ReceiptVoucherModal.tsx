@@ -30,7 +30,7 @@ export default function ReceiptVoucherModal({ transaction, onClose }: ReceiptVou
           role="dialog"
           aria-labelledby="receipt-title"
         >
-          {/* Toolbar ΓÇö hidden on print */}
+          {/* Toolbar — hidden on print */}
           <div className="flex items-center justify-between border-b-2 border-slate-200 bg-slate-50 px-3 py-2 print:hidden">
             <p className="text-xs font-bold text-slate-900">Print Receipt</p>
             <div className="flex gap-1">
@@ -62,9 +62,9 @@ export default function ReceiptVoucherModal({ transaction, onClose }: ReceiptVou
               <h2 id="receipt-title" className="text-sm font-bold tracking-tight text-slate-900">
                 Regal Multispeciality Hospital
               </h2>
-              <p className="text-[10px] text-slate-800">Payment Receipt ┬╖ OPD Counter T-04</p>
+              <p className="text-[10px] text-slate-800">Payment Receipt · OPD Counter T-04</p>
               <p className="mt-1 font-mono text-[10px] text-slate-800">
-                GSTIN: 29AABCN1234F1Z5 ┬╖ Bengaluru
+                GSTIN: 29AABCN1234F1Z5 · Bengaluru
               </p>
             </div>
 

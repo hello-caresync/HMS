@@ -64,18 +64,18 @@ export default function CashierTerminalWorkbench() {
     if (!isBalanced) return;
 
     const methods: string[] = [];
-    if (split.cash > 0) methods.push(`Cash Γé╣${split.cash.toLocaleString('en-IN')}`);
-    if (split.card > 0) methods.push(`Card Γé╣${split.card.toLocaleString('en-IN')}`);
-    if (split.upi > 0) methods.push(`UPI Γé╣${split.upi.toLocaleString('en-IN')}`);
+    if (split.cash > 0) methods.push(`Cash ₹${split.cash.toLocaleString('en-IN')}`);
+    if (split.card > 0) methods.push(`Card ₹${split.card.toLocaleString('en-IN')}`);
+    if (split.upi > 0) methods.push(`UPI ₹${split.upi.toLocaleString('en-IN')}`);
     if (split.insuranceCover > 0)
-      methods.push(`Insurance Γé╣${split.insuranceCover.toLocaleString('en-IN')}`);
+      methods.push(`Insurance ₹${split.insuranceCover.toLocaleString('en-IN')}`);
 
     const entry: PaymentHistoryLog = {
       transactionToken: generateTransactionToken(),
       invoiceRef: pendingInvoice.invoiceRef,
       patientName: pendingInvoice.patientName,
       totalAmount: pendingInvoice.grandTotal,
-      methodsSummary: methods.join(' ┬╖ '),
+      methodsSummary: methods.join(' · '),
       status: 'Completed',
       processedAt: new Date().toISOString(),
     };
@@ -93,7 +93,7 @@ export default function CashierTerminalWorkbench() {
           <div>
             <h1 className="text-lg font-black text-slate-900">Cashier Terminal &amp; Split-Payment</h1>
             <p className="text-xs text-slate-800">
-              Phase 5 ┬╖ Module 15 ┬╖ High-volume payment collection desk
+              Phase 5 · Module 15 · High-volume payment collection desk
             </p>
           </div>
         </div>
@@ -109,7 +109,7 @@ export default function CashierTerminalWorkbench() {
           <p className="font-mono text-[10px] text-slate-800">{pendingInvoice.patientUhid}</p>
           <p className="mt-3 text-[10px] text-slate-800">{pendingInvoice.lineCount} line items</p>
           <p className="mt-4 font-mono text-2xl font-black tabular-nums text-emerald-700">
-            Γé╣ {pendingInvoice.grandTotal.toLocaleString('en-IN')}
+            ₹ {pendingInvoice.grandTotal.toLocaleString('en-IN')}
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-[10px] text-slate-800">
             <span className="inline-flex items-center gap-1">

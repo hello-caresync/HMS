@@ -8,7 +8,7 @@ function QueueFallback() {
   return (
     <div className="mx-auto max-w-xl p-6">
       <div className="flex h-64 animate-pulse items-center justify-center rounded-3xl border border-[#E2D2C8] bg-white/80">
-        <p className="text-sm font-bold text-[#8E7692]">Loading queue trackerΓÇª</p>
+        <p className="text-sm font-bold text-[#8E7692]">Loading queue tracker…</p>
       </div>
     </div>
   );

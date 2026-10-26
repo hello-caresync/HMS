@@ -177,7 +177,7 @@ export default function HospitalInteractiveModuleShell(config: HospitalInteracti
           showError(error);
           return;
         }
-        showSuccess('Patient discharged ┬╖ status updated in Supabase.');
+        showSuccess('Patient discharged · status updated in Supabase.');
         await reloadRecords();
       })();
     });
@@ -299,14 +299,14 @@ export default function HospitalInteractiveModuleShell(config: HospitalInteracti
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search reference, subject, departmentΓÇª"
+              placeholder="Search reference, subject, department…"
               className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-3 text-base focus:border-[#008588] focus:outline-none focus:ring-2 focus:ring-[#008588]/20"
             />
           </div>
           {recordsLoading ? (
             <p className="flex items-center gap-2 text-sm text-slate-500">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              Loading from SupabaseΓÇª
+              Loading from Supabase…
             </p>
           ) : (
           <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
@@ -337,10 +337,10 @@ export default function HospitalInteractiveModuleShell(config: HospitalInteracti
                       <td className="px-4 py-2.5 text-base font-semibold text-slate-900">{row.subject}</td>
                       <td className="px-4 py-2.5 text-base text-slate-600">{row.department}</td>
                       {isBillingTable ? (
-                        <td className="px-4 py-2.5 text-base font-medium text-slate-700">{row.amount ?? 'ΓÇö'}</td>
+                        <td className="px-4 py-2.5 text-base font-medium text-slate-700">{row.amount ?? '—'}</td>
                       ) : null}
                       {isPharmacyTable ? (
-                        <td className="px-4 py-2.5 text-base font-medium text-slate-700">{row.amount ?? 'ΓÇö'}</td>
+                        <td className="px-4 py-2.5 text-base font-medium text-slate-700">{row.amount ?? '—'}</td>
                       ) : null}
                       <td className="px-4 py-2.5">
                         <span className="rounded-md border border-[#00A481]/30 bg-[#00A481]/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[#00758C]">
@@ -357,7 +357,7 @@ export default function HospitalInteractiveModuleShell(config: HospitalInteracti
                               onClick={() => runDischarge(row.id)}
                               className="text-sm font-semibold text-[#00758C] hover:underline disabled:opacity-50"
                             >
-                              {isPending ? 'ProcessingΓÇª' : 'Discharge'}
+                              {isPending ? 'Processing…' : 'Discharge'}
                             </button>
                           ) : null}
                           {isBillingTable && row.status !== 'Paid' ? (
@@ -367,7 +367,7 @@ export default function HospitalInteractiveModuleShell(config: HospitalInteracti
                               onClick={() => runRecordPayment(row)}
                               className="text-sm font-semibold text-[#00758C] hover:underline disabled:opacity-50"
                             >
-                              {isPending ? 'ProcessingΓÇª' : 'Record payment'}
+                              {isPending ? 'Processing…' : 'Record payment'}
                             </button>
                           ) : null}
                           {isPharmacyTable ? (
@@ -386,7 +386,7 @@ export default function HospitalInteractiveModuleShell(config: HospitalInteracti
                                 onClick={() => runStockAdjust(row.id, -1)}
                                 className="text-sm font-semibold text-rose-600 hover:underline disabled:opacity-50"
                               >
-                                ΓêÆ Stock
+                                − Stock
                               </button>
                             </>
                           ) : null}
@@ -402,7 +402,7 @@ export default function HospitalInteractiveModuleShell(config: HospitalInteracti
                               onClick={() => markComplete(row.id)}
                               className="text-sm font-semibold text-[#00758C] hover:underline disabled:opacity-50"
                             >
-                              {isPending ? 'SavingΓÇª' : 'Complete'}
+                              {isPending ? 'Saving…' : 'Complete'}
                             </button>
                           ) : null}
                         </div>
@@ -485,7 +485,7 @@ export default function HospitalInteractiveModuleShell(config: HospitalInteracti
                     value={form.phone}
                     onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                     className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-base"
-                    placeholder="+91ΓÇª"
+                    placeholder="+91…"
                   />
                 </label>
               ) : null}
@@ -532,7 +532,7 @@ export default function HospitalInteractiveModuleShell(config: HospitalInteracti
                   className="inline-flex items-center gap-2 rounded-lg bg-[#00758C] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 >
                   {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  {isPending ? 'SavingΓÇª' : 'Save'}
+                  {isPending ? 'Saving…' : 'Save'}
                 </button>
               </div>
             </form>

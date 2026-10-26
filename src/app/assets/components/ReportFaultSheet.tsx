@@ -63,7 +63,7 @@ export default function ReportFaultSheet({ open, onClose }: ReportFaultSheetProp
           >
             {assets.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name} ┬╖ {a.assetId}
+                {a.name} · {a.assetId}
               </option>
             ))}
           </select>
@@ -117,7 +117,7 @@ export default function ReportFaultSheet({ open, onClose }: ReportFaultSheetProp
               setError(null);
             }}
             rows={4}
-            placeholder="Describe fault symptoms, error codes, patient impactΓÇª"
+            placeholder="Describe fault symptoms, error codes, patient impact…"
             className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs leading-relaxed focus:border-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500/20"
           />
         </div>

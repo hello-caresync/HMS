@@ -65,7 +65,7 @@ export default function CommercialAnalyticsPanel({ metrics }: CommercialAnalytic
           <h2 className="text-base font-semibold tracking-tight text-slate-900">
             Commercial & Ancillary Analytics
           </h2>
-          <p className="text-xs text-slate-800">Financial health ┬╖ pharmacy ┬╖ diagnostics throughput</p>
+          <p className="text-xs text-slate-800">Financial health · pharmacy · diagnostics throughput</p>
         </div>
       </div>
 
@@ -79,7 +79,7 @@ export default function CommercialAnalyticsPanel({ metrics }: CommercialAnalytic
               </span>
               <div>
                 <h3 className="text-sm font-semibold text-slate-800">Today&apos;s Collection</h3>
-                <p className="text-[11px] text-slate-800">Gross receipts ┬╖ live</p>
+                <p className="text-[11px] text-slate-800">Gross receipts · live</p>
               </div>
             </div>
             <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
@@ -181,7 +181,7 @@ export default function CommercialAnalyticsPanel({ metrics }: CommercialAnalytic
                 <Tooltip
                   contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #e2e8f0' }}
                   formatter={(value: number, name: string) => {
-                    if (name === 'sales') return [`Γé╣${(value * 1000).toLocaleString('en-IN')}`, 'Pharmacy'];
+                    if (name === 'sales') return [`₹${(value * 1000).toLocaleString('en-IN')}`, 'Pharmacy'];
                     if (name === 'samples') return [value, 'Lab Samples'];
                     return [value, 'Radiology'];
                   }}

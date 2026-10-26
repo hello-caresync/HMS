@@ -67,7 +67,7 @@ export default function PatientAdmissionIntake() {
               </select>
             </MasterField>
             <div className="grid grid-cols-2 gap-3">
-              <MasterField label="Advance Cash (Γé╣)">
+              <MasterField label="Advance Cash (₹)">
                 <input
                   className={masterInputClass}
                   value={deposit.cash}
@@ -75,7 +75,7 @@ export default function PatientAdmissionIntake() {
                   placeholder="0.00"
                 />
               </MasterField>
-              <MasterField label="Advance UPI (Γé╣)">
+              <MasterField label="Advance UPI (₹)">
                 <input
                   className={masterInputClass}
                   value={deposit.upi}
@@ -86,7 +86,7 @@ export default function PatientAdmissionIntake() {
             </div>
             <p className="flex items-center gap-2 text-xs text-slate-500">
               <CreditCard className="h-4 w-4 text-blue-600" />
-              Total advance: Γé╣
+              Total advance: ₹
               {(parseFloat(deposit.cash || '0') + parseFloat(deposit.upi || '0')).toLocaleString('en-IN')}
             </p>
           </div>

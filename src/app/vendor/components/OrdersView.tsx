@@ -29,7 +29,7 @@ export default function OrdersView({ ordersList = [], setSelectedOrder, setIsUpd
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
-  // ≡ƒ¢í∩╕Å CRASH SAFEGUARDS: Using fallbacks (|| '') ensures toLowerCase() never fires on undefined data
+  // 🛡️ CRASH SAFEGUARDS: Using fallbacks (|| '') ensures toLowerCase() never fires on undefined data
   const filteredOrders = ordersList.filter((order) => {
     if (!order) return false;
     
@@ -93,7 +93,7 @@ export default function OrdersView({ ordersList = [], setSelectedOrder, setIsUpd
                   {order.id || 'NO ID'}
                 </span>
                 <h3 className="text-base font-black text-[#2C393A] mt-1.5">{order.recipientName || 'Unknown Recipient'}</h3>
-                <p className="text-[10px] text-slate-800 font-bold font-mono mt-0.5">{order.timestamp || 'No Timestamp'} ┬╖ Contact: {order.contact || 'N/A'}</p>
+                <p className="text-[10px] text-slate-800 font-bold font-mono mt-0.5">{order.timestamp || 'No Timestamp'} · Contact: {order.contact || 'N/A'}</p>
               </div>
               <span className={`text-xs px-2.5 py-1 rounded-md font-black border uppercase tracking-wider ${statusStyles[order.status] || 'bg-slate-100'}`}>
                 {order.status || 'Unknown'}
@@ -109,7 +109,7 @@ export default function OrdersView({ ordersList = [], setSelectedOrder, setIsUpd
                   <span className="text-slate-800">
                     {item.name} <strong className="text-[#4A5D5E] ml-1.5 bg-[#EBF1F1] px-2 py-0.5 rounded-md text-[10px]">x{item.quantity || 0}</strong>
                   </span>
-                  <span className="font-mono text-slate-900">Γé╣{(item.price || 0).toLocaleString('en-IN')}</span>
+                  <span className="font-mono text-slate-900">₹{(item.price || 0).toLocaleString('en-IN')}</span>
                 </div>
               ))}
             </div>
@@ -117,7 +117,7 @@ export default function OrdersView({ ordersList = [], setSelectedOrder, setIsUpd
             {order.gpsTrackingUrl && order.status === 'Out for Delivery' && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex flex-col sm:flex-row justify-between sm:items-center text-xs gap-3 animate-fadeIn">
                 <div>
-                  <strong className="text-emerald-900 block font-black">≡ƒôí Live Logistics GPS Dispatch Link Active</strong>
+                  <strong className="text-emerald-900 block font-black">📡 Live Logistics GPS Dispatch Link Active</strong>
                   <span className="text-emerald-700 font-medium">Tracking vehicle streams active.</span>
                 </div>
                 <a href={order.gpsTrackingUrl} target="_blank" rel="noreferrer" className="bg-[#4A5D5E] text-white text-[11px] font-black px-4 py-2 rounded-xl text-center shadow-xs">
@@ -128,7 +128,7 @@ export default function OrdersView({ ordersList = [], setSelectedOrder, setIsUpd
 
             <div className="flex justify-between items-center pt-1">
               <span className="text-xs font-bold text-slate-800">
-                Valuation Ledger: <span className="text-slate-950 font-black font-mono text-sm ml-1">Γé╣{(order.total || 0).toLocaleString('en-IN')}</span>
+                Valuation Ledger: <span className="text-slate-950 font-black font-mono text-sm ml-1">₹{(order.total || 0).toLocaleString('en-IN')}</span>
               </span>
               
               {order.status !== 'Out for Delivery' ? (
@@ -140,7 +140,7 @@ export default function OrdersView({ ordersList = [], setSelectedOrder, setIsUpd
                 </button>
               ) : (
                 <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider bg-white px-3 py-1.5 rounded-xl border border-emerald-100 shadow-3xs">
-                  Γ£ô Dispatch Finalized
+                  ✓ Dispatch Finalized
                 </span>
               )}
             </div>

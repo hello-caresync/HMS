@@ -165,7 +165,7 @@ export function FraudAlertBanner({ count }: { count: number }) {
   return (
     <div className="mb-2 flex items-center gap-2 rounded-md border-2 border-red-500 bg-red-600 px-3 py-1.5 text-white animate-pulse">
       <AlertTriangle className="h-4 w-4" />
-      <span className="text-[10px] font-bold uppercase">{count} Suspicious Activity Alert{count !== 1 ? 's' : ''} ΓÇö Finance audit required</span>
+      <span className="text-[10px] font-bold uppercase">{count} Suspicious Activity Alert{count !== 1 ? 's' : ''} — Finance audit required</span>
     </div>
   );
 }

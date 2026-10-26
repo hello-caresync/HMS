@@ -40,10 +40,10 @@ const DOSSIER_INDEX: PatientDossier[] = [
     phone: '+91 98765 43210',
     address: 'M.G. Road, Bengaluru',
     status: 'Admitted',
-    primaryCare: 'Dr. Anita Roy ┬╖ Cardiology',
+    primaryCare: 'Dr. Anita Roy · Cardiology',
     chronicConditions: ['Type-2 Diabetes', 'Hypertension'],
     timeline: [
-      { date: '2026-07-14', event: 'IPD Admission ΓÇö Ward 3A', dept: 'Cardiology' },
+      { date: '2026-07-14', event: 'IPD Admission — Ward 3A', dept: 'Cardiology' },
       { date: '2026-07-10', event: 'Echo + Stress Test', dept: 'Cardiology' },
       { date: '2026-06-22', event: 'OPD Follow-up', dept: 'General Medicine' },
     ],
@@ -60,7 +60,7 @@ const DOSSIER_INDEX: PatientDossier[] = [
     phone: '+91 87654 32109',
     address: 'Indiranagar, Bengaluru',
     status: 'Active OPD',
-    primaryCare: 'Dr. Meera Iyer ┬╖ Pediatrics',
+    primaryCare: 'Dr. Meera Iyer · Pediatrics',
     chronicConditions: ['Asthma'],
     timeline: [
       { date: '2026-07-15', event: 'Pulmonary function review', dept: 'Pulmonology' },
@@ -76,7 +76,7 @@ const DOSSIER_INDEX: PatientDossier[] = [
     phone: '+91 91234 56780',
     address: 'Koramangala, Bengaluru',
     status: 'Under Review',
-    primaryCare: 'Dr. B. J. Joseph ┬╖ Orthopedics',
+    primaryCare: 'Dr. B. J. Joseph · Orthopedics',
     chronicConditions: ['Osteoarthritis', 'Hypothyroidism'],
     timeline: [
       { date: '2026-07-16', event: 'MRI knee scheduled', dept: 'Radiology' },
@@ -124,7 +124,7 @@ export default function PatientProfileView() {
       <MasterSearchBar
         value={search}
         onChange={setSearch}
-        placeholder="Search by patient name or UHIDΓÇª"
+        placeholder="Search by patient name or UHID…"
       />
 
       <div className="flex flex-wrap gap-2">
@@ -159,7 +159,7 @@ export default function PatientProfileView() {
                 <div className="flex justify-between border-b border-slate-100 pb-2">
                   <dt className="text-slate-500">Age / Sex</dt>
                   <dd className="font-semibold text-slate-800">
-                    {profile.age} ┬╖ {profile.sex}
+                    {profile.age} · {profile.sex}
                   </dd>
                 </div>
                 <div className="flex items-center gap-2 text-slate-600">
@@ -206,7 +206,7 @@ export default function PatientProfileView() {
                     <div>
                       <p className="text-xs font-semibold text-slate-800">{t.event}</p>
                       <p className="text-[10px] text-slate-500">
-                        {t.date} ┬╖ {t.dept}
+                        {t.date} · {t.dept}
                       </p>
                     </div>
                   </li>
@@ -218,7 +218,7 @@ export default function PatientProfileView() {
               <ul className="divide-y divide-slate-100">
                 {profile.visits.map((v, i) => (
                   <li key={i} className="flex items-center justify-between py-2.5 text-xs">
-                    <span className="font-medium text-slate-800">{v.type} ┬╖ {v.provider}</span>
+                    <span className="font-medium text-slate-800">{v.type} · {v.provider}</span>
                     <span className="flex items-center gap-1 text-slate-500">
                       <Activity className="h-3.5 w-3.5" />
                       {v.date}

@@ -12,23 +12,23 @@ export const EXECUTIVE_METRICS: ExecutiveMetricCard[] = [
   {
     id: 'daily-revenue',
     label: 'Daily Revenue Total',
-    value: 'Γé╣ 32,86,500',
-    subtext: 'Collections ┬╖ 10 Jul 2026',
+    value: '₹ 32,86,500',
+    subtext: 'Collections · 10 Jul 2026',
     trendLabel: '+8.2% vs yesterday',
   },
   {
     id: 'opd-ipd-ratio',
     label: 'OPD vs IPD Occupancy',
     value: '47 : 186',
-    subtext: 'OPD queue ┬╖ IPD census beds',
+    subtext: 'OPD queue · IPD census beds',
     trendLabel: 'IPD 76.3% occupied',
   },
   {
     id: 'pharmacy-turnover',
     label: 'Pharmacy Inventory Turnover',
-    value: '4.2├ù',
+    value: '4.2×',
     subtext: 'Rolling 30-day rate',
-    trendLabel: 'Target 3.5├ù ┬╖ Above benchmark',
+    trendLabel: 'Target 3.5× · Above benchmark',
   },
 ];
 
@@ -53,7 +53,7 @@ export const SEED_MEDICAL_ASSETS: MedicalAssetRecord[] = [
   {
     assetId: 'AST-MRI-001',
     equipmentName: 'GE 3T MRI Machine',
-    roomLocator: 'Block B ┬╖ MRI Suite 2 ┬╖ Floor 1',
+    roomLocator: 'Block B · MRI Suite 2 · Floor 1',
     status: 'Operational',
     warrantyExpiration: '2027-12-31',
     amcProvider: 'GE Healthcare AMC',
@@ -62,7 +62,7 @@ export const SEED_MEDICAL_ASSETS: MedicalAssetRecord[] = [
   {
     assetId: 'AST-CT-002',
     equipmentName: 'Siemens SOMATOM CT Scanner',
-    roomLocator: 'Block C ┬╖ CT Suite 1 ┬╖ Floor 2',
+    roomLocator: 'Block C · CT Suite 1 · Floor 2',
     status: 'Needs Calibration',
     warrantyExpiration: '2026-11-15',
     amcProvider: 'Siemens Healthineers',
@@ -70,17 +70,17 @@ export const SEED_MEDICAL_ASSETS: MedicalAssetRecord[] = [
   },
   {
     assetId: 'AST-VENT-003',
-    equipmentName: 'Dr├ñger Evita V800 Ventilator',
-    roomLocator: 'ICU-A ┬╖ Bed Bay 4',
+    equipmentName: 'Dräger Evita V800 Ventilator',
+    roomLocator: 'ICU-A · Bed Bay 4',
     status: 'Operational',
     warrantyExpiration: '2028-03-20',
-    amcProvider: 'Dr├ñger India Service',
+    amcProvider: 'Dräger India Service',
     amcContact: 'support@draeger.com',
   },
   {
     assetId: 'AST-XR-004',
     equipmentName: 'Philips Digital X-Ray System',
-    roomLocator: 'Block A ┬╖ X-Ray Room 3',
+    roomLocator: 'Block A · X-Ray Room 3',
     status: 'Under Repair',
     warrantyExpiration: '2026-08-01',
     amcProvider: 'Philips Healthcare',
@@ -89,7 +89,7 @@ export const SEED_MEDICAL_ASSETS: MedicalAssetRecord[] = [
   {
     assetId: 'AST-ANES-005',
     equipmentName: 'Datex-Ohmeda Anesthesia Workstation',
-    roomLocator: 'OT-1 ┬╖ General Surgery',
+    roomLocator: 'OT-1 · General Surgery',
     status: 'Operational',
     warrantyExpiration: '2027-06-30',
     amcProvider: 'GE Healthcare AMC',
@@ -149,10 +149,10 @@ export const SEED_SECURITY_AUDIT_LOG: SecurityAuditLogEntry[] = [
 ];
 
 export const SEED_HR_ROSTER: HrEmployeeRecord[] = [
-  { employeeId: 'EMP-HOS-001', displayName: 'Hospital Admin', department: 'Administration', role: 'hospital_admin', shiftLabel: 'Day ┬╖ 08:00ΓÇô20:00', status: 'Active', joinedOn: '2024-01-15' },
-  { employeeId: 'EMP-PHR-014', displayName: 'Priya Menon', department: 'Pharmacy', role: 'pharmacist', shiftLabel: 'Day ┬╖ 07:00ΓÇô19:00', status: 'Active', joinedOn: '2023-06-01' },
-  { employeeId: 'EMP-LAB-008', displayName: 'Rajesh Kumar', department: 'Laboratory', role: 'lab_technician', shiftLabel: 'Rotating ┬╖ 12h', status: 'On Leave', joinedOn: '2022-11-20' },
-  { employeeId: 'EMP-NRS-042', displayName: 'Sunita Iyer', department: 'IPD Nursing', role: 'staff_nurse', shiftLabel: 'Night ┬╖ 19:00ΓÇô07:00', status: 'Active', joinedOn: '2021-08-10' },
+  { employeeId: 'EMP-HOS-001', displayName: 'Hospital Admin', department: 'Administration', role: 'hospital_admin', shiftLabel: 'Day · 08:00–20:00', status: 'Active', joinedOn: '2024-01-15' },
+  { employeeId: 'EMP-PHR-014', displayName: 'Priya Menon', department: 'Pharmacy', role: 'pharmacist', shiftLabel: 'Day · 07:00–19:00', status: 'Active', joinedOn: '2023-06-01' },
+  { employeeId: 'EMP-LAB-008', displayName: 'Rajesh Kumar', department: 'Laboratory', role: 'lab_technician', shiftLabel: 'Rotating · 12h', status: 'On Leave', joinedOn: '2022-11-20' },
+  { employeeId: 'EMP-NRS-042', displayName: 'Sunita Iyer', department: 'IPD Nursing', role: 'staff_nurse', shiftLabel: 'Night · 19:00–07:00', status: 'Active', joinedOn: '2021-08-10' },
   { employeeId: 'EMP-IT-002', displayName: 'Vikram Das', department: 'IT & Security', role: 'system_admin', shiftLabel: 'On-call', status: 'Active', joinedOn: '2025-02-01' },
 ];
 

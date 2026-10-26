@@ -64,7 +64,7 @@ export default function OperationsQueueTab({ lookupQuery, onQuickAction }: Opera
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
-        <AptPanel title="Live Queue Status" icon={Users} subtitle="Token ┬╖ consultation ┬╖ delay flags" className="xl:col-span-8">
+        <AptPanel title="Live Queue Status" icon={Users} subtitle="Token · consultation · delay flags" className="xl:col-span-8">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left">
               <thead>
@@ -131,14 +131,14 @@ export default function OperationsQueueTab({ lookupQuery, onQuickAction }: Opera
         </AptPanel>
       </div>
 
-      <AptPanel title="Waiting Room Overview" icon={Users} subtitle="Occupancy ┬╖ average wait by zone">
+      <AptPanel title="Waiting Room Overview" icon={Users} subtitle="Occupancy · average wait by zone">
         <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
           {MOCK_WAITING_ROOMS.map((wr) => {
             const pct = Math.round((wr.seatsOccupied / wr.seatsTotal) * 100);
             return (
               <div key={wr.id} className="rounded-md border border-[#E2E8F0] p-2.5">
                 <p className="text-[10px] font-bold text-[#0F172A]">{wr.waitingArea}</p>
-                <p className="mt-1 text-[9px] text-slate-500">{wr.seatsOccupied}/{wr.seatsTotal} seats ┬╖ avg {wr.avgWaitMinutes}m wait</p>
+                <p className="mt-1 text-[9px] text-slate-500">{wr.seatsOccupied}/{wr.seatsTotal} seats · avg {wr.avgWaitMinutes}m wait</p>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
                   <div
                     className={`h-full rounded-full ${pct > 80 ? 'bg-red-500' : pct > 60 ? 'bg-amber-500' : 'bg-emerald-500'}`}

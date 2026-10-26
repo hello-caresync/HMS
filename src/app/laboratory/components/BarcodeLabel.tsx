@@ -10,7 +10,7 @@ type BarcodeLabelProps = {
   onPrint?: () => void;
 };
 
-/** Mock barcode label ΓÇö SVG bar pattern + human-readable ID */
+/** Mock barcode label — SVG bar pattern + human-readable ID */
 export default function BarcodeLabel({ barcode, patientName, uhid, tests, onPrint }: BarcodeLabelProps) {
   const bars = barcode.split('').flatMap((char, i) => {
     const w = (char.charCodeAt(0) % 3) + 1;
@@ -48,7 +48,7 @@ export default function BarcodeLabel({ barcode, patientName, uhid, tests, onPrin
       <div className="mt-2 border-t border-slate-200 pt-2 text-[10px] text-slate-800">
         <p className="font-semibold text-slate-800">{patientName}</p>
         <p className="font-mono">{uhid}</p>
-        <p className="truncate">{tests.join(' ┬╖ ')}</p>
+        <p className="truncate">{tests.join(' · ')}</p>
       </div>
     </div>
   );

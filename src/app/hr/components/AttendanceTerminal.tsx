@@ -63,7 +63,7 @@ export default function AttendanceTerminal() {
             >
               {employees.map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.name} ┬╖ {e.staffId}
+                  {e.name} · {e.staffId}
                 </option>
               ))}
             </select>
@@ -98,10 +98,10 @@ export default function AttendanceTerminal() {
           {record && (
             <div className="sm:col-span-2 rounded-md border-2 border-slate-200 bg-slate-50 px-3 py-2 text-[11px]">
               <p className="font-mono text-slate-800">
-                In: {record.clockIn ? new Date(record.clockIn).toLocaleString('en-IN') : 'ΓÇö'}
+                In: {record.clockIn ? new Date(record.clockIn).toLocaleString('en-IN') : '—'}
               </p>
               <p className="font-mono text-slate-800">
-                Out: {record.clockOut ? new Date(record.clockOut).toLocaleString('en-IN') : 'ΓÇö'}
+                Out: {record.clockOut ? new Date(record.clockOut).toLocaleString('en-IN') : '—'}
               </p>
               <span
                 className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${ATTENDANCE_FLAG_STYLES[record.flag]}`}

@@ -156,11 +156,11 @@ export default function HospitalPortalLayout({ children }: HospitalPortalLayoutP
               <span className="text-xs font-semibold uppercase tracking-wider text-[#00758C]">
                 Systems Online
               </span>
-              <span className="text-xs text-slate-400">┬╖</span>
+              <span className="text-xs text-slate-400">·</span>
               <span className="font-mono text-xs font-semibold tabular-nums text-slate-600">
                 {networkLatencyMs}ms
               </span>
-              <span className="text-xs text-slate-400">┬╖</span>
+              <span className="text-xs text-slate-400">·</span>
               <span className="font-mono text-xs font-semibold tabular-nums text-[#00A481]">
                 DB {dbSyncIndex.toFixed(1)}%
               </span>
@@ -224,7 +224,7 @@ export default function HospitalPortalLayout({ children }: HospitalPortalLayoutP
           <p className="text-xs font-semibold uppercase tracking-wider text-[#008588]">
             Facility Sync Active
           </p>
-          <p className="mt-1 font-mono text-xs text-slate-500">node ┬╖ nexora-hospital-ecosystem</p>
+          <p className="mt-1 font-mono text-xs text-slate-500">node · nexora-hospital-ecosystem</p>
         </footer>
       </aside>
 

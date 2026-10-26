@@ -5,18 +5,18 @@ import React from 'react';
 /** Premium blush workspace canvas */
 export const hubCanvasClassName = 'bg-[#FDF4F2]';
 
-/** Studio canvas ΓÇö independently scrollable workspace frame */
+/** Studio canvas — independently scrollable workspace frame */
 export const workspaceClassName =
   'space-y-8 animate-fadeIn text-slate-900 pb-24 h-full overflow-y-auto';
 
-/** Structural panel ΓÇö crisp white elevated cards */
+/** Structural panel — crisp white elevated cards */
 export const panelClassName =
   'bg-white border border-slate-200/60 rounded-2xl p-6 shadow-xs transition-all hover:shadow-sm';
 
 export const nestedPanelClassName =
   'bg-white border border-slate-200/60 rounded-xl p-4 shadow-xs';
 
-/** Overline accent ΓÇö blush rose mono headers */
+/** Overline accent — blush rose mono headers */
 export const overlineClassName =
   'text-xs font-semibold uppercase tracking-wider text-[#A65E53] font-mono block mb-1';
 

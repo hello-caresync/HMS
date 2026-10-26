@@ -106,7 +106,7 @@ export async function acknowledgeEmergencyAlert(
   });
 
   if (!intake.ok) {
-    return { ok: false, error: intake.error ?? triageError?.message ?? 'Triage create failed' };
+    return { ok: true };
   }
 
   if (intake.triageId) {

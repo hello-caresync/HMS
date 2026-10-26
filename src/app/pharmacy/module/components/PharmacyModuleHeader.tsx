@@ -14,7 +14,7 @@ export default function PharmacyModuleHeader({ lookupValue, onLookupChange, resu
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-base font-bold text-[#0F172A]">Pharmacy Management (HPMS)</h1>
-          <p className="text-[9px] text-slate-500">Dispensing ┬╖ inventory ┬╖ FEFO ┬╖ procurement ┬╖ controlled drugs ┬╖ billing</p>
+          <p className="text-[9px] text-slate-500">Dispensing · inventory · FEFO · procurement · controlled drugs · billing</p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[9px] font-bold uppercase text-emerald-800">
           <Pill className="h-3.5 w-3.5" />
@@ -27,7 +27,7 @@ export default function PharmacyModuleHeader({ lookupValue, onLookupChange, resu
           type="search"
           value={lookupValue}
           onChange={(e) => onLookupChange(e.target.value)}
-          placeholder="Search pharmacy ΓÇö RX #, UHID, patient, or medicine name"
+          placeholder="Search pharmacy — RX #, UHID, patient, or medicine name"
           aria-label="Search pharmacy"
           className="w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] py-1.5 pl-8 pr-3 text-[10px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
         />

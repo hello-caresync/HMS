@@ -50,7 +50,7 @@ export default function WorkforceOperationsTab({ lookupQuery, onQuickAction }: W
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
-        <StaffPanel title="Shift & Duty Roster" icon={CalendarClock} subtitle="Today ┬╖ weekly ┬╖ on-call status" className="xl:col-span-6">
+        <StaffPanel title="Shift & Duty Roster" icon={CalendarClock} subtitle="Today · weekly · on-call status" className="xl:col-span-6">
           <table className="w-full min-w-[480px] text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -66,7 +66,7 @@ export default function WorkforceOperationsTab({ lookupQuery, onQuickAction }: W
                   <td className="px-2 py-1.5 text-[10px] text-slate-600">{r.department}</td>
                   <td className="px-2 py-1.5 text-[10px] text-slate-600">{r.shift}</td>
                   <td className="px-2 py-1.5 text-[9px] text-slate-500">{r.schedule}</td>
-                  <td className="px-2 py-1.5">{r.onCall ? <span className="text-[9px] font-bold text-violet-600">On-Call</span> : <span className="text-[9px] text-slate-400">ΓÇö</span>}</td>
+                  <td className="px-2 py-1.5">{r.onCall ? <span className="text-[9px] font-bold text-violet-600">On-Call</span> : <span className="text-[9px] text-slate-400">—</span>}</td>
                   <td className="px-2 py-1.5 text-[9px] text-slate-500">{r.roomOrWard}</td>
                 </tr>
               ))}
@@ -74,7 +74,7 @@ export default function WorkforceOperationsTab({ lookupQuery, onQuickAction }: W
           </table>
         </StaffPanel>
 
-        <StaffPanel title="Biometric / Manual Attendance" icon={Clock} subtitle="Check-in ┬╖ late markers ┬╖ leave pending" className="xl:col-span-6">
+        <StaffPanel title="Biometric / Manual Attendance" icon={Clock} subtitle="Check-in · late markers · leave pending" className="xl:col-span-6">
           <table className="w-full min-w-[480px] text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -93,7 +93,7 @@ export default function WorkforceOperationsTab({ lookupQuery, onQuickAction }: W
                   <td className="px-2 py-1.5">
                     {a.lateMinutes > 0 ? <span className="rounded bg-red-50 px-1 text-[9px] font-bold text-red-700">+{a.lateMinutes}m</span> : <span className="text-[9px] text-emerald-600">On time</span>}
                   </td>
-                  <td className="px-2 py-1.5 text-[9px] text-amber-700">{a.leavePending ?? 'ΓÇö'}</td>
+                  <td className="px-2 py-1.5 text-[9px] text-amber-700">{a.leavePending ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -106,7 +106,7 @@ export default function WorkforceOperationsTab({ lookupQuery, onQuickAction }: W
           <ul className="space-y-1">
             {MOCK_LEAVE_REQUESTS.filter((l) => l.status === 'Pending').map((l) => (
               <li key={l.id} className="flex items-center justify-between rounded border border-[#E2E8F0] px-2 py-1.5">
-                <span className="text-[10px] text-[#0F172A]"><strong>{l.employeeName}</strong> ΓÇö {l.type} ┬╖ {l.from} to {l.to}</span>
+                <span className="text-[10px] text-[#0F172A]"><strong>{l.employeeName}</strong> — {l.type} · {l.from} to {l.to}</span>
                 <StatusPill status={l.status} />
               </li>
             ))}

@@ -90,7 +90,7 @@ export default function InventoryStockTable({
                       )}
                       {expiry === 'expired' && (
                         <span className="inline-flex w-fit rounded bg-rose-100 px-1.5 py-0.5 text-[8px] font-bold uppercase text-rose-800 ring-1 ring-rose-300">
-                          Expired ┬╖ Do Not Use
+                          Expired · Do Not Use
                         </span>
                       )}
                       {expiry === 'warning' && (

@@ -96,7 +96,7 @@ export default function PatientProfilePage() {
       );
       setLoadError(
         localCache
-          ? 'Cloud sync unavailable ΓÇö showing your last saved profile from this device.'
+          ? 'Cloud sync unavailable — showing your last saved profile from this device.'
           : 'Could not load your saved profile. You can complete it below.',
       );
     } finally {

@@ -36,7 +36,7 @@ export default function DiagnosticEngine() {
       >
         <label className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: CLINICAL.mint }}>
           <Search className="h-3.5 w-3.5" />
-          Diagnosis Entry ┬╖ ICD-10 Auto-Match
+          Diagnosis Entry · ICD-10 Auto-Match
         </label>
         <div className="relative">
           <input

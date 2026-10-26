@@ -147,7 +147,7 @@ export function RecallAlertBanner({ count }: { count: number }) {
   if (count === 0) return null;
   return (
     <div className="flex items-center gap-2 rounded-md border-2 border-red-500 bg-red-600 px-3 py-1.5 text-white animate-pulse">
-      <span className="text-[10px] font-bold uppercase">{count} Manufacturer Recall / Expired Safety Certificate ΓÇö immediate quarantine required</span>
+      <span className="text-[10px] font-bold uppercase">{count} Manufacturer Recall / Expired Safety Certificate — immediate quarantine required</span>
     </div>
   );
 }

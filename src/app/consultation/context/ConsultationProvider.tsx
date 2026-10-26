@@ -167,7 +167,7 @@ export function ConsultationProvider({ children }: { children: React.ReactNode }
       radiologyOrderCount: finalized.radiologyOrders.length,
       signedAt,
       message: [
-        `Digital signature ${signatureId} applied ΓÇö consultation record locked.`,
+        `Digital signature ${signatureId} applied — consultation record locked.`,
         `${finalized.prescriptions.length} prescription line(s) routed to Pharmacy subsystem (${pharmacyLogId}).`,
         `OPD charges synchronized to central Billing Integration ledger (${billingLedgerId}).`,
         finalized.labOrders.length > 0

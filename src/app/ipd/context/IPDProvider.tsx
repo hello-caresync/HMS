@@ -186,7 +186,7 @@ export function IPDProvider({ children }: { children: React.ReactNode }) {
       setToasts((prev) =>
         pushToast(
           prev,
-          `Ward transfer ┬╖ ${admission.patientName} ΓåÆ ${toBed.bedLabel} (${toWard.name}). ${fromWard.name} rate frozen.`,
+          `Ward transfer · ${admission.patientName} → ${toBed.bedLabel} (${toWard.name}). ${fromWard.name} rate frozen.`,
           'info',
         ),
       );
@@ -225,7 +225,7 @@ export function IPDProvider({ children }: { children: React.ReactNode }) {
       });
 
       setToasts((prev) =>
-        pushToast(prev, `MAR logged ┬╖ ${time} dose verified & timestamped`, 'success'),
+        pushToast(prev, `MAR logged · ${time} dose verified & timestamped`, 'success'),
       );
     },
     [],
@@ -301,7 +301,7 @@ export function IPDProvider({ children }: { children: React.ReactNode }) {
       setToasts((prev) =>
         pushToast(
           prev,
-          `[Central Billing] Ledger ${payload.ledgerId} locked ┬╖ Γé╣${payload.totalOutstanding.toLocaleString('en-IN')} consolidated`,
+          `[Central Billing] Ledger ${payload.ledgerId} locked · ₹${payload.totalOutstanding.toLocaleString('en-IN')} consolidated`,
           'alert',
         ),
       );

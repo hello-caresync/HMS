@@ -33,12 +33,12 @@ export default function RcmInsuranceTab({ claims, onAdvanceClaim }: RcmInsurance
       {denials > 0 && (
         <div className="flex items-center gap-2 rounded-md border-2 border-red-500 bg-red-600 px-3 py-1.5 text-white animate-pulse">
           <Shield className="h-4 w-4" />
-          <span className="text-[10px] font-bold uppercase">{denials} Claim{denials !== 1 ? 's' : ''} in Denial Management ΓÇö recovery action required</span>
+          <span className="text-[10px] font-bold uppercase">{denials} Claim{denials !== 1 ? 's' : ''} in Denial Management — recovery action required</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <FinPanel title="Insurance & Claim Pipeline" subtitle="Pre-auth ΓåÆ submission ΓåÆ review ΓåÆ denial ΓåÆ settlement" icon={Shield} secure>
+        <FinPanel title="Insurance & Claim Pipeline" subtitle="Pre-auth → submission → review → denial → settlement" icon={Shield} secure>
           <SecureFinancialPlaceholder verified />
           <table className="mt-2 w-full min-w-[520px] text-left">
             <thead>
@@ -58,13 +58,13 @@ export default function RcmInsuranceTab({ claims, onAdvanceClaim }: RcmInsurance
                   </td>
                   <td className="max-w-[80px] truncate px-1.5 py-1 text-[8px] text-slate-600" title={c.insurer}>{c.insurer}</td>
                   <td className="px-1.5 py-1 text-[9px] tabular-nums">{formatInr(c.claimAmount)}</td>
-                  <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums text-emerald-700">{c.approvedAmount ? formatInr(c.approvedAmount) : 'ΓÇö'}</td>
+                  <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums text-emerald-700">{c.approvedAmount ? formatInr(c.approvedAmount) : '—'}</td>
                   <td className="px-1.5 py-1">
                     <button type="button" onClick={() => onAdvanceClaim(c.id)} disabled={c.stage === 'Settlement'} title="Advance claim">
                       <ClaimStagePill stage={c.stage} />
                     </button>
                   </td>
-                  <td className="max-w-[90px] truncate px-1.5 py-1 text-[7px] text-red-600" title={c.denialReason}>{c.denialReason ?? 'ΓÇö'}</td>
+                  <td className="max-w-[90px] truncate px-1.5 py-1 text-[7px] text-red-600" title={c.denialReason}>{c.denialReason ?? '—'}</td>
                   <td className="px-1.5 py-1">
                     {c.stage !== 'Settlement' && (
                       <button type="button" onClick={() => onAdvanceClaim(c.id)} className="rounded bg-[#2563EB] px-1 py-0.5 text-[7px] font-bold text-white">Advance</button>
@@ -77,7 +77,7 @@ export default function RcmInsuranceTab({ claims, onAdvanceClaim }: RcmInsurance
         </FinPanel>
 
         <div className="space-y-2">
-          <FinPanel title="Accounts Payable & Vendor Matching" subtitle="Invoice validation ┬╖ approval ┬╖ payment" icon={Building2}>
+          <FinPanel title="Accounts Payable & Vendor Matching" subtitle="Invoice validation · approval · payment" icon={Building2}>
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -101,7 +101,7 @@ export default function RcmInsuranceTab({ claims, onAdvanceClaim }: RcmInsurance
             </table>
           </FinPanel>
 
-          <FinPanel title="Operational Expenditure" subtitle="Salary ┬╖ rent ┬╖ consumables ┬╖ utilities">
+          <FinPanel title="Operational Expenditure" subtitle="Salary · rent · consumables · utilities">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -124,7 +124,7 @@ export default function RcmInsuranceTab({ claims, onAdvanceClaim }: RcmInsurance
             </table>
           </FinPanel>
 
-          <FinPanel title="Corporate Tie-Ups" subtitle="Credit limits ┬╖ utilization ┬╖ active patients">
+          <FinPanel title="Corporate Tie-Ups" subtitle="Credit limits · utilization · active patients">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -156,7 +156,7 @@ export default function RcmInsuranceTab({ claims, onAdvanceClaim }: RcmInsurance
               <div key={a.bucket} className={`rounded-md border p-2 ${i === 3 ? 'border-red-200 bg-red-50/40' : 'border-[#E2E8F0]'}`}>
                 <p className={`text-sm font-bold tabular-nums ${i === 3 ? 'text-red-600' : i === 0 ? 'text-emerald-600' : 'text-amber-700'}`}>{formatInr(a.amount)}</p>
                 <p className="text-[8px] font-bold uppercase text-slate-500">{a.bucket}</p>
-                <p className="text-[8px] text-slate-400">{a.invoiceCount} invoices ┬╖ {a.pct}%</p>
+                <p className="text-[8px] text-slate-400">{a.invoiceCount} invoices · {a.pct}%</p>
               </div>
             ))}
           </div>
@@ -165,7 +165,7 @@ export default function RcmInsuranceTab({ claims, onAdvanceClaim }: RcmInsurance
               <BarChart data={AR_AGING} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                 <XAxis dataKey="bucket" tick={{ fontSize: 7, fill: '#64748B' }} />
-                <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `Γé╣${(v / 100000).toFixed(0)}L`} />
+                <YAxis tick={{ fontSize: 8, fill: '#64748B' }} tickFormatter={(v) => `₹${(v / 100000).toFixed(0)}L`} />
                 <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid #E2E8F0' }} formatter={(v: number) => formatInr(v)} />
                 <Bar dataKey="amount" radius={[2, 2, 0, 0]}>
                   {AR_AGING.map((_, i) => (

@@ -17,9 +17,9 @@ export const APPOINTMENTS_WORKSPACE_TABS: {
   label: string;
   description: string;
 }[] = [
-  { id: 'operations', label: 'Dashboard & Live Queue', description: 'Census ┬╖ queue ┬╖ waiting room ┬╖ quick actions' },
-  { id: 'scheduling', label: 'Scheduling & Calendar', description: 'Booking engine ┬╖ online requests ┬╖ master calendar' },
-  { id: 'lifecycle', label: 'Lifecycle & Outcomes', description: 'Reschedule ┬╖ communications ┬╖ analytics' },
+  { id: 'operations', label: 'Dashboard & Live Queue', description: 'Census · queue · waiting room · quick actions' },
+  { id: 'scheduling', label: 'Scheduling & Calendar', description: 'Booking engine · online requests · master calendar' },
+  { id: 'lifecycle', label: 'Lifecycle & Outcomes', description: 'Reschedule · communications · analytics' },
 ];
 
 export type QueuePriority = 'General' | 'VIP' | 'Emergency';

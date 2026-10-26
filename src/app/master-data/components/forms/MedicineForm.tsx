@@ -98,7 +98,7 @@ export default function MedicineForm({
 
       <FormSection title="Tax & Billing">
         <div className="grid gap-3 sm:grid-cols-2">
-          <FormField label="HSN Code" htmlFor="med-hsn" required hint="4ΓÇô8 digit code">
+          <FormField label="HSN Code" htmlFor="med-hsn" required hint="4–8 digit code">
             <input
               id="med-hsn"
               value={hsnCode}
@@ -147,7 +147,7 @@ export default function MedicineForm({
             Price Calculator
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <FormField label="Base Price (ex-GST) Γé╣" htmlFor="med-base" required>
+            <FormField label="Base Price (ex-GST) ₹" htmlFor="med-base" required>
               <input
                 id="med-base"
                 type="number"
@@ -163,12 +163,12 @@ export default function MedicineForm({
             <div className="rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-800">GST Amount</p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">
-                Γé╣{gstAmount.toFixed(2)}
+                ₹{gstAmount.toFixed(2)}
               </p>
             </div>
             <div className="rounded-lg bg-primary px-3 py-2 text-white">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-white/80">Final MRP</p>
-              <p className="mt-0.5 text-sm font-bold tabular-nums">Γé╣{finalPrice.toFixed(2)}</p>
+              <p className="mt-0.5 text-sm font-bold tabular-nums">₹{finalPrice.toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -183,7 +183,7 @@ export default function MedicineForm({
             className={selectClass}
             required
           >
-            <option value="">Select vendorΓÇª</option>
+            <option value="">Select vendor…</option>
             {activeVendors.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.vendorName}

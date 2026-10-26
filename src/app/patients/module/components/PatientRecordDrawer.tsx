@@ -43,14 +43,14 @@ export default function PatientRecordDrawer({ patient, onClose }: PatientRecordD
 
   const docs = [
     { name: 'General Treatment Consent.pdf', type: 'Consent', status: 'Signed' },
-    { name: 'Echo Report ΓÇö 14 Jul.pdf', type: 'Diagnostic', status: 'On file' },
-    { name: 'Referral ΓÇö Cardiology.pdf', type: 'Referral', status: 'On file' },
+    { name: 'Echo Report — 14 Jul.pdf', type: 'Diagnostic', status: 'On file' },
+    { name: 'Referral — Cardiology.pdf', type: 'Referral', status: 'On file' },
   ];
 
   return (
     <DrawerOverlay
       title={patient.name}
-      subtitle={`${patient.uhid} ┬╖ ${patient.department} ┬╖ ${patient.status}`}
+      subtitle={`${patient.uhid} · ${patient.department} · ${patient.status}`}
       onClose={onClose}
     >
       <div className="space-y-2">

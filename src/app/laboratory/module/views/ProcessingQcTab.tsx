@@ -24,7 +24,7 @@ export default function ProcessingQcTab() {
   return (
     <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
       <div className="space-y-2">
-        <LabPanel title="Sample Processing & Transport Log" icon={Activity} subtitle="Status ┬╖ analyzer assignment ┬╖ result entry">
+        <LabPanel title="Sample Processing & Transport Log" icon={Activity} subtitle="Status · analyzer assignment · result entry">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -80,7 +80,7 @@ export default function ProcessingQcTab() {
               <li key={qc.id} className="flex items-center justify-between rounded border border-[#E2E8F0] px-2 py-1.5">
                 <div>
                   <p className="text-[9px] font-semibold text-[#0F172A]">{qc.instrument}</p>
-                  <p className="text-[8px] text-slate-500">{qc.checkType} ┬╖ {qc.level} ┬╖ {qc.operator}</p>
+                  <p className="text-[8px] text-slate-500">{qc.checkType} · {qc.level} · {qc.operator}</p>
                 </div>
                 <QcPill status={qc.status} />
               </li>

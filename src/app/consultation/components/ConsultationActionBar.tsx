@@ -98,7 +98,7 @@ export default function ConsultationActionBar() {
                   value={encounter.referralNotes}
                   disabled={isLocked}
                   onChange={(e) => setReferralNotes(e.target.value)}
-                  placeholder="Referral notesΓÇª"
+                  placeholder="Referral notes…"
                   className="min-w-0 flex-1 rounded-lg border px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#5ebda8]/40 disabled:opacity-60"
                   style={{ borderColor: CLINICAL.border, color: CLINICAL.charcoal }}
                 />

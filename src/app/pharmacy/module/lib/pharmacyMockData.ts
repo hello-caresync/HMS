@@ -149,7 +149,7 @@ export const INITIAL_PRESCRIPTIONS: PrescriptionOrder[] = [
     patientName: 'Rahul Sharma',
     uhid: 'NX-2026-000412',
     source: 'IPD',
-    medicines: 'Amoxicillin 500mg ┬╖ Paracetamol 650mg ┬╖ Pantoprazole 40mg',
+    medicines: 'Amoxicillin 500mg · Paracetamol 650mg · Pantoprazole 40mg',
     itemCount: 3,
     priority: 'Routine',
     verified: true,
@@ -167,14 +167,14 @@ export const INITIAL_PRESCRIPTIONS: PrescriptionOrder[] = [
     patientName: 'Meera Krishnan',
     uhid: 'NX-2026-000415',
     source: 'Emergency',
-    medicines: 'Adrenaline 1:1000 ┬╖ Normal Saline 500mL ┬╖ Hydrocortisone 100mg IV',
+    medicines: 'Adrenaline 1:1000 · Normal Saline 500mL · Hydrocortisone 100mg IV',
     itemCount: 3,
     priority: 'STAT',
     verified: true,
     batchAvailability: 'Available',
     barcodeStatus: 'Printed',
     status: 'Ready to Dispense',
-    orderedBy: 'Dr. B. Joseph ΓÇö ER',
+    orderedBy: 'Dr. B. Joseph — ER',
     orderedAt: '2026-07-18T11:40:00',
     controlledDrug: false,
     identityVerified: true,
@@ -185,14 +185,14 @@ export const INITIAL_PRESCRIPTIONS: PrescriptionOrder[] = [
     patientName: 'Sanjay Rao',
     uhid: 'NX-2026-000365',
     source: 'OPD',
-    medicines: 'Tramadol 50mg ┬╖ Aceclofenac 100mg',
+    medicines: 'Tramadol 50mg · Aceclofenac 100mg',
     itemCount: 2,
     priority: 'Controlled',
     verified: false,
     batchAvailability: 'Low Stock',
     barcodeStatus: 'Pending',
     status: 'Pending Verification',
-    orderedBy: 'Dr. Kapoor ΓÇö Ortho',
+    orderedBy: 'Dr. Kapoor — Ortho',
     orderedAt: '2026-07-18T11:55:00',
     controlledDrug: true,
     identityVerified: true,
@@ -203,7 +203,7 @@ export const INITIAL_PRESCRIPTIONS: PrescriptionOrder[] = [
     patientName: 'Vikram Patel',
     uhid: 'NX-2026-000388',
     source: 'OPD',
-    medicines: 'Atorvastatin 20mg ┬╖ Metformin 500mg ┬╖ Telmisartan 40mg',
+    medicines: 'Atorvastatin 20mg · Metformin 500mg · Telmisartan 40mg',
     itemCount: 3,
     priority: 'Routine',
     verified: true,
@@ -221,14 +221,14 @@ export const INITIAL_PRESCRIPTIONS: PrescriptionOrder[] = [
     patientName: 'Priya Patel',
     uhid: 'NX-2026-000413',
     source: 'IPD',
-    medicines: 'Insulin Glargine 100IU/mL ┬╖ Insulin Aspart',
+    medicines: 'Insulin Glargine 100IU/mL · Insulin Aspart',
     itemCount: 2,
     priority: 'Routine',
     verified: true,
     batchAvailability: 'Substitute Required',
     barcodeStatus: 'Pending',
     status: 'Verified',
-    orderedBy: 'Dr. Anita Roy ΓÇö Endo',
+    orderedBy: 'Dr. Anita Roy — Endo',
     orderedAt: '2026-07-18T10:20:00',
     controlledDrug: false,
     identityVerified: true,
@@ -246,7 +246,7 @@ export const INITIAL_PRESCRIPTIONS: PrescriptionOrder[] = [
     batchAvailability: 'Available',
     barcodeStatus: 'Printed',
     status: 'Processing',
-    orderedBy: 'Dr. Joseph ΓÇö ICU',
+    orderedBy: 'Dr. Joseph — ICU',
     orderedAt: '2026-07-18T11:25:00',
     controlledDrug: true,
     identityVerified: true,
@@ -257,7 +257,7 @@ export const INITIAL_PRESCRIPTIONS: PrescriptionOrder[] = [
     patientName: 'Kavitha Nair',
     uhid: 'NX-2026-000401',
     source: 'OPD',
-    medicines: 'Azithromycin 500mg ┬╖ Cetirizine 10mg',
+    medicines: 'Azithromycin 500mg · Cetirizine 10mg',
     itemCount: 2,
     priority: 'Routine',
     verified: false,
@@ -290,9 +290,9 @@ export const MOCK_BATCH_STOCK: BatchStock[] = [
 ];
 
 export const MOCK_PURCHASE_REQUESTS: PurchaseRequest[] = [
-  { id: 'pr1', prNumber: 'PR-2026-3310', vendor: 'MedSupply India Pvt Ltd', items: 'Azithromycin 500mg ├ù 5000 tabs', totalValue: 185000, status: 'Approved', requestedBy: 'Pharm. Ravi K.', requestedAt: '2026-07-17' },
-  { id: 'pr2', prNumber: 'PR-2026-3315', vendor: 'Apollo Pharma Distribution', items: 'Insulin Glargine ├ù 50 pens ┬╖ Tramadol ├ù 500 tabs', totalValue: 342000, status: 'Submitted', requestedBy: 'Pharm. Anita R.', requestedAt: '2026-07-18' },
-  { id: 'pr3', prNumber: 'PR-2026-3318', vendor: 'Cipla Healthcare Logistics', items: 'Morphine 10mg/mL ├ù 100 ampoules', totalValue: 98000, status: 'PO Issued', requestedBy: 'Chief Pharm. Joseph M.', requestedAt: '2026-07-18' },
+  { id: 'pr1', prNumber: 'PR-2026-3310', vendor: 'MedSupply India Pvt Ltd', items: 'Azithromycin 500mg × 5000 tabs', totalValue: 185000, status: 'Approved', requestedBy: 'Pharm. Ravi K.', requestedAt: '2026-07-17' },
+  { id: 'pr2', prNumber: 'PR-2026-3315', vendor: 'Apollo Pharma Distribution', items: 'Insulin Glargine × 50 pens · Tramadol × 500 tabs', totalValue: 342000, status: 'Submitted', requestedBy: 'Pharm. Anita R.', requestedAt: '2026-07-18' },
+  { id: 'pr3', prNumber: 'PR-2026-3318', vendor: 'Cipla Healthcare Logistics', items: 'Morphine 10mg/mL × 100 ampoules', totalValue: 98000, status: 'PO Issued', requestedBy: 'Chief Pharm. Joseph M.', requestedAt: '2026-07-18' },
 ];
 
 export const MOCK_VENDOR_SCORES: VendorScore[] = [
@@ -309,30 +309,30 @@ export const MOCK_GRN_RECORDS: GrnRecord[] = [
 ];
 
 export const INITIAL_NARCOTIC_ENTRIES: NarcoticRegisterEntry[] = [
-  { id: 'nr1', rxNumber: 'RX-2026-11846', patientName: 'Arjun Das', uhid: 'NX-2026-000377', drugName: 'Morphine 10mg/mL Injection', schedule: 'Schedule X', quantity: '2 ampoules', stage: 'Approved', chiefPharmacistSignature: 'Chief Pharm. Joseph M. ΓÇö 11:30', auditLogged: false },
+  { id: 'nr1', rxNumber: 'RX-2026-11846', patientName: 'Arjun Das', uhid: 'NX-2026-000377', drugName: 'Morphine 10mg/mL Injection', schedule: 'Schedule X', quantity: '2 ampoules', stage: 'Approved', chiefPharmacistSignature: 'Chief Pharm. Joseph M. — 11:30', auditLogged: false },
   { id: 'nr2', rxNumber: 'RX-2026-11850', patientName: 'Sanjay Rao', uhid: 'NX-2026-000365', drugName: 'Tramadol 50mg Tablet', schedule: 'Schedule H1', quantity: '10 tabs (5 days)', stage: 'Pending Chief Pharmacist', auditLogged: false },
-  { id: 'nr3', rxNumber: 'RX-2026-11820', patientName: 'Deepak Menon', uhid: 'NX-2026-000390', drugName: 'Fentanyl 50mcg/hr Patch', schedule: 'Schedule X', quantity: '2 patches', stage: 'Dispensed', chiefPharmacistSignature: 'Chief Pharm. Joseph M. ΓÇö 2026-07-17', auditLogged: true },
+  { id: 'nr3', rxNumber: 'RX-2026-11820', patientName: 'Deepak Menon', uhid: 'NX-2026-000390', drugName: 'Fentanyl 50mcg/hr Patch', schedule: 'Schedule X', quantity: '2 patches', stage: 'Dispensed', chiefPharmacistSignature: 'Chief Pharm. Joseph M. — 2026-07-17', auditLogged: true },
 ];
 
 export const MOCK_AUDIT_LOG: AuditLogEntry[] = [
   { id: 'al1', timestamp: '2026-07-18 11:30', action: 'Controlled Drug Approved', drugName: 'Morphine 10mg/mL', performedBy: 'Chief Pharm. Joseph M.', reference: 'RX-2026-11846' },
   { id: 'al2', timestamp: '2026-07-18 10:15', action: 'Batch Recall Initiated', drugName: 'Ranitidine 150mg', performedBy: 'Pharm. Anita R.', reference: 'Batch RAN-3300-G' },
-  { id: 'al3', timestamp: '2026-07-17 16:00', action: 'GRN Rejected ΓÇö QC Fail', drugName: 'Insulin Aspart', performedBy: 'QC Tech Joseph M.', reference: 'GRN-2026-8818' },
+  { id: 'al3', timestamp: '2026-07-17 16:00', action: 'GRN Rejected — QC Fail', drugName: 'Insulin Aspart', performedBy: 'QC Tech Joseph M.', reference: 'GRN-2026-8818' },
   { id: 'al4', timestamp: '2026-07-17 14:22', action: 'Narcotic Register Entry', drugName: 'Fentanyl 50mcg/hr Patch', performedBy: 'Chief Pharm. Joseph M.', reference: 'RX-2026-11820' },
 ];
 
 export const MOCK_BILLING_LINES: BillingLine[] = [
-  { id: 'bl1', rxNumber: 'RX-2026-11835', patientName: 'Vikram Patel', medicine: 'Atorvastatin 20mg ├ù 30', qty: 30, unitPrice: 12, discountPct: 0, insuranceVerified: true, paymentStatus: 'Paid' },
-  { id: 'bl2', rxNumber: 'RX-2026-11842', patientName: 'Rahul Sharma', medicine: 'Amoxicillin 500mg ├ù 21', qty: 21, unitPrice: 8, discountPct: 0, insuranceVerified: true, paymentStatus: 'Insurance Pending' },
+  { id: 'bl1', rxNumber: 'RX-2026-11835', patientName: 'Vikram Patel', medicine: 'Atorvastatin 20mg × 30', qty: 30, unitPrice: 12, discountPct: 0, insuranceVerified: true, paymentStatus: 'Paid' },
+  { id: 'bl2', rxNumber: 'RX-2026-11842', patientName: 'Rahul Sharma', medicine: 'Amoxicillin 500mg × 21', qty: 21, unitPrice: 8, discountPct: 0, insuranceVerified: true, paymentStatus: 'Insurance Pending' },
   { id: 'bl3', rxNumber: 'RX-2026-11848', patientName: 'Meera Krishnan', medicine: 'ER Medication Bundle', qty: 1, unitPrice: 4200, discountPct: 0, insuranceVerified: false, paymentStatus: 'Outstanding' },
-  { id: 'bl4', rxNumber: 'RX-2026-11850', patientName: 'Sanjay Rao', medicine: 'Tramadol 50mg ├ù 10', qty: 10, unitPrice: 18, discountPct: 0, insuranceVerified: true, paymentStatus: 'Partial' },
+  { id: 'bl4', rxNumber: 'RX-2026-11850', patientName: 'Sanjay Rao', medicine: 'Tramadol 50mg × 10', qty: 10, unitPrice: 18, discountPct: 0, insuranceVerified: true, paymentStatus: 'Partial' },
 ];
 
 export const MOCK_DRUG_INFO: DrugInfoRecord[] = [
-  { id: 'di1', brandName: 'Azithromycin 500mg', genericName: 'Azithromycin', interactions: 'Warfarin Γåæ INR ┬╖ Antacids Γåô absorption', contraindications: 'Macrolide allergy ┬╖ QT prolongation', alternatives: 'Doxycycline 100mg BID ┬╖ Clarithromycin 500mg BD' },
-  { id: 'di2', brandName: 'Tramadol 50mg', genericName: 'Tramadol HCl', interactions: 'SSRIs/SNRIs ΓÇö serotonin syndrome risk ┬╖ CYP2D6 inhibitors', contraindications: 'Respiratory depression ┬╖ Seizure disorder ┬╖ MAOIs', alternatives: 'Tapentadol ┬╖ Paracetamol + Aceclofenac (non-opioid)' },
-  { id: 'di3', brandName: 'Insulin Glargine', genericName: 'Insulin Glargine', interactions: 'Beta-blockers mask hypoglycemia ┬╖ Corticosteroids Γåæ glucose', contraindications: 'Hypoglycemia episodes ┬╖ Insulin allergy', alternatives: 'Insulin Detemir ┬╖ Insulin Degludec' },
-  { id: 'di4', brandName: 'Morphine 10mg/mL', genericName: 'Morphine Sulphate', interactions: 'CNS depressants ┬╖ MAOIs ┬╖ Mixed agonist/antagonists', contraindications: 'Respiratory depression ┬╖ Paralytic ileus ┬╖ Head injury', alternatives: 'Fentanyl (controlled) ┬╖ Tapentadol (Schedule H1)' },
+  { id: 'di1', brandName: 'Azithromycin 500mg', genericName: 'Azithromycin', interactions: 'Warfarin ↑ INR · Antacids ↓ absorption', contraindications: 'Macrolide allergy · QT prolongation', alternatives: 'Doxycycline 100mg BID · Clarithromycin 500mg BD' },
+  { id: 'di2', brandName: 'Tramadol 50mg', genericName: 'Tramadol HCl', interactions: 'SSRIs/SNRIs — serotonin syndrome risk · CYP2D6 inhibitors', contraindications: 'Respiratory depression · Seizure disorder · MAOIs', alternatives: 'Tapentadol · Paracetamol + Aceclofenac (non-opioid)' },
+  { id: 'di3', brandName: 'Insulin Glargine', genericName: 'Insulin Glargine', interactions: 'Beta-blockers mask hypoglycemia · Corticosteroids ↑ glucose', contraindications: 'Hypoglycemia episodes · Insulin allergy', alternatives: 'Insulin Detemir · Insulin Degludec' },
+  { id: 'di4', brandName: 'Morphine 10mg/mL', genericName: 'Morphine Sulphate', interactions: 'CNS depressants · MAOIs · Mixed agonist/antagonists', contraindications: 'Respiratory depression · Paralytic ileus · Head injury', alternatives: 'Fentanyl (controlled) · Tapentadol (Schedule H1)' },
 ];
 
 export const REVENUE_TREND = [

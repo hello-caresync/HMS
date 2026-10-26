@@ -34,7 +34,7 @@ export default function ExecutiveAnalyticsCockpit() {
             <div>
               <h1 className="text-lg font-black text-slate-900">Executive Analytics Cockpit</h1>
               <p className="text-xs text-slate-800">
-                Phase 7 ┬╖ Module 22 ┬╖ Leadership metrics &amp; financial parameters
+                Phase 7 · Module 22 · Leadership metrics &amp; financial parameters
               </p>
             </div>
           </div>

@@ -136,11 +136,11 @@ export const MDM_CENSUS: MdmCensus = {
 };
 
 export const ORG_HIERARCHY: OrgHierarchyNode[] = [
-  { id: 'org-1', level: 'Branch', name: 'Regal Multispeciality Hospital ΓÇö Pune', parent: 'ΓÇö', status: 'Active' },
+  { id: 'org-1', level: 'Branch', name: 'Regal Multispeciality Hospital — Pune', parent: '—', status: 'Active' },
   { id: 'org-2', level: 'Building', name: 'Main Clinical Block', parent: 'Regal Multispeciality Hospital', status: 'Active' },
   { id: 'org-3', level: 'Building', name: 'Critical Care Tower', parent: 'Regal Multispeciality Hospital', status: 'Active' },
-  { id: 'org-4', level: 'Floor', name: 'Ground Floor ΓÇö Emergency & OPD', parent: 'Main Clinical Block', status: 'Active' },
-  { id: 'org-5', level: 'Floor', name: '3rd Floor ΓÇö ICU & CCU', parent: 'Critical Care Tower', status: 'Active' },
+  { id: 'org-4', level: 'Floor', name: 'Ground Floor — Emergency & OPD', parent: 'Main Clinical Block', status: 'Active' },
+  { id: 'org-5', level: 'Floor', name: '3rd Floor — ICU & CCU', parent: 'Critical Care Tower', status: 'Active' },
   { id: 'org-6', level: 'Block', name: 'Radiology Wing B', parent: 'Main Clinical Block', status: 'Mapped' },
   { id: 'org-7', level: 'Department', name: 'Cardiology OPD', parent: 'Ground Floor', status: 'Active' },
   { id: 'org-8', level: 'Department', name: 'Central Laboratory', parent: 'Main Clinical Block', status: 'Synchronized' },
@@ -157,9 +157,9 @@ export const NUMBERING_TEMPLATES: NumberingTemplate[] = [
 ];
 
 export const INITIAL_PENDING_SERVICES: PendingServiceConfig[] = [
-  { id: 'ps-1', serviceCode: 'SRV-OPD-CARD-NEW', description: 'Cardiology OPD ΓÇö Senior Consultant Follow-up', basePrice: 1200, discountRule: 'Senior Citizen 10%', insuranceRate: 'Star Health Package A', status: 'Pending', submittedBy: 'Billing Admin' },
+  { id: 'ps-1', serviceCode: 'SRV-OPD-CARD-NEW', description: 'Cardiology OPD — Senior Consultant Follow-up', basePrice: 1200, discountRule: 'Senior Citizen 10%', insuranceRate: 'Star Health Package A', status: 'Pending', submittedBy: 'Billing Admin' },
   { id: 'ps-2', serviceCode: 'SRV-IPD-ICU-DAY', description: 'ICU Daily Nursing & Monitoring Bundle', basePrice: 18500, discountRule: 'Corporate tie-up variable', insuranceRate: 'ICICI Lombard ICU cap', status: 'Under Review', submittedBy: 'IPD Finance' },
-  { id: 'ps-3', serviceCode: 'SRV-LAB-HBA1C', description: 'HbA1c ΓÇö NABL traceability panel', basePrice: 650, discountRule: 'None', insuranceRate: 'Cash / TPA standard', status: 'Pending', submittedBy: 'Lab Superintendent' },
+  { id: 'ps-3', serviceCode: 'SRV-LAB-HBA1C', description: 'HbA1c — NABL traceability panel', basePrice: 650, discountRule: 'None', insuranceRate: 'Cash / TPA standard', status: 'Pending', submittedBy: 'Lab Superintendent' },
 ];
 
 export const DOCTOR_MASTER: DoctorMasterRow[] = [
@@ -175,9 +175,9 @@ export const ROOM_BED_MASTER: RoomBedRow[] = [
 ];
 
 export const LAB_MASTER: LabMasterRow[] = [
-  { id: 'lab-1', testCode: 'LAB-CBC', testName: 'Complete Blood Count', sampleType: 'EDTA Whole Blood', normalRange: 'Hb 12ΓÇô16 g/dL ┬╖ WBC 4ΓÇô11 K', tatHrs: 4, status: 'Active' },
+  { id: 'lab-1', testCode: 'LAB-CBC', testName: 'Complete Blood Count', sampleType: 'EDTA Whole Blood', normalRange: 'Hb 12–16 g/dL · WBC 4–11 K', tatHrs: 4, status: 'Active' },
   { id: 'lab-2', testCode: 'LAB-TROP', testName: 'Troponin I', sampleType: 'Serum', normalRange: '< 0.04 ng/mL', tatHrs: 1, status: 'Active' },
-  { id: 'lab-3', testCode: 'LAB-HBA1C', testName: 'HbA1c', sampleType: 'EDTA Whole Blood', normalRange: '4.0ΓÇô5.6%', tatHrs: 8, status: 'Pending' },
+  { id: 'lab-3', testCode: 'LAB-HBA1C', testName: 'HbA1c', sampleType: 'EDTA Whole Blood', normalRange: '4.0–5.6%', tatHrs: 8, status: 'Pending' },
 ];
 
 export const PHARMACY_MASTER: PharmacyMasterRow[] = [
@@ -198,9 +198,9 @@ export const EMPLOYEE_MASTER = [
 ];
 
 export const USER_ROLES = [
-  { id: 'ur-1', role: 'Admin / MDM', modules: 'All Masters ┬╖ Approve ┬╖ Sync', users: 4, status: 'Active' as MasterRecordStatus },
-  { id: 'ur-2', role: 'Billing Configurator', modules: 'Charge Master ┬╖ Insurance rates', users: 8, status: 'Active' as MasterRecordStatus },
-  { id: 'ur-3', role: 'Clinical Read-Only', modules: 'Doctor ┬╖ Diagnosis view', users: 42, status: 'Mapped' as MasterRecordStatus },
+  { id: 'ur-1', role: 'Admin / MDM', modules: 'All Masters · Approve · Sync', users: 4, status: 'Active' as MasterRecordStatus },
+  { id: 'ur-2', role: 'Billing Configurator', modules: 'Charge Master · Insurance rates', users: 8, status: 'Active' as MasterRecordStatus },
+  { id: 'ur-3', role: 'Clinical Read-Only', modules: 'Doctor · Diagnosis view', users: 42, status: 'Mapped' as MasterRecordStatus },
 ];
 
 export const DIAGNOSIS_TEMPLATES = [
@@ -209,13 +209,13 @@ export const DIAGNOSIS_TEMPLATES = [
 ];
 
 export const PATIENT_CONFIG = [
-  { id: 'pc-1', field: 'UHID Generation', value: 'Auto on registration ΓÇö NX template', mandatory: true, status: 'Active' as MasterRecordStatus },
+  { id: 'pc-1', field: 'UHID Generation', value: 'Auto on registration — NX template', mandatory: true, status: 'Active' as MasterRecordStatus },
   { id: 'pc-2', field: 'Identity Proof Capture', value: '[Commercial License Verification Checked/Masked for Security]', mandatory: true, status: 'Synchronized' as MasterRecordStatus },
 ];
 
 export const RADIOLOGY_MASTER = [
-  { id: 'rad-1', modality: 'CT', procedure: 'CT Head ΓÇö Trauma Protocol', chargeCode: 'RAD-CT-HEAD', basePrice: 6500, status: 'Active' as MasterRecordStatus },
-  { id: 'rad-2', modality: 'MRI', procedure: 'MRI Brain ΓÇö Contrast', chargeCode: 'RAD-MRI-BRN', basePrice: 12000, status: 'Active' as MasterRecordStatus },
+  { id: 'rad-1', modality: 'CT', procedure: 'CT Head — Trauma Protocol', chargeCode: 'RAD-CT-HEAD', basePrice: 6500, status: 'Active' as MasterRecordStatus },
+  { id: 'rad-2', modality: 'MRI', procedure: 'MRI Brain — Contrast', chargeCode: 'RAD-MRI-BRN', basePrice: 12000, status: 'Active' as MasterRecordStatus },
 ];
 
 export const INVENTORY_MASTER = [
@@ -230,32 +230,32 @@ export const INSURANCE_TPA = [
 
 export const SERVICE_CHARGE_MASTER = [
   { id: 'sc-1', code: 'SRV-OPD-GEN', description: 'General Medicine OPD Consultation', basePrice: 800, discount: 'SC 10%', insurance: 'Standard OPD', status: 'Active' as MasterRecordStatus },
-  { id: 'sc-2', code: 'SRV-OT-MINOR', description: 'Minor OT Procedure ΓÇö Local anesthesia', basePrice: 15000, discount: 'Approval required', insurance: 'Package dependent', status: 'Active' as MasterRecordStatus },
+  { id: 'sc-2', code: 'SRV-OT-MINOR', description: 'Minor OT Procedure — Local anesthesia', basePrice: 15000, discount: 'Approval required', insurance: 'Package dependent', status: 'Active' as MasterRecordStatus },
   { id: 'sc-3', code: 'SRV-ER-TRIAGE', description: 'Emergency Triage & Stabilization', basePrice: 2500, discount: 'None', insurance: 'ER cap', status: 'Synchronized' as MasterRecordStatus },
 ];
 
 export const WORKFLOW_RULES: WorkflowRule[] = [
-  { id: 'wf-1', ruleName: 'PR Approval ΓÇö > Γé╣50,000', domain: 'Procurement', approverLevel: 'Finance HOD ΓåÆ Admin', status: 'Active' },
-  { id: 'wf-2', ruleName: 'Discount Tier Lock ΓÇö > 15%', domain: 'Billing', approverLevel: 'Billing Manager ΓåÆ CFO', status: 'Active' },
-  { id: 'wf-3', ruleName: 'Charge Master Mutation', domain: 'Service Master', approverLevel: 'Department HOD ΓåÆ MDM', status: 'Mapped' },
+  { id: 'wf-1', ruleName: 'PR Approval — > ₹50,000', domain: 'Procurement', approverLevel: 'Finance HOD → Admin', status: 'Active' },
+  { id: 'wf-2', ruleName: 'Discount Tier Lock — > 15%', domain: 'Billing', approverLevel: 'Billing Manager → CFO', status: 'Active' },
+  { id: 'wf-3', ruleName: 'Charge Master Mutation', domain: 'Service Master', approverLevel: 'Department HOD → MDM', status: 'Mapped' },
 ];
 
 export const AUDIT_LOG: AuditLogEntry[] = [
-  { id: 'au-1', timestamp: '2026-07-18T08:30:00', masterEntity: 'Service Charge Master', field: 'basePrice', previousValue: 'Γé╣750', updatedValue: 'Γé╣800', changedBy: 'Billing Admin' },
-  { id: 'au-2', timestamp: '2026-07-18T07:15:00', masterEntity: 'Doctor Master', field: 'consultationCharge', previousValue: 'Γé╣1,400', updatedValue: 'Γé╣1,500', changedBy: 'MDM Console' },
+  { id: 'au-1', timestamp: '2026-07-18T08:30:00', masterEntity: 'Service Charge Master', field: 'basePrice', previousValue: '₹750', updatedValue: '₹800', changedBy: 'Billing Admin' },
+  { id: 'au-2', timestamp: '2026-07-18T07:15:00', masterEntity: 'Doctor Master', field: 'consultationCharge', previousValue: '₹1,400', updatedValue: '₹1,500', changedBy: 'MDM Console' },
   { id: 'au-3', timestamp: '2026-07-17T16:00:00', masterEntity: 'Vendor Master', field: 'paymentTerms', previousValue: 'Net 30', updatedValue: 'Net 45', changedBy: 'Procurement Lead' },
   { id: 'au-4', timestamp: '2026-07-17T14:30:00', masterEntity: 'Numbering Template', field: 'sequencePad', previousValue: '5', updatedValue: '6', changedBy: 'System Architect' },
 ];
 
 export const AI_DUPLICATE_ALERTS: AiDuplicateAlert[] = [
-  { id: 'dup-1', entityType: 'Doctor Master', matchScore: 94, recordA: 'Dr. Vikram Patil ΓÇö Cardiology', recordB: 'Dr V. Patil ΓÇö Cardiac Sciences', suggestion: 'Auto-merge consultation charge profiles ΓÇö retain NX-DOC-0042', status: 'Active' },
-  { id: 'dup-2', entityType: 'Vendor Master', matchScore: 88, recordA: 'MedSupply India Pvt Ltd', recordB: 'Med Supply India Private Limited', suggestion: 'Merge vendor ledger ΓÇö unify PO history', status: 'Active' },
+  { id: 'dup-1', entityType: 'Doctor Master', matchScore: 94, recordA: 'Dr. Vikram Patil — Cardiology', recordB: 'Dr V. Patil — Cardiac Sciences', suggestion: 'Auto-merge consultation charge profiles — retain NX-DOC-0042', status: 'Active' },
+  { id: 'dup-2', entityType: 'Vendor Master', matchScore: 88, recordA: 'MedSupply India Pvt Ltd', recordB: 'Med Supply India Private Limited', suggestion: 'Merge vendor ledger — unify PO history', status: 'Active' },
   { id: 'dup-3', entityType: 'Lab Test Master', matchScore: 91, recordA: 'LAB-CBC Complete Blood Count', recordB: 'LAB-CBC-01 CBC Panel', suggestion: 'Consolidate TAT rules under LAB-CBC', status: 'Active' },
 ];
 
 export const AI_ANOMALY_ALERTS: AiAnomalyAlert[] = [
-  { id: 'ano-1', category: 'Missing Config', message: 'Radiology modality CT ΓÇö insurance rate matrix missing for 3 corporate packages', severity: 'Critical', status: 'Active' },
-  { id: 'ano-2', category: 'Invalid Value', message: 'Room Bed Master ΓÇö ICU-3 Bed 4 daily rate Γé╣0 detected (should inherit ICU bundle)', severity: 'Warning', status: 'Active' },
+  { id: 'ano-1', category: 'Missing Config', message: 'Radiology modality CT — insurance rate matrix missing for 3 corporate packages', severity: 'Critical', status: 'Active' },
+  { id: 'ano-2', category: 'Invalid Value', message: 'Room Bed Master — ICU-3 Bed 4 daily rate ₹0 detected (should inherit ICU bundle)', severity: 'Warning', status: 'Active' },
   { id: 'ano-3', category: 'Orphan Record', message: 'Diagnosis template ICD S72.001A not mapped to any active orthopedic service charge', severity: 'Warning', status: 'Active' },
 ];
 

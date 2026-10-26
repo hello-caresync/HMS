@@ -87,8 +87,8 @@ export function RadiologyProvider({ children }: { children: React.ReactNode }) {
         'IMPRESSION / FINDINGS:',
         findings,
         '',
-        `Signed: ${radiologistName} ┬╖ ${finalized.finalizedAt}`,
-        'Appended to Patient EMR Γ£ô',
+        `Signed: ${radiologistName} · ${finalized.finalizedAt}`,
+        'Appended to Patient EMR ✓',
       ].join('\n');
 
       setOrders((prev) => prev.map((o) => (o.id === orderId ? finalized : o)));

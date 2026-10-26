@@ -19,7 +19,7 @@ export const PATIENT_LOOKUP = SEED_PATIENTS.map((p) => ({
 export const PRESET_LINE_ITEMS: InvoiceLineItem[] = [
   {
     id: generateLineItemId(),
-    description: 'Consultation Fee ΓÇö Senior Physician',
+    description: 'Consultation Fee — Senior Physician',
     department: 'General Medicine',
     basePrice: 800,
     gstPercent: 0,
@@ -27,7 +27,7 @@ export const PRESET_LINE_ITEMS: InvoiceLineItem[] = [
   },
   {
     id: generateLineItemId(),
-    description: 'CBC ΓÇö Complete Blood Count',
+    description: 'CBC — Complete Blood Count',
     department: 'Laboratory',
     basePrice: 450,
     gstPercent: 12,
@@ -35,7 +35,7 @@ export const PRESET_LINE_ITEMS: InvoiceLineItem[] = [
   },
   {
     id: generateLineItemId(),
-    description: 'Pharmacy Consumables ΓÇö Dolo 650 (10 strips)',
+    description: 'Pharmacy Consumables — Dolo 650 (10 strips)',
     department: 'Pharmacy',
     basePrice: 320,
     gstPercent: 12,

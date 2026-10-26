@@ -79,7 +79,7 @@ export default function ExecutiveCommandTab({ onQuickAction }: ExecutiveCommandT
         </table>
       </HbiPanel>
 
-      <HbiPanel title="Quick Actions Matrix" subtitle="Report builder ┬╖ export ┬╖ schedule ┬╖ AI forecast ┬╖ access security" icon={Zap}>
+      <HbiPanel title="Quick Actions Matrix" subtitle="Report builder · export · schedule · AI forecast · access security" icon={Zap}>
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5">
           {[
             { label: 'Custom Report Builder', icon: LayoutDashboard, action: 'custom-report-builder' as const },

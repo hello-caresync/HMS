@@ -30,7 +30,7 @@ const SEED_CENSUS: InpatientRow[] = [
     admitDate: '2026-07-14',
     losDays: 2,
     status: 'Critical',
-    nurseShift: 'Anitha Raj ┬╖ Day',
+    nurseShift: 'Anitha Raj · Day',
   },
   {
     uhid: 'NX-2026-000413',
@@ -39,7 +39,7 @@ const SEED_CENSUS: InpatientRow[] = [
     admitDate: '2026-07-12',
     losDays: 4,
     status: 'Stable',
-    nurseShift: 'Kavitha M. ┬╖ Night',
+    nurseShift: 'Kavitha M. · Night',
   },
   {
     uhid: 'NX-2026-000415',
@@ -48,7 +48,7 @@ const SEED_CENSUS: InpatientRow[] = [
     admitDate: '2026-07-10',
     losDays: 6,
     status: 'Post-Op',
-    nurseShift: 'Sneha P. ┬╖ Day',
+    nurseShift: 'Sneha P. · Day',
   },
   {
     uhid: 'NX-2026-000420',
@@ -102,7 +102,7 @@ export default function InpatientCensusMgmt() {
         icon={Users}
       />
 
-      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search census by name, UHID, wardΓÇª" />
+      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search census by name, UHID, ward…" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">

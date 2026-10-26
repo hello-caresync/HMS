@@ -3,17 +3,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
-  Building2,
   Check,
-  CheckCircle2,
-  Clock,
-  Filter,
   Loader2,
   Package,
-  Plus,
   Receipt,
   RefreshCw,
-  Truck,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,7 +28,6 @@ import {
   getHospitalInvoicePaymentBadgeClass,
   getPurchaseOrderStatusBadgeClass,
   isEligibleHospitalVendor,
-  isPendingPurchaseOrder,
   markPurchaseOrderDelivered,
   normalizeHospitalPaymentStatus,
   settleHospitalVendorInvoice,
@@ -53,6 +46,58 @@ function formatInr(amount: number): string {
     currency: 'INR',
     maximumFractionDigits: 0,
   }).format(Number.isFinite(amount) ? amount : 0);
+}
+
+export type SupplyStockItem = {
+  id: string;
+  sku: string;
+  item_name: string;
+  category: string;
+  stock: number;
+  unit_price: number | null;
+  supplier: string;
+  status: string;
+};
+
+const STOCK_FILTERS = ['All', 'Pharmaceuticals', 'Surgical & Sterile', 'PPE & Consumables'] as const;
+type StockFilter = (typeof STOCK_FILTERS)[number];
+
+function stockBucket(category: string): Exclude<StockFilter, 'All'> {
+  const value = category.toLowerCase();
+  if (/surg|sterile|glove/.test(value)) return 'Surgical & Sterile';
+  if (/ppe|consum|dispos/.test(value)) return 'PPE & Consumables';
+  return 'Pharmaceuticals';
+}
+
+function stockStatusLabel(stock: number, status: string): { label: string; className: string } {
+  const raw = status.toLowerCase();
+  if (/out|critical/.test(raw) || stock <= 0) {
+    return { label: 'Out', className: 'bg-rose-50 text-rose-700' };
+  }
+  if (/low/.test(raw) || stock < 10) {
+    return { label: 'Low', className: 'bg-amber-50 text-amber-800' };
+  }
+  return { label: 'Optimal', className: 'bg-emerald-50 text-emerald-700' };
+}
+
+function formatUnitPrice(amount: number | null): string {
+  if (amount == null || !Number.isFinite(amount)) return '—';
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+function formatExpectedDelivery(value?: string): string {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '—';
+  const iso = raw.match(/\d{4}-\d{2}-\d{2}/);
+  if (iso) return iso[0];
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  return date.toISOString().slice(0, 10);
 }
 
 function formatInvoiceDate(value?: string): string {
@@ -81,6 +126,7 @@ export function SupplyOrdersCommandCenter({
   ordersLoading = false,
   onRefreshPurchaseOrders,
   onPurchaseOrdersChange,
+  inventory = [],
 }: {
   hospitalId: string;
   hospitalName: string;
@@ -90,6 +136,7 @@ export function SupplyOrdersCommandCenter({
   ordersLoading?: boolean;
   onRefreshPurchaseOrders?: () => Promise<void>;
   onPurchaseOrdersChange?: (orders: PurchaseOrderRow[]) => void;
+  inventory?: SupplyStockItem[];
 }) {
   const nodeId = hospitalId || HOSPITAL_TENANT_ID;
   const onChangedRef = useRef(onOrdersChanged);
@@ -110,6 +157,7 @@ export function SupplyOrdersCommandCenter({
   const [vendorForm, setVendorForm] = useState(EMPTY_VENDOR_FORM);
   const [markingPoId, setMarkingPoId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<CommandCenterTab>('orders');
+  const [stockFilter, setStockFilter] = useState<StockFilter>('All');
   const [vendorInvoices, setVendorInvoices] = useState<HospitalVendorInvoiceRow[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
   const [settlementInvoice, setSettlementInvoice] = useState<HospitalVendorInvoiceRow | null>(null);
@@ -262,15 +310,6 @@ export function SupplyOrdersCommandCenter({
     });
   }, [registeredSuppliers, purchaseOrders, selectedVendorId]);
 
-  const deliveryMetrics = useMemo(() => {
-    const open = filteredOrders.filter((po) => isPendingPurchaseOrder(po.status)).length;
-    const delivered = filteredOrders.filter(
-      (po) => formatPurchaseOrderStatus(po.status) === 'DELIVERED',
-    ).length;
-    const totalValue = filteredOrders.reduce((sum, po) => sum + po.total_amount, 0);
-    return { open, delivered, totalValue };
-  }, [filteredOrders]);
-
   const filteredInvoices = useMemo(() => {
     if (selectedVendorId === 'ALL') return vendorInvoices;
     const vendor = registeredSuppliers.find((item) => item.id === selectedVendorId);
@@ -284,20 +323,6 @@ export function SupplyOrdersCommandCenter({
       return invoiceName === name || (email && invoiceEmail === email);
     });
   }, [registeredSuppliers, selectedVendorId, vendorInvoices]);
-
-  const payableMetrics = useMemo(() => {
-    const awaiting = filteredInvoices.filter(
-      (invoice) => normalizeHospitalPaymentStatus(invoice.payment_status) === 'AWAITING_SETTLEMENT',
-    );
-    const settled = filteredInvoices.filter(
-      (invoice) => normalizeHospitalPaymentStatus(invoice.payment_status) === 'PAID',
-    );
-    return {
-      awaitingCount: awaiting.length,
-      awaitingTotal: awaiting.reduce((sum, invoice) => sum + invoice.total_amount, 0),
-      settledCount: settled.length,
-    };
-  }, [filteredInvoices]);
 
   const openCreatePoModal = () => {
     void reload(true).then(() => setIsModalOpen(true));
@@ -419,6 +444,16 @@ export function SupplyOrdersCommandCenter({
     }
   };
 
+  const visibleStock = useMemo(() => {
+    if (stockFilter === 'All') return inventory;
+    return inventory.filter((item) => stockBucket(item.category) === stockFilter);
+  }, [inventory, stockFilter]);
+
+  const activeOrderCount = useMemo(
+    () => filteredOrders.filter((po) => formatPurchaseOrderStatus(po.status) !== 'CANCELLED').length,
+    [filteredOrders],
+  );
+
   const isLoading = controlledOrders ? ordersLoading && vendors.length === 0 : loading;
 
   if (isLoading) {
@@ -431,175 +466,112 @@ export function SupplyOrdersCommandCenter({
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+    <div className="space-y-4">
+      <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Procurement &amp; Supply Command</h1>
-          <p className="text-xs text-gray-500">
-            Node:{' '}
-            <span className="font-semibold text-teal-600">
-              {nodeId} ({hospitalName || 'Regal Hospital'})
-            </span>{' '}
-            · Manage supplier purchase orders and inbound deliveries
+          <h2 className="text-lg font-black text-slate-900">Hospital Pharmacy &amp; Central Supply Chain</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Live pharmaceutical inventory levels, low-stock threshold triggers, and vendor PO creation.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setIsVendorModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-teal-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-teal-700 shadow-sm transition-all hover:bg-teal-50"
+            className="rounded-full px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-800"
           >
-            <Building2 className="h-4 w-4" />
-            Register Supplier
+            Register supplier
           </button>
           <button
             type="button"
             onClick={openCreatePoModal}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all hover:from-teal-700 hover:to-cyan-700"
+            className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700"
           >
-            <Plus className="h-4 w-4" />
-            Create Purchase Order
+            Raise Purchase Order to Vendor
           </button>
         </div>
-      </div>
+      </section>
 
-      <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:flex-row">
-        <div className="flex w-full items-center gap-3 md:w-auto">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-teal-100 bg-teal-50 text-teal-600 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400">
-            <Building2 className="h-5 w-5" />
-          </div>
-          <div className="min-w-[240px] flex-1">
-            <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Select Registered Supplier
-            </label>
-            <select
-              value={selectedVendorId}
-              onChange={(event) => setSelectedVendorId(event.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-xs font-semibold text-gray-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+      <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
+        <span className="self-center px-2 text-xs font-semibold text-slate-500">Category:</span>
+        {STOCK_FILTERS.map((filter) => {
+          const selected = stockFilter === filter;
+          return (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => setStockFilter(filter)}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+                selected ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
             >
-              <option value="ALL">All Registered Vendors ({registeredSuppliers.length})</option>
-              {registeredSuppliers.map((vendor) => (
-                <option key={vendor.id} value={vendor.id}>
-                  {vendor.company_name}
-                </option>
-              ))}
-            </select>
-          </div>
+              {filter}
+            </button>
+          );
+        })}
+      </div>
+
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <div className="border-b border-slate-100 px-5 py-4">
+          <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Stock Inventory</h3>
         </div>
-
-        {activeVendor ? (
-          <div className="flex w-full items-center justify-between gap-4 rounded-xl border border-teal-100 bg-teal-50/60 px-4 py-2.5 dark:border-teal-900/50 dark:bg-teal-950/20 md:w-auto md:justify-start">
-            <div>
-              <p className="text-xs font-bold text-teal-900 dark:text-teal-200">{activeVendor.company_name}</p>
-              <p className="font-mono text-[11px] text-teal-700 dark:text-teal-400">{activeVendor.email}</p>
-              {activeVendor.phone ? (
-                <p className="font-mono text-[10px] text-teal-600 dark:text-teal-500">{activeVendor.phone}</p>
-              ) : null}
-            </div>
-            {activeVendor.gstin ? (
-              <span className="rounded-full bg-teal-100 px-2.5 py-0.5 font-mono text-[10px] font-bold text-teal-800 dark:bg-teal-900/60 dark:text-teal-300">
-                GSTIN {activeVendor.gstin}
-              </span>
-            ) : null}
-          </div>
+        {visibleStock.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-slate-400">No stock in this category.</div>
         ) : (
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
-            <Filter className="h-3.5 w-3.5" />
-            Showing purchase orders across all vendors
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                <tr>
+                  <th className="px-5 py-3">SKU Code</th>
+                  <th className="px-5 py-3">Item Name</th>
+                  <th className="px-5 py-3">Category</th>
+                  <th className="px-5 py-3">Stock Level</th>
+                  <th className="px-5 py-3">Unit Price</th>
+                  <th className="px-5 py-3">Authorized Supplier</th>
+                  <th className="px-5 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {visibleStock.map((item) => {
+                  const stockStatus = stockStatusLabel(item.stock, item.status);
+                  return (
+                    <tr key={item.id || item.item_name} className="text-slate-700">
+                      <td className="px-5 py-3.5 font-mono text-slate-500">{item.sku || '—'}</td>
+                      <td className="px-5 py-3.5 font-semibold text-slate-900">{item.item_name}</td>
+                      <td className="px-5 py-3.5">{item.category || 'Medicine'}</td>
+                      <td className="px-5 py-3.5 font-semibold text-slate-900">{item.stock} units</td>
+                      <td className="px-5 py-3.5">{formatUnitPrice(item.unit_price)}</td>
+                      <td className="px-5 py-3.5">{item.supplier || 'Authorized Supplier'}</td>
+                      <td className="px-5 py-3.5">
+                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${stockStatus.className}`}>
+                          {stockStatus.label}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {activeTab === 'orders' ? (
-          <>
-            <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 dark:border-amber-900/40 dark:bg-amber-950/20">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                <Clock className="h-3.5 w-3.5" />
-                Pending Dispatch
-              </div>
-              <div className="mt-1 text-2xl font-black text-amber-900 dark:text-amber-200">{deliveryMetrics.open}</div>
-            </div>
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Delivered
-              </div>
-              <div className="mt-1 text-2xl font-black text-emerald-900 dark:text-emerald-200">{deliveryMetrics.delivered}</div>
-            </div>
-            <div className="rounded-2xl border border-teal-100 bg-teal-50/70 px-4 py-3 dark:border-teal-900/40 dark:bg-teal-950/20">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-teal-700">
-                <Truck className="h-3.5 w-3.5" />
-                Order Value
-              </div>
-              <div className="mt-1 text-2xl font-black text-teal-900 dark:text-teal-200">{formatInr(deliveryMetrics.totalValue)}</div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 dark:border-amber-900/40 dark:bg-amber-950/20">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                <Receipt className="h-3.5 w-3.5" />
-                Awaiting Settlement
-              </div>
-              <div className="mt-1 text-2xl font-black text-amber-900 dark:text-amber-200">
-                {formatInr(payableMetrics.awaitingTotal)}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 dark:border-amber-900/40 dark:bg-amber-950/20">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                <Clock className="h-3.5 w-3.5" />
-                Open Invoices
-              </div>
-              <div className="mt-1 text-2xl font-black text-amber-900 dark:text-amber-200">{payableMetrics.awaitingCount}</div>
-            </div>
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 dark:border-emerald-900/40 dark:bg-emerald-950/20">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Settled
-              </div>
-              <div className="mt-1 text-2xl font-black text-emerald-900 dark:text-emerald-200">{payableMetrics.settledCount}</div>
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition-all dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex flex-col gap-4 border-b border-gray-100 p-5 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="mb-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab('orders')}
-                className={`rounded-xl px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition ${
-                  activeTab === 'orders'
-                    ? 'bg-teal-600 text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-gray-300'
-                }`}
-              >
-                Purchase Orders
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('invoices')}
-                className={`rounded-xl px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition ${
-                  activeTab === 'invoices'
-                    ? 'bg-teal-600 text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-gray-300'
-                }`}
-              >
-                Invoices / Payables
-              </button>
-            </div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
-              {activeTab === 'orders' ? 'Procurement & Vendor Dispatch' : 'Vendor Invoices & Payables'}
-            </h3>
-            <p className="mt-0.5 text-[11px] text-gray-400">
-              {activeTab === 'orders'
-                ? "Active orders automatically sync with the selected vendor's portal."
-                : 'Review incoming tax invoices, record bank references, and mark payables as settled.'}
-            </p>
-          </div>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            Purchase Orders Issued to Vendors
+          </h3>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-slate-400">
+              {activeOrderCount} Active Orders
+            </span>
+            <button
+              type="button"
+              onClick={() => setActiveTab(activeTab === 'invoices' ? 'orders' : 'invoices')}
+              className="text-xs font-semibold text-violet-700 hover:underline"
+            >
+              {activeTab === 'invoices' ? 'Show purchase orders' : 'Vendor invoices'}
+            </button>
           <button
             type="button"
             onClick={() =>
@@ -615,6 +587,7 @@ export function SupplyOrdersCommandCenter({
               className={`h-4 w-4 text-teal-600 ${refreshing || ordersLoading || invoicesLoading ? 'animate-spin' : ''}`}
             />
           </button>
+          </div>
         </div>
 
         {activeTab === 'invoices' ? (
@@ -720,11 +693,7 @@ export function SupplyOrdersCommandCenter({
                 </>
               ) : (
                 <>
-                  Orders issued using{' '}
-                  <span className="font-semibold text-teal-600 dark:text-teal-400">
-                    &quot;+ Create Purchase Order&quot;
-                  </span>{' '}
-                  will appear here and sync in real time with the supplier&apos;s portal.
+                  Orders raised with Raise Purchase Order to Vendor will appear here and sync with the supplier portal.
                 </>
               )}
             </p>
@@ -732,72 +701,55 @@ export function SupplyOrdersCommandCenter({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50/80 text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:bg-zinc-800/60">
+              <thead className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                 <tr>
-                  <th className="px-4 py-3.5">PO Number</th>
-                  <th className="px-4 py-3.5">Vendor</th>
-                  <th className="px-4 py-3.5">Item &amp; Description</th>
-                  <th className="px-4 py-3.5">Qty</th>
-                  <th className="px-4 py-3.5">Total Amount</th>
-                  <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 py-3.5 text-right">Action</th>
+                  <th className="px-5 py-3">PO Number</th>
+                  <th className="px-5 py-3">Vendor Partner</th>
+                  <th className="px-5 py-3">Item &amp; Quantity</th>
+                  <th className="px-5 py-3">Total Order Value</th>
+                  <th className="px-5 py-3">Expected Delivery</th>
+                  <th className="px-5 py-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+              <tbody className="divide-y divide-slate-100">
                 {filteredOrders.map((po) => {
                   const statusLabel = formatPurchaseOrderStatus(po.status);
                   const status = String(statusLabel).toUpperCase();
-                  const isDelivered = status === 'DELIVERED';
-                  const isCancelled = status === 'CANCELLED' || status === 'REJECTED';
+                  const isPaid = status === 'PAID';
                   const canMarkDelivered = canMarkPurchaseOrderDelivered(po.status);
+                  const orderValue = po.total_amount || po.quantity * (po.unit_price || 0);
 
                   return (
-                    <tr
-                      key={po.id || po.po_number}
-                      className="transition-colors hover:bg-gray-50/50 dark:hover:bg-zinc-800/40"
-                    >
-                      <td className="px-4 py-3.5 font-mono font-bold text-teal-600 dark:text-teal-400">
-                        {po.po_number}
+                    <tr key={po.id || po.po_number} className="text-slate-700">
+                      <td className="px-5 py-3.5 font-mono text-slate-500">{po.po_number}</td>
+                      <td className="px-5 py-3.5 font-semibold text-slate-900">{po.vendor_name}</td>
+                      <td className="px-5 py-3.5">
+                        {po.item_description} ({po.quantity} units)
                       </td>
-                      <td className="px-4 py-3.5">
-                        <div className="font-bold text-gray-900 dark:text-white">{po.vendor_name}</div>
-                        <div className="text-[10px] text-gray-400">{po.category || 'General Supplies'}</div>
-                      </td>
-                      <td className="max-w-xs truncate px-4 py-3.5 font-medium text-gray-700 dark:text-gray-300">
-                        {po.item_description}
-                      </td>
-                      <td className="px-4 py-3.5 font-mono">{po.quantity}</td>
-                      <td className="px-4 py-3.5 font-mono font-bold text-gray-900 dark:text-white">
-                        {formatInr(po.total_amount || po.quantity * (po.unit_price || 0))}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span
-                          className={`inline-block rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${getPurchaseOrderStatusBadgeClass(po.status)}`}
-                        >
-                          {statusLabel}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
-                        {canMarkDelivered ? (
-                          <button
-                            type="button"
-                            disabled={markingPoId === po.id}
-                            onClick={() => void handleMarkDelivered(po)}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                      <td className="px-5 py-3.5 font-semibold text-slate-900">{formatInr(orderValue)}</td>
+                      <td className="px-5 py-3.5">{formatExpectedDelivery(po.delivery_window)}</td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
+                              isPaid
+                                ? 'bg-blue-50 text-blue-600'
+                                : getPurchaseOrderStatusBadgeClass(po.status)
+                            }`}
                           >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            {markingPoId === po.id ? 'Updating…' : 'Mark Delivered'}
-                          </button>
-                        ) : isDelivered ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                            <Check className="h-3.5 w-3.5" />
-                            Completed
+                            {statusLabel}
                           </span>
-                        ) : isCancelled ? (
-                          <span className="text-xs font-medium text-rose-500">Cancelled</span>
-                        ) : (
-                          <span className="text-xs font-medium text-slate-400">In Progress</span>
-                        )}
+                          {canMarkDelivered ? (
+                            <button
+                              type="button"
+                              disabled={markingPoId === po.id}
+                              onClick={() => void handleMarkDelivered(po)}
+                              className="text-[10px] font-semibold text-emerald-700 hover:underline disabled:opacity-50"
+                            >
+                              {markingPoId === po.id ? 'Updating…' : 'Mark delivered'}
+                            </button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   );

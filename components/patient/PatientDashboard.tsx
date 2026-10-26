@@ -37,6 +37,7 @@ import {
   partitionDashboardAppointments,
 } from '@/lib/patient/dashboard-appointments';
 import { CACHE_KEYS, readLocalJson, writeLocalJson } from '@/lib/persistence/local-cache';
+import { displayClinicalText } from '@/lib/clinical/clinical-text';
 import { isDemoMode } from '@/lib/shared/demo-mode';
 import { REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 import { usePatientProfileCompleteness } from '@/lib/patient/usePatientProfileCompleteness';
@@ -131,7 +132,7 @@ export default function PatientDashboard() {
       scoped.slice(0, 3).map((row: Record<string, unknown>) => ({
         id: String(row.id ?? ''),
         doctor_name: String(row.doctor_name ?? 'Your doctor'),
-        diagnosis: String(row.diagnosis ?? 'Digital prescription'),
+        diagnosis: displayClinicalText(String(row.diagnosis ?? '')) || 'Digital prescription',
         created_at: String(row.created_at ?? ''),
       })),
     );

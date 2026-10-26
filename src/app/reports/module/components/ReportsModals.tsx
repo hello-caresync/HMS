@@ -26,7 +26,7 @@ export function CustomReportBuilderModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Custom Report Builder" onClose={onClose} wide>
       <SecurePatientPlaceholder hipaa />
-      <p className="mt-2 text-[9px] text-slate-600">Drag parameters to reorder ┬╖ select metrics for your dashboard layout</p>
+      <p className="mt-2 text-[9px] text-slate-600">Drag parameters to reorder · select metrics for your dashboard layout</p>
       <div className="mt-3 grid grid-cols-2 gap-3">
         <div>
           <p className="mb-1 text-[9px] font-bold uppercase text-slate-500">Available Parameters</p>
@@ -84,8 +84,8 @@ export function ScheduleReportModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Schedule Automated Report" onClose={onClose} wide>
       <input className={inputClass} placeholder="Report name" defaultValue="Weekly Executive HBI Pack" />
-      <select className={`${inputClass} mt-2`}><option>Daily ΓÇö 06:00 IST</option><option>Weekly ΓÇö Monday 07:00</option><option>Monthly ΓÇö 1st 08:00</option></select>
-      <input className={`${inputClass} mt-2`} placeholder="Recipients" defaultValue="HOD Distribution List ┬╖ Finance ┬╖ Admin" />
+      <select className={`${inputClass} mt-2`}><option>Daily — 06:00 IST</option><option>Weekly — Monday 07:00</option><option>Monthly — 1st 08:00</option></select>
+      <input className={`${inputClass} mt-2`} placeholder="Recipients" defaultValue="HOD Distribution List · Finance · Admin" />
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-[#2563EB] py-2 text-[10px] font-bold text-white">Schedule Report</button>
     </ModalOverlay>
   );
@@ -94,9 +94,9 @@ export function ScheduleReportModal({ onClose }: { onClose: () => void }) {
 export function AiForecastModal({ onClose }: { onClose: () => void }) {
   return (
     <ModalOverlay title="Trigger AI Forecasting Run" onClose={onClose} wide>
-      <p className="text-[10px] text-slate-700">Initiate predictive models: ICU capacity ┬╖ OPD demand ┬╖ revenue forecast ┬╖ claim rejection risk</p>
+      <p className="text-[10px] text-slate-700">Initiate predictive models: ICU capacity · OPD demand · revenue forecast · claim rejection risk</p>
       <select className={`${inputClass} mt-2`}><option>Full Hospital Intelligence Suite</option><option>Capacity Only</option><option>Revenue & Claims</option></select>
-      <div className="mt-2 rounded-md border border-teal-200 bg-teal-50 p-2 text-[9px] text-teal-800">Estimated run time: 4ΓÇô6 minutes ┬╖ uses anonymized aggregate data only</div>
+      <div className="mt-2 rounded-md border border-teal-200 bg-teal-50 p-2 text-[9px] text-teal-800">Estimated run time: 4–6 minutes · uses anonymized aggregate data only</div>
       <button type="button" onClick={onClose} className="mt-3 w-full rounded-md bg-teal-600 py-2 text-[10px] font-bold text-white">Run AI Forecast</button>
     </ModalOverlay>
   );
@@ -124,7 +124,7 @@ export function ReportAccessSecurityModal({ onClose }: { onClose: () => void }) 
             <tr key={r.role} className="border-b border-slate-50">
               <td className="px-1.5 py-1 text-[9px] font-semibold">{r.role}</td>
               {[r.exec, r.clinical, r.financial, r.export].map((v, i) => (
-                <td key={i} className="px-1.5 py-1 text-center text-[10px]">{v ? 'Γ£ô' : 'ΓÇö'}</td>
+                <td key={i} className="px-1.5 py-1 text-center text-[10px]">{v ? '✓' : '—'}</td>
               ))}
             </tr>
           ))}

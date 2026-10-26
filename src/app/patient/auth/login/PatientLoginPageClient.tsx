@@ -4,13 +4,15 @@ import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Heart, Lock, Mail, ShieldCheck, Loader2 } from 'lucide-react';
 
+import { AuthSceneBackground } from '@/components/auth/AuthSceneBackground';
+
 function CuraSyncAuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get('next') || '/patient/dashboard';
 
-  const [email, setEmail] = useState('aishwarya@gmail.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSignIn = (e: React.FormEvent) => {
@@ -77,8 +79,8 @@ function CuraSyncAuthForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="aishwarya@gmail.com"
-                className="w-full rounded-2xl border border-slate-200 bg-[#FAF7F9] py-3.5 pl-10 pr-4 text-xs font-bold text-[#2D1B2A] focus:border-[#623E5D] focus:outline-none"
+                placeholder="name@email.com"
+                className="w-full rounded-2xl border border-slate-200 bg-[#FAF7F9] py-3.5 pl-10 pr-4 text-xs font-bold text-[#2D1B2A] placeholder:text-slate-400 focus:border-[#623E5D] focus:outline-none"
               />
             </div>
           </div>
@@ -92,8 +94,8 @@ function CuraSyncAuthForm() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"
-                className="w-full rounded-2xl border border-slate-200 bg-[#FAF7F9] py-3.5 pl-10 pr-4 text-xs font-bold text-[#2D1B2A] focus:border-[#623E5D] focus:outline-none"
+                placeholder="Enter your password"
+                className="w-full rounded-2xl border border-slate-200 bg-[#FAF7F9] py-3.5 pl-10 pr-4 text-xs font-bold text-[#2D1B2A] placeholder:text-slate-400 focus:border-[#623E5D] focus:outline-none"
               />
             </div>
           </div>
@@ -124,7 +126,8 @@ function CuraSyncAuthForm() {
 
 export default function CuraSyncLoginPage() {
   return (
-    <div className="min-h-screen bg-[#F5ECE8] flex items-center justify-center p-6 font-sans">
+    <div className="relative isolate min-h-screen flex items-center justify-center overflow-hidden p-6 font-sans">
+      <AuthSceneBackground tone="patient" />
       <Suspense
         fallback={
           <div className="flex items-center gap-3 rounded-2xl bg-white px-6 py-4 shadow-xl">

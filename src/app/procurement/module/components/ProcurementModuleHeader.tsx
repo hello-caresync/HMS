@@ -14,7 +14,7 @@ export default function ProcurementModuleHeader({ lookupValue, onLookupChange, r
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-base font-bold text-[#0F172A]">Procurement Management (P2P)</h1>
-          <p className="text-[9px] text-slate-500">Requisitions ┬╖ approvals ┬╖ RFQ ┬╖ tenders ┬╖ three-way match ┬╖ vendor payments ┬╖ AI sourcing</p>
+          <p className="text-[9px] text-slate-500">Requisitions · approvals · RFQ · tenders · three-way match · vendor payments · AI sourcing</p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-[9px] font-bold uppercase text-violet-800">
           <ShoppingCart className="h-3.5 w-3.5" />
@@ -27,7 +27,7 @@ export default function ProcurementModuleHeader({ lookupValue, onLookupChange, r
           type="search"
           value={lookupValue}
           onChange={(e) => onLookupChange(e.target.value)}
-          placeholder="Search procurement ΓÇö PR #, department, budget line, or item"
+          placeholder="Search procurement — PR #, department, budget line, or item"
           aria-label="Search procurement"
           className="w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] py-1.5 pl-8 pr-3 text-[10px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
         />

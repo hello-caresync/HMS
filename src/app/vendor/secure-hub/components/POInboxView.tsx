@@ -101,7 +101,7 @@ export default function POInboxView({
                   <div>
                     <p className={overlineClassName}>Contract manifest</p>
                     <p className="font-mono text-xs font-black text-slate-950">
-                      {po.id ?? 'ΓÇö'}
+                      {po.id ?? '—'}
                     </p>
                     <h3 className={`${sectionTitleClassName} mt-1`}>
                       {po.hospitalName ?? 'Unknown Hospital'}
@@ -123,10 +123,10 @@ export default function POInboxView({
                   <div>
                     <p className={overlineClassName}>Delivery terms</p>
                     <p className="mt-1 text-sm text-slate-900">
-                      {po.deliveryLocation ?? 'ΓÇö'}
+                      {po.deliveryLocation ?? '—'}
                     </p>
                     <p className="mt-0.5 font-mono text-[11px] font-black text-slate-800">
-                      NET {po.creditTermsDays ?? 30} ┬╖ {po.expectedDeliveryDate ?? 'ΓÇö'}
+                      NET {po.creditTermsDays ?? 30} · {po.expectedDeliveryDate ?? '—'}
                     </p>
                   </div>
                 </div>
@@ -138,21 +138,21 @@ export default function POInboxView({
                       onClick={() => po.id && openDetailCorridor(po.id)}
                       className={btnOutlineClassName}
                     >
-                      Inspect Contract Detail ΓåÆ
+                      Inspect Contract Detail →
                     </button>
                     <button
                       type="button"
                       onClick={() => po.id && updatePOStatus(po.id, 'Rejected')}
                       className={btnOutlineClassName}
                     >
-                      Γ£ò Decline Contract
+                      ✕ Decline Contract
                     </button>
                     <button
                       type="button"
                       onClick={() => po.id && updatePOStatus(po.id, 'Accepted')}
                       className={btnPrimaryClassName}
                     >
-                      Γ£ô Accept PO Terms
+                      ✓ Accept PO Terms
                     </button>
                   </div>
                 )}
@@ -164,14 +164,14 @@ export default function POInboxView({
                       onClick={() => po.id && openDetailCorridor(po.id)}
                       className={btnOutlineClassName}
                     >
-                      Inspect Contract Detail ΓåÆ
+                      Inspect Contract Detail →
                     </button>
                     <button
                       type="button"
                       onClick={() => po.id && updatePOStatus(po.id, 'Processing')}
                       className={btnLogisticsClassName}
                     >
-                      ≡ƒÅù∩╕Å Route to Fulfillment Floor ΓåÆ
+                      🏗️ Route to Fulfillment Floor →
                     </button>
                   </div>
                 )}

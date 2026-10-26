@@ -104,7 +104,7 @@ export default function POTrackingFeed() {
                         </p>
                       </div>
                     ) : (
-                      <span className="text-[10px] text-slate-800">ΓÇö</span>
+                      <span className="text-[10px] text-slate-800">—</span>
                     )}
                   </td>
                 </tr>

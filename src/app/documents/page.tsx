@@ -11,9 +11,9 @@ type DocTemplate = {
 
 const TEMPLATES: DocTemplate[] = [
   { id: 'ref', title: 'Referral Letters', description: 'Specialist referral with clinical summary' },
-  { id: 'med', title: 'Medical Certificates', description: 'Sick leave ┬╖ fitness for duty' },
-  { id: 'fit', title: 'Fitness Certificates', description: 'Pre-employment ┬╖ sports clearance' },
-  { id: 'consent', title: 'Procedure Consent Forms', description: 'Informed consent ┬╖ risks ┬╖ witnesses' },
+  { id: 'med', title: 'Medical Certificates', description: 'Sick leave · fitness for duty' },
+  { id: 'fit', title: 'Fitness Certificates', description: 'Pre-employment · sports clearance' },
+  { id: 'consent', title: 'Procedure Consent Forms', description: 'Informed consent · risks · witnesses' },
 ];
 
 export default function DocumentsPage() {
@@ -26,7 +26,7 @@ export default function DocumentsPage() {
           <div>
             <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">Document Hub</h1>
             <p className="mt-1 text-sm font-medium text-slate-800">
-              Printable templates ┬╖ referral ┬╖ certificates ┬╖ consent ┬╖ sandbox ┬╖ 13 Jul 2026
+              Printable templates · referral · certificates · consent · sandbox · 13 Jul 2026
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-xs font-black uppercase text-slate-950">
@@ -60,12 +60,12 @@ export default function DocumentsPage() {
               <article className="mt-4 space-y-3 rounded-lg border-2 border-slate-200 bg-slate-50 p-4">
                 <p className="flex items-center gap-1.5 text-xs font-black uppercase text-slate-800">
                   <FileText className="h-4 w-4" aria-hidden />
-                  Regal Clinical ┬╖ Sandbox
+                  Regal Clinical · Sandbox
                 </p>
                 <p className="text-lg font-black text-slate-950">{selected.title}</p>
-                <p className="text-sm font-bold text-slate-950">Patient ┬╖ P.N. ┬╖ UHID NX-2026-301882</p>
+                <p className="text-sm font-bold text-slate-950">Patient · P.N. · UHID NX-2026-301882</p>
                 <p className="text-xs font-bold leading-relaxed text-slate-800">
-                  {selected.description}. Generated 13 Jul 2026 ┬╖ authorized signatory Dr. Aishwarya D S, MD.
+                  {selected.description}. Generated 13 Jul 2026 · authorized signatory Dr. Aishwarya D S, MD.
                 </p>
               </article>
             ) : (

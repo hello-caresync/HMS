@@ -48,7 +48,7 @@ export default function PatientTimelineView({ events = MOCK_TIMELINE, compact = 
         <div>
           <h2 className="text-sm font-bold text-[#0F172A]">Patient Timeline</h2>
           <p className="text-[10px] text-slate-500">
-            Chronological journey ΓÇö registration through consultations, diagnostics, pharmacy, and discharge
+            Chronological journey — registration through consultations, diagnostics, pharmacy, and discharge
           </p>
         </div>
       )}

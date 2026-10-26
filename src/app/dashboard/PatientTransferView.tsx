@@ -13,16 +13,16 @@ import {
 } from './_masterLightUi';
 
 const INPATIENTS = [
-  { id: 'IP-001', name: 'Rahul Sharma', current: 'ICU-A ┬╖ ICU-01' },
-  { id: 'IP-002', name: 'Priya Patel', current: 'General ┬╖ GEN-102' },
-  { id: 'IP-003', name: 'Meera Krishnan', current: 'Deluxe ┬╖ DLX-202' },
+  { id: 'IP-001', name: 'Rahul Sharma', current: 'ICU-A · ICU-01' },
+  { id: 'IP-002', name: 'Priya Patel', current: 'General · GEN-102' },
+  { id: 'IP-003', name: 'Meera Krishnan', current: 'Deluxe · DLX-202' },
 ];
 
 const TARGET_UNITS = [
-  'General Ward ┬╖ Block C',
-  'Semi-Private ┬╖ Block B',
+  'General Ward · Block C',
+  'Semi-Private · Block B',
   'ICU-A Step-Down',
-  'General ┬╖ GEN-101',
+  'General · GEN-101',
   'Rehab Unit',
 ];
 
@@ -38,8 +38,8 @@ const INITIAL_HISTORY: TransferLog[] = [
   {
     id: 'TR-441',
     patient: 'Sanjay Rao',
-    from: 'ICU-A ┬╖ ICU-04',
-    to: 'General ┬╖ GEN-205',
+    from: 'ICU-A · ICU-04',
+    to: 'General · GEN-205',
     at: '2026-07-15 18:30',
   },
 ];
@@ -86,7 +86,7 @@ export default function PatientTransferView() {
               >
                 {INPATIENTS.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} ΓÇö {p.current}
+                    {p.name} — {p.current}
                   </option>
                 ))}
               </select>
@@ -109,7 +109,7 @@ export default function PatientTransferView() {
                 className={`${masterInputClass} min-h-[72px]`}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="e.g. Step-down from ICU ΓÇö stable vitals 24h"
+                placeholder="e.g. Step-down from ICU — stable vitals 24h"
               />
             </MasterField>
             <button type="button" className={masterBtnPrimary} onClick={executeTransfer}>

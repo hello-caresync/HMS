@@ -65,7 +65,7 @@ export default function SupplyChainInventoryPage() {
             quantityOrdered: 50,
           }),
       );
-      toast.success('Purchase order created ΓÇö vendor notified via system_events');
+      toast.success('Purchase order created — vendor notified via system_events');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'PO creation failed');
     }
@@ -74,7 +74,7 @@ export default function SupplyChainInventoryPage() {
   return (
     <HospitalOpsShell
       title="Supply Chain & Vendor Sync"
-      subtitle="Low-stock triggers ┬╖ PURCHASE_ORDER_CREATED events ┬╖ GRN inventory increment"
+      subtitle="Low-stock triggers · PURCHASE_ORDER_CREATED events · GRN inventory increment"
       actions={
         <button type="button" className={hospitalOpsClasses.btnPrimary} onClick={() => void autoReorder()}>
           Scan & Auto-Reorder
@@ -111,7 +111,7 @@ export default function SupplyChainInventoryPage() {
             {items.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-[#84A98C]">
-                  No inventory items ΓÇö run hospital-operations-schema.sql in Supabase
+                  No inventory items — run hospital-operations-schema.sql in Supabase
                 </td>
               </tr>
             ) : (
@@ -121,7 +121,7 @@ export default function SupplyChainInventoryPage() {
                 return (
                   <tr key={rowKey} className="border-b border-[#CAD2C5]/50">
                     <td className="py-2.5 px-3 font-bold">{item.item_name}</td>
-                    <td className="py-2.5 px-3 font-mono">{item.sku ?? 'ΓÇö'}</td>
+                    <td className="py-2.5 px-3 font-mono">{item.sku ?? '—'}</td>
                     <td className="py-2.5 px-3">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-black ${low ? hospitalOpsClasses.badgeWarning : hospitalOpsClasses.badgeDefault}`}>
                         {item.quantity_in_stock}

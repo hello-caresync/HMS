@@ -40,7 +40,7 @@ function AiSeverityPill({ severity }: { severity: 'Info' | 'Warning' | 'Critical
 export default function FinancialAiTab({ aiInsights, onUpdateAiStatus }: FinancialAiTabProps) {
   return (
     <div className="space-y-2">
-      <AssetPanel title="Asset Financial Ledger & Compliance Vault" subtitle="TCO ┬╖ net book value ┬╖ depreciation ┬╖ warranty ┬╖ audit verification" icon={DollarSign} secure>
+      <AssetPanel title="Asset Financial Ledger & Compliance Vault" subtitle="TCO · net book value · depreciation · warranty · audit verification" icon={DollarSign} secure>
         <SecureCompliancePlaceholder verified />
         <table className="mt-2 w-full min-w-[720px] text-left">
           <thead>
@@ -73,7 +73,7 @@ export default function FinancialAiTab({ aiInsights, onUpdateAiStatus }: Financi
         </table>
       </AssetPanel>
 
-      <AssetPanel title="Equipment Disposal Workflow" subtitle="End-of-life ┬╖ decommissioning ┬╖ finance approval" icon={Shield}>
+      <AssetPanel title="Equipment Disposal Workflow" subtitle="End-of-life · decommissioning · finance approval" icon={Shield}>
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -102,7 +102,7 @@ export default function FinancialAiTab({ aiInsights, onUpdateAiStatus }: Financi
       </AssetPanel>
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <AssetPanel title="Depreciation Trend (Γé╣ Crores)" subtitle="Gross asset value vs net book value ΓÇö FY22ΓÇôFY26" icon={TrendingUp}>
+        <AssetPanel title="Depreciation Trend (₹ Crores)" subtitle="Gross asset value vs net book value — FY22–FY26" icon={TrendingUp}>
           <div className="h-[180px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={DEPRECIATION_TREND}>
@@ -117,7 +117,7 @@ export default function FinancialAiTab({ aiInsights, onUpdateAiStatus }: Financi
           </div>
         </AssetPanel>
 
-        <AssetPanel title="Smart Equipment Utilization Matrix" subtitle="Idle vs capacity ΓÇö CT ┬╖ MRI ┬╖ lab ┬╖ ECG hours" icon={TrendingUp}>
+        <AssetPanel title="Smart Equipment Utilization Matrix" subtitle="Idle vs capacity — CT · MRI · lab · ECG hours" icon={TrendingUp}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -144,7 +144,7 @@ export default function FinancialAiTab({ aiInsights, onUpdateAiStatus }: Financi
         </AssetPanel>
       </div>
 
-      <AssetPanel title="AI Asset Intelligence Terminal" subtitle="Predictive maintenance ┬╖ utilization optimization ┬╖ capital replacement forecasts" icon={Bot}>
+      <AssetPanel title="AI Asset Intelligence Terminal" subtitle="Predictive maintenance · utilization optimization · capital replacement forecasts" icon={Bot}>
         <div className="space-y-1">
           {aiInsights.map((ins) => (
             <div key={ins.id} className={`flex items-start justify-between gap-2 rounded border px-2 py-1.5 ${ins.severity === 'Critical' ? 'border-red-200 bg-red-50/40' : 'border-slate-100'}`}>

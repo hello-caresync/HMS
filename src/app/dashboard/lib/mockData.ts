@@ -5,7 +5,7 @@ export const INITIAL_NOTIFICATIONS: DashboardNotification[] = [
   {
     id: 'n1',
     title: 'Low Stock Alert',
-    message: 'Paracetamol 500mg below safety threshold ΓÇö 142 units remaining (min 500).',
+    message: 'Paracetamol 500mg below safety threshold — 142 units remaining (min 500).',
     severity: 'warning',
     module: 'Pharmacy',
     timestamp: '2026-07-16T06:12:00Z',
@@ -14,7 +14,7 @@ export const INITIAL_NOTIFICATIONS: DashboardNotification[] = [
   {
     id: 'n2',
     title: 'Emergency Case',
-    message: 'Red Alert in ER ΓÇö Trauma bay T-2, multi-vehicle collision, ETA 4 min.',
+    message: 'Red Alert in ER — Trauma bay T-2, multi-vehicle collision, ETA 4 min.',
     severity: 'critical',
     module: 'Emergency',
     timestamp: '2026-07-16T06:08:00Z',
@@ -23,7 +23,7 @@ export const INITIAL_NOTIFICATIONS: DashboardNotification[] = [
   {
     id: 'n3',
     title: 'Critical Patient',
-    message: 'ICU-4 ΓÇö SpOΓéé drop to 88%, rapid response team dispatched.',
+    message: 'ICU-4 — SpO₂ drop to 88%, rapid response team dispatched.',
     severity: 'critical',
     module: 'ICU',
     timestamp: '2026-07-16T05:55:00Z',
@@ -32,7 +32,7 @@ export const INITIAL_NOTIFICATIONS: DashboardNotification[] = [
   {
     id: 'n4',
     title: 'Pending Payment',
-    message: 'Invoice INV-8842 (Γé╣1,24,500) overdue by 12 days ΓÇö vendor MedSupply Co.',
+    message: 'Invoice INV-8842 (₹1,24,500) overdue by 12 days — vendor MedSupply Co.',
     severity: 'warning',
     module: 'Finance',
     timestamp: '2026-07-16T05:30:00Z',
@@ -41,7 +41,7 @@ export const INITIAL_NOTIFICATIONS: DashboardNotification[] = [
   {
     id: 'n5',
     title: 'System Sync',
-    message: 'HL7/ADT feed synchronized ΓÇö 47 patient records updated.',
+    message: 'HL7/ADT feed synchronized — 47 patient records updated.',
     severity: 'info',
     module: 'Integration',
     timestamp: '2026-07-16T05:00:00Z',
@@ -89,16 +89,16 @@ export const DASHBOARD_METRICS: DashboardMetrics = {
     { id: 's4', name: 'Insulin Glargine 100IU', currentUnits: 18, safetyThreshold: 80, unit: 'vials' },
   ],
   criticalPatients: [
-    { id: 'c1', name: 'Meera Iyer', ward: 'ICU-4', vitals: 'SpOΓéé 88%', priority: 'critical' },
+    { id: 'c1', name: 'Meera Iyer', ward: 'ICU-4', vitals: 'SpO₂ 88%', priority: 'critical' },
     { id: 'c2', name: 'Arjun Das', ward: 'CCU-2', vitals: 'BP 190/120', priority: 'critical' },
-    { id: 'c3', name: 'Lakshmi Nair', ward: 'Ward-7B', vitals: 'Temp 39.8┬░C', priority: 'high' },
+    { id: 'c3', name: 'Lakshmi Nair', ward: 'Ward-7B', vitals: 'Temp 39.8°C', priority: 'high' },
   ],
   admissions: { today: 12, yesterday: 9 },
   discharges: { today: 8, yesterday: 11 },
   emergencyCases: [
     {
       id: 'e1',
-      patient: 'Unknown ΓÇö MVA',
+      patient: 'Unknown — MVA',
       location: 'ER Trauma Bay T-2',
       triage: 'Red Alert',
       etaMinutes: 4,
@@ -163,13 +163,13 @@ export const DASHBOARD_METRICS: DashboardMetrics = {
       scmAlerts: [
         {
           id: 'scm1',
-          message: 'Insulin Stock Low in Main Pharmacy ΓÇö 18 vials remaining (min 80)',
+          message: 'Insulin Stock Low in Main Pharmacy — 18 vials remaining (min 80)',
           severity: 'critical',
           module: 'Pharmacy SCM',
         },
         {
           id: 'scm2',
-          message: '3 Purchase Requests Awaiting Approval ΓÇö total value Γé╣8.4L',
+          message: '3 Purchase Requests Awaiting Approval — total value ₹8.4L',
           severity: 'warning',
           module: 'Procurement',
         },
@@ -181,7 +181,7 @@ export const DASHBOARD_METRICS: DashboardMetrics = {
         },
         {
           id: 'scm4',
-          message: 'Vendor SLA breach ΓÇö MedSupply Co. delivery delayed 2 days',
+          message: 'Vendor SLA breach — MedSupply Co. delivery delayed 2 days',
           severity: 'info',
           module: 'Vendor Hub',
         },
@@ -195,28 +195,28 @@ export const DASHBOARD_METRICS: DashboardMetrics = {
           id: 'ai1',
           type: 'predictive',
           message:
-            'Predictive Alert: 12% ER influx surge expected between 19:00 ΓÇô 22:00 based on historical Thursday patterns.',
+            'Predictive Alert: 12% ER influx surge expected between 19:00 – 22:00 based on historical Thursday patterns.',
           confidence: 87,
         },
         {
           id: 'ai2',
           type: 'operational',
           message:
-            'ICU-4 bed turnover projected to free at 21:30 ΓÇö recommend pre-admit from ER queue (2 candidates).',
+            'ICU-4 bed turnover projected to free at 21:30 — recommend pre-admit from ER queue (2 candidates).',
           confidence: 79,
         },
         {
           id: 'ai3',
           type: 'financial',
           message:
-            'Pharmacy revenue pacing 11% above forecast ΓÇö high-margin oncology scripts driving uplift.',
+            'Pharmacy revenue pacing 11% above forecast — high-margin oncology scripts driving uplift.',
           confidence: 92,
         },
         {
           id: 'ai4',
           type: 'predictive',
           message:
-            'Staffing gap forecast: OPD peak at 10:00 tomorrow ΓÇö suggest +2 duty nurses in Block C.',
+            'Staffing gap forecast: OPD peak at 10:00 tomorrow — suggest +2 duty nurses in Block C.',
           confidence: 74,
         },
       ],

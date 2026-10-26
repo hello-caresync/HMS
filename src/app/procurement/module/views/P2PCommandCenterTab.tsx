@@ -70,7 +70,7 @@ export default function P2PCommandCenterTab({
 
       <div className="rounded-md border border-[#E2E8F0] bg-white p-2">
         <div className="mb-1 flex items-center justify-between">
-          <p className="text-[9px] font-bold uppercase text-[#0F172A]">Budget Utilization ΓÇö FY26 Procurement Cap</p>
+          <p className="text-[9px] font-bold uppercase text-[#0F172A]">Budget Utilization — FY26 Procurement Cap</p>
           <span className={`text-[10px] font-bold tabular-nums ${census.budgetUtilizationPct >= 90 ? 'text-red-600' : 'text-[#2563EB]'}`}>{census.budgetUtilizationPct}%</span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-slate-100">
@@ -79,7 +79,7 @@ export default function P2PCommandCenterTab({
         <p className="mt-1 text-[8px] text-slate-500">{formatInr(census.budgetConsumed)} consumed of {formatInr(census.budgetAllocated)} allocated</p>
       </div>
 
-      <ProcPanel title="Purchase Requests (PR) Queue" subtitle="ICU ┬╖ OT ┬╖ ER ┬╖ Pharmacy ┬╖ priority ┬╖ stock ┬╖ required date" icon={ClipboardList}>
+      <ProcPanel title="Purchase Requests (PR) Queue" subtitle="ICU · OT · ER · Pharmacy · priority · stock · required date" icon={ClipboardList}>
         <table className="w-full min-w-[980px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -120,7 +120,7 @@ export default function P2PCommandCenterTab({
         </table>
       </ProcPanel>
 
-      <ProcPanel title="Active POs ΓÇö Delivery & Payment Tracking" subtitle="On track ┬╖ delayed ┬╖ payment due status" icon={ShoppingCart}>
+      <ProcPanel title="Active POs — Delivery & Payment Tracking" subtitle="On track · delayed · payment due status" icon={ShoppingCart}>
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -145,7 +145,7 @@ export default function P2PCommandCenterTab({
         </table>
       </ProcPanel>
 
-      <ProcPanel title="Quick Actions" icon={Zap} subtitle="PR ┬╖ PO ┬╖ RFQ ┬╖ invoice ┬╖ emergency purchase">
+      <ProcPanel title="Quick Actions" icon={Zap} subtitle="PR · PO · RFQ · invoice · emergency purchase">
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-5">
           {[
             { id: 'create-pr' as const, label: 'Create PR', icon: FileText },

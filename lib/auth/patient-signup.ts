@@ -35,6 +35,117 @@ export function isDatabaseTriggerSignupError(error: AuthError | null | undefined
   );
 }
 
+/** True when Auth returned an existing account instead of creating a new one. */
+export function signupIsExistingAccount(user: {
+  identities?: unknown[] | null;
+  created_at?: string | null;
+}): boolean {
+  if (user.identities && user.identities.length === 0) return true;
+  const createdAt = user.created_at ? Date.parse(user.created_at) : Number.NaN;
+  if (!Number.isFinite(createdAt)) return false;
+  return Date.now() - createdAt > 2 * 60 * 1000;
+}
+
+function missingColumnName(message: string): string | null {
+  const match =
+    message.match(/Could not find the '([^']+)' column/i) ??
+    message.match(/column [\w."]+\.([a-z_]+) does not exist/i);
+  return match?.[1] ?? null;
+}
+
+function isMissingSchemaError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('does not exist') ||
+    lower.includes('schema cache') ||
+    lower.includes('could not find') ||
+    lower.includes('relation')
+  );
+}
+
+async function emailExistsInTable(
+  supabase: SupabaseClient,
+  table: 'patient_profiles' | 'patients' | 'profiles',
+  email: string,
+): Promise<boolean> {
+  const { data, error } = await supabase.from(table).select('id').ilike('email', email).limit(1);
+  if (error) return false;
+  return Array.isArray(data) && data.length > 0;
+}
+
+/** One email, one patient account. profiles has no email column in this database. */
+export async function patientEmailAlreadyRegistered(
+  supabase: SupabaseClient,
+  email: string,
+): Promise<boolean> {
+  const clean = email.trim().toLowerCase();
+  if (!clean) return false;
+
+  const tables = ['patient_profiles', 'patients', 'profiles'] as const;
+  for (const table of tables) {
+    if (await emailExistsInTable(supabase, table, clean)) return true;
+  }
+  return false;
+}
+
+/** Writes the registration email where the live schema can store it. */
+export async function recordPatientRegistrationEmail(
+  supabase: SupabaseClient,
+  params: { userId: string; email: string; fullName: string; phone: string },
+): Promise<void> {
+  const row: Record<string, string> = {
+    id: params.userId,
+    email: params.email.trim().toLowerCase(),
+    full_name: params.fullName.trim(),
+    phone: params.phone.trim(),
+  };
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const { error } = await supabase.from('patient_profiles').upsert(row, { onConflict: 'id' });
+    if (!error) return;
+    const missing = missingColumnName(error.message);
+    if (missing && missing !== 'id' && missing !== 'email' && missing in row) {
+      delete row[missing];
+      continue;
+    }
+    const inserted = await supabase.from('patient_profiles').insert(row);
+    if (!inserted.error) return;
+    const insertMissing = missingColumnName(inserted.error.message);
+    if (insertMissing && insertMissing !== 'id' && insertMissing !== 'email' && insertMissing in row) {
+      delete row[insertMissing];
+      continue;
+    }
+    return;
+  }
+}
+
+export async function savePatientProfileRow(
+  supabase: SupabaseClient,
+  params: { userId: string; email: string; fullName: string; phone: string; hospitalId: string },
+): Promise<string | null> {
+  const row: Record<string, string> = {
+    id: params.userId,
+    email: params.email.trim().toLowerCase(),
+    full_name: params.fullName.trim(),
+    phone: params.phone.trim(),
+    role: 'PATIENT',
+    hospital_id: params.hospitalId,
+  };
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const { error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' });
+    if (!error) return null;
+    const missing = missingColumnName(error.message);
+    if (missing && missing !== 'id' && missing in row) {
+      delete row[missing];
+      continue;
+    }
+    if (isMissingSchemaError(error.message)) return null;
+    return error.message;
+  }
+  return null;
+}
+
 export async function signUpPatientAccount(
   supabase: SupabaseClient,
   params: {

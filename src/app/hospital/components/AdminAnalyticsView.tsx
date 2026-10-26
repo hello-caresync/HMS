@@ -44,7 +44,7 @@ export default function AdminAnalyticsView({
         <div className={panelClassName}>
           <span className={overlineClassName}>Total spend</span>
           <p className={`text-2xl ${monoDataClassName}`}>
-            Γé╣{totalSpend.toLocaleString('en-IN')}
+            ₹{totalSpend.toLocaleString('en-IN')}
           </p>
         </div>
         <div className={panelClassName}>
@@ -86,19 +86,19 @@ export default function AdminAnalyticsView({
               <span className={bodyTextClassName}>
                 Allocated{' '}
                 <span className={monoDataClassName}>
-                  Γé╣{budget.allocatedBudget.toLocaleString('en-IN')}
+                  ₹{budget.allocatedBudget.toLocaleString('en-IN')}
                 </span>
               </span>
               <span className={bodyTextClassName}>
                 Consumed{' '}
                 <span className={monoDataClassName}>
-                  Γé╣{budget.consumedBudget.toLocaleString('en-IN')}
+                  ₹{budget.consumedBudget.toLocaleString('en-IN')}
                 </span>
               </span>
               <span className={bodyTextClassName}>
                 Monthly burn{' '}
                 <span className={monoDataClassName}>
-                  Γé╣{budget.monthlyBurnRate.toLocaleString('en-IN')}
+                  ₹{budget.monthlyBurnRate.toLocaleString('en-IN')}
                 </span>
               </span>
             </div>

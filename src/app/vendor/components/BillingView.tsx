@@ -18,11 +18,11 @@ export default function BillingView({ invoicesList }: BillingViewProps) {
             <span className="text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded">{inv.reviewStatus}</span>
           </div>
           <div className="bg-white border border-[#CBD6D6] rounded-xl p-4 space-y-2 text-xs font-bold text-slate-800">
-            <div className="flex justify-between"><span>Base Taxable Valuation:</span><span className="text-slate-900 font-mono">Γé╣{inv.amountBeforeTax}</span></div>
-            <div className="flex justify-between text-slate-800"><span>Central GST (CGST 9%):</span><span className="text-slate-800 font-mono">Γé╣{inv.cgst}</span></div>
-            <div className="flex justify-between text-slate-800"><span>State GST (SGST 9%):</span><span className="text-slate-800 font-mono">Γé╣{inv.sgst}</span></div>
+            <div className="flex justify-between"><span>Base Taxable Valuation:</span><span className="text-slate-900 font-mono">₹{inv.amountBeforeTax}</span></div>
+            <div className="flex justify-between text-slate-800"><span>Central GST (CGST 9%):</span><span className="text-slate-800 font-mono">₹{inv.cgst}</span></div>
+            <div className="flex justify-between text-slate-800"><span>State GST (SGST 9%):</span><span className="text-slate-800 font-mono">₹{inv.sgst}</span></div>
             <div className="flex justify-between border-t border-dashed border-slate-200 pt-2.5 text-slate-950 text-sm font-black">
-              <span>Net Payable Balance:</span><span className="font-mono text-[#4A5D5E] text-base">Γé╣{inv.totalPayable}</span>
+              <span>Net Payable Balance:</span><span className="font-mono text-[#4A5D5E] text-base">₹{inv.totalPayable}</span>
             </div>
           </div>
         </div>

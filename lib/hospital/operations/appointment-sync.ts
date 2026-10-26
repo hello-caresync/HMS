@@ -4,6 +4,7 @@ import { ensureDoctorUuid } from '@/lib/doctor/command-center/doctor-context';
 import { DEFAULT_ACTIVE_DOCTOR_ID } from '@/lib/doctor/command-center/supabase-service';
 import { hospitalIdQueryValues, isUuidColumnError } from '@/lib/hospital/hospital-node';
 import { resolveHospitalUuid } from '@/lib/hospital/resolve-hospital-context';
+import { sanitizeClinicalInput } from '@/lib/clinical/clinical-text';
 import { REGAL_FACILITY_CODE, REGAL_HOSPITAL_CODE } from '@/lib/regal/constants';
 
 import type { AppointmentLifecycleStatus } from './types';
@@ -651,7 +652,7 @@ export async function registerPatientOnlineBooking(
   const uhid = input.patient_uhid || newUhid();
   const tokenNumber = formatTokenLabel(input.token_number);
   const now = new Date().toISOString();
-  const clinicalReason = input.reason?.trim() || 'General OPD Consultation';
+  const clinicalReason = sanitizeClinicalInput(input.reason || '') || 'General OPD Consultation';
 
   const doctorUuid = await resolveDoctorUuidForHospital(
     input.doctor_id,

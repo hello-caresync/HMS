@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 
+import { acceptClinicalDraft } from '@/lib/clinical/clinical-text';
 import { APP_ROUTES } from '../../lib/routes';
 
 type PatientNavId =
@@ -87,7 +88,7 @@ export default function PatientCommandCenter() {
             Hospital procurement console
           </Link>
           <p className="text-center font-mono text-[9px] uppercase tracking-wider text-patient-text">
-            Secure patient lane ┬╖ v2
+            Secure patient lane · v2
           </p>
         </div>
       </aside>
@@ -147,8 +148,11 @@ export default function PatientCommandCenter() {
 
           <textarea
             value={symptoms}
-            onChange={(event) => setSymptoms(event.target.value)}
-            placeholder="e.g. Persistent headache with mild fever for 2 daysΓÇª"
+            maxLength={180}
+            onChange={(event) =>
+              setSymptoms((current) => acceptClinicalDraft(event.target.value, current))
+            }
+            placeholder="e.g. Persistent headache with mild fever for 2 days…"
             className="w-full border border-patient-lavender/20 200 rounded-xl p-4 text-xs font-semibold bg-[#FDF4F2]/30 text-patient-charcoal focus:outline-none focus:border-[#D48D82] focus:ring-1 focus:ring-[#D48D82] h-24 placeholder-slate-400 resize-none"
           />
 
@@ -182,7 +186,7 @@ export default function PatientCommandCenter() {
                 aria-hidden
                 className="text-[#D48D82] text-lg font-black transition-transform group-hover:translate-x-1"
               >
-                ΓåÆ
+                →
               </span>
             </div>
             <p className="mt-2 text-xs font-medium text-patient-text">
@@ -206,7 +210,7 @@ export default function PatientCommandCenter() {
                 aria-hidden
                 className="text-[#D48D82] text-lg font-black transition-transform group-hover:translate-x-1"
               >
-                ΓåÆ
+                →
               </span>
             </div>
             <p className="mt-2 text-xs font-medium text-patient-text">

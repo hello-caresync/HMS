@@ -26,7 +26,7 @@ export default function InventoryWorkspace() {
           <Warehouse className="h-4 w-4 text-amber-400" />
           <div>
             <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-800">
-              Phase 13 ┬╖ Inventory
+              Phase 13 · Inventory
             </p>
             <h1 className="text-sm font-bold leading-tight text-white">
               Procurement & Stock Control

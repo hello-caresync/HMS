@@ -104,7 +104,7 @@ export default function PatientRegistrationWorkspaceView() {
     <div className="space-y-2">
       <div>
         <h2 className="text-sm font-bold text-[#0F172A]">Patient Registration</h2>
-        <p className="text-[10px] text-slate-500">{channelLabel} intake ┬╖ demographics ┬╖ identity verification</p>
+        <p className="text-[10px] text-slate-500">{channelLabel} intake · demographics · identity verification</p>
       </div>
 
       <div className="flex flex-wrap gap-1 rounded-md border border-slate-200 bg-slate-50 p-0.5">
@@ -125,7 +125,7 @@ export default function PatientRegistrationWorkspaceView() {
 
       {submitted && (
         <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-800">
-          Registration complete ┬╖ UHID assigned:{' '}
+          Registration complete · UHID assigned:{' '}
           <span className="font-mono">{submitted.uhid}</span>
           <VerifiedPill label="EHR Chart Created" />
         </div>
@@ -229,7 +229,7 @@ export default function PatientRegistrationWorkspaceView() {
 
         {channel === 'emergency' && (
           <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[10px] font-semibold text-red-800">
-            Emergency fast-track enabled ΓÇö identity verification can be completed post-stabilization within 24 hours.
+            Emergency fast-track enabled — identity verification can be completed post-stabilization within 24 hours.
           </div>
         )}
 

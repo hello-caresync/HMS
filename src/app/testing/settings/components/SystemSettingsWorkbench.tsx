@@ -22,7 +22,7 @@ export default function SystemSettingsWorkbench() {
           <div>
             <h1 className="text-lg font-black text-slate-900">System Settings &amp; Configurations</h1>
             <p className="text-sm font-medium text-slate-800">
-              Sandbox testing terminal ┬╖ all credentials masked ┬╖ no live PII
+              Sandbox testing terminal · all credentials masked · no live PII
             </p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export default function SystemSettingsWorkbench() {
             <h2 className="text-sm font-black text-slate-900">API &amp; Webhook Credentials</h2>
           </div>
           <p className="mb-3 text-sm font-medium text-slate-800">
-            External integration tracker ┬╖ credentials are read-only in sandbox.
+            External integration tracker · credentials are read-only in sandbox.
           </p>
           <ul className="space-y-2">
             {SEED_WEBHOOK_CREDENTIALS.map((hook) => (

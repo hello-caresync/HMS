@@ -65,8 +65,8 @@ export default function PharmacyView() {
       {tab === 'stock' && (
         <Panel title="Stock Alert Indicators">
           <ul className="space-y-2 text-xs text-amber-300">
-            <li>Amoxicillin 500mg ΓÇö below reorder point</li>
-            <li>Insulin Glargine ΓÇö 18 days to expiry batch</li>
+            <li>Amoxicillin 500mg — below reorder point</li>
+            <li>Insulin Glargine — 18 days to expiry batch</li>
           </ul>
         </Panel>
       )}

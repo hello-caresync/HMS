@@ -10,9 +10,9 @@ export type LaboratoryModalType =
   | null;
 
 export const LABORATORY_WORKSPACE_TABS: { id: LaboratoryWorkspaceTab; label: string; description: string }[] = [
-  { id: 'command', label: 'Command Center & Collection Queue', description: 'Census ┬╖ intake ┬╖ sample flow ┬╖ quick actions' },
-  { id: 'processing', label: 'Processing, Automation & QC', description: 'Analyzers ┬╖ transport ┬╖ calibration ┬╖ IQC' },
-  { id: 'verification', label: 'Verification, Reagents & Billing', description: 'Path review ┬╖ critical values ┬╖ inventory ┬╖ billing' },
+  { id: 'command', label: 'Command Center & Collection Queue', description: 'Census · intake · sample flow · quick actions' },
+  { id: 'processing', label: 'Processing, Automation & QC', description: 'Analyzers · transport · calibration · IQC' },
+  { id: 'verification', label: 'Verification, Reagents & Billing', description: 'Path review · critical values · inventory · billing' },
 ];
 
 export type TestPriority = 'Routine' | 'STAT Emergency';

@@ -15,7 +15,7 @@ export default function StaffPharmacyPage() {
             <p className="text-[10px] font-bold tracking-widest text-teal-600 uppercase">Pharmacy Desk</p>
             <h1 className="mt-2 text-3xl font-black text-slate-900">Central Dispensary</h1>
             <p className="mt-2 text-sm text-slate-500">
-              Pharmacist: {session?.full_name ?? 'Staff'} ΓÇó {session?.hospital_name}
+              Pharmacist: {session?.full_name ?? 'Staff'} • {session?.hospital_name}
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">

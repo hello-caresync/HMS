@@ -35,7 +35,7 @@ export default function IPDWorkspace() {
           </span>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-800">
-              Module 5 ┬╖ IPD Command Center
+              Module 5 · IPD Command Center
             </p>
             <h1 className="text-sm font-bold text-slate-900">Bed Management & Clinical Shift</h1>
           </div>

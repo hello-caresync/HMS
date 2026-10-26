@@ -16,7 +16,7 @@ export const SEED_RBAC_ROLES: RbacRoleConfig[] = [
 ];
 
 export const SEED_BACKUP_CONFIG: BackupScheduleConfig = {
-  scheduleLabel: 'Daily Cold Backup ┬╖ 02:00 IST',
+  scheduleLabel: 'Daily Cold Backup · 02:00 IST',
   nextRunAt: '2026-07-11T02:00:00+05:30',
   retentionDays: 30,
   lastSnapshotRef: SANDBOX_SECURED_PLACEHOLDER,

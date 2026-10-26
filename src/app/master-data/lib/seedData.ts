@@ -157,7 +157,7 @@ export function formatOpdSummary(timings: { day: string; enabled: boolean; start
   const active = timings.filter((t) => t.enabled);
   if (active.length === 0) return 'No OPD';
   if (active.length === 7 && active.every((t) => t.startTime === active[0].startTime)) {
-    return `Daily ${active[0].startTime}ΓÇô${active[0].endTime}`;
+    return `Daily ${active[0].startTime}–${active[0].endTime}`;
   }
   return `${active.length} days/week`;
 }

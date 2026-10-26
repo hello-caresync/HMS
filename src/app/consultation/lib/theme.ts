@@ -1,4 +1,4 @@
-﻿/** OPD Consultation Workbench ΓÇö calming clinical palette */
+﻿/** OPD Consultation Workbench — calming clinical palette */
 
 export const CLINICAL = {
   canvas: '#f4faf6',

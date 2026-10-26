@@ -1,4 +1,4 @@
-﻿/** Mask government ID for display ΓÇö last 4 characters visible */
+﻿/** Mask government ID for display — last 4 characters visible */
 export function maskGovernmentId(raw: string): string {
   const normalized = raw.trim();
   if (normalized.length <= 4) return '****';
@@ -15,6 +15,6 @@ export function formatEmployeeId(id: string): string {
 export function formatShiftDays(days: number[]): string {
   const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   if (days.length === 7) return 'Daily';
-  if (days.length === 5 && days.every((d) => d >= 1 && d <= 5)) return 'MonΓÇôFri';
+  if (days.length === 5 && days.every((d) => d >= 1 && d <= 5)) return 'Mon–Fri';
   return days.map((d) => labels[d]).join(', ');
 }

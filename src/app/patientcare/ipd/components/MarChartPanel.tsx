@@ -33,7 +33,7 @@ export default function MarChartPanel({ bed, lines, onToggleDose }: MarChartPane
           <div>
             <h2 className="text-sm font-black">Medication Administration Record</h2>
             <p className="text-[10px] text-slate-900">
-              {bed.patientName} ┬╖ {bed.label} ┬╖ Prescriptions read-only
+              {bed.patientName} · {bed.label} · Prescriptions read-only
             </p>
           </div>
         </div>
@@ -96,7 +96,7 @@ export default function MarChartPanel({ bed, lines, onToggleDose }: MarChartPane
                           {checked ? (
                             <CheckSquare className="h-4 w-4" />
                           ) : (
-                            <span className="text-[10px] font-bold">ΓÇö</span>
+                            <span className="text-[10px] font-bold">—</span>
                           )}
                         </button>
                       </td>
@@ -110,7 +110,7 @@ export default function MarChartPanel({ bed, lines, onToggleDose }: MarChartPane
       </div>
 
       <p className="border-t border-slate-200 px-3 py-2 text-[10px] text-slate-800">
-        Click checkbox to sign off administered dose ┬╖ Audit trail placeholder
+        Click checkbox to sign off administered dose · Audit trail placeholder
       </p>
     </div>
   );

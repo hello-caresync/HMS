@@ -115,7 +115,7 @@ function BalanceMetric({
 }
 
 function formatInr(value: number): string {
-  return `Γé╣${(Number(value) || 0).toLocaleString('en-IN')}`;
+  return `₹${(Number(value) || 0).toLocaleString('en-IN')}`;
 }
 
 export default function BillingView({
@@ -166,7 +166,7 @@ export default function BillingView({
             </h3>
           </div>
           <p className="font-mono text-xs font-black text-slate-800">
-            {billableOrders.length} record(s) ┬╖ 12% GST baseline
+            {billableOrders.length} record(s) · 12% GST baseline
           </p>
         </div>
 
@@ -207,7 +207,7 @@ export default function BillingView({
                       PO reference
                     </p>
                     <p className="font-mono font-black text-slate-900">
-                      {po?.id ?? 'ΓÇö'}
+                      {po?.id ?? '—'}
                     </p>
                   </div>
                   <div>
@@ -253,7 +253,7 @@ export default function BillingView({
                         onClick={() => executeInvoiceGeneration(po)}
                         className={BTN_COMPILE}
                       >
-                        ΓÜí Auto-Compile GST Invoice
+                        ⚡ Auto-Compile GST Invoice
                       </button>
                     )}
                   </div>
@@ -309,10 +309,10 @@ export default function BillingView({
                       Invoice token
                     </p>
                     <p className="font-mono font-black text-slate-900">
-                      {inv?.id ?? 'ΓÇö'}
+                      {inv?.id ?? '—'}
                     </p>
                     <p className="font-mono text-[10px] font-black text-slate-800">
-                      {inv?.dateCreated ?? 'ΓÇö'}
+                      {inv?.dateCreated ?? '—'}
                     </p>
                   </div>
                   <div>
@@ -328,7 +328,7 @@ export default function BillingView({
                       PO reference
                     </p>
                     <p className="font-mono font-black text-slate-900">
-                      {inv?.poReferenceId ?? 'ΓÇö'}
+                      {inv?.poReferenceId ?? '—'}
                     </p>
                   </div>
                   <div>

@@ -14,7 +14,7 @@ function StatusBadge({ status }: { status: keyof typeof STATUS_STYLES }) {
 }
 
 function medicationSummary(items: { brandName: string; genericName: string }[]): string {
-  if (items.length === 0) return 'ΓÇö';
+  if (items.length === 0) return '—';
   const first = items[0];
   const extra = items.length > 1 ? ` +${items.length - 1} more` : '';
   return `${first.brandName} (${first.genericName})${extra}`;

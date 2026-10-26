@@ -96,7 +96,7 @@ const SEED_MOVEMENT_HISTORY: MovementLogEntry[] = [
     medicineName: 'Dolo 650mg Antipyretic Tablets',
     batchCode: 'B-DOL25',
     delta: 1200,
-    reason: 'Inbound dock receipt ΓÇö PO HOS-PO-442',
+    reason: 'Inbound dock receipt — PO HOS-PO-442',
   },
   {
     id: 'MOV-003',
@@ -104,7 +104,7 @@ const SEED_MOVEMENT_HISTORY: MovementLogEntry[] = [
     medicineName: 'Amoxicillin 500mg Antibiotic Capsules',
     batchCode: 'B-AMX24',
     delta: -240,
-    reason: 'Ward stock transfer ΓÇö ICU',
+    reason: 'Ward stock transfer — ICU',
   },
   {
     id: 'MOV-004',
@@ -242,7 +242,7 @@ export default function HospitalInventoryDashboard() {
             {expiredUnitsTotal.toLocaleString('en-IN')}
           </p>
           <p className="mt-1 text-xs font-medium text-[#49769F]">
-            {expiredBatchCount} batch(es) with expiry prior to today ΓÇö removal required
+            {expiredBatchCount} batch(es) with expiry prior to today — removal required
           </p>
         </article>
       </section>
@@ -290,13 +290,13 @@ export default function HospitalInventoryDashboard() {
 
           <label className="mb-4 block">
             <span className="mb-1.5 block font-mono text-xs font-semibold uppercase tracking-wider text-[#49769F]">
-              Quick filter ΓÇö medicine name or batch code
+              Quick filter — medicine name or batch code
             </span>
             <input
               type="text"
               value={holdingsSearch}
               onChange={(event) => setHoldingsSearch(event.target.value)}
-              placeholder="Search e.g. Telmisartan or B-TEL26ΓÇª"
+              placeholder="Search e.g. Telmisartan or B-TEL26…"
               className={SEARCH_INPUT_CLASS}
             />
           </label>
@@ -396,7 +396,7 @@ export default function HospitalInventoryDashboard() {
                   {entry.medicineName}
                 </p>
                 <p className="mt-0.5 font-mono text-xs text-[#49769F]">
-                  Batch {entry.batchCode} ┬╖ {entry.reason}
+                  Batch {entry.batchCode} · {entry.reason}
                 </p>
               </article>
             ))}

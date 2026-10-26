@@ -45,7 +45,7 @@ export default function AuditAiTab({
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <MdmPanel title="Workflow & Approval Systems" subtitle="PR rules ┬╖ discount tier locks ┬╖ charge master mutations" icon={Shield}>
+        <MdmPanel title="Workflow & Approval Systems" subtitle="PR rules · discount tier locks · charge master mutations" icon={Shield}>
           <table className="mb-2 w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -134,14 +134,14 @@ export default function AuditAiTab({
         </table>
       </MdmPanel>
 
-      <MdmPanel title="AI Master Data Intelligence" subtitle="Smart duplicate detection ┬╖ auto-merger ┬╖ anomaly alerts" icon={Bot}>
+      <MdmPanel title="AI Master Data Intelligence" subtitle="Smart duplicate detection · auto-merger · anomaly alerts" icon={Bot}>
         <p className="mb-2 text-[9px] font-bold uppercase text-amber-700">Smart Duplicate Detection</p>
         <div className="mb-3 space-y-1">
           {duplicateAlerts.map((d) => (
             <div key={d.id} className={`flex items-start justify-between gap-2 rounded border px-2 py-1.5 ${d.status === 'Active' ? 'border-amber-200 bg-amber-50/40' : 'border-slate-100 opacity-60'}`}>
               <div>
-                <p className="text-[9px] font-bold text-[#0F172A]">{d.entityType} ┬╖ {d.matchScore}% match</p>
-                <p className="text-[8px] text-slate-600">{d.recordA} Γåö {d.recordB}</p>
+                <p className="text-[9px] font-bold text-[#0F172A]">{d.entityType} · {d.matchScore}% match</p>
+                <p className="text-[8px] text-slate-600">{d.recordA} ↔ {d.recordB}</p>
                 <p className="text-[8px] text-violet-700">{d.suggestion}</p>
               </div>
               {d.status === 'Active' && (

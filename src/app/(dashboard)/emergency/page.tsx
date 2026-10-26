@@ -46,7 +46,7 @@ export default function EmergencyTriagePage() {
         () => registerEmergencyTriage(getOpsSupabase(), form),
       );
       if (form.priority === 'P1') {
-        toast.error('P1 CRITICAL ΓÇö Doctor bypass alarm broadcast', { duration: 6000 });
+        toast.error('P1 CRITICAL — Doctor bypass alarm broadcast', { duration: 6000 });
       } else {
         toast.success('Triage registered');
       }
@@ -100,9 +100,9 @@ export default function EmergencyTriagePage() {
             value={form.priority}
             onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as TriagePriority }))}
           >
-            <option value="P1">P1 ΓÇö Critical (Doctor Bypass)</option>
-            <option value="P2">P2 ΓÇö Urgent</option>
-            <option value="P3">P3 ΓÇö Non-Urgent</option>
+            <option value="P1">P1 — Critical (Doctor Bypass)</option>
+            <option value="P2">P2 — Urgent</option>
+            <option value="P3">P3 — Non-Urgent</option>
           </select>
         </div>
 

@@ -29,7 +29,7 @@ export default function PurchaseRequestGrid({
               <th className="px-3 py-2 text-left text-[10px] font-black uppercase">Request ID</th>
               <th className="px-3 py-2 text-left text-[10px] font-black uppercase">Title</th>
               <th className="px-3 py-2 text-left text-[10px] font-black uppercase">Vendor Ref</th>
-              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Est. (Γé╣)</th>
+              <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Est. (₹)</th>
               <th className="px-3 py-2 text-left text-[10px] font-black uppercase">Pipeline</th>
               <th className="px-3 py-2 text-right text-[10px] font-black uppercase">Action</th>
             </tr>

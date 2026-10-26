@@ -1,7 +1,7 @@
 ﻿import HrAdminWorkbench from '../../administration/hr/components/HrAdminWorkbench';
 
 export const metadata = {
-  title: 'HR ┬╖ CuraSync ERP',
+  title: 'HR · CuraSync ERP',
   description: 'Workforce administration and employee roster',
 };
 

@@ -60,7 +60,7 @@ export function AnalyticsVisualizationCanvas({ nodeId }: AnalyticsVisualizationC
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-[9px] text-slate-500">Aggregate demographic bands ΓÇö no individual patient identifiers rendered</p>
+          <p className="text-[9px] text-slate-500">Aggregate demographic bands — no individual patient identifiers rendered</p>
         </>
       )}
 
@@ -129,7 +129,7 @@ export function AnalyticsVisualizationCanvas({ nodeId }: AnalyticsVisualizationC
                     color: cell.waitMin > 45 ? '#B91C1C' : cell.waitMin > 35 ? '#B45309' : '#047857',
                   }}
                 >
-                  {cell.day} {cell.hour}:00 ┬╖ {cell.waitMin}m
+                  {cell.day} {cell.hour}:00 · {cell.waitMin}m
                 </div>
               ))}
             </div>

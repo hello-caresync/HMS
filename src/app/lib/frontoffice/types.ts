@@ -1,4 +1,4 @@
-﻿/** Phase 2 ΓÇö Front Office workflow types */
+﻿/** Phase 2 — Front Office workflow types */
 
 export type Gender = 'Male' | 'Female' | 'Other';
 

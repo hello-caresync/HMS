@@ -81,7 +81,7 @@ export default function TechnicianResultsPanel({
               const refLabel =
                 field.referenceMin === 0 && field.referenceMax === 0
                   ? 'Qualitative'
-                  : `${field.referenceMin} ΓÇô ${field.referenceMax} ${field.unit}`.trim();
+                  : `${field.referenceMin} – ${field.referenceMax} ${field.unit}`.trim();
 
               return (
                 <label

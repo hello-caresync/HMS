@@ -9,9 +9,9 @@ export type ProcurementModalType =
   | null;
 
 export const PROCUREMENT_WORKSPACE_TABS: { id: ProcurementWorkspaceTab; label: string; description: string }[] = [
-  { id: 'p2p', label: 'P2P Command Center & Requisitions', description: 'KPIs ┬╖ PR queue ┬╖ multi-level approvals ┬╖ quick actions' },
-  { id: 'vendor', label: 'Vendor Vault, Sourcing & Bidding', description: 'Supplier directory ┬╖ catalogues ┬╖ RFQ ┬╖ tender comparison' },
-  { id: 'logistics', label: 'Logistics, Accounting & AI Intelligence', description: 'Three-way match ┬╖ returns ┬╖ demand forecasting ┬╖ vendor AI' },
+  { id: 'p2p', label: 'P2P Command Center & Requisitions', description: 'KPIs · PR queue · multi-level approvals · quick actions' },
+  { id: 'vendor', label: 'Vendor Vault, Sourcing & Bidding', description: 'Supplier directory · catalogues · RFQ · tender comparison' },
+  { id: 'logistics', label: 'Logistics, Accounting & AI Intelligence', description: 'Three-way match · returns · demand forecasting · vendor AI' },
 ];
 
 export type RequestPriority = 'Emergency' | 'Critical' | 'Normal';

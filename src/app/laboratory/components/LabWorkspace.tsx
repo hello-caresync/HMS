@@ -53,7 +53,7 @@ export default function LabWorkspace() {
             <FlaskConical className="h-4 w-4 text-primary" />
             Laboratory
           </p>
-          <p className="text-[10px] uppercase tracking-wider text-slate-800">Phase 7 ┬╖ LIS</p>
+          <p className="text-[10px] uppercase tracking-wider text-slate-800">Phase 7 · LIS</p>
         </div>
         <nav className="flex-1 space-y-0.5 p-2">
           {VIEWS.map(({ id, label, icon: Icon }) => {

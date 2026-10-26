@@ -95,11 +95,11 @@ export const EXECUTIVE_CENSUS: ExecutiveCensus = {
 
 export const DEPARTMENT_STATUS_STREAM: DepartmentStatusRow[] = [
   { id: 'ds-1', department: 'ICU', metric: 'Occupancy', value: '28/32 (87.5%)', status: 'Warning', lastUpdated: '2026-07-18T08:45:00' },
-  { id: 'ds-2', department: 'General Wards', metric: 'Available Beds', value: '18 beds free ┬╖ 342 occupied', status: 'Normal', lastUpdated: '2026-07-18T08:44:00' },
-  { id: 'ds-3', department: 'Laboratory', metric: 'Pending Reports', value: '142 backlog ┬╖ 28 critical TAT breach', status: 'Critical', lastUpdated: '2026-07-18T08:43:00' },
-  { id: 'ds-4', department: 'Pharmacy', metric: 'Low Reagent Alert', value: 'Piperacillin-Tazobactam ┬╖ Enoxaparin ┬╖ NS 500mL', status: 'Warning', lastUpdated: '2026-07-18T08:42:00' },
-  { id: 'ds-5', department: 'Emergency', metric: 'Critical Notifications', value: 'Trauma activation ┬╖ 2 STEMI pathways open', status: 'Critical', lastUpdated: '2026-07-18T08:41:00' },
-  { id: 'ds-6', department: 'Radiology', metric: 'Scanner Queue', value: 'CT wait 42 min ┬╖ MRI 68 min avg', status: 'Warning', lastUpdated: '2026-07-18T08:40:00' },
+  { id: 'ds-2', department: 'General Wards', metric: 'Available Beds', value: '18 beds free · 342 occupied', status: 'Normal', lastUpdated: '2026-07-18T08:44:00' },
+  { id: 'ds-3', department: 'Laboratory', metric: 'Pending Reports', value: '142 backlog · 28 critical TAT breach', status: 'Critical', lastUpdated: '2026-07-18T08:43:00' },
+  { id: 'ds-4', department: 'Pharmacy', metric: 'Low Reagent Alert', value: 'Piperacillin-Tazobactam · Enoxaparin · NS 500mL', status: 'Warning', lastUpdated: '2026-07-18T08:42:00' },
+  { id: 'ds-5', department: 'Emergency', metric: 'Critical Notifications', value: 'Trauma activation · 2 STEMI pathways open', status: 'Critical', lastUpdated: '2026-07-18T08:41:00' },
+  { id: 'ds-6', department: 'Radiology', metric: 'Scanner Queue', value: 'CT wait 42 min · MRI 68 min avg', status: 'Warning', lastUpdated: '2026-07-18T08:40:00' },
 ];
 
 export const VISIT_VOLUME_TREND = [
@@ -231,9 +231,9 @@ export const HR_PRODUCTIVITY: HrProductivityRow[] = [
 
 export const INITIAL_AI_INSIGHTS: AiReportInsight[] = [
   { id: 'rai-1', category: 'Capacity', message: 'ICU beds may reach 95% occupancy tomorrow due to seasonal demand shifts and 3 pending cardiac surgery admissions', severity: 'Warning', status: 'Active', confidencePct: 87, generatedAt: '2026-07-18T08:00:00' },
-  { id: 'rai-2', category: 'Demand', message: 'OPD patient load expected to surge by 20% next month ΓÇö monsoon respiratory illness pattern detected across 3 prior seasons', severity: 'Info', status: 'Active', confidencePct: 82, generatedAt: '2026-07-18T07:30:00' },
-  { id: 'rai-3', category: 'Revenue', message: 'Revenue forecast Q3 FY26: Γé╣12.8 Cr (+8.2% YoY) driven by cath lab expansion and corporate tie-up volume', severity: 'Info', status: 'Active', confidencePct: 79, generatedAt: '2026-07-17T18:00:00' },
-  { id: 'rai-4', category: 'Quality', message: 'ICICI Lombard claim rejection rate elevated 16.3% ΓÇö documentation gap on pre-auth codes flagged for billing review', severity: 'Critical', status: 'Active', confidencePct: 91, generatedAt: '2026-07-18T06:30:00' },
+  { id: 'rai-2', category: 'Demand', message: 'OPD patient load expected to surge by 20% next month — monsoon respiratory illness pattern detected across 3 prior seasons', severity: 'Info', status: 'Active', confidencePct: 82, generatedAt: '2026-07-18T07:30:00' },
+  { id: 'rai-3', category: 'Revenue', message: 'Revenue forecast Q3 FY26: ₹12.8 Cr (+8.2% YoY) driven by cath lab expansion and corporate tie-up volume', severity: 'Info', status: 'Active', confidencePct: 79, generatedAt: '2026-07-17T18:00:00' },
+  { id: 'rai-4', category: 'Quality', message: 'ICICI Lombard claim rejection rate elevated 16.3% — documentation gap on pre-auth codes flagged for billing review', severity: 'Critical', status: 'Active', confidencePct: 91, generatedAt: '2026-07-18T06:30:00' },
 ];
 
 export const REVENUE_FORECAST = [
@@ -263,8 +263,8 @@ export function formatInr(amount: number): string {
 }
 
 export function formatInrCr(amount: number): string {
-  if (amount >= 10000000) return `Γé╣${(amount / 10000000).toFixed(2)} Cr`;
-  if (amount >= 100000) return `Γé╣${(amount / 100000).toFixed(1)} L`;
+  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
+  if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)} L`;
   return formatInr(amount);
 }
 

@@ -163,8 +163,8 @@ export default function SchedulingMatrix() {
     <div className="rounded-xl border border-slate-200 bg-white shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-slate-200 px-4 py-3">
         <div>
-          <h2 className="text-sm font-bold text-slate-900">Day-at-a-Glance ┬╖ 15-min Grid</h2>
-          <p className="text-[11px] text-slate-800">{doctor?.name} ┬╖ {doctor?.specialization}</p>
+          <h2 className="text-sm font-bold text-slate-900">Day-at-a-Glance · 15-min Grid</h2>
+          <p className="text-[11px] text-slate-800">{doctor?.name} · {doctor?.specialization}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {(['available', 'booked', 'blocked'] as const).map((state) => (

@@ -16,8 +16,25 @@ import { supabase } from '@/lib/supabase/client';
 import { PatientAuthProvider } from '@/lib/patient/auth/PatientAuthProvider';
 import { patientClasses } from '@/lib/patient/theme';
 
+function normalizePath(pathname: string) {
+  const noQuery = pathname.split('?')[0] ?? pathname;
+  if (noQuery.length > 1 && noQuery.endsWith('/')) {
+    return noQuery.slice(0, -1);
+  }
+  return noQuery;
+}
+
 function isAuthRoute(pathname: string | null) {
-  return Boolean(pathname?.includes('/auth/login') || pathname?.endsWith('/login'));
+  if (!pathname) return false;
+  const path = normalizePath(pathname);
+  return (
+    path === '/patient/login' ||
+    path.startsWith('/patient/login/') ||
+    path === '/patient/auth/login' ||
+    path.startsWith('/patient/auth/login/') ||
+    path.endsWith('/login') ||
+    path.includes('/auth/login')
+  );
 }
 
 export default function PatientLayoutClient({ children }: { children: ReactNode }) {
@@ -90,7 +107,7 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
   if (isAuthRoute(pathname)) {
     return (
       <PatientAuthProvider>
-        <PatientAmbientCanvas>{children}</PatientAmbientCanvas>
+        {children}
         <Toaster position="top-right" closeButton />
       </PatientAuthProvider>
     );
@@ -102,7 +119,7 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
         <PatientAmbientCanvas className="flex items-center justify-center">
           <div className="flex items-center gap-2.5 rounded-xl bg-[#8C5A3C] px-5 py-3 text-white shadow-md">
             <Loader2 className="h-4 w-4 animate-spin text-[#F5EFE6]" />
-            <span className="text-xs font-bold">Connecting to Patient WorkspaceΓÇª</span>
+            <span className="text-xs font-bold">Connecting to Patient Workspace...</span>
           </div>
         </PatientAmbientCanvas>
       </PatientAuthProvider>
@@ -122,10 +139,10 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-[#2B1810]">
                   {patientName}
-                  <span className="font-medium text-[#7C5C48]"> ΓÇó Verified Member</span>
+                  <span className="font-medium text-[#7C5C48]"> · Verified Member</span>
                 </p>
                 <p className="hidden truncate text-[11px] text-[#7C5C48] sm:block">
-                  Regal Patient Care ┬╖ Live OPD workspace
+                  Regal Patient Care · Live OPD workspace
                 </p>
               </div>
 

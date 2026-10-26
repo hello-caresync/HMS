@@ -11,9 +11,9 @@ export type BillingModalType =
   | null;
 
 export const BILLING_WORKSPACE_TABS: { id: BillingWorkspaceTab; label: string; description: string }[] = [
-  { id: 'command', label: 'Financial Command Center & Patient Billing', description: 'Revenue KPIs ┬╖ billing queues ┬╖ collections ┬╖ quick actions' },
-  { id: 'rcm', label: 'RCM, Insurance & Payables', description: 'Claims pipeline ┬╖ AP ledger ┬╖ AR aging ┬╖ corporate tie-ups' },
-  { id: 'accounting', label: 'Accounting, Compliance & AI Intelligence', description: 'GL ┬╖ GST ┬╖ trial balance ┬╖ fraud detection ┬╖ P&L charts' },
+  { id: 'command', label: 'Financial Command Center & Patient Billing', description: 'Revenue KPIs · billing queues · collections · quick actions' },
+  { id: 'rcm', label: 'RCM, Insurance & Payables', description: 'Claims pipeline · AP ledger · AR aging · corporate tie-ups' },
+  { id: 'accounting', label: 'Accounting, Compliance & AI Intelligence', description: 'GL · GST · trial balance · fraud detection · P&L charts' },
 ];
 
 export type BillingQueueType = 'OPD' | 'IPD' | 'Emergency';

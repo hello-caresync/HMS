@@ -60,7 +60,7 @@ export default function GoodsReceiptValidationSheet({
         </div>
         <div>
           <dt className="text-[9px] font-bold uppercase text-slate-800">PO Total</dt>
-          <dd className="font-mono font-bold">Γé╣ {purchaseOrder.grandTotal.toLocaleString('en-IN')}</dd>
+          <dd className="font-mono font-bold">₹ {purchaseOrder.grandTotal.toLocaleString('en-IN')}</dd>
         </div>
       </dl>
 
@@ -81,7 +81,7 @@ export default function GoodsReceiptValidationSheet({
                 <td className="px-2 py-1.5 font-mono text-[10px]">{line.sku}</td>
                 <td className="px-2 py-1.5">{line.description}</td>
                 <td className="px-2 py-1.5 text-right font-mono">{line.quantityOrdered}</td>
-                <td className="px-2 py-1.5 text-right font-mono">Γé╣ {line.unitPrice}</td>
+                <td className="px-2 py-1.5 text-right font-mono">₹ {line.unitPrice}</td>
                 <td className="px-2 py-1.5 text-right font-mono">{line.gstPercent}%</td>
               </tr>
             ))}

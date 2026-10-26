@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
           type="email"
           value={email}
           onChange={setEmail}
-          placeholder="Registered work email"
+          placeholder="name@email.com"
           autoComplete="off"
         />
 

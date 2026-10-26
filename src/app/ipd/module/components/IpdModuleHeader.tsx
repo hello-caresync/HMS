@@ -23,9 +23,9 @@ export default function IpdModuleHeader({
         <div>
           <h1 className="text-base font-bold text-[#0F172A]">IPD Operations</h1>
           <p className="text-[10px] text-slate-500">
-            Inpatient census ┬╖ ward capacity ┬╖ nursing ┬╖ discharge clearance
+            Inpatient census · ward capacity · nursing · discharge clearance
             {selectedPatient && (
-              <span className="ml-2 font-semibold text-[#2563EB]">┬╖ Selected: {selectedPatient}</span>
+              <span className="ml-2 font-semibold text-[#2563EB]">· Selected: {selectedPatient}</span>
             )}
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function IpdModuleHeader({
           type="search"
           value={lookupValue}
           onChange={(e) => onLookupChange(e.target.value)}
-          placeholder="Filter inpatients ΓÇö UHID, name, ward, room, or bed"
+          placeholder="Filter inpatients — UHID, name, ward, room, or bed"
           aria-label="Filter inpatients"
           className="w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] py-2 pl-8 pr-3 text-[11px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
         />

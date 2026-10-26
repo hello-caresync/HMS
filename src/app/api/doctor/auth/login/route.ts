@@ -28,10 +28,14 @@ export async function POST(req: Request) {
     passcode?: string;
     pin?: string;
     password?: string;
+    hospitalId?: string;
+    hospitalCode?: string;
   };
 
   const identifier = String(body.identifier ?? body.email ?? body.doctorId ?? '').trim();
   const passcode = String(body.passcode ?? body.pin ?? body.password ?? '').trim();
+  const hospitalId = String(body.hospitalId ?? '').trim();
+  const hospitalCode = String(body.hospitalCode ?? '').trim();
 
   if (!identifier || !passcode) {
     return NextResponse.json(
@@ -52,7 +56,10 @@ export async function POST(req: Request) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const result = await authenticateDoctorCredential(supabase, identifier, passcode);
+  const result = await authenticateDoctorCredential(supabase, identifier, passcode, {
+    id: hospitalId,
+    code: hospitalCode,
+  });
   if (!result.ok) {
     return NextResponse.json({ success: false, error: result.error }, { status: 401 });
   }

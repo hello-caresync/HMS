@@ -22,7 +22,7 @@ export default function PacsSafetyTab() {
       <div className="space-y-2">
         <RadPanel
           title="PACS Image Viewer Frame"
-          subtitle="Multi-series view ┬╖ DICOM metadata ┬╖ comparison canvas"
+          subtitle="Multi-series view · DICOM metadata · comparison canvas"
           icon={Monitor}
           dark
           headerRight={
@@ -45,17 +45,17 @@ export default function PacsSafetyTab() {
               <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
                 <div className="flex h-full flex-col items-center justify-center p-4">
                   <div className="mb-2 h-32 w-32 rounded-full border-2 border-slate-600 bg-gradient-radial from-slate-700 to-black opacity-80" />
-                  <p className="text-[9px] font-bold text-slate-400">Current Study ΓÇö {currentSeries.description}</p>
+                  <p className="text-[9px] font-bold text-slate-400">Current Study — {currentSeries.description}</p>
                   <p className="mt-1 font-mono text-[8px] text-slate-500">
-                    Series {currentSeries.seriesNumber} ┬╖ {currentSeries.sliceCount} slices ┬╖ {currentSeries.acquisitionTime}
+                    Series {currentSeries.seriesNumber} · {currentSeries.sliceCount} slices · {currentSeries.acquisitionTime}
                   </p>
                 </div>
               </div>
               <div className="absolute left-1 top-1 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[7px] text-emerald-400">
-                W/L: 400/40 ┬╖ Zoom 1.2x
+                W/L: 400/40 · Zoom 1.2x
               </div>
               <div className="absolute bottom-1 right-1 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[7px] text-sky-400">
-                {currentSeries.modality} ┬╖ 512├ù512 ┬╖ 1.0mm
+                {currentSeries.modality} · 512×512 · 1.0mm
               </div>
             </div>
 
@@ -64,9 +64,9 @@ export default function PacsSafetyTab() {
                 <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-amber-950/20 to-slate-900">
                   <div className="flex h-full flex-col items-center justify-center p-4">
                     <div className="mb-2 h-32 w-32 rounded-full border-2 border-amber-700/50 bg-gradient-radial from-slate-700 to-black opacity-70" />
-                    <p className="text-[9px] font-bold text-amber-400">Prior Study ΓÇö {priorSeries.description}</p>
+                    <p className="text-[9px] font-bold text-amber-400">Prior Study — {priorSeries.description}</p>
                     <p className="mt-1 font-mono text-[8px] text-slate-500">
-                      Series {priorSeries.seriesNumber} ┬╖ {priorSeries.sliceCount} slices ┬╖ {priorSeries.acquisitionTime}
+                      Series {priorSeries.seriesNumber} · {priorSeries.sliceCount} slices · {priorSeries.acquisitionTime}
                     </p>
                   </div>
                 </div>
@@ -89,7 +89,7 @@ export default function PacsSafetyTab() {
                     : 'border-slate-600 text-slate-400 hover:border-slate-500'
                 }`}
               >
-                S{s.seriesNumber}: {s.description.slice(0, 24)}ΓÇª
+                S{s.seriesNumber}: {s.description.slice(0, 24)}…
               </button>
             ))}
           </div>
@@ -98,18 +98,18 @@ export default function PacsSafetyTab() {
             <p className="mb-1 text-[8px] font-bold uppercase text-slate-400">DICOM Metadata</p>
             <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono text-[7px] text-slate-500">
               <span>Patient ID: [MASKED]</span>
-              <span>Study UID: 1.2.840ΓÇª604688119</span>
+              <span>Study UID: 1.2.840…604688119</span>
               <span>Accession: RAD-2026-5521</span>
               <span>Body Part: CHEST</span>
               <span>Protocol: PE Angiography</span>
-              <span>Contrast: Iohexol 350 ΓÇö 80mL</span>
+              <span>Contrast: Iohexol 350 — 80mL</span>
             </div>
           </div>
         </RadPanel>
       </div>
 
       <div className="space-y-2">
-        <RadPanel title="Patient Preparation & Safety Screening" subtitle="Pregnancy ┬╖ contrast allergy ┬╖ fasting verification" icon={ShieldCheck}>
+        <RadPanel title="Patient Preparation & Safety Screening" subtitle="Pregnancy · contrast allergy · fasting verification" icon={ShieldCheck}>
           <SecureIdentityPlaceholder verified />
           <table className="mt-2 w-full text-left">
             <thead>
@@ -146,7 +146,7 @@ export default function PacsSafetyTab() {
           </table>
         </RadPanel>
 
-        <RadPanel title="Radiation Dose Tracking" subtitle="CTDIvol ┬╖ DLP ┬╖ effective dose metrics log" icon={Radiation}>
+        <RadPanel title="Radiation Dose Tracking" subtitle="CTDIvol · DLP · effective dose metrics log" icon={Radiation}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">

@@ -33,7 +33,7 @@ type ComplianceAuditTabProps = {
 export default function ComplianceAuditTab({ expandedAuditIds, onToggleAudit }: ComplianceAuditTabProps) {
   return (
     <div className="space-y-2">
-      <EmrPanel title="EMR Audit Log & Access History" subtitle="Record access ┬╖ modifications ┬╖ user activity" icon={Shield}>
+      <EmrPanel title="EMR Audit Log & Access History" subtitle="Record access · modifications · user activity" icon={Shield}>
         <table className="w-full min-w-[800px] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -70,7 +70,7 @@ export default function ComplianceAuditTab({ expandedAuditIds, onToggleAudit }: 
                         <span className="font-semibold">IP:</span> {entry.ipAddress}
                         {entry.details && (
                           <>
-                            <span className="mx-2">┬╖</span>
+                            <span className="mx-2">·</span>
                             <span className="font-semibold">Details:</span> {entry.details}
                           </>
                         )}
@@ -85,13 +85,13 @@ export default function ComplianceAuditTab({ expandedAuditIds, onToggleAudit }: 
       </EmrPanel>
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <EmrPanel title="Consent Tracking" subtitle="Active ┬╖ revoked ┬╖ expired consents">
+        <EmrPanel title="Consent Tracking" subtitle="Active · revoked · expired consents">
           <ul className="space-y-1">
             {CONSENT_TRACKING.map((c) => (
               <li key={c.id} className="flex items-center justify-between rounded border border-[#E2E8F0] px-2 py-1.5">
                 <div>
                   <p className="text-[9px] font-semibold text-[#0F172A]">{c.consentType}</p>
-                  <p className="text-[8px] text-slate-500">{c.grantedAt} ΓåÆ {c.expiresAt}</p>
+                  <p className="text-[8px] text-slate-500">{c.grantedAt} → {c.expiresAt}</p>
                 </div>
                 <OutcomePill outcome={c.status} />
               </li>

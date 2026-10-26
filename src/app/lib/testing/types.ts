@@ -1,4 +1,4 @@
-﻿/** Sandbox testing types ΓÇö no live PII; initials and secured placeholders only */
+﻿/** Sandbox testing types — no live PII; initials and secured placeholders only */
 
 export const SANDBOX_SECURED_PLACEHOLDER = '[DATA SECURED FOR SANDBOX ISOLATION]';
 

@@ -28,7 +28,7 @@ export default function SupplierMasterTab({ onOpenVendorDrawer }: SupplierMaster
   return (
     <div className="grid grid-cols-1 gap-2 xl:grid-cols-[2fr_3fr]">
       <div className="space-y-2">
-        <VrmPanel title="Profiles & Catalogues Vault" subtitle="Ratings ┬╖ supply categories ┬╖ contracts ┬╖ MOQ ┬╖ alternatives" icon={BookOpen} secure>
+        <VrmPanel title="Profiles & Catalogues Vault" subtitle="Ratings · supply categories · contracts · MOQ · alternatives" icon={BookOpen} secure>
           <SecureSupplierPlaceholder verified />
           <table className="mt-2 w-full text-left">
             <thead>
@@ -57,7 +57,7 @@ export default function SupplierMasterTab({ onOpenVendorDrawer }: SupplierMaster
             </tbody>
           </table>
 
-          <p className="mb-1 mt-3 text-[8px] font-bold uppercase text-slate-500">Unified Catalogue ΓÇö MOQ & Alternatives</p>
+          <p className="mb-1 mt-3 text-[8px] font-bold uppercase text-slate-500">Unified Catalogue — MOQ & Alternatives</p>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -73,7 +73,7 @@ export default function SupplierMasterTab({ onOpenVendorDrawer }: SupplierMaster
                   <td className="px-1.5 py-1 text-[8px] text-slate-600">{c.vendorName}</td>
                   <td className="px-1.5 py-1 text-[9px] tabular-nums">{c.moq} {c.unit}</td>
                   <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums">{formatInr(c.rateContractPrice)}</td>
-                  <td className="max-w-[90px] truncate px-1.5 py-1 text-[7px] text-slate-500" title={c.alternative}>{c.alternative ?? 'ΓÇö'}</td>
+                  <td className="max-w-[90px] truncate px-1.5 py-1 text-[7px] text-slate-500" title={c.alternative}>{c.alternative ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -83,7 +83,7 @@ export default function SupplierMasterTab({ onOpenVendorDrawer }: SupplierMaster
 
       <div className="space-y-2">
         <VrmPanel
-          title="RFQ ΓÇö Quotation Comparison Analytics"
+          title="RFQ — Quotation Comparison Analytics"
           subtitle="Price vs delivery speed vs quality scoring"
           icon={Scale}
           headerRight={
@@ -106,7 +106,7 @@ export default function SupplierMasterTab({ onOpenVendorDrawer }: SupplierMaster
                   <p className="text-[8px] font-bold uppercase text-slate-500">{label}</p>
                   <p className="text-[9px] font-semibold">{vendor}</p>
                   <p className="text-sm font-bold tabular-nums text-[#0F172A]">{formatInr(price)}</p>
-                  <p className="text-[8px] text-violet-600">{delivery} days ┬╖ Quality {quality}/5</p>
+                  <p className="text-[8px] text-violet-600">{delivery} days · Quality {quality}/5</p>
                   {isRec && <span className="mt-1 inline-block rounded bg-emerald-600 px-1 py-0.5 text-[7px] font-bold uppercase text-white">Recommended</span>}
                 </div>
               );
@@ -114,7 +114,7 @@ export default function SupplierMasterTab({ onOpenVendorDrawer }: SupplierMaster
           </div>
         </VrmPanel>
 
-        <VrmPanel title="Contract & Agreement Renewal Alerts" subtitle="Rate contracts ┬╖ AMC ┬╖ annual supply agreements" icon={FileText}>
+        <VrmPanel title="Contract & Agreement Renewal Alerts" subtitle="Rate contracts · AMC · annual supply agreements" icon={FileText}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">

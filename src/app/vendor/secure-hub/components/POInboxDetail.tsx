@@ -14,7 +14,7 @@ interface POInboxDetailProps {
 }
 
 function parseDeliveryDeadline(dateString: string): Date | null {
-  if (!dateString || dateString === 'ΓÇö') return null;
+  if (!dateString || dateString === '—') return null;
 
   const parsed = new Date(`${dateString}T23:59:59`);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -88,13 +88,13 @@ export default function POInboxDetail({
           </p>
           <p className="mt-1 font-mono text-2xl font-black text-amber-500">
             {hoursRemaining === null
-              ? 'ΓÇö'
+              ? '—'
               : hoursRemaining === 0
                 ? 'OVERDUE'
                 : `${hoursRemaining}h`}
           </p>
           <p className="mt-0.5 text-[10px] font-medium text-slate-800">
-            Required by {po.expectedDeliveryDate ?? 'ΓÇö'}
+            Required by {po.expectedDeliveryDate ?? '—'}
           </p>
         </div>
       </header>
@@ -122,7 +122,7 @@ export default function POInboxDetail({
                   Unit economics
                 </p>
                 <p className="mt-1 font-mono text-sm font-black text-amber-500">
-                  Γé╣{primaryItem.unitPrice.toFixed(2)}/unit
+                  ₹{primaryItem.unitPrice.toFixed(2)}/unit
                 </p>
                 <p className="mt-1 text-xs text-slate-900">
                   {po.deliveryLocation ?? 'Delivery location pending'}
@@ -139,15 +139,15 @@ export default function POInboxDetail({
             <div className="mt-4 space-y-2 font-mono text-xs">
               <div className="flex items-center justify-between text-slate-900">
                 <span>Base contract value</span>
-                <span>Γé╣{baseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>₹{baseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex items-center justify-between text-amber-500">
                 <span>Pharma GST (12%)</span>
-                <span>Γé╣{gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>₹{gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex items-center justify-between border-t border-amber-500/20 pt-2 text-sm font-black text-white">
                 <span>Settlement total</span>
-                <span>Γé╣{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </article>
@@ -197,14 +197,14 @@ export default function POInboxDetail({
                     onClick={() => handleStatusChange('Rejected')}
                     className="rounded-xl border border-amber-500/20 bg-[#0F172A] px-4 py-2.5 text-xs font-bold text-slate-200 transition-all hover:border-amber-500/40 hover:text-white"
                   >
-                    Γ£ò Decline Contract
+                    ✕ Decline Contract
                   </button>
                   <button
                     type="button"
                     onClick={() => handleStatusChange('Accepted')}
                     className="rounded-xl border border-amber-500/30 bg-amber-500 px-4 py-2.5 text-xs font-bold text-[#0F172A] transition-all hover:bg-amber-400"
                   >
-                    Γ£ô Accept PO Terms
+                    ✓ Accept PO Terms
                   </button>
                 </>
               )}
@@ -215,7 +215,7 @@ export default function POInboxDetail({
                   onClick={() => handleStatusChange('Processing')}
                   className="rounded-xl border border-amber-500/30 bg-[#0F172A] px-4 py-2.5 text-xs font-bold text-amber-500 transition-all hover:bg-amber-500/10"
                 >
-                  ≡ƒÅù∩╕Å Route to Fulfillment Floor ΓåÆ
+                  🏗️ Route to Fulfillment Floor →
                 </button>
               )}
             </div>
@@ -256,7 +256,7 @@ export default function POInboxDetail({
               onClick={onBack}
               className="w-full rounded-xl border border-amber-500/20 px-4 py-2.5 text-xs font-bold text-slate-900 transition-all hover:border-amber-500/40 hover:text-white"
             >
-              ΓåÉ Back to inbox list
+              ← Back to inbox list
             </button>
           )}
         </aside>

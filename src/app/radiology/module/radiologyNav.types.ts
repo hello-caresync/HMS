@@ -10,9 +10,9 @@ export type RadiologyModalType =
   | null;
 
 export const RADIOLOGY_WORKSPACE_TABS: { id: RadiologyWorkspaceTab; label: string; description: string }[] = [
-  { id: 'command', label: 'Command Center & Scan Queue', description: 'RIS census ┬╖ modality intake ┬╖ scan flow ┬╖ quick actions' },
-  { id: 'pacs', label: 'PACS Simulation & Patient Safety', description: 'Image viewer ┬╖ DICOM metadata ┬╖ safety screening ┬╖ dose tracking' },
-  { id: 'verification', label: 'Report Verification & Equipment', description: 'Radiologist sign-off ┬╖ analytics ┬╖ machinery ┬╖ contrast inventory' },
+  { id: 'command', label: 'Command Center & Scan Queue', description: 'RIS census · modality intake · scan flow · quick actions' },
+  { id: 'pacs', label: 'PACS Simulation & Patient Safety', description: 'Image viewer · DICOM metadata · safety screening · dose tracking' },
+  { id: 'verification', label: 'Report Verification & Equipment', description: 'Radiologist sign-off · analytics · machinery · contrast inventory' },
 ];
 
 export type ScanPriority = 'Routine' | 'STAT Emergency';

@@ -20,7 +20,7 @@ export function generatePatientId(): string {
 export function splitFullName(fullName: string): { firstName: string; lastName: string } {
   const parts = fullName.trim().split(/\s+/);
   if (parts.length === 0) return { firstName: 'Unknown', lastName: '' };
-  if (parts.length === 1) return { firstName: parts[0], lastName: 'ΓÇö' };
+  if (parts.length === 1) return { firstName: parts[0], lastName: '—' };
   return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
 }
 

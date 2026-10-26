@@ -52,8 +52,8 @@ export default function OperationalConsoleTab({
 
   const groupKey = (p: IpdInpatient) => {
     if (groupBy === 'ward') return p.ward;
-    if (groupBy === 'room') return `${p.ward} ┬╖ ${p.room}`;
-    return `${p.ward} ┬╖ ${p.room} ┬╖ ${p.bed}`;
+    if (groupBy === 'room') return `${p.ward} · ${p.room}`;
+    return `${p.ward} · ${p.room} · ${p.bed}`;
   };
 
   const grouped = filtered.reduce<Record<string, IpdInpatient[]>>((acc, p) => {
@@ -88,7 +88,7 @@ export default function OperationalConsoleTab({
 
       <IpdPanel
         title="Master Inpatient Directory"
-        subtitle="Ward ┬╖ room ┬╖ bed allocations with clinical & nursing flags"
+        subtitle="Ward · room · bed allocations with clinical & nursing flags"
         icon={ClipboardList}
         headerRight={
           <div className="flex gap-1">

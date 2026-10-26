@@ -1,10 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { AlertTriangle, Loader2, MapPin, Phone, Siren } from 'lucide-react';
 import { toast } from 'sonner';
-import { getDoctorSession } from '@/lib/doctor/session';
+import { getDoctorSession, resolveDoctorSessionIdentity } from '@/lib/doctor/session';
 import {
+  EMERGENCY_CONTINUE_KEY,
+  emergencyAssignedToDoctor,
   useAcknowledgeEmergency,
   useDoctorContext,
   useEmergencyAlertsRealtime,
@@ -13,22 +16,21 @@ import {
 import { ccClasses } from '@/lib/doctor/command-center/theme';
 
 export function EmergencyCenter() {
+  const router = useRouter();
   const session = getDoctorSession();
-  const employeeId =
-    session?.employeeId ||
-    (session as any)?.doctorId ||
-    (session as any)?.doctor_id ||
-    'RH-D01';
+  const identity = resolveDoctorSessionIdentity(session);
+  const employeeId = identity.employeeId || 'RH-D01';
 
   const { data: ctx } = useDoctorContext(employeeId);
   const doctorUuid = ctx?.doctorUuid ?? '';
 
-  const { data: alerts = [], isLoading } = useEmergencyAlertsRealtime(doctorUuid);
+  const { data: alerts = [], isLoading } = useEmergencyAlertsRealtime(doctorUuid || employeeId);
   const ack = useAcknowledgeEmergency();
   const escalate = useEscalateEmergency();
 
-  const critical = alerts.filter((a) => a.severity === 'CRITICAL' && a.status === 'ACTIVE');
-  const active = alerts.filter((a) => a.status === 'ACTIVE');
+  const mine = alerts.filter((alert) => emergencyAssignedToDoctor(alert, identity));
+  const critical = mine.filter((a) => a.severity === 'CRITICAL' && a.status === 'ACTIVE');
+  const active = mine.filter((a) => a.status === 'ACTIVE');
 
   useEffect(() => {
     if (critical.length > 0 && typeof window !== 'undefined') {
@@ -74,14 +76,14 @@ export function EmergencyCenter() {
         <div className="flex h-40 items-center justify-center gap-2 text-sm font-semibold text-[#5A7A94]">
           <Loader2 className="h-5 w-5 animate-spin" /> Monitoring emergency channel…
         </div>
-      ) : alerts.length === 0 ? (
+      ) : mine.length === 0 ? (
         <div className={`p-12 text-center ${ccClasses.card}`}>
           <Siren className="mx-auto h-10 w-10 text-[#2E8B70]" />
-          <p className="mt-3 font-black text-[#173F5F]">All clear — no emergency alerts</p>
+          <p className="mt-3 font-black text-[#173F5F]">No emergency has been sent to you</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {alerts.map((alert) => (
+          {mine.map((alert) => (
             <article
               key={alert.id}
               className={`p-5 ${
@@ -105,6 +107,11 @@ export function EmergencyCenter() {
                     {alert.patient_name || `Patient ${alert.patient_id?.slice(0, 8)}`}
                   </h2>
                   <p className="mt-1 text-sm font-semibold text-[#5A7A94]">{alert.message || 'SOS triggered'}</p>
+                  {alert.assigned_doctor_name ? (
+                    <p className="mt-2 text-xs font-bold text-[#173F5F]">
+                      Assigned to {alert.assigned_doctor_name}
+                    </p>
+                  ) : null}
                   {alert.location && (
                     <p className="mt-2 flex items-center gap-1 text-xs font-bold text-[#20639B]">
                       <MapPin className="h-3.5 w-3.5" /> {alert.location}
@@ -124,12 +131,32 @@ export function EmergencyCenter() {
                     <button
                       type="button"
                       onClick={() => {
-                        void ack.mutateAsync(alert.id);
-                        toast.success('Alert acknowledged');
+                        void ack
+                          .mutateAsync({
+                            alertId: alert.id,
+                            assigned_doctor_id: identity.employeeId,
+                            assigned_doctor_name: identity.doctorName,
+                          })
+                          .then(() => {
+                            sessionStorage.setItem(
+                              EMERGENCY_CONTINUE_KEY,
+                              JSON.stringify({
+                                id: alert.id,
+                                patient_name: alert.patient_name,
+                                patient_id: alert.patient_id,
+                                message: alert.message,
+                              }),
+                            );
+                            toast.success('Case accepted. Continue the emergency procedure.');
+                            router.push('/doctor/dashboard/');
+                          })
+                          .catch((err: unknown) => {
+                            toast.error(err instanceof Error ? err.message : 'Could not open this case');
+                          });
                       }}
                       className={ccClasses.btnPrimary}
                     >
-                      Acknowledge
+                      Continue procedure
                     </button>
                     <button
                       type="button"

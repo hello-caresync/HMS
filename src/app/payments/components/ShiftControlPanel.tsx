@@ -69,7 +69,7 @@ export default function ShiftControlPanel() {
               </span>
               <div>
                 <p className="text-xs font-bold text-slate-900">{shift.cashierName}</p>
-                <p className="text-[10px] text-slate-800">Counter T-04 ┬╖ OPD Billing</p>
+                <p className="text-[10px] text-slate-800">Counter T-04 · OPD Billing</p>
               </div>
             </div>
             <span
@@ -131,10 +131,10 @@ export default function ShiftControlPanel() {
             Shift Opening
           </p>
           <p className="mt-0.5 text-[10px] text-indigo-700">
-            Step 1 ΓÇö Enter starting counter float before accepting payments.
+            Step 1 — Enter starting counter float before accepting payments.
           </p>
           <label className="mt-2 block text-[10px] font-bold uppercase tracking-wider text-slate-800">
-            Opening Cash Balance (Γé╣)
+            Opening Cash Balance (₹)
           </label>
           <input
             type="number"
@@ -188,7 +188,7 @@ export default function ShiftControlPanel() {
                   {formatCurrency(expectedCash)}
                 </p>
                 <p className="text-[9px] text-slate-800">
-                  Opening float + net settled cash ΓêÆ cash refunds
+                  Opening float + net settled cash − cash refunds
                 </p>
               </div>
 

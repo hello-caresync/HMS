@@ -26,28 +26,28 @@ const INSURANCE_CONTRACTS = [
   {
     tpa: 'Star Health TPA',
     clearance: 'Pre-auth within 4h',
-    corporateCap: 'Γé╣5,00,000',
+    corporateCap: '₹5,00,000',
     status: 'Active',
   },
   {
     tpa: 'MediAssist Corporate',
-    clearance: 'Cashless ┬╖ 24h SLA',
-    corporateCap: 'Γé╣10,00,000',
+    clearance: 'Cashless · 24h SLA',
+    corporateCap: '₹10,00,000',
     status: 'Active',
   },
   {
-    tpa: 'FHPL ΓÇö PSU Panel',
+    tpa: 'FHPL — PSU Panel',
     clearance: 'Manual review queue',
-    corporateCap: 'Γé╣2,50,000',
+    corporateCap: '₹2,50,000',
     status: 'Review',
   },
 ];
 
 const PAYMENT_MODES = [
-  { mode: 'Cash', gateway: 'Counter POS', protocol: 'Manual receipt ┬╖ Shift close', enabled: true },
-  { mode: 'Card', gateway: 'Razorpay Terminal', protocol: 'EMV ┬╖ 3DS enabled', enabled: true },
+  { mode: 'Cash', gateway: 'Counter POS', protocol: 'Manual receipt · Shift close', enabled: true },
+  { mode: 'Card', gateway: 'Razorpay Terminal', protocol: 'EMV · 3DS enabled', enabled: true },
   { mode: 'UPI', gateway: 'NPCI UPI Switch', protocol: 'QR + VPA collect', enabled: true },
-  { mode: 'Corporate Credit Ledger', gateway: 'Internal AR Module', protocol: 'Credit limit ┬╖ 30d terms', enabled: true },
+  { mode: 'Corporate Credit Ledger', gateway: 'Internal AR Module', protocol: 'Credit limit · 30d terms', enabled: true },
 ];
 
 export default function MasterFinancesView() {

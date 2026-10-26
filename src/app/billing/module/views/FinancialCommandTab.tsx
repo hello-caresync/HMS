@@ -88,7 +88,7 @@ export default function FinancialCommandTab({
 
       <FinPanel
         title="Active Billing Queues"
-        subtitle="OPD ┬╖ IPD room/nursing accumulation ┬╖ Emergency quick billing"
+        subtitle="OPD · IPD room/nursing accumulation · Emergency quick billing"
         icon={ClipboardList}
         headerRight={
           <div className="flex gap-0.5">
@@ -127,7 +127,7 @@ export default function FinancialCommandTab({
                   <td className="px-1.5 py-1"><QueueTypePill type={b.queueType} /></td>
                   <td className="max-w-[120px] truncate px-1.5 py-1 text-[8px] text-slate-600" title={b.charges}>{b.charges}</td>
                   <td className="px-1.5 py-1 text-[9px] tabular-nums">{formatInr(b.grossAmount)}</td>
-                  <td className="px-1.5 py-1 text-[9px] tabular-nums text-emerald-600">{b.discount ? formatInr(b.discount) : 'ΓÇö'}</td>
+                  <td className="px-1.5 py-1 text-[9px] tabular-nums text-emerald-600">{b.discount ? formatInr(b.discount) : '—'}</td>
                   <td className="px-1.5 py-1 text-[9px] font-bold tabular-nums">{formatInr(b.netAmount)}</td>
                   <td className="px-1.5 py-1 text-[9px] tabular-nums">{formatInr(b.paidAmount)}</td>
                   <td className={`px-1.5 py-1 text-[9px] font-bold tabular-nums ${balance > 0 ? 'text-amber-700' : 'text-emerald-600'}`}>{formatInr(balance)}</td>
@@ -140,7 +140,7 @@ export default function FinancialCommandTab({
         </table>
       </FinPanel>
 
-      <FinPanel title="Payment Collection Center" subtitle="Cash ┬╖ Card ┬╖ UPI ┬╖ Corporate credit ┬╖ partial payments" icon={CreditCard}>
+      <FinPanel title="Payment Collection Center" subtitle="Cash · Card · UPI · Corporate credit · partial payments" icon={CreditCard}>
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -165,7 +165,7 @@ export default function FinancialCommandTab({
         </table>
       </FinPanel>
 
-      <FinPanel title="Quick Actions" icon={Zap} subtitle="Invoice ┬╖ payment ┬╖ discount ┬╖ refund ┬╖ charge master ┬╖ closing ┬╖ packages">
+      <FinPanel title="Quick Actions" icon={Zap} subtitle="Invoice · payment · discount · refund · charge master · closing · packages">
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-7">
           {[
             { id: 'generate-invoice' as const, label: 'Generate Invoice', icon: FileText },

@@ -146,7 +146,7 @@ export default function DashboardWidgets({ metrics = DASHBOARD_METRICS }: Dashbo
         <p className="text-2xl font-bold tabular-nums tracking-tight text-slate-900 sm:text-3xl">
           {formatCurrency(revenue.amount, revenue.currency)}
         </p>
-        <p className="mt-0.5 text-xs text-slate-800">Gross collections ┬╖ today</p>
+        <p className="mt-0.5 text-xs text-slate-800">Gross collections · today</p>
         <div className="mt-3 flex items-end justify-between">
           <Sparkline values={revenue.sparkline} />
           <span className="text-[11px] text-slate-800">10-day trend</span>
@@ -166,7 +166,7 @@ export default function DashboardWidgets({ metrics = DASHBOARD_METRICS }: Dashbo
       <WidgetCard title="Pending Payments" icon={Wallet} iconClassName="text-orange-600">
         <p className="text-3xl font-bold tabular-nums text-slate-900">{pendingPayments.count}</p>
         <p className="mt-0.5 text-xs text-slate-800">
-          Invoice queue ┬╖ oldest {pendingPayments.oldestDays}d
+          Invoice queue · oldest {pendingPayments.oldestDays}d
         </p>
         <ul className="mt-3 space-y-1.5">
           {pendingPayments.topInvoices.map((inv) => (
@@ -239,7 +239,7 @@ export default function DashboardWidgets({ metrics = DASHBOARD_METRICS }: Dashbo
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-slate-800">{p.name}</p>
                 <p className="text-[11px] text-slate-800">
-                  {p.ward} ┬╖ {p.vitals}
+                  {p.ward} · {p.vitals}
                 </p>
               </div>
               <span

@@ -66,21 +66,21 @@ export default function GovernanceCockpitTab({ onQuickAction }: GovernanceCockpi
         </div>
       </div>
 
-      <GovPanel title="Live Operational Monitoring Stream" subtitle="Patient flow ┬╖ staff activity ┬╖ bottlenecks ┬╖ finance" icon={AlertTriangle}>
+      <GovPanel title="Live Operational Monitoring Stream" subtitle="Patient flow · staff activity · bottlenecks · finance" icon={AlertTriangle}>
         <ul className="max-h-[240px] space-y-1 overflow-y-auto">
           {OPERATIONAL_STREAM.map((entry) => (
             <li key={entry.id} className={`flex gap-2 rounded border px-2 py-1.5 ${entry.severity === 'Critical' ? 'border-red-200 bg-red-50/40' : entry.severity === 'Warning' ? 'border-amber-100 bg-amber-50/30' : 'border-slate-50'}`}>
               <SeverityDot severity={entry.severity} />
               <div className="min-w-0 flex-1">
                 <p className="text-[9px] text-slate-800">{entry.message}</p>
-                <p className="text-[8px] text-slate-500">{entry.category} ┬╖ {entry.department} ┬╖ {formatTime(entry.timestamp)}</p>
+                <p className="text-[8px] text-slate-500">{entry.category} · {entry.department} · {formatTime(entry.timestamp)}</p>
               </div>
             </li>
           ))}
         </ul>
       </GovPanel>
 
-      <GovPanel title="Quick Actions Matrix" subtitle="User ┬╖ incident ┬╖ approval ┬╖ policy ┬╖ visitor ┬╖ emergency" icon={Zap}>
+      <GovPanel title="Quick Actions Matrix" subtitle="User · incident · approval · policy · visitor · emergency" icon={Zap}>
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-6">
           {[
             { label: 'Create User', icon: UserPlus, action: 'create-user' as const },

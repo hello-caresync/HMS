@@ -44,13 +44,13 @@ export default function RoomBedView() {
           <BedDouble className="h-4 w-4 text-primary" />
           Bed / Room Registry
         </h2>
-        <p className="text-[11px] text-slate-800">Inpatient bed inventory ┬╖ ICU / General / Private</p>
+        <p className="text-[11px] text-slate-800">Inpatient bed inventory · ICU / General / Private</p>
       </div>
 
       <MasterToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search bed no., room type, statusΓÇª"
+        searchPlaceholder="Search bed no., room type, status…"
         recordCount={filtered.length}
         recordLabel="beds"
         onAdd={() => setSheet({ type: 'add' })}

@@ -42,10 +42,10 @@ export default function CheckoutPanel({ prescription, onCheckout }: CheckoutPane
                 className="flex justify-between gap-2 border-b-2 border-slate-200 pb-2 text-xs"
               >
                 <span className="font-medium text-slate-800">
-                  {line.drugName} ├ù {line.quantityOrdered}
+                  {line.drugName} × {line.quantityOrdered}
                 </span>
                 <span className="shrink-0 font-mono font-bold tabular-nums text-slate-900">
-                  Γé╣ {(line.unitPrice * line.quantityOrdered).toFixed(2)}
+                  ₹ {(line.unitPrice * line.quantityOrdered).toFixed(2)}
                 </span>
               </li>
             ))}
@@ -56,18 +56,18 @@ export default function CheckoutPanel({ prescription, onCheckout }: CheckoutPane
       <dl className="space-y-1.5 border-t border-slate-200 bg-slate-50 px-4 py-3 text-xs">
         <div className="flex justify-between">
           <dt className="text-slate-800">Subtotal</dt>
-          <dd className="font-mono font-bold tabular-nums">Γé╣ {subtotal.toFixed(2)}</dd>
+          <dd className="font-mono font-bold tabular-nums">₹ {subtotal.toFixed(2)}</dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-slate-800">GST ({DEFAULT_GST_PERCENT}%)</dt>
           <dd className="font-mono font-bold tabular-nums text-slate-900">
-            Γé╣ {gstAmount.toFixed(2)}
+            ₹ {gstAmount.toFixed(2)}
           </dd>
         </div>
         <div className="flex justify-between border-t border-slate-200 pt-2">
           <dt className="font-bold text-slate-800">Grand Total</dt>
           <dd className="font-mono text-base font-black tabular-nums text-emerald-700">
-            Γé╣ {grandTotal.toFixed(2)}
+            ₹ {grandTotal.toFixed(2)}
           </dd>
         </div>
       </dl>

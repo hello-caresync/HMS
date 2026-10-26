@@ -82,7 +82,7 @@ export default function CollectionLedger() {
                 <tr>
                   <td colSpan={7} className="px-3 py-12 text-center text-slate-950">
                     {!isActive
-                      ? 'No active shift ΓÇö open shift to load transaction feed'
+                      ? 'No active shift — open shift to load transaction feed'
                       : 'No transactions recorded'}
                   </td>
                 </tr>

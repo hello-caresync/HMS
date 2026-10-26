@@ -125,7 +125,7 @@ export default function LoginPanel({ redirectUrl }: LoginPanelProps) {
             >
               <CheckCircle2 className="mb-3 h-10 w-10 text-[#0EA5A4]" aria-hidden="true" />
               <p className="text-base font-bold text-[#102033]">Authentication Successful</p>
-              <p className="mt-1 text-sm text-[#6B7C8F]">Opening Regal Hospital DashboardΓÇª</p>
+              <p className="mt-1 text-sm text-[#6B7C8F]">Opening Regal Hospital Dashboard…</p>
             </motion.div>
           )}
 
@@ -166,7 +166,7 @@ export default function LoginPanel({ redirectUrl }: LoginPanelProps) {
                     if (authStage === 'error') setAuthStage('idle');
                   }}
                   onBlur={() => setEmailTouched(true)}
-                  placeholder="Enter admin email"
+                  placeholder="name@email.com"
                   aria-invalid={!!emailError}
                   aria-describedby={emailError ? 'regal-email-error' : undefined}
                   className="w-full rounded-xl border border-[#DCE4F0] bg-[#F8FAFD] py-2.5 pl-10 pr-10 text-sm text-[#102033] outline-none transition-all placeholder:text-[#94A3B8] focus:border-[#0EA5A4] focus:bg-white focus:shadow-[0_0_0_3px_rgba(14,165,164,0.12)]"
@@ -274,12 +274,12 @@ export default function LoginPanel({ redirectUrl }: LoginPanelProps) {
         </motion.div>
 
         <footer className="mt-[clamp(0.5rem,1.5vh,1rem)] w-full max-w-[420px] text-center text-[10px] text-[#6B7C8F]">
-          <p>┬⌐ 2026 Regal Hospital</p>
+          <p>© 2026 Regal Hospital</p>
           <div className="mt-1 flex items-center justify-center gap-3">
             <button type="button" className="hover:text-[#0EA5A4]">Privacy</button>
-            <span aria-hidden="true">┬╖</span>
+            <span aria-hidden="true">·</span>
             <button type="button" className="hover:text-[#0EA5A4]">Security</button>
-            <span aria-hidden="true">┬╖</span>
+            <span aria-hidden="true">·</span>
             <button type="button" className="hover:text-[#0EA5A4]">Support</button>
           </div>
         </footer>

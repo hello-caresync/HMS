@@ -18,54 +18,116 @@ const CANCELLED_STATUSES = new Set([
   'declined',
 ]);
 
-function doctorScopeFilter(doctorId: string): string {
-  const raw = String(doctorId).trim();
-  if (!raw) return 'doctor_id.eq.__invalid__';
-  const upper = raw.toUpperCase();
-  const clauses = new Set([
-    `doctor_id.eq.${raw}`,
-    `doctor_code.eq.${raw}`,
-    `doctor_employee_id.eq.${raw}`,
-  ]);
-  if (upper !== raw) {
-    clauses.add(`doctor_id.eq.${upper}`);
-    clauses.add(`doctor_code.eq.${upper}`);
-    clauses.add(`doctor_employee_id.eq.${upper}`);
+const DOCTOR_MATCH_COLUMNS = ['doctor_id', 'doctor_code', 'doctor_employee_id', 'doctor_uuid'] as const;
+
+export type DoctorSlotIdentity = {
+  ids?: Array<string | null | undefined>;
+  name?: string | null;
+};
+
+function quoteOrValue(value: string): string {
+  const clean = value.replace(/[",()]/g, '').trim();
+  if (!clean) return '';
+  return /[\s.:]/.test(clean) ? `"${clean}"` : clean;
+}
+
+function uniqueDoctorKeys(doctorId: string, identity?: DoctorSlotIdentity): string[] {
+  const keys = new Set<string>();
+  for (const value of [doctorId, ...(identity?.ids ?? [])]) {
+    const clean = String(value ?? '').trim();
+    if (!clean) continue;
+    keys.add(clean);
+    const upper = clean.toUpperCase();
+    if (upper !== clean) keys.add(upper);
   }
-  return Array.from(clauses).join(',');
+  return Array.from(keys);
+}
+
+function doctorScopeFilter(keys: string[], columns: readonly string[]): string {
+  const clauses: string[] = [];
+  for (const key of keys) {
+    const value = quoteOrValue(key);
+    if (!value) continue;
+    for (const column of columns) {
+      clauses.push(`${column}.eq.${value}`);
+    }
+  }
+  return clauses.join(',') || 'doctor_id.eq.__invalid__';
+}
+
+function missingFilterColumn(message: string): string | null {
+  const match = message.match(/column (?:[\w]+\.)?([a-z_]+) does not exist/i)
+    ?? message.match(/could not find the '([a-z_]+)' column/i);
+  return match?.[1] ?? null;
 }
 
 /** Loads active appointment times already reserved for this doctor on the given date. */
+function activeBookedTimes(rows: Array<Record<string, unknown>>): string[] {
+  return rows
+    .filter((row) => {
+      const status = String(row.status ?? row.queue_status ?? '').trim().toLowerCase();
+      if (!status) return true;
+      return !CANCELLED_STATUSES.has(status);
+    })
+    .map((row) =>
+      normalizeSlotTime(String(row.slot_time ?? row.appointment_time ?? row.time_slot ?? '')),
+    )
+    .filter(Boolean);
+}
+
+async function selectAppointmentsForDoctor(
+  supabase: SupabaseClient,
+  appointmentDate: string,
+  keys: string[],
+): Promise<Array<Record<string, unknown>>> {
+  let columns = [...DOCTOR_MATCH_COLUMNS];
+  for (let attempt = 0; attempt < columns.length; attempt += 1) {
+    const filter = doctorScopeFilter(keys, columns);
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('appointment_time, slot_time, time_slot, status, queue_status')
+      .eq('appointment_date', appointmentDate)
+      .or(filter);
+
+    if (!error) return (data ?? []) as Array<Record<string, unknown>>;
+
+    const missing = missingFilterColumn(error.message);
+    if (!missing || !columns.includes(missing as (typeof DOCTOR_MATCH_COLUMNS)[number])) {
+      console.warn('[fetchDoctorBookedSlotTimes]', error.message);
+      return [];
+    }
+    columns = columns.filter((column) => column !== missing);
+  }
+  return [];
+}
+
 export async function fetchDoctorBookedSlotTimes(
   supabase: SupabaseClient,
   doctorId: string,
   appointmentDate: string,
+  identity?: DoctorSlotIdentity,
 ): Promise<string[]> {
-  if (!doctorId || !appointmentDate) return [];
+  const keys = uniqueDoctorKeys(doctorId, identity);
+  const doctorName = String(identity?.name ?? '').trim();
+  if ((!keys.length && !doctorName) || !appointmentDate) return [];
 
-  const { data, error } = await supabase
-    .from('appointments')
-    .select('appointment_time, slot_time, time_slot, status')
-    .eq('appointment_date', appointmentDate)
-    .or(doctorScopeFilter(doctorId));
+  const byId = keys.length
+    ? await selectAppointmentsForDoctor(supabase, appointmentDate, keys)
+    : [];
 
-  if (error) {
-    console.warn('[fetchDoctorBookedSlotTimes]', error.message);
-    return [];
+  let byName: Array<Record<string, unknown>> = [];
+  if (doctorName) {
+    const named = await supabase
+      .from('appointments')
+      .select('appointment_time, slot_time, time_slot, status, queue_status')
+      .eq('appointment_date', appointmentDate)
+      .ilike('doctor_name', doctorName);
+    if (!named.error) {
+      byName = (named.data ?? []) as Array<Record<string, unknown>>;
+    }
   }
 
-  return (data ?? [])
-    .filter((row) => {
-      const status = String((row as Record<string, unknown>).status ?? '').toLowerCase();
-      return status && !CANCELLED_STATUSES.has(status);
-    })
-    .map((row) => {
-      const record = row as Record<string, unknown>;
-      return normalizeSlotTime(
-        String(record.slot_time ?? record.appointment_time ?? record.time_slot ?? ''),
-      );
-    })
-    .filter(Boolean);
+  return Array.from(new Set([...activeBookedTimes(byId), ...activeBookedTimes(byName)]));
 }
 
 export async function loadDynamicDoctorSchedule(
@@ -73,8 +135,14 @@ export async function loadDynamicDoctorSchedule(
   doctorId: string,
   appointmentDate: string,
   clinicalReason?: string,
+  identity?: DoctorSlotIdentity,
 ): Promise<{ slots: DynamicSlot[]; bookedTimes: string[] }> {
-  const bookedTimes = await fetchDoctorBookedSlotTimes(supabase, doctorId, appointmentDate);
+  const bookedTimes = await fetchDoctorBookedSlotTimes(
+    supabase,
+    doctorId,
+    appointmentDate,
+    identity,
+  );
   const slots = generateDynamicSlots({
     appointmentDate,
     bookedTimes,
@@ -89,6 +157,8 @@ export async function assertSlotAvailableForBooking(
     doctorId: string;
     appointmentDate: string;
     slotTime: string;
+    doctorIds?: Array<string | null | undefined>;
+    doctorName?: string | null;
   },
 ): Promise<void> {
   const normalized = normalizeSlotTime(input.slotTime);
@@ -104,6 +174,7 @@ export async function assertSlotAvailableForBooking(
     supabase,
     input.doctorId,
     input.appointmentDate,
+    { ids: input.doctorIds, name: input.doctorName },
   );
 
   if (bookedTimes.some((booked) => slotTimesMatch(booked, normalized))) {

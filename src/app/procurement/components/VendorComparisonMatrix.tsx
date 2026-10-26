@@ -17,7 +17,7 @@ export default function VendorComparisonMatrix({ rfq }: VendorComparisonMatrixPr
   if (rfq.bids.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-xs text-slate-800">
-        Awaiting vendor bids from external Vendor AppΓÇª
+        Awaiting vendor bids from external Vendor App…
       </div>
     );
   }
@@ -31,10 +31,10 @@ export default function VendorComparisonMatrix({ rfq }: VendorComparisonMatrixPr
           Vendor Comparison Matrix
         </p>
         <p className="text-xs font-bold text-white">
-          {rfq.rfqNumber} ┬╖ {rfq.itemName}
+          {rfq.rfqNumber} · {rfq.itemName}
         </p>
         <p className="font-mono text-[10px] text-slate-800">
-          Qty {rfq.quantity} {rfq.unit} ┬╖ {rfq.department}
+          Qty {rfq.quantity} {rfq.unit} · {rfq.department}
         </p>
       </div>
 

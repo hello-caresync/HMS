@@ -194,7 +194,7 @@ export function CollapsibleSection({
         <span className="text-[11px] font-bold text-[#0F172A]">{title}</span>
         <span className="flex items-center gap-2">
           {badge}
-          <span className="text-[10px] text-slate-400">{open ? 'Γû╛' : 'Γû╕'}</span>
+          <span className="text-[10px] text-slate-400">{open ? '▾' : '▸'}</span>
         </span>
       </button>
       {open && <div className="border-t border-slate-100 p-3">{children}</div>}

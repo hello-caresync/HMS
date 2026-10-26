@@ -86,7 +86,7 @@ export default function BedBlockCard({
         <span className="font-mono text-[10px] font-bold text-emerald-800">{bed.bedLabel}</span>
         <Sparkles className="h-3 w-3 text-emerald-500" />
       </div>
-      <p className="mt-auto text-[9px] font-semibold text-emerald-700">Available ┬╖ Cleaned</p>
+      <p className="mt-auto text-[9px] font-semibold text-emerald-700">Available · Cleaned</p>
       <p className="text-[8px] text-emerald-600">{formatCurrency(dailyRate)}/day</p>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { Calendar, CheckCircle2, Circle, Clock, Stethoscope } from 'lucide-react';
 
+import { displayClinicalText } from '@/lib/clinical/clinical-text';
 import type { PendingConsultation } from '@/lib/patient/prescriptions-feed';
 
 function formatDisplayDate(value: string): string {
@@ -98,8 +99,9 @@ export function PendingConsultationCard({ consultation }: PendingConsultationCar
             <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               Reported issue
             </p>
-            <p className="mt-1 text-sm font-medium text-slate-900">
-              {consultation.reported_symptoms?.trim() || 'General consultation requested'}
+            <p className="mt-1 line-clamp-4 break-words text-sm font-medium text-slate-900">
+              {displayClinicalText(consultation.reported_symptoms || '') ||
+                'General consultation requested'}
             </p>
           </div>
           <div className="rounded-xl border border-dashed border-sky-200 bg-sky-50/50 px-3 py-2.5">

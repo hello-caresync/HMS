@@ -18,7 +18,7 @@ export default function PurchaseOrdersView({ purchaseOrdersList }: PurchaseOrder
             </div>
             <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-md">{po.status}</span>
           </div>
-          <p className="text-xs text-slate-800 font-bold">≡ƒôì Destination: <span className="text-slate-900 font-medium">{po.deliveryAddress}</span></p>
+          <p className="text-xs text-slate-800 font-bold">📍 Destination: <span className="text-slate-900 font-medium">{po.deliveryAddress}</span></p>
         </div>
       ))}
     </div>

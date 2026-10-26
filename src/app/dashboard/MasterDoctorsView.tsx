@@ -30,7 +30,7 @@ const SEED_DOCTORS: Doctor[] = [
     name: 'Dr. Anita Roy',
     department: 'Cardiology',
     specialization: 'Interventional Cardiology',
-    opdTiming: 'MonΓÇôFri ┬╖ 09:00ΓÇô13:00',
+    opdTiming: 'Mon–Fri · 09:00–13:00',
     allocation: 'Full',
   },
   {
@@ -38,7 +38,7 @@ const SEED_DOCTORS: Doctor[] = [
     name: 'Dr. B. J. Joseph',
     department: 'Orthopedics',
     specialization: 'Joint Replacement',
-    opdTiming: 'MonΓÇôSat ┬╖ 14:00ΓÇô18:00',
+    opdTiming: 'Mon–Sat · 14:00–18:00',
     allocation: 'Full',
   },
   {
@@ -46,7 +46,7 @@ const SEED_DOCTORS: Doctor[] = [
     name: 'Dr. Meera Iyer',
     department: 'Pediatrics',
     specialization: 'Neonatology',
-    opdTiming: 'TueΓÇôSun ┬╖ 10:00ΓÇô14:00',
+    opdTiming: 'Tue–Sun · 10:00–14:00',
     allocation: 'Partial',
   },
   {
@@ -54,7 +54,7 @@ const SEED_DOCTORS: Doctor[] = [
     name: 'Dr. Rajesh Kumar',
     department: 'General Medicine',
     specialization: 'Internal Medicine',
-    opdTiming: 'Daily ┬╖ 08:00ΓÇô12:00',
+    opdTiming: 'Daily · 08:00–12:00',
     allocation: 'On-Call',
   },
 ];
@@ -132,7 +132,7 @@ export default function MasterDoctorsView() {
         }
       />
 
-      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search clinicians, specializationΓÇª" />
+      <MasterSearchBar value={search} onChange={setSearch} placeholder="Search clinicians, specialization…" />
 
       <MasterTabBar
         tabs={DEPT_TABS.map((d) => ({ id: d, label: d }))}
@@ -192,7 +192,7 @@ export default function MasterDoctorsView() {
               className={masterInputClass}
               value={form.opdTiming}
               onChange={(e) => setForm((f) => ({ ...f, opdTiming: e.target.value }))}
-              placeholder="MonΓÇôFri ┬╖ 09:00ΓÇô13:00"
+              placeholder="Mon–Fri · 09:00–13:00"
             />
           </MasterField>
           <MasterField label="Allocation Status">

@@ -29,7 +29,7 @@ export default function SmartSubstitutionPanel({ orderId, line, onClose }: Smart
       <div className="flex items-center justify-between border-b border-violet-100 px-3 py-1.5">
         <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-violet-700">
           <ArrowRightLeft className="h-3 w-3" />
-          Smart Substitution ┬╖ {line.genericName}
+          Smart Substitution · {line.genericName}
         </p>
         <button
           type="button"
@@ -40,7 +40,7 @@ export default function SmartSubstitutionPanel({ orderId, line, onClose }: Smart
         </button>
       </div>
       <p className="px-3 py-1.5 text-[10px] text-violet-600">
-        Same generic ┬╖ different brand ΓÇö select to swap line item
+        Same generic · different brand — select to swap line item
       </p>
       <ul className="divide-y divide-violet-100">
         {alternatives.map((alt) => {
@@ -61,7 +61,7 @@ export default function SmartSubstitutionPanel({ orderId, line, onClose }: Smart
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-slate-900">{alt.brandName}</p>
                   <p className="font-mono text-[10px] text-slate-800">
-                    Batch {alt.batchNumber} ┬╖ Exp {alt.expiryDate} ┬╖ {alt.stockCount} {alt.unit}
+                    Batch {alt.batchNumber} · Exp {alt.expiryDate} · {alt.stockCount} {alt.unit}
                   </p>
                 </div>
                 {low && (

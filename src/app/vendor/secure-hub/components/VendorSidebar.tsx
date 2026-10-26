@@ -86,7 +86,7 @@ export default function VendorSidebar({
           Open hospital console
         </Link>
         <p className="text-center font-mono text-[10px] font-black text-white/60">
-          node ┬╖ curasync-vendor
+          node · curasync-vendor
         </p>
       </div>
     </aside>

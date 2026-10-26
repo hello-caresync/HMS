@@ -43,7 +43,7 @@ export default function WorkflowBuilderTab({
   return (
     <div className="flex flex-col gap-4 xl:flex-row">
       <div className="w-full shrink-0 xl:w-[35%]">
-        <SettingsPanel title="Structural Master Registries Tree" subtitle="Hospital ┬╖ branches ┬╖ localization ┬╖ module toggles ┬╖ process profiles" icon={FolderTree}>
+        <SettingsPanel title="Structural Master Registries Tree" subtitle="Hospital · branches · localization · module toggles · process profiles" icon={FolderTree}>
           <nav className="max-h-[640px] overflow-y-auto">
             {REGISTRY_CONFIG_TREE.map((group) => (
               <div key={group.id} className="mb-2">
@@ -107,7 +107,7 @@ export default function WorkflowBuilderTab({
         )}
 
         {selectedNode === 'workflow-approvals' && (
-          <SettingsPanel title="Workflow & Approval Rules" subtitle="PR ┬╖ discount ┬╖ vendor ┬╖ OT ┬╖ controlled drug logic" icon={GitBranch}>
+          <SettingsPanel title="Workflow & Approval Rules" subtitle="PR · discount · vendor · OT · controlled drug logic" icon={GitBranch}>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
@@ -134,7 +134,7 @@ export default function WorkflowBuilderTab({
         )}
 
         {selectedNode === 'billing-tax' && (
-          <SettingsPanel title="GST/CGST Tax Structure Preview" subtitle="Intra-state ┬╖ inter-state ┬╖ concession rules" secure>
+          <SettingsPanel title="GST/CGST Tax Structure Preview" subtitle="Intra-state · inter-state · concession rules" secure>
             <div className="grid gap-3 sm:grid-cols-3">
               {[
                 { label: 'CGST', value: '9%', tone: 'text-[#2563EB]' },

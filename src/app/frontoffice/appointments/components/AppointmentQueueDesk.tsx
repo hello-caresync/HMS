@@ -30,7 +30,7 @@ export default function AppointmentQueueDesk() {
       <header className="border-b-2 border-slate-200 pb-3">
         <h1 className="text-lg font-black text-slate-900">Live Appointment Queue Tracker</h1>
         <p className="text-xs text-slate-800">
-          Phase 2 ┬╖ Module 6 ┬╖ Front Office traffic control desk
+          Phase 2 · Module 6 · Front Office traffic control desk
         </p>
       </header>
 

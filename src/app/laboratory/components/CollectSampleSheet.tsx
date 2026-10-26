@@ -39,7 +39,7 @@ export default function CollectSampleSheet({ order, open, onClose }: CollectSamp
     <Sheet
       open={open}
       title="Collect Sample"
-      description={`${order.patientName} ┬╖ ${order.uhid}`}
+      description={`${order.patientName} · ${order.uhid}`}
       onClose={handleClose}
       width="md"
     >
@@ -77,7 +77,7 @@ export default function CollectSampleSheet({ order, open, onClose }: CollectSamp
           <>
             <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
-              Sample collected ┬╖ {sampleType}
+              Sample collected · {sampleType}
             </div>
             {barcode && (
               <BarcodeLabel

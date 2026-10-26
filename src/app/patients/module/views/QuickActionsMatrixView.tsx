@@ -25,7 +25,7 @@ export default function QuickActionsMatrixView({ selectedUhid, onOpenModal }: Qu
       <div>
         <h2 className="text-sm font-bold text-[#0F172A]">Quick Actions Matrix</h2>
         <p className="text-[10px] text-slate-500">
-          Fast triggers for front desk ┬╖ Active patient:{' '}
+          Fast triggers for front desk · Active patient:{' '}
           <span className="font-mono font-semibold text-[#2563EB]">{patient?.uhid ?? 'None selected'}</span>
         </p>
       </div>
@@ -49,9 +49,9 @@ export default function QuickActionsMatrixView({ selectedUhid, onOpenModal }: Qu
 
       <PatientPanel title="Action Log" icon={Zap}>
         <ul className="space-y-1 text-[10px] text-slate-600">
-          <li>11:04 ΓÇö Patient card printed ┬╖ NX-2026-000412 ┬╖ Desk-02</li>
-          <li>09:28 ΓÇö Barcode label generated ┬╖ specimen collection</li>
-          <li>08:15 ΓÇö QR code issued ┬╖ kiosk check-in enabled</li>
+          <li>11:04 — Patient card printed · NX-2026-000412 · Desk-02</li>
+          <li>09:28 — Barcode label generated · specimen collection</li>
+          <li>08:15 — QR code issued · kiosk check-in enabled</li>
         </ul>
       </PatientPanel>
     </div>
@@ -72,10 +72,10 @@ export function QuickActionModalContent({
       <div className="space-y-3">
         <p className="text-[10px] text-slate-600">
           Send templated SMS to <span className="font-semibold text-[#0F172A]">{patientName}</span>
-          {uhid !== 'ΓÇö' && <span className="font-mono text-[#2563EB]"> ┬╖ {uhid}</span>}
+          {uhid !== '—' && <span className="font-mono text-[#2563EB]"> · {uhid}</span>}
         </p>
         <select className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-[11px]">
-          <option>Appointment reminder ΓÇö Cardiology follow-up</option>
+          <option>Appointment reminder — Cardiology follow-up</option>
           <option>Lab report available notification</option>
           <option>Outstanding balance reminder</option>
           <option>Discharge instructions summary</option>
@@ -83,7 +83,7 @@ export function QuickActionModalContent({
         <textarea
           className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-[11px]"
           rows={3}
-          defaultValue="Dear patient, your appointment at Regal Central Hospital is scheduled for 18 Jul, 10:00 AM ΓÇö Cardiology OPD Block A."
+          defaultValue="Dear patient, your appointment at Regal Central Hospital is scheduled for 18 Jul, 10:00 AM — Cardiology OPD Block A."
         />
         <button type="button" className="w-full rounded-md bg-[#2563EB] py-2 text-[11px] font-bold text-white">
           Queue SMS for Delivery
@@ -105,7 +105,7 @@ export function QuickActionModalContent({
             ))}
           </div>
         </div>
-        <p className="text-[10px] text-slate-500">Preview ΓÇö send to label printer at Desk-02</p>
+        <p className="text-[10px] text-slate-500">Preview — send to label printer at Desk-02</p>
         <button type="button" className="w-full rounded-md bg-[#2563EB] py-2 text-[11px] font-bold text-white">
           Send to Printer
         </button>
@@ -136,7 +136,7 @@ export function QuickActionModalContent({
         <QrCode className="h-16 w-16 text-[#0F172A]" />
       </div>
       <p className="text-[10px] text-slate-600">
-        Secure QR encodes tokenized patient reference ΓÇö no raw PII embedded
+        Secure QR encodes tokenized patient reference — no raw PII embedded
       </p>
       <p className="font-mono text-[10px] text-[#2563EB]">{uhid}</p>
       <button type="button" className="w-full rounded-md bg-[#2563EB] py-2 text-[11px] font-bold text-white">

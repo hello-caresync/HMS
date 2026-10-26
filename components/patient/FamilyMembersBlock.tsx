@@ -14,6 +14,29 @@ import {
 const inputClass =
   'w-full rounded-lg border border-[#EADBCE] bg-white px-3 py-2 text-xs font-medium text-[#2B1810] focus:border-[#8C5A3C] focus:outline-none focus:ring-2 focus:ring-[#8C5A3C]/20';
 
+const NAME_MAX = 40;
+
+function sanitizeDependentName(value: string): string {
+  return value.replace(/[^A-Za-z\s]/g, '').replace(/ {2,}/g, ' ').slice(0, NAME_MAX);
+}
+
+function dependentNameIsValid(value: string): boolean {
+  const name = value.trim().replace(/ {2,}/g, ' ');
+  return name.length >= 2 && /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(name);
+}
+
+function dependentAgeNumber(value: string): number | null {
+  if (!/^\d{1,3}$/.test(value.trim())) return null;
+  const age = Number(value);
+  if (!Number.isInteger(age) || age < 1 || age > 120) return null;
+  return age;
+}
+
+function displayDependentName(value: string): string {
+  const cleaned = value.replace(/[^A-Za-z\s]/g, '').replace(/\s+/g, ' ').trim();
+  return cleaned || 'Name needs letters only';
+}
+
 type FamilyMembersBlockProps = {
   members: FamilyMember[];
   onChange: (members: FamilyMember[]) => void;
@@ -24,21 +47,24 @@ export function FamilyMembersBlock({ members, onChange, disabled = false }: Fami
   const [showAddMember, setShowAddMember] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState(createEmptyFamilyMemberDraft());
+  const [formError, setFormError] = useState('');
 
   const openAdd = () => {
     setDraft(createEmptyFamilyMemberDraft());
+    setFormError('');
     setEditingId(null);
     setShowAddMember(true);
   };
 
   const openEdit = (member: FamilyMember) => {
     setDraft({
-      fullName: member.fullName,
+      fullName: sanitizeDependentName(member.fullName).trim(),
       relationship: member.relationship,
-      age: member.age,
+      age: member.age.replace(/\D/g, '').slice(0, 3),
       gender: member.gender,
       bloodGroup: member.bloodGroup || '',
     });
+    setFormError('');
     setEditingId(member.id);
     setShowAddMember(true);
   };
@@ -46,11 +72,29 @@ export function FamilyMembersBlock({ members, onChange, disabled = false }: Fami
   const closeModal = () => {
     setShowAddMember(false);
     setEditingId(null);
+    setFormError('');
     setDraft(createEmptyFamilyMemberDraft());
   };
 
   const saveMember = () => {
-    if (!draft.fullName.trim()) return;
+    const fullName = draft.fullName.trim().replace(/ {2,}/g, ' ');
+    const age = dependentAgeNumber(draft.age);
+    if (!dependentNameIsValid(fullName)) {
+      setFormError('Enter a name using letters and spaces only.');
+      return;
+    }
+    if (age == null) {
+      setFormError('Enter an age from 1 to 120.');
+      return;
+    }
+
+    const saved = {
+      fullName,
+      relationship: draft.relationship,
+      age: String(age),
+      gender: draft.gender,
+      bloodGroup: draft.bloodGroup?.trim() || undefined,
+    };
 
     if (editingId) {
       onChange(
@@ -58,11 +102,7 @@ export function FamilyMembersBlock({ members, onChange, disabled = false }: Fami
           member.id === editingId
             ? {
                 id: member.id,
-                fullName: draft.fullName.trim(),
-                relationship: draft.relationship,
-                age: draft.age.trim(),
-                gender: draft.gender,
-                bloodGroup: draft.bloodGroup?.trim() || undefined,
+                ...saved,
               }
             : member,
         ),
@@ -72,11 +112,7 @@ export function FamilyMembersBlock({ members, onChange, disabled = false }: Fami
         ...members,
         {
           id: crypto.randomUUID(),
-          fullName: draft.fullName.trim(),
-          relationship: draft.relationship,
-          age: draft.age.trim(),
-          gender: draft.gender,
-          bloodGroup: draft.bloodGroup?.trim() || undefined,
+          ...saved,
         },
       ]);
     }
@@ -131,10 +167,17 @@ export function FamilyMembersBlock({ members, onChange, disabled = false }: Fami
                   className="flex items-center justify-between rounded-xl border border-[#EADBCE] bg-[#FAF6F0]/40 p-3.5"
                 >
                   <div>
-                    <h4 className="text-xs font-bold text-[#2B1810]">{member.fullName}</h4>
+                    <h4 className="break-words text-xs font-bold text-[#2B1810]">
+                      {displayDependentName(member.fullName)}
+                    </h4>
                     <p className="text-[11px] text-[#7C5C48]">
                       {member.relationship}
-                      {member.age ? ` • ${member.age} yrs` : ''} • {member.gender}
+                      {' • '}
+                      {dependentAgeNumber(member.age) != null
+                        ? `${dependentAgeNumber(member.age)} yrs`
+                        : 'Age not recorded'}
+                      {' • '}
+                      {member.gender}
                       {member.bloodGroup ? ` • ${member.bloodGroup}` : ''}
                     </p>
                   </div>
@@ -195,10 +238,18 @@ export function FamilyMembersBlock({ members, onChange, disabled = false }: Fami
                 <input
                   type="text"
                   value={draft.fullName}
-                  onChange={(e) => setDraft((current) => ({ ...current, fullName: e.target.value }))}
+                  maxLength={NAME_MAX}
+                  onChange={(e) => {
+                    setFormError('');
+                    setDraft((current) => ({
+                      ...current,
+                      fullName: sanitizeDependentName(e.target.value),
+                    }));
+                  }}
                   className={inputClass}
-                  placeholder="Dependent full name"
+                  placeholder="e.g. Full name"
                 />
+                <p className="mt-1 text-[10px] text-stone-500">Letters and spaces only, up to 40 characters.</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -227,14 +278,21 @@ export function FamilyMembersBlock({ members, onChange, disabled = false }: Fami
                     Age
                   </label>
                   <input
-                    type="number"
-                    min={0}
-                    max={120}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={3}
                     value={draft.age}
-                    onChange={(e) => setDraft((current) => ({ ...current, age: e.target.value }))}
+                    onChange={(e) => {
+                      setFormError('');
+                      setDraft((current) => ({
+                        ...current,
+                        age: e.target.value.replace(/\D/g, '').slice(0, 3),
+                      }));
+                    }}
                     className={inputClass}
-                    placeholder="Age"
+                    placeholder="1–120"
                   />
+                  <p className="mt-1 text-[10px] text-stone-500">Required. 1 to 120, up to 3 digits.</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -279,6 +337,10 @@ export function FamilyMembersBlock({ members, onChange, disabled = false }: Fami
               </div>
             </div>
 
+            {formError ? (
+              <p className="mt-3 text-[11px] font-semibold text-rose-700">{formError}</p>
+            ) : null}
+
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
@@ -290,7 +352,7 @@ export function FamilyMembersBlock({ members, onChange, disabled = false }: Fami
               <button
                 type="button"
                 onClick={saveMember}
-                disabled={!draft.fullName.trim()}
+                disabled={!dependentNameIsValid(draft.fullName) || dependentAgeNumber(draft.age) == null}
                 className="rounded-xl bg-[#8C5A3C] px-4 py-2 text-xs font-bold text-white hover:bg-[#6F4E37] disabled:opacity-50"
               >
                 {editingId ? 'Update Member' : 'Add Member'}

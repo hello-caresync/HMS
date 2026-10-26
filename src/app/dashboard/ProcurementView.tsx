@@ -11,8 +11,8 @@ export default function ProcurementView() {
   const [tab, setTab] = useState<ProcTab>('po');
   const [search, setSearch] = useState('');
   const [pos, setPos] = useState([
-    { id: 'PO-4412', vendor: 'MedSupply Co.', amount: 'Γé╣2,40,000', status: 'Awaiting GRN' },
-    { id: 'PO-4413', vendor: 'SurgicalMart', amount: 'Γé╣88,000', status: 'Approved' },
+    { id: 'PO-4412', vendor: 'MedSupply Co.', amount: '₹2,40,000', status: 'Awaiting GRN' },
+    { id: 'PO-4413', vendor: 'SurgicalMart', amount: '₹88,000', status: 'Approved' },
   ]);
 
   return (
@@ -54,7 +54,7 @@ export default function ProcurementView() {
                 {
                   id: `PO-${4414 + rows.length}`,
                   vendor: 'New Vendor',
-                  amount: 'Γé╣50,000',
+                  amount: '₹50,000',
                   status: 'Draft',
                 },
                 ...rows,
@@ -71,7 +71,7 @@ export default function ProcurementView() {
           <DataTable
             columns={['Req', 'Department', 'Stage']}
             rows={[
-              ['REQ-881', 'Pharmacy', 'HOD Approved ΓåÆ Finance'],
+              ['REQ-881', 'Pharmacy', 'HOD Approved → Finance'],
               ['REQ-882', 'OT', 'Pending HOD'],
             ]}
           />
@@ -82,8 +82,8 @@ export default function ProcurementView() {
           <DataTable
             columns={['Vendor', 'Quote', 'Lead Time', 'Score']}
             rows={[
-              ['MedSupply Co.', 'Γé╣2,38,000', '5 days', '92'],
-              ['HealthProc Ltd.', 'Γé╣2,45,000', '3 days', '88'],
+              ['MedSupply Co.', '₹2,38,000', '5 days', '92'],
+              ['HealthProc Ltd.', '₹2,45,000', '3 days', '88'],
             ]}
           />
         </Panel>

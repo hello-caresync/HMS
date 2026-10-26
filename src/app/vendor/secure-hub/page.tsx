@@ -43,7 +43,7 @@ function VendorSecureHubLanding() {
               href={APP_ROUTES.vendorSecureHubPoInbox}
               className="mt-5 inline-flex rounded-xl border border-amber-500/30 bg-amber-500 px-5 py-3 text-xs font-bold text-[#0F172A] transition-all hover:bg-amber-400"
             >
-              Open PO Detail Corridor ΓåÆ
+              Open PO Detail Corridor →
             </Link>
           </section>
 
@@ -59,7 +59,7 @@ function VendorSecureHubLanding() {
                 </p>
                 <h3 className="mt-2 text-sm font-black text-white">{item.label}</h3>
                 <span className="mt-3 inline-block text-xs font-bold text-amber-500 transition-transform group-hover:translate-x-1">
-                  Enter workspace ΓåÆ
+                  Enter workspace →
                 </span>
               </Link>
             ))}
@@ -67,10 +67,10 @@ function VendorSecureHubLanding() {
 
           <footer className="flex flex-wrap gap-4 border-t border-amber-500/10 pt-6 text-xs font-semibold text-slate-800">
             <Link href={APP_ROUTES.vendorGateway} className="hover:text-amber-500">
-              ΓåÉ Supplier gateway
+              ← Supplier gateway
             </Link>
             <Link href={APP_ROUTES.hospital} className="hover:text-amber-500">
-              Hospital console ΓåÆ
+              Hospital console →
             </Link>
           </footer>
         </div>

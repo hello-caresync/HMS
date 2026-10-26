@@ -156,7 +156,7 @@ function syncQueueFromAppointments(appointments: Appointment[]): QueueEntry[] {
         doctorId: a.doctorId,
         doctorName: a.doctorName,
         departmentId: a.departmentId,
-        assignedRoom: a.assignedRoom ?? dept?.roomLabel ?? 'ΓÇö',
+        assignedRoom: a.assignedRoom ?? dept?.roomLabel ?? '—',
         status: baseStatus,
         position,
         waitDurationMinutes,
@@ -300,7 +300,7 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
         channel,
         input.patientName,
         token
-          ? `Token ${token} assigned for ${doctor.name} ΓÇö est. wait ${wait} mins`
+          ? `Token ${token} assigned for ${doctor.name} — est. wait ${wait} mins`
           : `Appointment confirmed for ${input.startTime} slot`,
         'Delivered',
         input.startTime,
@@ -354,8 +354,8 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
       });
 
       const waitMsg = atCapacity
-        ? `placed on waiting list ΓÇö capacity breached (${dept.maxQueueCapacity} max)`
-        : `checked in ΓÇö proceed to ${dept.roomLabel}`;
+        ? `placed on waiting list — capacity breached (${dept.maxQueueCapacity} max)`
+        : `checked in — proceed to ${dept.roomLabel}`;
       pushCommLog(
         'SMS',
         input.patientName,
@@ -394,7 +394,7 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
           pushCommLog(
             'Email',
             apt.patientName,
-            `Cancellation notice ΓÇö ${apt.date} at ${apt.startTime} with ${apt.doctorName}`,
+            `Cancellation notice — ${apt.date} at ${apt.startTime} with ${apt.doctorName}`,
             'Delivered',
             apt.startTime,
           );
@@ -463,7 +463,7 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
         pushCommLog(
           'SMS',
           apt.patientName,
-          `Check-in confirmed. Token ${token} ΓÇö proceed to ${dept.roomLabel}`,
+          `Check-in confirmed. Token ${token} — proceed to ${dept.roomLabel}`,
           'Delivered',
           apt.startTime,
         );

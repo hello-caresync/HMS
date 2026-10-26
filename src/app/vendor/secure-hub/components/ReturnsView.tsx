@@ -41,20 +41,20 @@ export default function ReturnsView({
             >
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-xs text-slate-800">{ret?.id ?? 'ΓÇö'}</span>
+                  <span className="font-mono text-xs text-slate-800">{ret?.id ?? '—'}</span>
                   {ret?.status && <StatusBadge label={ret.status} />}
                 </div>
                 <h3 className="text-sm font-semibold text-slate-900">
                   {ret?.itemName ?? 'Item Cargo Manifest'}{' '}
                   <span className="font-normal text-slate-800">
-                    ├ù {ret?.quantityToReturn ?? 0}
+                    × {ret?.quantityToReturn ?? 0}
                   </span>
                 </h3>
                 <p className="text-xs text-slate-800">
-                  {ret?.hospitalName ?? 'Unknown Hospital'} ┬╖ PO {ret?.poReferenceId ?? 'ΓÇö'}
+                  {ret?.hospitalName ?? 'Unknown Hospital'} · PO {ret?.poReferenceId ?? '—'}
                 </p>
                 <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-900">
-                  {ret?.reason ?? 'ΓÇö'}
+                  {ret?.reason ?? '—'}
                 </p>
               </div>
 

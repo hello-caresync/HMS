@@ -253,7 +253,9 @@ export function useDoctorAppointmentsRealtime(doctorId: string) {
   };
 }
 
-type EmergencyAlertView = {
+export const EMERGENCY_CONTINUE_KEY = 'regal.emergency.continue';
+
+export type EmergencyAlertView = {
   id: string;
   source: 'alert' | 'triage';
   severity?: string;
@@ -265,34 +267,90 @@ type EmergencyAlertView = {
   emergency_contact?: string;
   vitals_summary?: string;
   emergency_alert_id?: string;
+  assigned_doctor_name?: string;
+  assigned_email?: string;
+  assigned_employee_id?: string;
 };
+
+function readEmergencyAssignment(notes: string): {
+  name: string;
+  email: string;
+  employeeId: string;
+  message: string;
+} {
+  const [first = '', ...rest] = notes.split('\n');
+  const header = first.match(/^TO:(.*)$/);
+  if (!header) return { name: '', email: '', employeeId: '', message: notes.trim() };
+  const [name = '', email = '', employeeId = ''] = header[1].split('|');
+  return {
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
+    employeeId: employeeId.trim(),
+    message: rest.join('\n').trim(),
+  };
+}
+
+function sameDoctorName(left: string, right: string): boolean {
+  const normalize = (value: string) => value.toLowerCase().replace(/^dr\.?\s+/, '').replace(/\s+/g, ' ').trim();
+  const a = normalize(left);
+  const b = normalize(right);
+  return Boolean(a && b && (a === b || a.includes(b) || b.includes(a)));
+}
+
+export function emergencyAssignedToDoctor(
+  alert: Pick<EmergencyAlertView, 'source' | 'assigned_doctor_name' | 'assigned_email' | 'assigned_employee_id'>,
+  doctor: { doctorName?: string; fullName?: string; email?: string; employeeId?: string },
+): boolean {
+  if (alert.source && alert.source !== 'alert') return false;
+  if (!alert.assigned_doctor_name && !alert.assigned_email && !alert.assigned_employee_id) return false;
+  const email = String(doctor.email ?? '').trim().toLowerCase();
+  if (alert.assigned_email && email && alert.assigned_email === email) return true;
+  const code = String(doctor.employeeId ?? '').trim();
+  if (alert.assigned_employee_id && code && alert.assigned_employee_id === code) return true;
+  return sameDoctorName(alert.assigned_doctor_name ?? '', doctor.doctorName || doctor.fullName || '');
+}
+
+function emergencySeverityLabel(value: unknown): string {
+  const raw = String(value ?? '');
+  if (/red|critical|p1/i.test(raw)) return 'CRITICAL';
+  if (/yellow|urgent|p2/i.test(raw)) return 'URGENT';
+  return raw.toUpperCase() || 'URGENT';
+}
+
+function emergencyStatusLabel(value: unknown): string {
+  const raw = String(value ?? '');
+  if (/active|pending/i.test(raw)) return 'ACTIVE';
+  if (/ack/i.test(raw)) return 'ACKNOWLEDGED';
+  if (/resolve|close/i.test(raw)) return 'RESOLVED';
+  return raw.toUpperCase() || 'ACTIVE';
+}
 
 export function useEmergencyAlertsRealtime(doctorId: string) {
   const [data, setData] = useState<EmergencyAlertView[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refetch = useCallback(async () => {
-    if (!doctorId) {
-      setData([]);
-      setIsLoading(false);
-      return;
-    }
-
     const [alertsRes, triageRes] = await Promise.all([
       supabase.from('emergency_alerts').select('*').order('created_at', { ascending: false }).limit(50),
       supabase.from('emergency_triage').select('*').order('created_at', { ascending: false }).limit(50),
     ]);
 
-    const alerts: EmergencyAlertView[] = (alertsRes.data ?? []).map((row: Record<string, unknown>) => ({
-      id: String(row.id ?? ''),
-      source: 'alert' as const,
-      severity: String(row.severity ?? ''),
-      status: String(row.status ?? ''),
-      patient_name: String(row.patient_name ?? row.patient_info ?? ''),
-      patient_id: String(row.patient_id ?? ''),
-      message: String(row.emergency_notes ?? row.place_description ?? ''),
-      location: String(row.place_description ?? ''),
-    }));
+    const alerts: EmergencyAlertView[] = (alertsRes.data ?? []).map((row: Record<string, unknown>) => {
+      const assignment = readEmergencyAssignment(String(row.emergency_notes ?? ''));
+      return {
+        id: String(row.id ?? ''),
+        source: 'alert' as const,
+        severity: emergencySeverityLabel(row.severity),
+        status: emergencyStatusLabel(row.status),
+        patient_name: String(row.patient_name ?? row.patient_info ?? ''),
+        patient_id: String(row.patient_id ?? ''),
+        message: assignment.message || String(row.place_description ?? ''),
+        location: String(row.emergency_location ?? row.place_description ?? row.arrival ?? ''),
+        assigned_doctor_name: assignment.name,
+        assigned_email: assignment.email,
+        assigned_employee_id: assignment.employeeId,
+      };
+    });
 
     const triage: EmergencyAlertView[] = (triageRes.data ?? []).map((row: Record<string, unknown>) => ({
       id: String(row.id ?? ''),
@@ -309,7 +367,7 @@ export function useEmergencyAlertsRealtime(doctorId: string) {
       (a, b) => (b.id > a.id ? 1 : -1),
     ));
     setIsLoading(false);
-  }, [doctorId]);
+  }, []);
 
   useEffect(() => {
     void refetch();
@@ -404,8 +462,18 @@ export function useEmergencyQueueBypass(doctorId: string) {
 export function useAcknowledgeEmergency() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (alertId: string) => {
-      const result = await acknowledgeEmergencyAlert(supabase, alertId);
+    mutationFn: async (
+      input: string | { alertId: string; assigned_doctor_id?: string; assigned_doctor_name?: string },
+    ) => {
+      const alertId = typeof input === 'string' ? input : input.alertId;
+      const options =
+        typeof input === 'string'
+          ? undefined
+          : {
+              assigned_doctor_id: input.assigned_doctor_id,
+              assigned_doctor_name: input.assigned_doctor_name,
+            };
+      const result = await acknowledgeEmergencyAlert(supabase, alertId, options);
       if (!result.ok) throw new Error(result.error ?? 'Acknowledge failed');
       return result.triageId;
     },

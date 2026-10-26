@@ -56,7 +56,7 @@ export function AuditedBanner() {
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[#0F172A]/20 bg-[#0F172A] px-3 py-1.5 text-white">
       <div className="flex items-center gap-2">
         <ShieldCheck className="h-4 w-4 text-emerald-400" />
-        <span className="text-[10px] font-semibold">Read-Only Operational Vault ΓÇö Medical Records ┬╖ Administration ┬╖ Quality Management</span>
+        <span className="text-[10px] font-semibold">Read-Only Operational Vault — Medical Records · Administration · Quality Management</span>
       </div>
       <ViewOnlyBadge />
     </div>

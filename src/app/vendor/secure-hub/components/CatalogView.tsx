@@ -40,7 +40,7 @@ export default function CatalogView({ catalog }: CatalogProps) {
               <div>
                 <p className={overlineClassName}>SKU</p>
                 <p className="font-mono text-xs font-black text-slate-950">
-                  {prod?.id ?? 'ΓÇö'}
+                  {prod?.id ?? '—'}
                 </p>
                 <h3 className={`${sectionTitleClassName} mt-1`}>
                   {prod?.name ?? 'Unnamed product'}
@@ -51,13 +51,13 @@ export default function CatalogView({ catalog }: CatalogProps) {
                 <div>
                   <p className={overlineClassName}>HSN code</p>
                   <p className="mt-1 font-mono text-sm font-black text-slate-950">
-                    {prod?.hsnCode ?? 'ΓÇö'}
+                    {prod?.hsnCode ?? '—'}
                   </p>
                 </div>
                 <div>
                   <p className={overlineClassName}>Contract rate</p>
                   <p className="mt-1 font-mono text-sm font-black text-blue-700">
-                    Γé╣{prod?.price ?? 0}/unit
+                    ₹{prod?.price ?? 0}/unit
                   </p>
                 </div>
               </div>

@@ -288,7 +288,7 @@ export default function PatientView() {
                         <div className="flex flex-col gap-0.5">
                           {patient.familyMembers.map((member) => (
                             <span key={member} className="text-[11px] font-medium text-slate-400">
-                              ΓÇó {member}
+                              • {member}
                             </span>
                           ))}
                         </div>
@@ -391,7 +391,7 @@ export default function PatientView() {
               {generatedUhid && (
                 <div className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-900/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300">
                   <ShieldCheck className="h-4 w-4" />
-                  UHID committed to Core Registry ΓÇö redirecting to master index...
+                  UHID committed to Core Registry — redirecting to master index...
                 </div>
               )}
             </div>

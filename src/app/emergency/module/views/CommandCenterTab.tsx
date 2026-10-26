@@ -85,7 +85,7 @@ export default function CommandCenterTab({
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-12">
         <ErPanel
           title="Live Triage Stream"
-          subtitle="Priority ┬╖ chief complaint ┬╖ GCS ┬╖ MLC flags"
+          subtitle="Priority · chief complaint · GCS · MLC flags"
           icon={ListOrdered}
           className="xl:col-span-7"
           critical={filteredTriage.some((t) => t.priority === 'Critical')}
@@ -130,7 +130,7 @@ export default function CommandCenterTab({
                         onClick={() => onBumpTriage(t.id)}
                         className="rounded bg-orange-100 px-1.5 py-0.5 text-[8px] font-bold text-orange-800 hover:bg-orange-200"
                       >
-                        Γåæ Escalate
+                        ↑ Escalate
                       </button>
                     )}
                   </td>
@@ -142,7 +142,7 @@ export default function CommandCenterTab({
 
         <ErPanel
           title="ER Bed & Treatment Queue"
-          subtitle="Observation ┬╖ trauma ┬╖ resus ┬╖ code blue"
+          subtitle="Observation · trauma · resus · code blue"
           icon={BedDouble}
           className="xl:col-span-5"
           critical={codeBlueActive}
@@ -156,12 +156,12 @@ export default function CommandCenterTab({
                 <div className="flex items-start justify-between gap-1">
                   <div>
                     <p className="text-[10px] font-bold text-[#0F172A]">
-                      {bed.bedLabel} ┬╖ {bed.bay}
+                      {bed.bedLabel} · {bed.bay}
                     </p>
                     {bed.patientName ? (
                       <>
                         <p className="text-[9px] font-semibold">{bed.patientName}</p>
-                        <p className="text-[8px] text-slate-500">{bed.assignedDoctor} ┬╖ {bed.assignedNurse}</p>
+                        <p className="text-[8px] text-slate-500">{bed.assignedDoctor} · {bed.assignedNurse}</p>
                       </>
                     ) : (
                       <p className="text-[8px] text-slate-400">Unoccupied</p>

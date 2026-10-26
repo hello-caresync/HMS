@@ -21,7 +21,7 @@ function VendorWorkspaceContent() {
           <p className="text-[10px] font-bold tracking-widest text-orange-600 uppercase">Vendor Workspace</p>
           <h1 className="mt-2 text-3xl font-black text-slate-900">{vendor?.company_name ?? 'Vendor Partner'}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {vendor?.rep_email} ΓÇó {vendor?.category ?? 'General Supplies'}
+            {vendor?.rep_email} • {vendor?.category ?? 'General Supplies'}
           </p>
         </div>
 
@@ -43,9 +43,9 @@ function VendorWorkspaceContent() {
         <div className="rounded-2xl border border-slate-200 bg-white p-6">
           <h2 className="text-lg font-bold text-slate-900">Recent Procurement Activity</h2>
           <ul className="mt-4 space-y-3 text-sm text-slate-600">
-            <li>PO-2026-1042 ΓÇó Antibiotics batch ΓÇó Awaiting dispatch confirmation</li>
-            <li>PO-2026-1038 ΓÇó Surgical consumables ΓÇó Delivered to central store</li>
-            <li>INV-2026-551 ΓÇó Invoice submitted ΓÇó Pending hospital finance approval</li>
+            <li>PO-2026-1042 • Antibiotics batch • Awaiting dispatch confirmation</li>
+            <li>PO-2026-1038 • Surgical consumables • Delivered to central store</li>
+            <li>INV-2026-551 • Invoice submitted • Pending hospital finance approval</li>
           </ul>
         </div>
       </div>

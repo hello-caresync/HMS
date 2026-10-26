@@ -80,7 +80,7 @@ export default function MasterDeptsView() {
       <MasterSearchBar
         value={search}
         onChange={setSearch}
-        placeholder="Search departments by name or route codeΓÇª"
+        placeholder="Search departments by name or route code…"
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

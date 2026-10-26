@@ -32,9 +32,9 @@ export type RegistryTreeNodeId =
   | 'insurance-tpa';
 
 export const MASTER_DATA_WORKSPACE_TABS: { id: MasterDataWorkspaceTab; label: string; description: string }[] = [
-  { id: 'foundation', label: 'Data Quality Dashboard & Hierarchy Setup', description: 'MDM KPIs ┬╖ org structure ┬╖ numbering ┬╖ quick actions' },
-  { id: 'registries', label: 'Module Registries & Mapping Matrix', description: 'Clinical/support masters ┬╖ charges ┬╖ rooms ┬╖ ancillary ┬╖ SCM' },
-  { id: 'audit', label: 'Audits, Data Quality & AI Intelligence', description: 'Workflow approvals ┬╖ audit ledger ┬╖ duplicate detection ┬╖ auto-merge' },
+  { id: 'foundation', label: 'Data Quality Dashboard & Hierarchy Setup', description: 'MDM KPIs · org structure · numbering · quick actions' },
+  { id: 'registries', label: 'Module Registries & Mapping Matrix', description: 'Clinical/support masters · charges · rooms · ancillary · SCM' },
+  { id: 'audit', label: 'Audits, Data Quality & AI Intelligence', description: 'Workflow approvals · audit ledger · duplicate detection · auto-merge' },
 ];
 
 export type RegistryTreeGroup = {

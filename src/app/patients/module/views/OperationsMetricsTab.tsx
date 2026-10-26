@@ -117,7 +117,7 @@ export default function OperationsMetricsTab({ onQuickAction, selectedUhid }: Op
         </PatientPanel>
       </div>
 
-      <PatientPanel title="Demographics & Analytics" icon={BarChart3} subtitle="Age ┬╖ gender ┬╖ admission trends ΓÇö navy palette">
+      <PatientPanel title="Demographics & Analytics" icon={BarChart3} subtitle="Age · gender · admission trends — navy palette">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           <div className="h-[140px]">
             <p className="mb-1 text-[9px] font-bold uppercase text-slate-400">Age Distribution</p>

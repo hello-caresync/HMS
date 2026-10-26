@@ -6,27 +6,27 @@ import { CLINICAL } from '../lib/theme';
 const SOAP_FIELDS = [
   {
     key: 'subjective' as const,
-    label: 'S ΓÇö Subjective',
+    label: 'S — Subjective',
     hint: 'Chief complaint, HPI, ROS',
-    placeholder: 'Patient reports intermittent chest discomfort on exertion for 3 daysΓÇª',
+    placeholder: 'Patient reports intermittent chest discomfort on exertion for 3 days…',
   },
   {
     key: 'objective' as const,
-    label: 'O ΓÇö Objective',
+    label: 'O — Objective',
     hint: 'Exam findings, vitals',
-    placeholder: 'BP 142/92, pulse 84 regular. No pedal edema. Heart sounds S1 S2 normalΓÇª',
+    placeholder: 'BP 142/92, pulse 84 regular. No pedal edema. Heart sounds S1 S2 normal…',
   },
   {
     key: 'assessment' as const,
-    label: 'A ΓÇö Assessment',
+    label: 'A — Assessment',
     hint: 'Diagnosis, differential',
-    placeholder: 'Likely stable angina vs. musculoskeletal chest wall painΓÇª',
+    placeholder: 'Likely stable angina vs. musculoskeletal chest wall pain…',
   },
   {
     key: 'plan' as const,
-    label: 'P ΓÇö Plan',
+    label: 'P — Plan',
     hint: 'Treatment, counselling',
-    placeholder: 'Continue antihypertensive. Order ECG, Lipid panel. Lifestyle counsellingΓÇª',
+    placeholder: 'Continue antihypertensive. Order ECG, Lipid panel. Lifestyle counselling…',
   },
 ];
 

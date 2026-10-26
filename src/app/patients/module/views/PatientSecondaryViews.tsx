@@ -58,18 +58,18 @@ export default function PatientSecondaryViews({ view, selectedUhid }: SecondaryV
 
   if (view === 'insurance-tpa') {
     return (
-      <ViewShell title="Insurance & TPA" subtitle="Policy details ┬╖ eligibility ┬╖ authorization status">
+      <ViewShell title="Insurance & TPA" subtitle="Policy details · eligibility · authorization status">
         <PatientPanel title="Active Policy" icon={Shield}>
           <dl className="grid grid-cols-2 gap-2 text-[10px]">
-            <div><dt className="text-slate-400">Policy ID</dt><dd className="font-mono font-semibold text-[#0F172A]">{patient?.insuranceId ?? 'ΓÇö'}</dd></div>
+            <div><dt className="text-slate-400">Policy ID</dt><dd className="font-mono font-semibold text-[#0F172A]">{patient?.insuranceId ?? '—'}</dd></div>
             <div><dt className="text-slate-400">Payer</dt><dd className="font-semibold text-[#0F172A]">Star Health Insurance</dd></div>
-            <div><dt className="text-slate-400">Sum Insured</dt><dd className="font-semibold text-[#0F172A]">Γé╣5,00,000</dd></div>
-            <div><dt className="text-slate-400">Room Eligibility</dt><dd className="font-semibold text-[#0F172A]">Single AC ΓÇö up to Γé╣8,000/day</dd></div>
+            <div><dt className="text-slate-400">Sum Insured</dt><dd className="font-semibold text-[#0F172A]">₹5,00,000</dd></div>
+            <div><dt className="text-slate-400">Room Eligibility</dt><dd className="font-semibold text-[#0F172A]">Single AC — up to ₹8,000/day</dd></div>
           </dl>
           <div className="mt-2 flex gap-2">
             <VerifiedPill label="Eligibility Verified" />
             <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[9px] font-bold text-amber-800">
-              Pre-auth pending ΓÇö IPD Day-3
+              Pre-auth pending — IPD Day-3
             </span>
           </div>
         </PatientPanel>
@@ -80,12 +80,12 @@ export default function PatientSecondaryViews({ view, selectedUhid }: SecondaryV
   if (view === 'documents') {
     const docs = [
       { name: 'Discharge Summary Draft.pdf', type: 'Clinical', date: '2026-07-16', size: '248 KB' },
-      { name: 'Echo Report ΓÇö 14 Jul.pdf', type: 'Diagnostic', date: '2026-07-14', size: '1.2 MB' },
-      { name: 'Consent ΓÇö Cardiac Procedure.pdf', type: 'Legal', date: '2026-07-14', size: '89 KB' },
-      { name: 'Referral ΓÇö Cardiology.pdf', type: 'Referral', date: '2026-06-22', size: '56 KB' },
+      { name: 'Echo Report — 14 Jul.pdf', type: 'Diagnostic', date: '2026-07-14', size: '1.2 MB' },
+      { name: 'Consent — Cardiac Procedure.pdf', type: 'Legal', date: '2026-07-14', size: '89 KB' },
+      { name: 'Referral — Cardiology.pdf', type: 'Referral', date: '2026-06-22', size: '56 KB' },
     ];
     return (
-      <ViewShell title="Documents Management" subtitle="Medical reports ┬╖ consent forms ┬╖ referral letters">
+      <ViewShell title="Documents Management" subtitle="Medical reports · consent forms · referral letters">
         <div className="mb-2 flex gap-2">
           <button type="button" className="inline-flex items-center gap-1 rounded-md bg-[#2563EB] px-2.5 py-1 text-[10px] font-bold text-white">
             <Upload className="h-3 w-3" /> Upload Document
@@ -99,7 +99,7 @@ export default function PatientSecondaryViews({ view, selectedUhid }: SecondaryV
                   <FileText className="h-3.5 w-3.5 text-[#2563EB]" />
                   <div>
                     <p className="text-[10px] font-semibold text-[#0F172A]">{d.name}</p>
-                    <p className="text-[9px] text-slate-400">{d.type} ┬╖ {d.date} ┬╖ {d.size}</p>
+                    <p className="text-[9px] text-slate-400">{d.type} · {d.date} · {d.size}</p>
                   </div>
                 </div>
                 <button type="button" className="rounded p-1 text-slate-400 hover:bg-slate-100" aria-label={`Download ${d.name}`}>
@@ -115,13 +115,13 @@ export default function PatientSecondaryViews({ view, selectedUhid }: SecondaryV
 
   if (view === 'appointment-admission') {
     const rows = [
-      { date: '2026-07-18 10:00', type: 'Appointment', detail: 'Cardiology follow-up ΓÇö Dr. Anita Roy', status: 'Scheduled' },
-      { date: '2026-07-14 14:10', type: 'Admission', detail: 'Ward 3A Bed 12 ΓÇö IPD', status: 'Active' },
-      { date: '2026-07-12 09:00', type: 'Transfer', detail: 'ER Bay T-4 ΓåÆ Ward 3A (step-down)', status: 'Completed' },
-      { date: '2026-03-08 22:30', type: 'Discharge', detail: 'Emergency ΓÇö hypertensive urgency', status: 'Completed' },
+      { date: '2026-07-18 10:00', type: 'Appointment', detail: 'Cardiology follow-up — Dr. Anita Roy', status: 'Scheduled' },
+      { date: '2026-07-14 14:10', type: 'Admission', detail: 'Ward 3A Bed 12 — IPD', status: 'Active' },
+      { date: '2026-07-12 09:00', type: 'Transfer', detail: 'ER Bay T-4 → Ward 3A (step-down)', status: 'Completed' },
+      { date: '2026-03-08 22:30', type: 'Discharge', detail: 'Emergency — hypertensive urgency', status: 'Completed' },
     ];
     return (
-      <ViewShell title="Appointment & Admission History" subtitle="Schedules ┬╖ ward transfers ┬╖ discharge records">
+      <ViewShell title="Appointment & Admission History" subtitle="Schedules · ward transfers · discharge records">
         <PatientPanel title="Timeline Grid" icon={CalendarClock}>
           <table className="w-full text-left">
             <thead>
@@ -150,7 +150,7 @@ export default function PatientSecondaryViews({ view, selectedUhid }: SecondaryV
   if (view === 'billing') {
     const outstanding = MOCK_INVOICES.filter((i) => i.status !== 'Paid').reduce((s, i) => s + i.amount, 0);
     return (
-      <ViewShell title="Billing Summary" subtitle="Outstanding balances ┬╖ invoices ┬╖ payment receipts">
+      <ViewShell title="Billing Summary" subtitle="Outstanding balances · invoices · payment receipts">
         <div className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
           <p className="text-[10px] font-bold text-amber-900">Outstanding Balance</p>
           <p className="text-lg font-bold tabular-nums text-[#0F172A]">{formatInr(outstanding)}</p>
@@ -183,7 +183,7 @@ export default function PatientSecondaryViews({ view, selectedUhid }: SecondaryV
 
   if (view === 'communication') {
     return (
-      <ViewShell title="Communication Center" subtitle="SMS ┬╖ Email ┬╖ WhatsApp notification logs">
+      <ViewShell title="Communication Center" subtitle="SMS · Email · WhatsApp notification logs">
         <PatientPanel title="Outbound Communications" icon={MessageSquare}>
           <table className="w-full text-left">
             <thead>
@@ -213,11 +213,11 @@ export default function PatientSecondaryViews({ view, selectedUhid }: SecondaryV
     const consents = [
       { name: 'General Treatment Consent', signed: '2026-07-14', status: 'Signed' },
       { name: 'Cardiac Procedure Consent', signed: '2026-07-14', status: 'Signed' },
-      { name: 'Data Sharing ΓÇö Insurance TPA', signed: '2026-07-14', status: 'Signed' },
-      { name: 'Research Participation (Opt-out)', signed: 'ΓÇö', status: 'Declined' },
+      { name: 'Data Sharing — Insurance TPA', signed: '2026-07-14', status: 'Signed' },
+      { name: 'Research Participation (Opt-out)', signed: '—', status: 'Declined' },
     ];
     return (
-      <ViewShell title="Consent & Legal" subtitle="Digital consent ┬╖ treatment agreements ┬╖ signature logs">
+      <ViewShell title="Consent & Legal" subtitle="Digital consent · treatment agreements · signature logs">
         <PatientPanel title="Consent Registry" icon={Scale}>
           <ul className="space-y-1.5">
             {consents.map((c) => (
@@ -238,7 +238,7 @@ export default function PatientSecondaryViews({ view, selectedUhid }: SecondaryV
   if (view === 'alerts') {
     const p = patient!;
     return (
-      <ViewShell title="Patient Alerts Panel" subtitle="Allergy ┬╖ critical conditions ┬╖ special instructions">
+      <ViewShell title="Patient Alerts Panel" subtitle="Allergy · critical conditions · special instructions">
         <div className="sticky top-0 z-10 space-y-1.5">
           {p.allergies.map((a) => (
             <AlertStickyBar key={a} type="allergy" message={a} />
@@ -256,7 +256,7 @@ export default function PatientSecondaryViews({ view, selectedUhid }: SecondaryV
 
   if (view === 'reports') {
     return (
-      <ViewShell title="Reports & Analytics" subtitle="Demographics ┬╖ registration trends ┬╖ readmission statistics">
+      <ViewShell title="Reports & Analytics" subtitle="Demographics · registration trends · readmission statistics">
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: 'Registrations (7d)', value: '99' },

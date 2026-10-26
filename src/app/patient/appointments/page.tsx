@@ -12,6 +12,7 @@ import {
   isMissedAppointmentStatus,
   shouldTreatAsMissedAppointment,
 } from '@/lib/patient/appointment-status';
+import { displayClinicalText } from '@/lib/clinical/clinical-text';
 import { todayIsoDate } from '@/lib/hospital/smartq-wait';
 import { readPatientPortalSession } from '@/lib/patient/portal-session';
 import { createClient } from '@/lib/supabase/client';
@@ -45,7 +46,7 @@ const cardClass = 'rounded-xl border border-[#EADBCE] bg-white p-5 shadow-xs';
 
 function formatSlotTime(value: string): string {
   const raw = String(value ?? '').trim();
-  if (!raw || raw === 'ΓÇö') return 'ΓÇö';
+  if (!raw || raw === '—') return '—';
   const match = raw.match(/^(\d{1,2}):(\d{2})/);
   if (!match) return raw;
   const hours = Number(match[1]);
@@ -57,7 +58,7 @@ function formatSlotTime(value: string): string {
 
 function formatDisplayDate(value: string): string {
   const raw = String(value ?? '').slice(0, 10);
-  if (!raw) return 'ΓÇö';
+  if (!raw) return '—';
   const date = new Date(`${raw}T12:00:00`);
   if (Number.isNaN(date.getTime())) return raw;
   return date.toLocaleDateString('en-IN', {
@@ -130,7 +131,7 @@ function AppointmentCard({
   const tokenLabel =
     typeof appt.token_number === 'string' && appt.token_number.startsWith('T-')
       ? appt.token_number
-      : `#${appt.token_number || 'ΓÇö'}`;
+      : `#${appt.token_number || '—'}`;
   const isMissed = shouldTreatAsMissedAppointment(appt);
   const statusLabel = isMissed
     ? 'MISSED APPOINTMENT'
@@ -211,8 +212,8 @@ function AppointmentCard({
       </div>
 
       {appt.reason ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
-          <span className="font-bold">Reason:</span> {appt.reason}
+        <p className="line-clamp-3 break-words rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+          <span className="font-bold">Reason:</span> {displayClinicalText(appt.reason)}
         </p>
       ) : null}
 
@@ -452,7 +453,7 @@ export default function MyAppointmentsPage() {
             <span className="font-semibold text-[#8C5A3C]">
               {portalSession?.hospital_name ?? 'HOSP-01 (Bengaluru)'}
             </span>
-            {' ┬╖ '}
+            {' · '}
             {appointments.length} consultation{appointments.length === 1 ? '' : 's'} on record
           </p>
         </div>

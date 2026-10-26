@@ -48,7 +48,7 @@ export default function EmergencyTraumaPanel() {
           <div>
             <h1 className="text-lg font-black text-white">Emergency Trauma Triage Monitor</h1>
             <p className="text-xs text-slate-800">
-              Phase 4 ┬╖ Module 12 ┬╖ Live casualty intake wall
+              Phase 4 · Module 12 · Live casualty intake wall
             </p>
           </div>
         </div>

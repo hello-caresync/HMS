@@ -117,7 +117,7 @@ export default function AnalyticsPage() {
       tags.push('Collections: Follow up on SUBMITTED invoices older than 15 days.');
     }
     if (tags.length === 0) {
-      tags.push('Demand stable ┬╖ maintain current replenishment cadence across categories.');
+      tags.push('Demand stable · maintain current replenishment cadence across categories.');
     }
     return tags;
   }, [products, kpis]);
@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
         ) : null}
 
         {loading ? (
-          <p className="text-sm text-slate-500">Loading analyticsΓÇª</p>
+          <p className="text-sm text-slate-500">Loading analytics…</p>
         ) : (
           <>
             <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

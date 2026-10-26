@@ -29,7 +29,7 @@ export default function ExecutiveOpsDashboard({
   }, []);
 
   const nowLabel = useMemo(() => {
-    if (!refreshedAt) return 'ΓÇö';
+    if (!refreshedAt) return '—';
     return new Intl.DateTimeFormat('en-IN', {
       weekday: 'short',
       hour: '2-digit',
@@ -56,7 +56,7 @@ export default function ExecutiveOpsDashboard({
               Real-Time Command Center
             </span>
             <span className="text-sm font-medium text-slate-600">
-              Regal Multispeciality Hospital ┬╖ Executive Operations
+              Regal Multispeciality Hospital · Executive Operations
             </span>
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-[#0F172A] sm:text-4xl">
@@ -68,7 +68,7 @@ export default function ExecutiveOpsDashboard({
             <Clock className="h-3 w-3" aria-hidden />
             Sync{' '}
             <time dateTime={mounted && refreshedAt ? refreshedAt.toISOString() : undefined}>
-              {mounted ? nowLabel : 'ΓÇö'}
+              {mounted ? nowLabel : '—'}
             </time>
           </p>
           <button

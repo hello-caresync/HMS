@@ -70,7 +70,7 @@ export default function StockTransferSheet({ open, onClose }: StockTransferSheet
     <Sheet
       open={open}
       title="Initiate Stock Transfer"
-      description="Internal requisition ΓÇö source to department"
+      description="Internal requisition — source to department"
       onClose={handleClose}
       width="lg"
     >
@@ -84,10 +84,10 @@ export default function StockTransferSheet({ open, onClose }: StockTransferSheet
             onChange={(e) => handleItemChange(e.target.value)}
             className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
           >
-            <option value="">Choose inventory lineΓÇª</option>
+            <option value="">Choose inventory line…</option>
             {transferableItems.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.itemName} ┬╖ {i.sku}
+                {i.itemName} · {i.sku}
               </option>
             ))}
           </select>

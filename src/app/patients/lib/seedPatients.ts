@@ -82,7 +82,7 @@ export const SEED_PATIENTS: PatientRecord[] = [
       dob: '',
       gender: 'Male',
       bloodGroup: 'Unknown',
-      phone: 'ΓÇö',
+      phone: '—',
       isTemporary: true,
       estimatedAge: 34,
       registeredAt: '2026-07-09T05:48:00Z',
@@ -97,5 +97,5 @@ export const SEED_PATIENTS: PatientRecord[] = [
 ];
 
 export function formatPhoneDisplay(phone: string): string {
-  return phone || 'ΓÇö';
+  return phone || '—';
 }

@@ -224,7 +224,7 @@ export default function PurchaseOrdersPage() {
           <div>
             <h1 className="text-2xl font-black">Purchase Orders</h1>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              Accept/reject, dispatch logistics, and generate invoices ┬╖ Supabase live
+              Accept/reject, dispatch logistics, and generate invoices · Supabase live
             </p>
           </div>
           <button
@@ -233,7 +233,7 @@ export default function PurchaseOrdersPage() {
             onClick={() => void handleBulkAccept()}
             className="rounded-xl bg-teal-700 px-4 py-2 text-xs font-bold text-white hover:bg-teal-800 disabled:opacity-60"
           >
-            {bulkSubmitting ? 'AcceptingΓÇª' : 'Bulk accept selected'}
+            {bulkSubmitting ? 'Accepting…' : 'Bulk accept selected'}
           </button>
         </header>
 
@@ -268,7 +268,7 @@ export default function PurchaseOrdersPage() {
         </div>
 
         {loading ? (
-          <p className="text-sm text-slate-500">Loading purchase ordersΓÇª</p>
+          <p className="text-sm text-slate-500">Loading purchase orders…</p>
         ) : (
           <ul className="space-y-4">
             {filtered.length === 0 ? (
@@ -294,7 +294,7 @@ export default function PurchaseOrdersPage() {
                       <p className="font-mono text-sm font-black">{po.po_number}</p>
                       <p className="mt-1 text-sm font-semibold">{po.hospital_name}</p>
                       <p className="mt-2 text-xs text-slate-500">
-                        Deadline: {po.delivery_deadline} ┬╖ Total {formatMoney(Number(po.total_amount))}
+                        Deadline: {po.delivery_deadline} · Total {formatMoney(Number(po.total_amount))}
                       </p>
                       </div>
                     </div>
@@ -406,7 +406,7 @@ export default function PurchaseOrdersPage() {
                   disabled={dispatchSaving}
                   className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
                 >
-                  {dispatchSaving ? 'DispatchingΓÇª' : 'Confirm dispatch'}
+                  {dispatchSaving ? 'Dispatching…' : 'Confirm dispatch'}
                 </button>
               </div>
             </form>
@@ -418,7 +418,7 @@ export default function PurchaseOrdersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
           <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-700 dark:bg-slate-900">
             <h2 className="text-lg font-black">Generate invoice</h2>
-            <p className="mt-1 text-xs text-slate-500">{invoicePo.po_number} ┬╖ {invoicePo.hospital_name}</p>
+            <p className="mt-1 text-xs text-slate-500">{invoicePo.po_number} · {invoicePo.hospital_name}</p>
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <dt className="text-slate-500">Subtotal</dt>
@@ -434,7 +434,7 @@ export default function PurchaseOrdersPage() {
                   {formatMoney(invoicePreview.total_amount)}
                 </dd>
               </div>
-              <p className="text-xs text-slate-500">Due date: 30 days from submission ┬╖ Status SUBMITTED</p>
+              <p className="text-xs text-slate-500">Due date: 30 days from submission · Status SUBMITTED</p>
             </dl>
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" onClick={() => setInvoicePo(null)} className="rounded-lg border px-4 py-2 text-sm font-bold">
@@ -446,7 +446,7 @@ export default function PurchaseOrdersPage() {
                 onClick={() => void handleInvoiceSubmit()}
                 className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
               >
-                {invoiceSaving ? 'SubmittingΓÇª' : 'Submit invoice'}
+                {invoiceSaving ? 'Submitting…' : 'Submit invoice'}
               </button>
             </div>
           </div>

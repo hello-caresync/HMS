@@ -6,7 +6,7 @@ export type PersonalDetails = {
   fullName: string;
   email: string;
   phone: string;
-  /** Stored internally ΓÇö display via masking rules only */
+  /** Stored internally — display via masking rules only */
   governmentId: string;
   emergencyContact?: string;
 };
@@ -30,7 +30,7 @@ export type ShiftAllocation = {
   label: string;
   startTime: string;
   endTime: string;
-  /** 0 = Sunday ΓÇª 6 = Saturday */
+  /** 0 = Sunday … 6 = Saturday */
   daysOfWeek: number[];
   staffIds: string[];
 };

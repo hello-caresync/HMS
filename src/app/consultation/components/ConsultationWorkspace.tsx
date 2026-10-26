@@ -36,10 +36,10 @@ export default function ConsultationWorkspace() {
             </span>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: CLINICAL.textSubtle }}>
-                Module 4 ┬╖ OPD Consultation Workbench
+                Module 4 · OPD Consultation Workbench
               </p>
               <h1 className="text-xs font-bold" style={{ color: CLINICAL.text }}>
-                Clinical EMR ┬╖ Live Session
+                Clinical EMR · Live Session
               </h1>
             </div>
           </div>

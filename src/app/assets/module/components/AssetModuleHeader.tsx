@@ -14,7 +14,7 @@ export default function AssetModuleHeader({ lookupValue, onLookupChange, resultC
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-base font-bold text-[#0F172A]">Asset Management (ALM)</h1>
-          <p className="text-[9px] text-slate-500">Clinical capital tracking ┬╖ predictive maintenance ┬╖ calibration ┬╖ AMC ┬╖ financial governance ┬╖ AI intelligence</p>
+          <p className="text-[9px] text-slate-500">Clinical capital tracking · predictive maintenance · calibration · AMC · financial governance · AI intelligence</p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[9px] font-bold uppercase text-emerald-800">
           <Monitor className="h-3.5 w-3.5" />
@@ -27,7 +27,7 @@ export default function AssetModuleHeader({ lookupValue, onLookupChange, resultC
           type="search"
           value={lookupValue}
           onChange={(e) => onLookupChange(e.target.value)}
-          placeholder="Search assets ΓÇö tag ID, serial ref, department, category, or request #"
+          placeholder="Search assets — tag ID, serial ref, department, category, or request #"
           aria-label="Search assets"
           className="w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] py-1.5 pl-8 pr-3 text-[10px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
         />

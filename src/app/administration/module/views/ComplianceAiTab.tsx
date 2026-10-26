@@ -45,7 +45,7 @@ export default function ComplianceAiTab({ complaints, incidents, aiInsights, onA
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <GovPanel title="Complaint & Feedback Workflows" subtitle="Patient ┬╖ staff ┬╖ TPA escalations" icon={Shield}>
+        <GovPanel title="Complaint & Feedback Workflows" subtitle="Patient · staff · TPA escalations" icon={Shield}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -69,7 +69,7 @@ export default function ComplianceAiTab({ complaints, incidents, aiInsights, onA
           </table>
         </GovPanel>
 
-        <GovPanel title="Incident Management & Root Cause Tracking" subtitle="Patient falls ┬╖ equipment ┬╖ medication near-miss" icon={Shield} critical>
+        <GovPanel title="Incident Management & Root Cause Tracking" subtitle="Patient falls · equipment · medication near-miss" icon={Shield} critical>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -121,7 +121,7 @@ export default function ComplianceAiTab({ complaints, incidents, aiInsights, onA
           </table>
         </GovPanel>
 
-        <GovPanel title="Regulatory Compliance Renewal Deadlines" subtitle="Licenses ┬╖ registrations ┬╖ authorizations" icon={Shield} secure>
+        <GovPanel title="Regulatory Compliance Renewal Deadlines" subtitle="Licenses · registrations · authorizations" icon={Shield} secure>
           <SecureAdminPlaceholder verified />
           <table className="mt-2 w-full text-left">
             <thead>
@@ -146,19 +146,19 @@ export default function ComplianceAiTab({ complaints, incidents, aiInsights, onA
       </div>
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-        <GovPanel title="Meeting Management Logs" subtitle="Governance huddles ┬╖ quality committee ┬╖ RCA sessions" icon={Shield}>
+        <GovPanel title="Meeting Management Logs" subtitle="Governance huddles · quality committee · RCA sessions" icon={Shield}>
           <ul className="space-y-1">
             {MEETING_LOGS.map((m) => (
               <li key={m.id} className="rounded border border-slate-100 px-2 py-1.5">
                 <p className="text-[9px] font-semibold">{m.title}</p>
-                <p className="text-[8px] text-slate-600">{m.datetime} ┬╖ {m.attendees}</p>
+                <p className="text-[8px] text-slate-600">{m.datetime} · {m.attendees}</p>
                 <GovStatusPill status={m.status} />
               </li>
             ))}
           </ul>
         </GovPanel>
 
-        <GovPanel title="Vendor Contract Alert Status" subtitle="AMC ┬╖ SLA ┬╖ supply agreements" icon={Shield}>
+        <GovPanel title="Vendor Contract Alert Status" subtitle="AMC · SLA · supply agreements" icon={Shield}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -181,9 +181,9 @@ export default function ComplianceAiTab({ complaints, incidents, aiInsights, onA
         </GovPanel>
       </div>
 
-      <GovPanel title="AI Administration Intelligence" subtitle="Operations analysis ┬╖ resource planning ┬╖ department attention" icon={Bot}>
+      <GovPanel title="AI Administration Intelligence" subtitle="Operations analysis · resource planning · department attention" icon={Bot}>
         <div className="flex gap-2">
-          <input value={aiQuery} onChange={(e) => setAiQuery(e.target.value)} placeholder="Ask: Show today's hospital issues ΓÇö or Which departments need attention?" className="flex-1 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] px-2 py-1.5 text-[10px] focus:border-[#2563EB] focus:outline-none" />
+          <input value={aiQuery} onChange={(e) => setAiQuery(e.target.value)} placeholder="Ask: Show today's hospital issues — or Which departments need attention?" className="flex-1 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] px-2 py-1.5 text-[10px] focus:border-[#2563EB] focus:outline-none" />
           <button type="button" onClick={handleAsk} className="rounded-md bg-[#2563EB] px-3 py-1.5 text-[9px] font-bold text-white">Ask AI</button>
         </div>
         <div className="mt-2 space-y-1">
@@ -192,7 +192,7 @@ export default function ComplianceAiTab({ complaints, incidents, aiInsights, onA
               <p className="text-[9px] font-bold text-[#2563EB]">{ins.query}</p>
               <p className="text-[9px] text-slate-800">{ins.response}</p>
               <div className="mt-1 flex items-center justify-between">
-                <span className="text-[8px] uppercase text-slate-500">{ins.category} ┬╖ {ins.severity}</span>
+                <span className="text-[8px] uppercase text-slate-500">{ins.category} · {ins.severity}</span>
                 {ins.status === 'Active' && (
                   <div className="flex gap-0.5">
                     <button type="button" onClick={() => onUpdateAiStatus(ins.id, 'Acknowledged')} className="rounded bg-emerald-100 px-1.5 py-0.5 text-[7px] font-bold text-emerald-800">Ack</button>
@@ -206,7 +206,7 @@ export default function ComplianceAiTab({ complaints, incidents, aiInsights, onA
         </div>
       </GovPanel>
 
-      <GovPanel title="Patient Load Forecast ΓÇö Resource Planning" subtitle="OPD ┬╖ ER ┬╖ IPD weekly projection" icon={Bot}>
+      <GovPanel title="Patient Load Forecast — Resource Planning" subtitle="OPD · ER · IPD weekly projection" icon={Bot}>
         <div className="h-[160px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={PATIENT_LOAD_FORECAST}>
@@ -221,7 +221,7 @@ export default function ComplianceAiTab({ complaints, incidents, aiInsights, onA
         </div>
       </GovPanel>
 
-      <GovPanel title="Immutable Audit & Activity Log" subtitle="User actions ┬╖ access attempts ┬╖ policy changes" icon={Shield}>
+      <GovPanel title="Immutable Audit & Activity Log" subtitle="User actions · access attempts · policy changes" icon={Shield}>
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-[#F8FAFC]">

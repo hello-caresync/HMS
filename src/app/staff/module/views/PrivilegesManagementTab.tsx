@@ -13,7 +13,7 @@ import { StaffPanel, StatusPill } from '../components/staffUi';
 export default function PrivilegesManagementTab() {
   return (
     <div className="space-y-3">
-      <StaffPanel title="Role & Access Control Matrix" icon={ShieldCheck} subtitle="Admin ┬╖ HR ┬╖ Dept Head ┬╖ IT ┬╖ Employee self-service">
+      <StaffPanel title="Role & Access Control Matrix" icon={ShieldCheck} subtitle="Admin · HR · Dept Head · IT · Employee self-service">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-left">
             <thead>
@@ -39,12 +39,12 @@ export default function PrivilegesManagementTab() {
           </table>
         </div>
         <p className="mt-2 flex items-center gap-1 text-[9px] text-slate-500">
-          <Lock className="h-3 w-3" /> Device access permissions managed via IT terminal registry ΓÇö changes audited
+          <Lock className="h-3 w-3" /> Device access permissions managed via IT terminal registry — changes audited
         </p>
       </StaffPanel>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <StaffPanel title="Salary Structure Configuration" icon={DollarSign} subtitle="Pay bands ┬╖ component breakdown">
+        <StaffPanel title="Salary Structure Configuration" icon={DollarSign} subtitle="Pay bands · component breakdown">
           <ul className="space-y-2">
             {SALARY_STRUCTURES.map((s) => (
               <li key={s.band} className="rounded border border-[#E2E8F0] px-2.5 py-2">
@@ -96,8 +96,8 @@ export default function PrivilegesManagementTab() {
 
 function PermCheck({ checked }: { checked: boolean }) {
   return checked ? (
-    <span className="inline-flex h-4 w-4 items-center justify-center rounded bg-[#2563EB] text-[10px] text-white">Γ£ô</span>
+    <span className="inline-flex h-4 w-4 items-center justify-center rounded bg-[#2563EB] text-[10px] text-white">✓</span>
   ) : (
-    <span className="inline-flex h-4 w-4 items-center justify-center rounded border border-slate-200 bg-slate-50 text-slate-300">ΓÇö</span>
+    <span className="inline-flex h-4 w-4 items-center justify-center rounded border border-slate-200 bg-slate-50 text-slate-300">—</span>
   );
 }

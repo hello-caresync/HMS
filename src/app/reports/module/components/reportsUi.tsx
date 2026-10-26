@@ -72,7 +72,7 @@ export function TrendPill({ trend, value }: { trend: 'up' | 'down' | 'stable'; v
     down: 'text-red-600',
     stable: 'text-slate-500',
   };
-  const arrow = trend === 'up' ? 'Γåæ' : trend === 'down' ? 'Γåô' : 'ΓåÆ';
+  const arrow = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
   return (
     <span className={`text-[8px] font-bold ${styles[trend]}`}>
       {arrow} {value ?? trend}

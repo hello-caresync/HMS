@@ -16,7 +16,7 @@ export default function LogisticsTab() {
   return (
     <div className="grid grid-cols-1 gap-2 xl:grid-cols-12">
       <div className="space-y-2 xl:col-span-5">
-        <ErPanel title="Urgent Laboratory Orders" icon={FlaskConical} subtitle="STAT ┬╖ trauma ┬╖ sepsis panels">
+        <ErPanel title="Urgent Laboratory Orders" icon={FlaskConical} subtitle="STAT · trauma · sepsis panels">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -69,7 +69,7 @@ export default function LogisticsTab() {
               <li key={b.id} className="flex items-center justify-between rounded border border-[#E2E8F0] px-2 py-1">
                 <div>
                   <p className="text-[9px] font-semibold text-[#0F172A]">{b.patientName}</p>
-                  <p className="text-[8px] text-slate-600">{b.component} ├ù {b.units} units</p>
+                  <p className="text-[8px] text-slate-600">{b.component} × {b.units} units</p>
                 </div>
                 <div className="flex flex-col items-end gap-0.5">
                   <TriageBadge priority={b.urgency} />
@@ -87,7 +87,7 @@ export default function LogisticsTab() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[9px] font-bold text-[#0F172A]">{p.procedure}</p>
-                    <p className="text-[8px] text-slate-600">{p.patientName} ┬╖ {p.teamLead}</p>
+                    <p className="text-[8px] text-slate-600">{p.patientName} · {p.teamLead}</p>
                   </div>
                   <StatusPill status={p.status} />
                 </div>
@@ -100,14 +100,14 @@ export default function LogisticsTab() {
       <div className="space-y-2 xl:col-span-7">
         <ErPanel
           title="Ambulance Fleet & Tracking"
-          subtitle="Active dispatches ┬╖ GPS placeholders ┬╖ driver alerts"
+          subtitle="Active dispatches · GPS placeholders · driver alerts"
           icon={Ambulance}
           headerRight={<span className="text-[8px] font-bold text-[#2563EB]">{MOCK_AMBULANCES.filter((a) => a.status !== 'Available').length} active</span>}
         >
           <div className="mb-2 rounded-md border border-dashed border-[#E2E8F0] bg-[#F8FAFC] p-4 text-center">
             <MapPin className="mx-auto mb-1 h-6 w-6 text-[#2563EB]" />
-            <p className="text-[10px] font-bold text-[#0F172A]">Live GPS Map ΓÇö Fleet Overlay</p>
-            <p className="text-[8px] text-slate-500">[Tracking feed masked for operational security ΓÇö 5 units on network]</p>
+            <p className="text-[10px] font-bold text-[#0F172A]">Live GPS Map — Fleet Overlay</p>
+            <p className="text-[8px] text-slate-500">[Tracking feed masked for operational security — 5 units on network]</p>
             <div className="mt-2 flex flex-wrap justify-center gap-1">
               {MOCK_AMBULANCES.map((a) => (
                 <span
@@ -138,7 +138,7 @@ export default function LogisticsTab() {
                   <td className="px-1.5 py-1"><StatusPill status={a.status} /></td>
                   <td className="px-1.5 py-1 text-[8px] text-slate-600">{a.crew}</td>
                   <td className="max-w-[120px] truncate px-1.5 py-1 text-[8px] text-slate-500" title={a.destination}>{a.destination}</td>
-                  <td className="px-1.5 py-1 text-[9px] tabular-nums">{a.etaMinutes != null ? `${a.etaMinutes}m` : 'ΓÇö'}</td>
+                  <td className="px-1.5 py-1 text-[9px] tabular-nums">{a.etaMinutes != null ? `${a.etaMinutes}m` : '—'}</td>
                   <td className="max-w-[140px] truncate px-1.5 py-1 text-[8px] text-amber-700" title={a.lastAlert}>{a.lastAlert}</td>
                 </tr>
               ))}

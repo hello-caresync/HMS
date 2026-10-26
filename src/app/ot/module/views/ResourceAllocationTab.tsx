@@ -25,7 +25,7 @@ export default function ResourceAllocationTab() {
   return (
     <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
       <div className="space-y-2">
-        <OtPanel title="OT Room Availability Matrix" icon={BedDouble} subtitle="Occupied ┬╖ cleaning ┬╖ sterilization ┬╖ maintenance">
+        <OtPanel title="OT Room Availability Matrix" icon={BedDouble} subtitle="Occupied · cleaning · sterilization · maintenance">
           <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
             {MOCK_OT_ROOMS.map((room) => (
               <button
@@ -45,7 +45,7 @@ export default function ResourceAllocationTab() {
           </div>
         </OtPanel>
 
-        <OtPanel title="Surgical Team Allocations" icon={Users} subtitle="Surgeon ┬╖ assistant ┬╖ anesthesia ┬╖ nursing ┬╖ tech">
+        <OtPanel title="Surgical Team Allocations" icon={Users} subtitle="Surgeon · assistant · anesthesia · nursing · tech">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -70,7 +70,7 @@ export default function ResourceAllocationTab() {
       </div>
 
       <div className="space-y-2">
-        <OtPanel title="Pre-Operative Checklist" subtitle="Patient ID ┬╖ fasting ┬╖ allergy ┬╖ blood ┬╖ implant ┬╖ consent">
+        <OtPanel title="Pre-Operative Checklist" subtitle="Patient ID · fasting · allergy · blood · implant · consent">
           <SecureIdentityPlaceholder verified />
           <table className="mt-2 w-full text-left">
             <thead>
@@ -98,13 +98,13 @@ export default function ResourceAllocationTab() {
           </table>
         </OtPanel>
 
-        <OtPanel title="Equipment & Instrument Readiness" icon={Package} subtitle="Sterilization status ┬╖ case assignment">
+        <OtPanel title="Equipment & Instrument Readiness" icon={Package} subtitle="Sterilization status · case assignment">
           <ul className="space-y-1">
             {MOCK_EQUIPMENT.map((eq) => (
               <li key={eq.id} className="flex items-center justify-between rounded border border-[#E2E8F0] px-2 py-1.5">
                 <div>
                   <p className="text-[9px] font-semibold text-[#0F172A]">{eq.name}</p>
-                  <p className="text-[8px] text-slate-500">{eq.otRoom} ┬╖ Sterilized {eq.lastSterilized}</p>
+                  <p className="text-[8px] text-slate-500">{eq.otRoom} · Sterilized {eq.lastSterilized}</p>
                   {eq.assignedCase && <p className="text-[7px] text-[#2563EB]">{eq.assignedCase}</p>}
                 </div>
                 <StatusPill status={eq.status} />
@@ -115,15 +115,15 @@ export default function ResourceAllocationTab() {
       </div>
 
       {drawerRoom && (
-        <DrawerOverlay title={`${drawerRoom.roomLabel} ΓÇö Detail`} onClose={() => setDrawerRoom(null)}>
+        <DrawerOverlay title={`${drawerRoom.roomLabel} — Detail`} onClose={() => setDrawerRoom(null)}>
           <dl className="space-y-2 text-[10px]">
             <div><dt className="text-slate-400">Floor</dt><dd className="font-semibold">{drawerRoom.floor}</dd></div>
             <div><dt className="text-slate-400">Status</dt><dd><OtRoomStatusPill status={drawerRoom.status} /></dd></div>
             {drawerRoom.currentCase && (
               <>
                 <div><dt className="text-slate-400">Active Case</dt><dd className="font-mono text-[#2563EB]">{drawerRoom.currentCase}</dd></div>
-                <div><dt className="text-slate-400">Patient</dt><dd>{drawerRoom.patientName ?? 'ΓÇö'}</dd></div>
-                <div><dt className="text-slate-400">Team Lead</dt><dd>{drawerRoom.teamLead ?? 'ΓÇö'}</dd></div>
+                <div><dt className="text-slate-400">Patient</dt><dd>{drawerRoom.patientName ?? '—'}</dd></div>
+                <div><dt className="text-slate-400">Team Lead</dt><dd>{drawerRoom.teamLead ?? '—'}</dd></div>
               </>
             )}
             <SecureIdentityPlaceholder verified />

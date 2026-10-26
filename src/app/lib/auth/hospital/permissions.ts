@@ -1,7 +1,7 @@
 ﻿import type { InternalStaffRole, StaffPermission } from './types';
 
 /**
- * Static RBAC matrix ΓÇö maps each internal staff role to explicit ERP permissions.
+ * Static RBAC matrix — maps each internal staff role to explicit ERP permissions.
  * `*` grants global access (hospital_admin only).
  */
 export const ROLE_PERMISSIONS: Record<InternalStaffRole, StaffPermission[]> = {
@@ -75,5 +75,5 @@ export function hasAnyPermission(
 
 export function formatRoleBadge(role: InternalStaffRole, shiftLabel?: string): string {
   const base = ROLE_LABELS[role];
-  return shiftLabel ? `${base} ΓÇö ${shiftLabel}` : base;
+  return shiftLabel ? `${base} — ${shiftLabel}` : base;
 }

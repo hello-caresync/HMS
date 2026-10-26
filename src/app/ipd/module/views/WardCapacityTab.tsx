@@ -59,7 +59,7 @@ export default function WardCapacityTab({ movements, onAdvanceMovement }: WardCa
     <div className="space-y-3">
       <IpdPanel
         title="Bed Occupancy Map"
-        subtitle="General ┬╖ semi-private ┬╖ private ┬╖ isolation ΓÇö real-time asset matrix"
+        subtitle="General · semi-private · private · isolation — real-time asset matrix"
         icon={LayoutGrid}
         headerRight={
           <div className="flex flex-wrap gap-1">
@@ -86,7 +86,7 @@ export default function WardCapacityTab({ movements, onAdvanceMovement }: WardCa
         <div className="space-y-3">
           {visibleTypes.map((type) => (
             <div key={type}>
-              <p className="mb-1 text-[9px] font-bold uppercase text-[#0F172A]">{type} Rooms ┬╖ {bedsByType[type].length} beds</p>
+              <p className="mb-1 text-[9px] font-bold uppercase text-[#0F172A]">{type} Rooms · {bedsByType[type].length} beds</p>
               <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5 md:grid-cols-6">
                 {bedsByType[type].map((bed) => (
                   <div key={bed.id} className={`rounded border px-1.5 py-1.5 text-center ${BED_STYLES[bed.status]}`}>
@@ -103,7 +103,7 @@ export default function WardCapacityTab({ movements, onAdvanceMovement }: WardCa
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="space-y-3 xl:col-span-7">
-          <IpdPanel title="Nurse Assignments" icon={Users} subtitle="Station ┬╖ shift ┬╖ patient load">
+          <IpdPanel title="Nurse Assignments" icon={Users} subtitle="Station · shift · patient load">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-slate-100 bg-[#F8FAFC]">
@@ -131,7 +131,7 @@ export default function WardCapacityTab({ movements, onAdvanceMovement }: WardCa
               {MOCK_SHIFT_HANDOVERS.map((h) => (
                 <li key={h.id} className="flex items-center justify-between rounded border border-[#E2E8F0] px-2 py-1.5">
                   <span className="text-[9px] text-[#0F172A]">
-                    <strong>{h.ward}</strong> ┬╖ {h.fromNurse} ΓåÆ {h.toNurse}
+                    <strong>{h.ward}</strong> · {h.fromNurse} → {h.toNurse}
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-[8px] text-slate-400">{h.pendingTasks} tasks</span>
@@ -149,7 +149,7 @@ export default function WardCapacityTab({ movements, onAdvanceMovement }: WardCa
                   <li key={m.id} className="flex items-center justify-between rounded border border-slate-100 px-2 py-1">
                     <div>
                       <p className="text-[9px] font-semibold text-[#0F172A]">{m.patientName}</p>
-                      <p className="text-[8px] text-slate-500">{m.medication} ┬╖ {m.scheduledTime}</p>
+                      <p className="text-[8px] text-slate-500">{m.medication} · {m.scheduledTime}</p>
                     </div>
                     <StatusPill status={m.status} />
                   </li>
@@ -166,7 +166,7 @@ export default function WardCapacityTab({ movements, onAdvanceMovement }: WardCa
                       <VitalCompliancePill status={v.compliance} />
                     </div>
                     <p className="text-[8px] text-slate-500">
-                      BP {v.bp} ┬╖ P {v.pulse} ┬╖ T {v.temp} ┬╖ SpOΓéé {v.spo2} ┬╖ {v.lastRecorded}
+                      BP {v.bp} · P {v.pulse} · T {v.temp} · SpO₂ {v.spo2} · {v.lastRecorded}
                     </p>
                   </li>
                 ))}
@@ -176,13 +176,13 @@ export default function WardCapacityTab({ movements, onAdvanceMovement }: WardCa
         </div>
 
         <div className="space-y-3 xl:col-span-5">
-          <IpdPanel title="Care Coordination Alerts" icon={AlertTriangle} subtitle="Fall risk ┬╖ infection control ┬╖ diet orders">
+          <IpdPanel title="Care Coordination Alerts" icon={AlertTriangle} subtitle="Fall risk · infection control · diet orders">
             <ul className="mb-2 space-y-1">
               {MOCK_CARE_ALERTS.map((a) => (
                 <li key={a.id} className="rounded border border-l-4 border-l-red-400 border-[#E2E8F0] px-2 py-1.5">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-[9px] font-bold text-[#0F172A]">{a.patientName} ΓÇö {a.type}</p>
+                      <p className="text-[9px] font-bold text-[#0F172A]">{a.patientName} — {a.type}</p>
                       <p className="text-[8px] text-slate-600">{a.detail}</p>
                     </div>
                     <StatusPill status={a.severity} />
@@ -195,14 +195,14 @@ export default function WardCapacityTab({ movements, onAdvanceMovement }: WardCa
             <ul className="space-y-1">
               {MOCK_DIET_ORDERS.map((d) => (
                 <li key={d.id} className="flex items-center justify-between rounded bg-[#F8FAFC] px-2 py-1">
-                  <span className="text-[9px] text-[#0F172A]">{d.patientName} ┬╖ {d.dietType} ┬╖ {d.mealSlot}</span>
+                  <span className="text-[9px] text-[#0F172A]">{d.patientName} · {d.dietType} · {d.mealSlot}</span>
                   <StatusPill status={d.status} />
                 </li>
               ))}
             </ul>
           </IpdPanel>
 
-          <IpdPanel title="Patient Movement Tracker" icon={ArrowRightLeft} subtitle="OT ┬╖ diagnostic ┬╖ ICU ┬╖ ward transfers">
+          <IpdPanel title="Patient Movement Tracker" icon={ArrowRightLeft} subtitle="OT · diagnostic · ICU · ward transfers">
             <ul className="space-y-1.5">
               {movements.map((m) => (
                 <li key={m.id} className="rounded border border-[#E2E8F0] px-2 py-1.5">
@@ -211,7 +211,7 @@ export default function WardCapacityTab({ movements, onAdvanceMovement }: WardCa
                       <p className="text-[10px] font-semibold text-[#0F172A]">{m.patientName}</p>
                       <p className="text-[8px] font-medium text-violet-700">{m.type}</p>
                       <p className="text-[8px] text-slate-500">
-                        {m.fromLocation} ΓåÆ {m.toLocation}
+                        {m.fromLocation} → {m.toLocation}
                       </p>
                       <p className="text-[8px] text-slate-400">{formatDateTime(m.scheduledAt)}</p>
                     </div>

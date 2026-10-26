@@ -49,7 +49,7 @@ export default function DashboardTopbar({
           <Search className="pointer-events-none absolute left-3 h-4 w-4 text-slate-400" />
           <input
             type="search"
-            placeholder="Search patients, wards, invoicesΓÇª"
+            placeholder="Search patients, wards, invoices…"
             className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>

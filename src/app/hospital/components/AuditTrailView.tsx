@@ -42,7 +42,7 @@ export default function AuditTrailView({ auditLogs }: AuditTrailViewProps) {
                 {log.actionDescription}
               </p>
               <p className={`mt-1 text-xs ${monoDataClassName} text-slate-800`}>
-                {log.timestamp} ┬╖ {log.userName} ({log.userId})
+                {log.timestamp} · {log.userName} ({log.userId})
               </p>
               <p className="mt-1 text-xs font-mono font-bold text-[#A65E53]">
                 {log.metadataToken}

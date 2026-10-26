@@ -9,6 +9,7 @@ import {
 } from '@/lib/auth/patientAuth';
 import { resolveActiveAuthUser } from '@/lib/auth/resolve-active-auth-user';
 import { readPatientPortalSession } from '@/lib/patient/portal-session';
+import { displayClinicalText } from '@/lib/clinical/clinical-text';
 import { resolveEffectivePatientId } from '@/lib/patient/resolve-effective-patient-id';
 
 export type MyAppointmentRecord = {
@@ -137,8 +138,9 @@ function mapRowToAppointmentRecord(
     (!sessionName || patientName.toLowerCase() === sessionName);
 
   const clinicalReason =
-    String(row.reason_for_visit ?? row.reason ?? row.chief_complaint ?? row.symptoms ?? '').trim() ||
-    undefined;
+    displayClinicalText(
+      String(row.reason_for_visit ?? row.reason ?? row.chief_complaint ?? row.symptoms ?? ''),
+    ) || undefined;
   const doctorId = String(
     row.doctor_id ?? row.doctor_code ?? row.doctor_uuid ?? doctor?.id ?? '',
   ).trim();
@@ -157,7 +159,7 @@ function mapRowToAppointmentRecord(
     slot_time: slotTime,
     fee: consultationFee > 0 ? `₹${consultationFee.toLocaleString('en-IN')}` : undefined,
     reason: clinicalReason,
-    symptoms: String(row.symptoms ?? clinicalReason ?? '').trim() || undefined,
+    symptoms: displayClinicalText(String(row.symptoms ?? clinicalReason ?? '')) || undefined,
     token_number: tokenValue,
     queue_status: String(row.queue_status ?? row.status ?? 'WAITING'),
     status: String(row.status ?? row.queue_status ?? 'WAITING'),

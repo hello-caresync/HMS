@@ -1,4 +1,4 @@
-﻿/** Phase 3 ΓÇö Clinical Support workflow types (Modules 8ΓÇô10) */
+﻿/** Phase 3 — Clinical Support workflow types (Modules 8–10) */
 
 export type SpecimenCategory = 'Blood' | 'Urine' | 'Swab';
 

@@ -96,7 +96,7 @@ export default function ExecutiveDeskTab({ lookupQuery, onQuickAction }: Executi
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <AdmPanel
           title="Active Admission Requests Queue"
-          subtitle="Doctor ┬╖ Emergency ┬╖ Elective ┬╖ Referral ΓÇö priority sorted"
+          subtitle="Doctor · Emergency · Elective · Referral — priority sorted"
           icon={ClipboardList}
           className="xl:col-span-7"
           headerRight={
@@ -199,7 +199,7 @@ export default function ExecutiveDeskTab({ lookupQuery, onQuickAction }: Executi
 
         <AdmPanel
           title="Inpatient Monitoring Console"
-          subtitle="Ward census ┬╖ nursing assignments ┬╖ discharge targets"
+          subtitle="Ward census · nursing assignments · discharge targets"
           icon={HeartPulse}
           className="xl:col-span-5"
         >
@@ -216,7 +216,7 @@ export default function ExecutiveDeskTab({ lookupQuery, onQuickAction }: Executi
                 <dl className="mt-1 grid grid-cols-2 gap-x-2 text-[9px] text-slate-600">
                   <div>
                     <dt className="text-slate-400">Ward / Bed</dt>
-                    <dd className="font-medium">{p.ward} ┬╖ {p.bed}</dd>
+                    <dd className="font-medium">{p.ward} · {p.bed}</dd>
                   </div>
                   <div>
                     <dt className="text-slate-400">Nurse</dt>

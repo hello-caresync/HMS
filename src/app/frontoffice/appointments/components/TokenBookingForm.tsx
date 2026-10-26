@@ -52,7 +52,7 @@ export default function TokenBookingForm({ queue, onIssueToken }: TokenBookingFo
           <Ticket className="h-4 w-4 text-sky-700" />
           <div>
             <h2 className="text-sm font-black text-slate-900">Token Booking Desk</h2>
-            <p className="text-[10px] text-slate-800">Walk-in ┬╖ department ┬╖ doctor routing</p>
+            <p className="text-[10px] text-slate-800">Walk-in · department · doctor routing</p>
           </div>
         </div>
       </div>
@@ -102,7 +102,7 @@ export default function TokenBookingForm({ queue, onIssueToken }: TokenBookingFo
                     doc.available ? 'text-emerald-600' : 'text-slate-800'
                   }`}
                 >
-                  {doc.available ? 'Available' : 'Read-only ┬╖ Off duty'}
+                  {doc.available ? 'Available' : 'Read-only · Off duty'}
                 </p>
               </button>
             ))}

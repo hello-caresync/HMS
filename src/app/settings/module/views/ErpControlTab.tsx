@@ -46,13 +46,13 @@ export default function ErpControlTab({ users, onToggleUserStatus, onQuickAction
       <div className="rounded-lg border border-[#E2E8F0] bg-white px-5 py-4">
         <p className={settingsType.bodyMuted}>
           Last full backup: <span className="font-semibold text-[#0F172A]">{formatDateTime(h.lastBackupAt)}</span>
-          {' ┬╖ '}
-          Incremental logs every 15 min ┬╖ Offsite DR pending sync
+          {' · '}
+          Incremental logs every 15 min · Offsite DR pending sync
         </p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SettingsPanel title="User Provisioning & Audit Log" subtitle="Doctor ┬╖ Nurse ┬╖ Finance ┬╖ Admin ┬╖ Pharmacist accounts" icon={Users}>
+        <SettingsPanel title="User Provisioning & Audit Log" subtitle="Doctor · Nurse · Finance · Admin · Pharmacist accounts" icon={Users}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left">
               <thead>
@@ -82,7 +82,7 @@ export default function ErpControlTab({ users, onToggleUserStatus, onQuickAction
           </div>
         </SettingsPanel>
 
-        <SettingsPanel title="Role & Field-Level Access Grid" subtitle="Granular capability matrix ┬╖ module permissions ┬╖ approval rights" icon={Shield}>
+        <SettingsPanel title="Role & Field-Level Access Grid" subtitle="Granular capability matrix · module permissions · approval rights" icon={Shield}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left">
               <thead>
@@ -97,9 +97,9 @@ export default function ErpControlTab({ users, onToggleUserStatus, onQuickAction
                   <tr key={row.id} className="border-b border-slate-50 hover:bg-slate-50/80">
                     <td className={`${settingsType.tableCell} font-semibold`}>{row.role}</td>
                     <td className={`max-w-[140px] truncate ${settingsType.tableCell}`}>{row.module}</td>
-                    <td className={`${settingsType.tableCell} text-center`}>{row.readAccess ? 'Γ£ô' : 'ΓÇö'}</td>
-                    <td className={`${settingsType.tableCell} text-center`}>{row.writeAccess ? 'Γ£ô' : 'ΓÇö'}</td>
-                    <td className={`${settingsType.tableCell} text-center`}>{row.approveRights ? 'Γ£ô' : 'ΓÇö'}</td>
+                    <td className={`${settingsType.tableCell} text-center`}>{row.readAccess ? '✓' : '—'}</td>
+                    <td className={`${settingsType.tableCell} text-center`}>{row.writeAccess ? '✓' : '—'}</td>
+                    <td className={`${settingsType.tableCell} text-center`}>{row.approveRights ? '✓' : '—'}</td>
                     <td className={`max-w-[120px] truncate ${settingsType.tableCellMuted}`}>{row.fieldMask}</td>
                     <td className={settingsType.tableCell}><SettingsStatusPill status={row.status} /></td>
                   </tr>
@@ -110,7 +110,7 @@ export default function ErpControlTab({ users, onToggleUserStatus, onQuickAction
         </SettingsPanel>
       </div>
 
-      <SettingsPanel title="Quick Actions Matrix" subtitle="User ┬╖ role ┬╖ department ┬╖ integration ┬╖ notifications ┬╖ backup" icon={Zap}>
+      <SettingsPanel title="Quick Actions Matrix" subtitle="User · role · department · integration · notifications · backup" icon={Zap}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {[
             { label: 'Create User', icon: UserPlus, action: 'create-user' as const },

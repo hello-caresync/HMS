@@ -25,7 +25,7 @@ export default function BillingShell() {
           <Receipt className="h-4 w-4 text-indigo-400" />
           <div>
             <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-800">
-              Phase 10 ┬╖ Finance
+              Phase 10 · Finance
             </p>
             <h1 className="text-sm font-bold leading-tight text-white">Corporate Ledger Terminal</h1>
           </div>

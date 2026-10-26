@@ -61,13 +61,13 @@ export default function InvoiceCanvas() {
           >
             {patientLookup.map((p) => (
               <option key={p.patientId} value={p.patientId}>
-                {p.name} ┬╖ {p.uhid}
+                {p.name} · {p.uhid}
               </option>
             ))}
           </select>
           <p className="mt-1 flex items-center gap-1 text-[10px] text-slate-800">
             <UserRound className="h-3 w-3" />
-            {currentInvoice.patientName} ┬╖ UHID{' '}
+            {currentInvoice.patientName} · UHID{' '}
             <span className="font-mono font-semibold">{currentInvoice.uhid}</span>
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function InvoiceCanvas() {
           </div>
           <div className="flex items-center justify-between gap-2">
             <label htmlFor="discount" className="text-slate-800">
-              Discount (Γé╣)
+              Discount (₹)
             </label>
             <input
               id="discount"

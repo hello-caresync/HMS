@@ -47,7 +47,7 @@ export default function ProcurementPipelineWorkbench() {
           <div>
             <h1 className="text-lg font-black text-slate-900">Procurement Order Pipeline</h1>
             <p className="text-xs text-slate-800">
-              Phase 6 ┬╖ Module 18 ┬╖ Purchase requests &amp; goods receipt validation
+              Phase 6 · Module 18 · Purchase requests &amp; goods receipt validation
             </p>
           </div>
         </div>

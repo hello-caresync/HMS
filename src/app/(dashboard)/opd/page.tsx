@@ -58,7 +58,7 @@ export default function OpdReceptionPage() {
         { appointmentId, status: 'checked_in' },
         () => checkInAppointment(getOpsSupabase(), { appointmentId }),
       );
-      toast.success('Patient checked in ΓÇö doctor queue notified');
+      toast.success('Patient checked in — doctor queue notified');
       void load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Check-in failed');
@@ -72,7 +72,7 @@ export default function OpdReceptionPage() {
         { appointmentId, status },
         () => transitionAppointmentStatus(getOpsSupabase(), { appointmentId, status }),
       );
-      toast.success(`Status updated ΓåÆ ${status.replace('_', ' ')}`);
+      toast.success(`Status updated → ${status.replace('_', ' ')}`);
       void load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Status update failed');
@@ -82,7 +82,7 @@ export default function OpdReceptionPage() {
   return (
     <HospitalOpsShell
       title="OPD & Reception Workstation"
-      subtitle="Real-time sync with Patient App bookings ┬╖ booked ΓåÆ checked_in ΓåÆ in_consultation ΓåÆ completed"
+      subtitle="Real-time sync with Patient App bookings · booked → checked_in → in_consultation → completed"
     >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {[
@@ -101,7 +101,7 @@ export default function OpdReceptionPage() {
       <div className={`${hospitalOpsClasses.surface} p-4 space-y-4`}>
         <input
           className={hospitalOpsClasses.input}
-          placeholder="Search patient, token, or appointment IDΓÇª"
+          placeholder="Search patient, token, or appointment ID…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -121,7 +121,7 @@ export default function OpdReceptionPage() {
               {loading ? (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-[#84A98C] font-semibold">
-                    Loading live OPD queueΓÇª
+                    Loading live OPD queue…
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
@@ -137,8 +137,8 @@ export default function OpdReceptionPage() {
                   return (
                     <tr key={rowKey} className="border-b border-[#CAD2C5]/60">
                       <td className="py-2.5 pr-3 font-bold">{row.patient_name ?? 'Patient'}</td>
-                      <td className="py-2.5 pr-3">{row.doctor_name ?? 'ΓÇö'}</td>
-                      <td className="py-2.5 pr-3 font-mono">{row.token_number ?? 'ΓÇö'}</td>
+                      <td className="py-2.5 pr-3">{row.doctor_name ?? '—'}</td>
+                      <td className="py-2.5 pr-3 font-mono">{row.token_number ?? '—'}</td>
                       <td className="py-2.5 pr-3">
                         <span className={`rounded px-2 py-0.5 text-[10px] font-black ${hospitalOpsClasses.badgeDefault}`}>
                           {status.replace('_', ' ')}

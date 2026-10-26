@@ -39,7 +39,7 @@ type FormDraft = {
 };
 
 const WORKFLOW_SUMMARY =
-  'Standalone Rx builder ┬╖ sandbox patient P.N. ┬╖ formulary search ┬╖ safety checks simulated ┬╖ 13 Jul 2026';
+  'Standalone Rx builder · sandbox patient P.N. · formulary search · safety checks simulated · 13 Jul 2026';
 
 const PATIENT = {
   initials: 'P.N.',
@@ -102,7 +102,7 @@ function findInteraction(nameA: string, existingLines: PrescriptionLine[]): stri
         (tokenA.includes(x) && tokenB.includes(y)) ||
         (tokenA.includes(y) && tokenB.includes(x))
       ) {
-        return `${line.nameStrength} Γåö ${nameA}`;
+        return `${line.nameStrength} ↔ ${nameA}`;
       }
     }
   }
@@ -158,11 +158,11 @@ export default function EPrescriptionCorePage() {
     const line: PrescriptionLine = {
       id: createLineId(),
       nameStrength: draft.nameStrength.trim(),
-      dosage: draft.dosage.trim() || 'ΓÇö',
-      frequency: draft.frequency.trim() || 'ΓÇö',
-      duration: draft.duration.trim() || 'ΓÇö',
+      dosage: draft.dosage.trim() || '—',
+      frequency: draft.frequency.trim() || '—',
+      duration: draft.duration.trim() || '—',
       route: draft.route,
-      specialInstructions: draft.specialInstructions.trim() || 'ΓÇö',
+      specialInstructions: draft.specialInstructions.trim() || '—',
     };
 
     setPrescriptionLines((prev) => [...prev, line]);
@@ -179,7 +179,7 @@ export default function EPrescriptionCorePage() {
 
   const handleFinalize = () => {
     showNotice(
-      `Finalize & transmit ┬╖ ${prescriptionLines.length} line(s) ┬╖ ${PATIENT.uhid} ┬╖ digital copy sandbox only`,
+      `Finalize & transmit · ${prescriptionLines.length} line(s) · ${PATIENT.uhid} · digital copy sandbox only`,
     );
   };
 
@@ -196,7 +196,7 @@ export default function EPrescriptionCorePage() {
               {WORKFLOW_SUMMARY}
             </p>
             <p className="mt-2 font-mono text-xs font-black text-slate-950">
-              Patient ┬╖ {PATIENT.initials} ┬╖ {PATIENT.uhid}
+              Patient · {PATIENT.initials} · {PATIENT.uhid}
             </p>
           </div>
           <div className="inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-950 shadow-sm">
@@ -217,7 +217,7 @@ export default function EPrescriptionCorePage() {
                 <p className="text-sm font-black uppercase tracking-wide">Allergy Alert</p>
                 <p className="mt-1 text-xs font-bold leading-relaxed">
                   Selected medication may conflict with documented allergies (
-                  {PATIENT.knownAllergies.join(', ')}). Verify before prescribing ┬╖ sandbox
+                  {PATIENT.knownAllergies.join(', ')}). Verify before prescribing · sandbox
                   warning only.
                 </p>
               </div>
@@ -232,7 +232,7 @@ export default function EPrescriptionCorePage() {
               <div>
                 <p className="text-sm font-bold uppercase tracking-wide">Drug Interaction Alert</p>
                 <p className="mt-1 text-xs font-bold leading-relaxed">
-                  Potential compound conflict detected ┬╖ {interactionAlert} ┬╖ review concurrent
+                  Potential compound conflict detected · {interactionAlert} · review concurrent
                   therapy before finalizing.
                 </p>
               </div>
@@ -240,7 +240,7 @@ export default function EPrescriptionCorePage() {
           )}
           {!allergyAlert && !interactionAlert && (
             <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 px-4 py-2.5 text-xs font-bold text-emerald-950">
-              Safety core monitoring active ┬╖ no blocking alerts on current draft selection
+              Safety core monitoring active · no blocking alerts on current draft selection
             </div>
           )}
         </section>
@@ -256,7 +256,7 @@ export default function EPrescriptionCorePage() {
 
         {/* Two-column Rx layout */}
         <div className="grid w-full grid-cols-1 gap-5 xl:grid-cols-[minmax(0,45fr)_minmax(0,55fr)]">
-          {/* Left ΓÇö intake & formulary */}
+          {/* Left — intake & formulary */}
           <section
             aria-label="Medication intake and formulary search"
             className="w-full space-y-4 rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4 shadow-sm sm:p-5"
@@ -272,7 +272,7 @@ export default function EPrescriptionCorePage() {
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search standard and generic medicinesΓÇª"
+                placeholder="Search standard and generic medicines…"
                 aria-label="Search medicines"
                 className={`${INPUT_CLASS} pl-10`}
               />
@@ -420,7 +420,7 @@ export default function EPrescriptionCorePage() {
             </div>
           </section>
 
-          {/* Right ΓÇö live prescription preview */}
+          {/* Right — live prescription preview */}
           <section
             aria-label="Live prescription sheet preview"
             className="w-full space-y-4"
@@ -451,7 +451,7 @@ export default function EPrescriptionCorePage() {
                 patientName={PATIENT.initials}
                 patientUhid={PATIENT.uhid}
                 doctorName="Dr. Regal Clinician"
-                department="General Medicine ┬╖ OPD"
+                department="General Medicine · OPD"
                 issuedDate="13 Jul 2026"
                 lines={prescriptionLines.map((line) => ({
                   id: line.id,
@@ -485,7 +485,7 @@ export default function EPrescriptionCorePage() {
                   </span>
                 </div>
                 <p className="text-[10px] font-bold text-slate-800">
-                  {prescriptionLines.length} active line(s) ┬╖ sandbox transmission only
+                  {prescriptionLines.length} active line(s) · sandbox transmission only
                 </p>
               </div>
             </div>

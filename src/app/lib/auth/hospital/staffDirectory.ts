@@ -1,6 +1,6 @@
 ﻿import type { InternalStaffRole, StaffDirectoryEntry } from './types';
 
-/** Demo internal staff directory ΓÇö back-office ERP credentials only */
+/** Demo internal staff directory — back-office ERP credentials only */
 export const STAFF_DIRECTORY: StaffDirectoryEntry[] = [
   {
     employeeId: 'EMP-1001',
@@ -17,7 +17,7 @@ export const STAFF_DIRECTORY: StaffDirectoryEntry[] = [
     password: 'Regal@2026',
     displayName: 'Kavitha Reddy',
     role: 'receptionist',
-    department: 'Front Desk ┬╖ OPD',
+    department: 'Front Desk · OPD',
     shiftLabel: 'Morning Shift',
   },
   {
@@ -26,7 +26,7 @@ export const STAFF_DIRECTORY: StaffDirectoryEntry[] = [
     password: 'Regal@2026',
     displayName: 'Priya S. Nair',
     role: 'nurse',
-    department: 'ICU ┬╖ Critical Care',
+    department: 'ICU · Critical Care',
     shiftLabel: 'ICU Shift',
   },
   {

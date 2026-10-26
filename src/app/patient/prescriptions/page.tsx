@@ -154,7 +154,7 @@ export default function PatientPrescriptionsPage() {
                               : 'border-sky-100 bg-white text-slate-600 hover:border-sky-300'
                           }`}
                         >
-                          {rx.doctor_name || 'Prescription'} ┬╖{' '}
+                          {rx.doctor_name || 'Prescription'} ·{' '}
                           {new Date(rx.created_at || rx.issued_at || '').toLocaleDateString('en-IN', {
                             day: 'numeric',
                             month: 'short',

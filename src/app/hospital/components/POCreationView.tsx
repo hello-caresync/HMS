@@ -93,7 +93,7 @@ export const medicalCatalog: CatalogProduct[] = [
   },
 ];
 
-/** @deprecated Use `medicalCatalog` ΓÇö kept for existing imports */
+/** @deprecated Use `medicalCatalog` — kept for existing imports */
 export const MEDICAL_CATALOG = medicalCatalog;
 
 const searchInputClassName =
@@ -219,7 +219,7 @@ export default function POCreationView({
           </div>
           {permissions.isRequisitionOnly && (
             <span className="inline-flex items-center bg-[#FCEEEB] text-[#A65E53] border border-[#F5D5CF] rounded-lg px-3 py-1 font-mono font-semibold text-xs tracking-wider uppercase">
-              Requisition ┬╖ {currentRole}
+              Requisition · {currentRole}
             </span>
           )}
         </div>
@@ -277,7 +277,7 @@ export default function POCreationView({
                     id="po-catalog-search"
                     type="text"
                     autoComplete="off"
-                    placeholder="Type product name or HSNΓÇª"
+                    placeholder="Type product name or HSN…"
                     value={searchQuery}
                     onChange={handleSearchInputChange}
                     onFocus={handleSearchFocus}
@@ -291,7 +291,7 @@ export default function POCreationView({
                         <p className="px-4 py-3 text-xs font-medium text-slate-800">
                           {searchQuery.trim().length > 0
                             ? `No catalog matches for "${searchQuery.trim()}"`
-                            : 'Start typing to filter the catalogΓÇª'}
+                            : 'Start typing to filter the catalog…'}
                         </p>
                       ) : (
                         filteredCatalog.map((product) => (
@@ -308,7 +308,7 @@ export default function POCreationView({
                               {product.name}
                             </span>
                             <span className="mt-0.5 block font-mono text-xs text-slate-800">
-                              HSN {product.hsn} ┬╖ {product.sku} ┬╖ Γé╣{product.rate}/unit
+                              HSN {product.hsn} · {product.sku} · ₹{product.rate}/unit
                             </span>
                           </button>
                         ))
@@ -319,11 +319,11 @@ export default function POCreationView({
 
                 {selectedProduct && (
                   <p className="text-xs font-semibold text-[#A65E53]">
-                    Selected: {selectedProduct.sku} ┬╖ HSN {selectedProduct.hsn}
+                    Selected: {selectedProduct.sku} · HSN {selectedProduct.hsn}
                     {lineTotalPreview > 0 && (
                       <>
                         {' '}
-                        ┬╖ Est. Γé╣{lineTotalPreview.toLocaleString('en-IN')}
+                        · Est. ₹{lineTotalPreview.toLocaleString('en-IN')}
                       </>
                     )}
                   </p>
@@ -385,12 +385,12 @@ export default function POCreationView({
                     {lineItem?.quantityRequested.toLocaleString('en-IN')})
                   </h5>
                   <p className={`mt-1 ${bodyTextClassName}`}>
-                    SKU {lineItem?.id} ┬╖ Vendor: {po.vendorName} ┬╖ Created by{' '}
+                    SKU {lineItem?.id} · Vendor: {po.vendorName} · Created by{' '}
                     {po.createdBy}
                   </p>
                   {lineTotal > 0 && (
                     <p className={`mt-0.5 text-xs ${monoDataClassName} text-[#A65E53]`}>
-                      Line value Γé╣{lineTotal.toLocaleString('en-IN')}
+                      Line value ₹{lineTotal.toLocaleString('en-IN')}
                     </p>
                   )}
                 </div>

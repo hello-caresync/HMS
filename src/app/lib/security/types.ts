@@ -1,6 +1,6 @@
 ﻿import type { InternalStaffRole } from '../auth/hospital/types';
 
-/** Phase 1 canonical session contract ΓÇö token-bound staff identity */
+/** Phase 1 canonical session contract — token-bound staff identity */
 export type StaffSession = {
   employeeId: string;
   activeToken: string;

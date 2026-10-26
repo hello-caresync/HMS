@@ -16,6 +16,7 @@ import {
 import { ProfileCompletionGate } from '@/components/patient/ProfileCompletionGate';
 import { usePatientProfileCompleteness } from '@/lib/patient/usePatientProfileCompleteness';
 import { profileIncompleteBookingMessage } from '@/lib/utils/profileCompleteness';
+import { acceptClinicalDraft, sanitizeClinicalInput } from '@/lib/clinical/clinical-text';
 import { toast } from 'sonner';
 import {
   AlertCircle,
@@ -162,7 +163,7 @@ function BookAppointmentContent() {
         doctor_name: selectedDoctor.name,
         appointmentDate,
         slotTime: selectedSlot,
-        reasonForVisit,
+        reasonForVisit: sanitizeClinicalInput(reasonForVisit) || 'OPD consultation',
         hospitalName,
         hospital_id: patientSession.hospital_id,
       } satisfies BookAppointmentPayload);
@@ -207,7 +208,7 @@ function BookAppointmentContent() {
 
       {profileGateLoading ? (
         <div className="rounded-2xl border border-[#e6ccb2] bg-white p-6 text-xs font-bold text-[#4B736B]">
-          Checking profile readiness for OPD bookingΓÇª
+          Checking profile readiness for OPD booking…
         </div>
       ) : !profileComplete ? (
         <ProfileCompletionGate missingFields={profileMissingFields} />
@@ -215,7 +216,7 @@ function BookAppointmentContent() {
 
       {loadingData ? (
         <div className="flex items-center gap-2 rounded-3xl border border-[#e6ccb2] bg-white p-8 text-xs font-bold text-[#4B736B]">
-          <Loader2 className="h-4 w-4 animate-spin text-[#b08968]" /> Loading clinicianΓÇª
+          <Loader2 className="h-4 w-4 animate-spin text-[#b08968]" /> Loading clinician…
         </div>
       ) : selectedDoctor && profileComplete ? (
         <form
@@ -228,7 +229,7 @@ function BookAppointmentContent() {
             </p>
             <p className="mt-1 text-sm font-black text-[#7f5539]">{selectedDoctor.name}</p>
             <p className="text-xs font-bold text-[#4B736B]">
-              {selectedDoctor.department} ΓÇó {selectedDoctor.specialization} ΓÇó{' '}
+              {selectedDoctor.department} • {selectedDoctor.specialization} •{' '}
               {selectedDoctor.employeeId}
             </p>
             <p className="mt-2 truncate font-mono text-[10px] font-semibold text-[#b08968]">
@@ -307,11 +308,18 @@ function BookAppointmentContent() {
             </label>
             <input
               type="text"
+              maxLength={180}
               value={reasonForVisit}
-              onChange={(e) => setReasonForVisit(e.target.value)}
+              onChange={(e) =>
+                setReasonForVisit((current) => acceptClinicalDraft(e.target.value, current))
+              }
+              placeholder="e.g. Fever, cough, routine checkup"
               className={inputClass}
               required
             />
+            <p className="mt-1 text-[10px] font-semibold text-[#7C5C48]">
+              Short clinical note only. Letters, numbers, and basic punctuation.
+            </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -357,7 +365,7 @@ function BookAppointmentContent() {
                 {selectedSlot}.
               </p>
               <p className="flex items-center gap-1 pt-1 text-[11px] font-black text-[#b08968]">
-                <IndianRupee className="h-3.5 w-3.5" /> Fee: Γé╣{selectedDoctor.fee}
+                <IndianRupee className="h-3.5 w-3.5" /> Fee: ₹{selectedDoctor.fee}
               </p>
             </div>
           )}
@@ -369,7 +377,7 @@ function BookAppointmentContent() {
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Confirming AppointmentΓÇª
+                <Loader2 className="h-4 w-4 animate-spin" /> Confirming Appointment…
               </>
             ) : (
               <>
@@ -404,7 +412,7 @@ export default function PatientBookPage() {
       fallback={
         <div className="flex items-center justify-center p-12 text-xs font-bold text-[#4B736B]">
           <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#b08968]" />
-          Loading booking formΓÇª
+          Loading booking form…
         </div>
       }
     >

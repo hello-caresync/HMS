@@ -157,7 +157,7 @@ export default function ServiceRequestsPage() {
         ) : null}
 
         {loading ? (
-          <p className="text-sm text-slate-500">Loading ticketsΓÇª</p>
+          <p className="text-sm text-slate-500">Loading tickets…</p>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {tickets.length === 0 ? (
@@ -258,7 +258,7 @@ export default function ServiceRequestsPage() {
                   Cancel
                 </button>
                 <button type="submit" disabled={saving} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
-                  {saving ? 'SubmittingΓÇª' : 'Submit ticket'}
+                  {saving ? 'Submitting…' : 'Submit ticket'}
                 </button>
               </div>
             </form>

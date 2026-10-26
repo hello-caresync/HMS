@@ -13,7 +13,7 @@ export function IntegrationLogDrawer({ logId, onClose }: IntegrationLogDrawerPro
   const detail = INTEGRATION_LOG_DETAILS[logId];
 
   return (
-    <DrawerOverlay title={detail.title} subtitle="Integration protocol ledger ┬╖ reference log" onClose={onClose}>
+    <DrawerOverlay title={detail.title} subtitle="Integration protocol ledger · reference log" onClose={onClose}>
       <dl className="space-y-3">
         {detail.rows.map((row) => (
           <div key={row.label} className="rounded-lg border border-slate-100 bg-[#F8FAFC] px-4 py-3">

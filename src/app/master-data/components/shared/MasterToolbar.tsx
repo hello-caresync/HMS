@@ -15,7 +15,7 @@ type MasterToolbarProps = {
 export default function MasterToolbar({
   search,
   onSearchChange,
-  searchPlaceholder = 'Search recordsΓÇª',
+  searchPlaceholder = 'Search records…',
   recordCount,
   recordLabel = 'records',
   onAdd,

@@ -22,7 +22,7 @@ export default function SystemSettingsConsole() {
           <div>
             <h1 className="text-lg font-black text-slate-900">System Settings &amp; Security</h1>
             <p className="text-xs text-slate-800">
-              Phase 7 ┬╖ Module 25 ┬╖ IT administrative controls
+              Phase 7 · Module 25 · IT administrative controls
             </p>
           </div>
         </div>

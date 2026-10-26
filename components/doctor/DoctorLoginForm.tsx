@@ -124,7 +124,7 @@ export function DoctorLoginForm({ redirectTo = '/doctor/dashboard' }: DoctorLogi
               name="doctor-portal-identifier"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="Doctor ID or hospital email"
+              placeholder="e.g. doctor@hospital.com"
               className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pr-4 pl-10 text-sm font-medium text-slate-900 transition focus:border-teal-600 focus:bg-white focus:outline-none"
               {...LOGIN_IDENTIFIER_INPUT_PROPS}
             />
@@ -143,7 +143,7 @@ export function DoctorLoginForm({ redirectTo = '/doctor/dashboard' }: DoctorLogi
               name="doctor-portal-passcode"
               value={passcode}
               onChange={(e) => setPasscode(e.target.value)}
-              placeholder="Assigned clinician passcode"
+              placeholder="Enter your passcode"
               className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pr-10 pl-10 font-mono text-sm font-bold text-slate-900 transition focus:border-teal-600 focus:bg-white focus:outline-none"
               {...LOGIN_PASSWORD_INPUT_PROPS}
             />

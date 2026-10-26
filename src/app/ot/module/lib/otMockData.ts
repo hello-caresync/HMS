@@ -103,7 +103,7 @@ export const INITIAL_SURGERIES: SurgeryCase[] = [
     caseNumber: 'OT-2026-0412',
     patientName: 'Arjun Das',
     uhid: 'NX-2026-000377',
-    procedure: 'Total Knee Replacement ΓÇö Left',
+    procedure: 'Total Knee Replacement — Left',
     scheduledSurgeon: 'Dr. Kapoor',
     otRoom: 'OT-3 Orthopedics',
     scheduledTime: '2026-07-18T08:00:00',
@@ -117,7 +117,7 @@ export const INITIAL_SURGERIES: SurgeryCase[] = [
     caseNumber: 'OT-2026-0415',
     patientName: 'Vikram Patel',
     uhid: 'NX-2026-000388',
-    procedure: 'Craniotomy ΓÇö Evacuation Hematoma',
+    procedure: 'Craniotomy — Evacuation Hematoma',
     scheduledSurgeon: 'Dr. Meera Iyer',
     otRoom: 'OT-1 Neuro',
     scheduledTime: '2026-07-18T09:30:00',
@@ -145,7 +145,7 @@ export const INITIAL_SURGERIES: SurgeryCase[] = [
     caseNumber: 'OT-2026-0410',
     patientName: 'Rahul Sharma',
     uhid: 'NX-2026-000412',
-    procedure: 'CABG ├ù 3 Grafts',
+    procedure: 'CABG × 3 Grafts',
     scheduledSurgeon: 'Dr. Rajesh Kumar',
     otRoom: 'OT-2 Cardiac',
     scheduledTime: '2026-07-18T07:00:00',
@@ -173,7 +173,7 @@ export const INITIAL_SURGERIES: SurgeryCase[] = [
     caseNumber: 'OT-2026-0408',
     patientName: 'Meera Krishnan',
     uhid: 'NX-2026-000415',
-    procedure: 'Appendectomy ΓÇö Lap',
+    procedure: 'Appendectomy — Lap',
     scheduledSurgeon: 'Dr. Anita Roy',
     otRoom: 'OT-5 General Surgery',
     scheduledTime: '2026-07-18T06:30:00',
@@ -210,13 +210,13 @@ export const MOCK_EQUIPMENT: EquipmentItem[] = [
   { id: 'eq2', name: 'Neuro Navigation System', otRoom: 'OT-1 Neuro', status: 'In Use', lastSterilized: '2026-07-18', assignedCase: 'OT-2026-0415' },
   { id: 'eq3', name: 'Laparoscopic Tower Set A', otRoom: 'OT-5 General Surgery', status: 'Sterilizing', lastSterilized: '2026-07-18' },
   { id: 'eq4', name: 'Cardiac Bypass Console', otRoom: 'OT-2 Cardiac', status: 'Ready', lastSterilized: '2026-07-18' },
-  { id: 'eq5', name: 'Electrosurgical Unit ΓÇö Bovie', otRoom: 'OT-4 ENT', status: 'Ready', lastSterilized: '2026-07-17' },
+  { id: 'eq5', name: 'Electrosurgical Unit — Bovie', otRoom: 'OT-4 ENT', status: 'Ready', lastSterilized: '2026-07-17' },
 ];
 
 export const MOCK_POSTOP_FLOWS: PostOpFlow[] = [
-  { id: 'po1', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', procedure: 'CABG ├ù 3', recoveryRoom: 'PACU Bay 2', icuTransfer: 'Completed', wardHandover: 'In Progress', notes: 'Hemodynamically stable ΓÇö ICU step-down planned' },
-  { id: 'po2', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', procedure: 'Appendectomy', recoveryRoom: 'PACU Bay 4', icuTransfer: 'Pending', wardHandover: 'Completed', notes: 'Discharged to Ward 6B ΓÇö post-op day 0' },
-  { id: 'po3', patientName: 'Arjun Das', uhid: 'NX-2026-000377', procedure: 'TKR Left', recoveryRoom: 'PACU Bay 1', icuTransfer: 'Pending', wardHandover: 'Pending', notes: 'Surgery in progress ΓÇö PACU reserved' },
+  { id: 'po1', patientName: 'Rahul Sharma', uhid: 'NX-2026-000412', procedure: 'CABG × 3', recoveryRoom: 'PACU Bay 2', icuTransfer: 'Completed', wardHandover: 'In Progress', notes: 'Hemodynamically stable — ICU step-down planned' },
+  { id: 'po2', patientName: 'Meera Krishnan', uhid: 'NX-2026-000415', procedure: 'Appendectomy', recoveryRoom: 'PACU Bay 4', icuTransfer: 'Pending', wardHandover: 'Completed', notes: 'Discharged to Ward 6B — post-op day 0' },
+  { id: 'po3', patientName: 'Arjun Das', uhid: 'NX-2026-000377', procedure: 'TKR Left', recoveryRoom: 'PACU Bay 1', icuTransfer: 'Pending', wardHandover: 'Pending', notes: 'Surgery in progress — PACU reserved' },
 ];
 
 export const MOCK_BILLING: OtBillingLine[] = [

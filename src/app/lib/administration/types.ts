@@ -1,4 +1,4 @@
-﻿/** Phase 7 ΓÇö Administration workflow types (Modules 20ΓÇô25) */
+﻿/** Phase 7 — Administration workflow types (Modules 20–25) */
 
 export type ReportDepartmentFilter =
   | 'All Departments'

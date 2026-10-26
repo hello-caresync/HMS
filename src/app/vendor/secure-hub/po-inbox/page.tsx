@@ -141,9 +141,9 @@ function POInboxRouteWorkspace() {
               href={APP_ROUTES.vendorSecureHub}
               className="text-xs font-semibold text-white/70 transition-colors hover:text-amber-500"
             >
-              ΓåÉ Secure hub modules
+              ← Secure hub modules
             </Link>
-            <span className="hidden text-white/30 sm:inline">┬╖</span>
+            <span className="hidden text-white/30 sm:inline">·</span>
             <Link
               href={APP_ROUTES.vendorGateway}
               className="text-xs font-semibold text-white/70 transition-colors hover:text-white"

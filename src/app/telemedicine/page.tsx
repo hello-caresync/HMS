@@ -27,7 +27,7 @@ type SharedReport = {
 };
 
 const CONNECTION_SUMMARY =
-  'Standalone telemedicine terminal ┬╖ encrypted RTC sandbox ┬╖ remote consult ┬╖ live chat ┬╖ 13 Jul 2026';
+  'Standalone telemedicine terminal · encrypted RTC sandbox · remote consult · live chat · 13 Jul 2026';
 
 const PATIENT = {
   initials: 'P.N.',
@@ -45,7 +45,7 @@ const INITIAL_CHAT: ChatMessage[] = [
   {
     id: 'msg-2',
     sender: 'doctor',
-    text: 'Good morning. Can you describe the pain ΓÇö location, intensity, and any associated symptoms?',
+    text: 'Good morning. Can you describe the pain — location, intensity, and any associated symptoms?',
     timestamp: '09:03',
   },
   {
@@ -101,8 +101,8 @@ export default function TelemedicineWorkspacePage() {
   const [viewedReportId, setViewedReportId] = useState<string | null>(null);
 
   const [rxDrug, setRxDrug] = useState('Paracetamol 500mg');
-  const [rxDose, setRxDose] = useState('1 tab TID ├ù 3 days');
-  const [rxNotes, setRxNotes] = useState('Take after meals ┬╖ avoid alcohol');
+  const [rxDose, setRxDose] = useState('1 tab TID × 3 days');
+  const [rxNotes, setRxNotes] = useState('Take after meals · avoid alcohol');
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -141,12 +141,12 @@ export default function TelemedicineWorkspacePage() {
     setSessionActive(false);
     setIsScreenSharing(false);
     if (isRecording) setIsRecording(false);
-    showNotice('Session ended ┬╖ sandbox disconnect simulated ┬╖ no real RTC teardown');
+    showNotice('Session ended · sandbox disconnect simulated · no real RTC teardown');
   };
 
   const handleViewReport = (report: SharedReport) => {
     setViewedReportId(report.id);
-    showNotice(`Quick-view ┬╖ ${report.fileName} ┬╖ ${report.category} ┬╖ sandbox preview only`);
+    showNotice(`Quick-view · ${report.fileName} · ${report.category} · sandbox preview only`);
   };
 
   const toggleRecording = () => {
@@ -154,8 +154,8 @@ export default function TelemedicineWorkspacePage() {
       const next = !prev;
       showNotice(
         next
-          ? 'Consultation recording started ┬╖ sandbox flag only ┬╖ no media captured'
-          : 'Consultation recording stopped ┬╖ sandbox flag cleared',
+          ? 'Consultation recording started · sandbox flag only · no media captured'
+          : 'Consultation recording stopped · sandbox flag cleared',
       );
       return next;
     });
@@ -174,7 +174,7 @@ export default function TelemedicineWorkspacePage() {
               {CONNECTION_SUMMARY}
             </p>
             <p className="mt-2 font-mono text-xs font-black text-slate-950">
-              Patient ┬╖ {PATIENT.initials} ┬╖ {PATIENT.uhid} ┬╖ session {PATIENT.sessionId}
+              Patient · {PATIENT.initials} · {PATIENT.uhid} · session {PATIENT.sessionId}
             </p>
           </div>
           <div className="inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-950 shadow-sm">
@@ -194,7 +194,7 @@ export default function TelemedicineWorkspacePage() {
 
         {/* Side-by-side virtual encounter */}
         <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-[60%_40%]">
-          {/* Left ΓÇö streaming & chat */}
+          {/* Left — streaming & chat */}
           <section aria-label="Real-time streaming and chat" className="w-full space-y-4">
             <div className="relative aspect-video w-full overflow-hidden rounded-xl border-2 border-slate-800 bg-slate-900">
               {sessionActive ? (
@@ -204,10 +204,10 @@ export default function TelemedicineWorkspacePage() {
                       <span className="text-2xl font-black text-slate-100">{PATIENT.initials}</span>
                     </div>
                     <p className="text-sm font-black uppercase tracking-wider text-slate-200">
-                      Video Consultation ┬╖ Live Feed Simulated
+                      Video Consultation · Live Feed Simulated
                     </p>
                     <p className="font-mono text-[10px] font-bold text-slate-400">
-                      {PATIENT.sessionId} ┬╖ sandbox stream ┬╖ no WebRTC provider
+                      {PATIENT.sessionId} · sandbox stream · no WebRTC provider
                     </p>
                   </div>
 
@@ -271,8 +271,8 @@ export default function TelemedicineWorkspacePage() {
                         setIsScreenSharing((p) => !p);
                         showNotice(
                           isScreenSharing
-                            ? 'Screen sharing stopped ┬╖ sandbox'
-                            : 'Screen sharing started ┬╖ sandbox overlay',
+                            ? 'Screen sharing stopped · sandbox'
+                            : 'Screen sharing started · sandbox overlay',
                         );
                       }}
                       aria-pressed={isScreenSharing}
@@ -330,7 +330,7 @@ export default function TelemedicineWorkspacePage() {
                       {msg.text}
                     </div>
                     <span className="mt-0.5 text-[10px] font-bold text-slate-600">
-                      {msg.sender === 'doctor' ? 'You' : PATIENT.initials} ┬╖ {msg.timestamp}
+                      {msg.sender === 'doctor' ? 'You' : PATIENT.initials} · {msg.timestamp}
                     </span>
                   </div>
                 ))}
@@ -343,7 +343,7 @@ export default function TelemedicineWorkspacePage() {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={handleChatKeyDown}
-                  placeholder="Type a messageΓÇª"
+                  placeholder="Type a message…"
                   disabled={!sessionActive}
                   aria-label="Chat message input"
                 />
@@ -360,13 +360,13 @@ export default function TelemedicineWorkspacePage() {
             </div>
           </section>
 
-          {/* Right ΓÇö clinical utilities */}
+          {/* Right — clinical utilities */}
           <aside aria-label="Integrated clinical utilities" className="w-full space-y-4">
             {/* Share reports */}
             <section className="w-full rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4">
               <h2 className="text-sm font-black text-slate-950">Share Reports Portal</h2>
               <p className="mt-1 text-xs font-bold text-slate-800">
-                Patient-uploaded documents ┬╖ quick-view sandbox
+                Patient-uploaded documents · quick-view sandbox
               </p>
               <ul className="mt-3 space-y-2">
                 {SHARED_REPORTS.map((report) => (
@@ -384,7 +384,7 @@ export default function TelemedicineWorkspacePage() {
                         {report.fileName}
                       </p>
                       <p className="text-[10px] font-bold text-slate-800">
-                        {report.category} ┬╖ {report.uploadedAt}
+                        {report.category} · {report.uploadedAt}
                       </p>
                     </div>
                     <button
@@ -403,7 +403,7 @@ export default function TelemedicineWorkspacePage() {
             <section className="w-full rounded-xl border border-slate-200/80 bg-white shadow-[0_4px_16px_-4px_rgba(0,117,140,0.03)] p-4">
               <h2 className="text-sm font-black text-slate-950">Digital Prescription Workspace</h2>
               <p className="mt-1 text-xs font-bold text-slate-800">
-                Mini e-Rx ┬╖ immediate drug lines ┬╖ sandbox only
+                Mini e-Rx · immediate drug lines · sandbox only
               </p>
               <div className="mt-3 space-y-3">
                 <label className="block space-y-1">

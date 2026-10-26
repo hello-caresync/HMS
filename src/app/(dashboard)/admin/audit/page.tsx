@@ -1,7 +1,7 @@
 ﻿import SecurityAuditDashboard from '../../../administration/admin/components/SecurityAuditDashboard';
 
 export const metadata = {
-  title: 'Security Audit ┬╖ CuraSync ERP',
+  title: 'Security Audit · CuraSync ERP',
   description: 'IT security audit log console',
 };
 

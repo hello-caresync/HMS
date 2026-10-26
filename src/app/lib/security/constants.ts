@@ -10,7 +10,7 @@ export const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 /** MFA OTP resend cooldown */
 export const MFA_RESEND_COOLDOWN_SEC = 60;
 
-/** Simulated MFA ΓÇö required for elevated internal roles in Phase 1 */
+/** Simulated MFA — required for elevated internal roles in Phase 1 */
 export const MFA_REQUIRED_ROLES = [
   'hospital_admin',
   'finance_team',

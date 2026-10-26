@@ -19,7 +19,7 @@ export default function VendorSourcingTab() {
   return (
     <div className="grid grid-cols-1 gap-2 xl:grid-cols-[2fr_3fr]">
       <div className="space-y-2">
-        <ProcPanel title="Supplier & Catalogue Directory" subtitle="Vendor profiles ┬╖ ratings ┬╖ rate contracts ┬╖ AMC tracking" icon={Building2} secure>
+        <ProcPanel title="Supplier & Catalogue Directory" subtitle="Vendor profiles · ratings · rate contracts · AMC tracking" icon={Building2} secure>
           <SecureVendorPlaceholder verified />
           <table className="mt-2 w-full text-left">
             <thead>
@@ -58,8 +58,8 @@ export default function VendorSourcingTab() {
 
       <div className="space-y-2">
         <ProcPanel
-          title="RFQ ΓÇö Quotation Comparison Matrix"
-          subtitle="Price vs delivery speed ┬╖ side-by-side vendor evaluation"
+          title="RFQ — Quotation Comparison Matrix"
+          subtitle="Price vs delivery speed · side-by-side vendor evaluation"
           icon={Scale}
           headerRight={
             <select
@@ -100,7 +100,7 @@ export default function VendorSourcingTab() {
           </div>
         </ProcPanel>
 
-        <ProcPanel title="Tender Management ΓÇö Capital Budget Selection" subtitle="Published ┬╖ evaluation ┬╖ award workflows" icon={Gavel}>
+        <ProcPanel title="Tender Management — Capital Budget Selection" subtitle="Published · evaluation · award workflows" icon={Gavel}>
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-[#F8FAFC]">

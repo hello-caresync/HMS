@@ -7,7 +7,7 @@ export default function BillingPage() {
   return (
     <HospitalOpsShell
       title="Billing & Cashier Desk"
-      subtitle="Consolidated invoicing ┬╖ GST ledger ┬╖ patient checkout"
+      subtitle="Consolidated invoicing · GST ledger · patient checkout"
     >
       <BillingInvoiceWorkbench />
     </HospitalOpsShell>

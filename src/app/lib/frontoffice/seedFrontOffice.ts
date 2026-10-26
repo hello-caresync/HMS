@@ -9,7 +9,7 @@
 } from './types';
 
 export const DEPARTMENT_OPTIONS: DepartmentOption[] = [
-  { code: 'ENT', label: 'ENT ┬╖ Otolaryngology' },
+  { code: 'ENT', label: 'ENT · Otolaryngology' },
   { code: 'CAR', label: 'Cardiology' },
   { code: 'ORT', label: 'Orthopedics' },
   { code: 'PED', label: 'Pediatrics' },
@@ -18,12 +18,12 @@ export const DEPARTMENT_OPTIONS: DepartmentOption[] = [
 ];
 
 export const DOCTOR_AVAILABILITY: DoctorAvailabilityOption[] = [
-  { id: 'doc-ent-1', name: 'Dr. Meera Iyer', departmentCode: 'ENT', slotLabel: 'OPD ┬╖ 09:00ΓÇô13:00', available: true },
-  { id: 'doc-ent-2', name: 'Dr. Rajesh Kumar', departmentCode: 'ENT', slotLabel: 'OPD ┬╖ 14:00ΓÇô18:00', available: false },
-  { id: 'doc-car-1', name: 'Dr. Priya Menon', departmentCode: 'CAR', slotLabel: 'OPD ┬╖ 10:00ΓÇô16:00', available: true },
-  { id: 'doc-ort-1', name: 'Dr. Arjun Das', departmentCode: 'ORT', slotLabel: 'OPD ┬╖ 09:30ΓÇô12:30', available: true },
-  { id: 'doc-ped-1', name: 'Dr. Lakshmi Nair', departmentCode: 'PED', slotLabel: 'OPD ┬╖ 08:00ΓÇô14:00', available: true },
-  { id: 'doc-gen-1', name: 'Dr. Vikram Patel', departmentCode: 'GEN', slotLabel: 'OPD ┬╖ Full day', available: false },
+  { id: 'doc-ent-1', name: 'Dr. Meera Iyer', departmentCode: 'ENT', slotLabel: 'OPD · 09:00–13:00', available: true },
+  { id: 'doc-ent-2', name: 'Dr. Rajesh Kumar', departmentCode: 'ENT', slotLabel: 'OPD · 14:00–18:00', available: false },
+  { id: 'doc-car-1', name: 'Dr. Priya Menon', departmentCode: 'CAR', slotLabel: 'OPD · 10:00–16:00', available: true },
+  { id: 'doc-ort-1', name: 'Dr. Arjun Das', departmentCode: 'ORT', slotLabel: 'OPD · 09:30–12:30', available: true },
+  { id: 'doc-ped-1', name: 'Dr. Lakshmi Nair', departmentCode: 'PED', slotLabel: 'OPD · 08:00–14:00', available: true },
+  { id: 'doc-gen-1', name: 'Dr. Vikram Patel', departmentCode: 'GEN', slotLabel: 'OPD · Full day', available: false },
 ];
 
 export const SEED_QUEUE_TOKENS: QueueTokenEntry[] = [
@@ -35,10 +35,10 @@ export const SEED_QUEUE_TOKENS: QueueTokenEntry[] = [
 ];
 
 export const ADMISSION_PACKAGES: AdmissionPackageOption[] = [
-  { id: 'pkg-gen', label: 'General Ward ┬╖ Standard Care', baseRate: 2500 },
-  { id: 'pkg-icu', label: 'ICU ┬╖ Critical Monitoring', baseRate: 12000 },
-  { id: 'pkg-pvt', label: 'Private Suite ┬╖ Premium', baseRate: 8500 },
-  { id: 'pkg-mat', label: 'Maternity ┬╖ Delivery Package', baseRate: 45000 },
+  { id: 'pkg-gen', label: 'General Ward · Standard Care', baseRate: 2500 },
+  { id: 'pkg-icu', label: 'ICU · Critical Monitoring', baseRate: 12000 },
+  { id: 'pkg-pvt', label: 'Private Suite · Premium', baseRate: 8500 },
+  { id: 'pkg-mat', label: 'Maternity · Delivery Package', baseRate: 45000 },
 ];
 
 function buildBedGrid(ward: WardTypeOption, prefix: string, states: BedOccupancyState[]): SimulatedBedCell[] {

@@ -1,7 +1,6 @@
 ﻿'use client';
 
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Activity,
@@ -73,6 +72,7 @@ import {
   type PrescribedItem,
 } from '@/lib/billing/post-consultation-invoice';
 import { createWalkInBillingRecord } from '@/lib/db/billing';
+import { peekNextHospitalUhid, resolvePatientUhidForSave } from '@/lib/db/patients';
 import {
   completeConsultationRecord,
   createConsultationFromAppointment,
@@ -93,10 +93,14 @@ import { DoctorsStaffCommandCenter } from '@/components/hospital/DoctorsStaffCom
 import { IpdBedCensus } from '@/components/hospital/IpdBedCensus';
 import { SupplyOrdersCommandCenter } from '@/components/hospital/SupplyOrdersCommandCenter';
 import { BillingCheckoutCommandCenter } from '@/components/hospital/BillingCheckoutCommandCenter';
-import { HospitalOperationsHeaderBrand, HospitalOperationsHeaderTitle } from '@/components/hospital/HospitalOperationsHeaderBrand';
+import { HospitalOperationsHeaderBrand } from '@/components/hospital/HospitalOperationsHeaderBrand';
 import { HospitalOperationsSidebarBrand } from '@/components/hospital/HospitalOperationsSidebarBrand';
 import { DASHBOARD_TAB_STORAGE_KEY } from '@/components/hospital/DashboardTabRedirect';
-import { mapHospitalStaffMember, toDashboardStaffRow } from '@/lib/hospital/staff-directory';
+import {
+  fetchCommandCenterPersonnel,
+  mapHospitalStaffMember,
+  toDashboardStaffRow,
+} from '@/lib/hospital/staff-directory';
 import {
   fetchActiveHospitalDoctors,
   formatConsultationFee,
@@ -292,8 +296,15 @@ type BillingCheckoutAlert = {
 type WalkInTokenSource = {
   uhid?: string | null;
   token?: string | null;
+  token_number?: string | number | null;
+  source?: string | null;
+  channel?: string | null;
   appointment_date?: string | null;
   created_at?: string | null;
+  doctor_name?: string | null;
+  doctor_id?: string | null;
+  doctor_code?: string | null;
+  doctor_employee_id?: string | null;
 };
 
 type PatientBillingStatus = 'none' | 'awaiting_consultation' | 'pending_payment' | 'paid';
@@ -328,16 +339,24 @@ type PharmacyRow = {
   category: string;
   stock: number;
   status: string;
+  sku: string;
+  unit_price: number | null;
+  supplier: string;
 };
 
 function mapPharmacyRow(row: Record<string, unknown>): PharmacyRow {
-  const stock = Number(row.stock ?? row.quantity_in_stock ?? 0);
+  const stock = Number(row.stock ?? row.quantity_in_stock ?? row.quantity ?? 0);
+  const priceRaw = row.unit_price ?? row.price ?? row.mrp ?? row.selling_price;
+  const price = priceRaw == null || priceRaw === '' ? null : Number(priceRaw);
   return {
     id: String(row.id ?? ''),
     item_name: String(row.item_name ?? row.name ?? '').trim(),
     category: String(row.category ?? 'Medicine').trim() || 'Medicine',
     stock,
     status: String(row.status ?? (stock > 0 ? 'In Stock' : 'Out of Stock')),
+    sku: String(row.sku ?? row.sku_code ?? row.item_code ?? row.code ?? '').trim(),
+    unit_price: price != null && Number.isFinite(price) ? price : null,
+    supplier: String(row.supplier ?? row.vendor_name ?? row.authorized_supplier ?? row.manufacturer ?? '').trim(),
   };
 }
 
@@ -354,7 +373,22 @@ function dedupePharmacyItems(rows: PharmacyRow[]): PharmacyRow[] {
     if (!row.item_name) continue;
     if (row.id && seenIds.has(row.id)) continue;
     const key = formularyMatchKey(row);
-    if (seenKeys.has(key)) continue;
+    if (seenKeys.has(key)) {
+      const index = next.findIndex((item) => formularyMatchKey(item) === key);
+      if (index >= 0) {
+        const current = next[index];
+        next[index] = {
+          ...current,
+          id: current.id || row.id,
+          sku: current.sku || row.sku,
+          unit_price: current.unit_price ?? row.unit_price,
+          supplier: current.supplier || row.supplier,
+          stock: current.stock > 0 ? current.stock : row.stock,
+          status: current.status || row.status,
+        };
+      }
+      continue;
+    }
     if (row.id) seenIds.add(row.id);
     seenKeys.add(key);
     next.push(row);
@@ -428,9 +462,103 @@ type EmergencyAlertRecord = {
   arrival: string;
   status: string;
   created_at: string;
+  notified_doctor?: string;
 };
 
+type EmergencyDoctorOption = {
+  id: string;
+  name: string;
+  department: string;
+  email: string;
+  employeeId: string;
+  timings: string;
+  availability: 'available' | 'appointment' | 'off-duty' | 'unlisted';
+};
+
+const WEEKDAY_INDEX: Record<string, number> = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+
+function clockToMinutes(text: string): number | null {
+  const match = text.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+  if (!match) return null;
+  let hour = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === 'PM') hour += 12;
+  return hour * 60 + Number(match[2] ?? '0');
+}
+
+function scheduleCoversWeekday(timings: string, day: number): boolean {
+  const lower = timings.toLowerCase();
+  const named = Object.keys(WEEKDAY_INDEX).filter((name) => lower.includes(name));
+  if (named.length === 0) return true;
+  if (/\bto\b/.test(lower) && named.length >= 2) {
+    const start = WEEKDAY_INDEX[named[0]];
+    const end = WEEKDAY_INDEX[named[named.length - 1]];
+    return start <= end ? day >= start && day <= end : day >= start || day <= end;
+  }
+  return named.some((name) => WEEKDAY_INDEX[name] === day);
+}
+
+function doctorAvailability(timings: string, now = new Date()): EmergencyDoctorOption['availability'] {
+  const text = timings.trim();
+  if (!text) return 'unlisted';
+  const hasClock = /\d{1,2}(?::\d{2})?\s*(am|pm)/i.test(text);
+  if (/appointment/i.test(text) && !hasClock) return 'appointment';
+  if (!scheduleCoversWeekday(text, now.getDay())) return 'off-duty';
+  const clocks = [...text.matchAll(/(\d{1,2}(?::\d{2})?\s*(?:am|pm))/gi)]
+    .map((match) => clockToMinutes(match[1]))
+    .filter((value): value is number => value != null);
+  if (clocks.length < 2) return /appointment/i.test(text) ? 'appointment' : 'unlisted';
+  const [start, end] = clocks;
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const inside = end >= start ? minutes >= start && minutes <= end : minutes >= start || minutes <= end;
+  if (inside) return 'available';
+  return /appointment/i.test(text) ? 'appointment' : 'off-duty';
+}
+
+function canTreatEmergency(department: string): boolean {
+  return /casualt|\bcmo\b|trauma|anesth|general medicine|general physician|laparoscopic|pediatric intensive|neurosurg|cardio|pulmon|ortho/i.test(
+    department,
+  );
+}
+
+function emergencySpecialtyRank(department: string): number {
+  if (/casualt|\bcmo\b/i.test(department)) return 0;
+  if (/trauma/i.test(department)) return 1;
+  if (/anesth/i.test(department)) return 2;
+  if (/general medicine|general physician/i.test(department)) return 3;
+  if (/pediatric intensive/i.test(department)) return 4;
+  if (/laparoscopic/i.test(department)) return 5;
+  return 6;
+}
+
+function availabilityRank(value: EmergencyDoctorOption['availability']): number {
+  if (value === 'available') return 0;
+  if (value === 'appointment') return 1;
+  if (value === 'unlisted') return 2;
+  return 3;
+}
+
+function availabilityLabel(value: EmergencyDoctorOption['availability']): string {
+  if (value === 'available') return 'Available now';
+  if (value === 'appointment') return 'On appointment';
+  if (value === 'off-duty') return 'Off duty';
+  return 'Schedule not listed';
+}
+
+function assignedDoctorFromNotes(notes: string): string {
+  const header = notes.split('\n')[0]?.match(/^TO:([^|]*)/);
+  return header?.[1]?.trim() ?? '';
+}
+
 function mapEmergencyAlert(row: Record<string, unknown>): EmergencyAlertRecord {
+  const notes = String(row.emergency_notes ?? '');
   return {
     id: String(row.id ?? ''),
     patient_info: String(row.patient_info ?? row.patient_name ?? row.chief_complaint ?? row.complaint ?? 'Unidentified trauma'),
@@ -438,6 +566,10 @@ function mapEmergencyAlert(row: Record<string, unknown>): EmergencyAlertRecord {
     arrival: String(row.arrival ?? row.arrival_mode ?? 'Ambulance'),
     status: String(row.status ?? 'active'),
     created_at: String(row.created_at ?? ''),
+    notified_doctor:
+      assignedDoctorFromNotes(notes) ||
+      String(row.assigned_doctor_name ?? row.notified_doctor ?? '').trim() ||
+      undefined,
   };
 }
 
@@ -505,25 +637,99 @@ function todayIsoDate(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
-const getNextWalkInToken = (queue: WalkInTokenSource[], prefix = WALK_IN_TOKEN_PREFIX) => {
-  const todayStr = todayIsoDate();
-  const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(`^${escaped}-(\\d+)$`, 'i');
-  let highest = 0;
+function walkInSeriesNumber(value: unknown): number {
+  const text = String(value ?? '').trim().toUpperCase();
+  const match = text.match(/^(?:NX-WLK|NX-OPD|T|WLK)-(\d+)$/);
+  if (match) {
+    const parsed = Number(match[1]);
+    return Number.isFinite(parsed) && parsed > 0 && parsed < 1000 ? parsed : 0;
+  }
+  if (/^\d{1,3}$/.test(text)) return Number(text);
+  return 0;
+}
 
+function rowIsToday(item: WalkInTokenSource): boolean {
+  const today = todayIsoDate();
+  const appointment = String(item.appointment_date ?? '').slice(0, 10);
+  if (appointment === today) return true;
+  if (!appointment && String(item.created_at ?? '').slice(0, 10) === today) return true;
+  return false;
+}
+
+function normalizeDoctorKey(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/^dr\.?\s+/, '');
+}
+
+function rowMatchesDoctor(row: WalkInTokenSource, doctorKeys: string[]): boolean {
+  const keys = doctorKeys.map(normalizeDoctorKey).filter(Boolean);
+  if (keys.length === 0) return true;
+  const fields = [row.doctor_id, row.doctor_code, row.doctor_employee_id, row.doctor_name]
+    .map(normalizeDoctorKey)
+    .filter(Boolean);
+  return keys.some((key) => fields.includes(key));
+}
+
+function formatWalkInToken(series: number, prefix = WALK_IN_TOKEN_PREFIX): string {
+  return `${prefix}-${String(Math.max(1, series)).padStart(3, '0')}`;
+}
+
+function walkInCountKey(item: WalkInTokenSource): string {
+  const doctor = normalizeDoctorKey(
+    item.doctor_name || item.doctor_id || item.doctor_code || item.doctor_employee_id,
+  );
+  const day = String(item.appointment_date ?? item.created_at ?? '').slice(0, 10);
+  const person = String(item.uhid ?? '').trim().toLowerCase();
+  const stamp = String(item.created_at ?? '').trim();
+  return person ? `${doctor}|${day}|${person}|${stamp}` : `${doctor}|${day}|${stamp}|${item.token_number ?? item.token ?? ''}`;
+}
+
+/** Next token for one doctor today. Each doctor starts at 001. */
+const getNextWalkInToken = (queue: WalkInTokenSource[], doctorKeys: string[] = []) => {
+  const seen = new Set<string>();
+  let counted = 0;
   for (const item of queue || []) {
-    const code = String(item.uhid || item.token || '');
-    if (!code.toUpperCase().startsWith(prefix.toUpperCase())) continue;
-    const onToday =
-      String(item.appointment_date || '').startsWith(todayStr) ||
-      String(item.created_at || '').startsWith(todayStr);
-    if (!onToday) continue;
-    const match = code.match(pattern);
-    if (match) highest = Math.max(highest, Number(match[1]));
+    if (!rowIsToday(item)) continue;
+    if (!rowMatchesDoctor(item, doctorKeys)) continue;
+    const key = walkInCountKey(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    counted += 1;
+  }
+  return formatWalkInToken(counted + 1);
+};
+
+async function readNextWalkInToken(
+  queue: WalkInTokenSource[],
+  doctorKeys: string[] = [],
+): Promise<string> {
+  const sources: WalkInTokenSource[] = [...(queue || [])];
+  if (!supabase) return getNextWalkInToken(sources, doctorKeys);
+
+  const today = todayIsoDate();
+  const selectWithDoctor =
+    'token_number, uhid, source, appointment_date, created_at, doctor_name, doctor_id, doctor_code';
+  for (const table of ['appointments', 'hospital_opd_queue'] as const) {
+    let { data, error } = await supabase
+      .from(table)
+      .select(selectWithDoctor)
+      .eq('appointment_date', today);
+    if (error) {
+      const fallback = await supabase
+        .from(table)
+        .select('token_number, uhid, source, appointment_date, created_at')
+        .eq('appointment_date', today);
+      data = fallback.data;
+      error = fallback.error;
+    }
+    if (error || !Array.isArray(data)) continue;
+    sources.push(...(data as WalkInTokenSource[]));
   }
 
-  return `${prefix}-${String(highest + 1).padStart(3, '0')}`;
-};
+  return getNextWalkInToken(sources, doctorKeys);
+}
 
 function classifyQueueSource(row: {
   source?: unknown;
@@ -569,6 +775,39 @@ function triageStage(status: string): TriageStage {
   if (/complete|done|discharged|closed/.test(value)) return 'Completed';
   if (/consult|in.?room|called|exam/.test(value)) return 'In Consultation';
   return 'Waiting';
+}
+
+/** Arrival order inside each doctor's list, numbered 001, 002, 003. */
+function sequenceQueueByDoctor(rows: QueueRow[]): QueueRow[] {
+  const groups = new Map<string, QueueRow[]>();
+  for (const row of rows) {
+    const key = normalizeDoctorKey(row.doctor_name) || normalizeDoctorKey(row.doctor_id) || 'unassigned';
+    const list = groups.get(key) ?? [];
+    list.push(row);
+    groups.set(key, list);
+  }
+
+  const keys = [...groups.keys()].sort((a, b) => {
+    if (a === 'unassigned') return 1;
+    if (b === 'unassigned') return -1;
+    return a.localeCompare(b);
+  });
+
+  const sequenced: QueueRow[] = [];
+  for (const key of keys) {
+    const list = (groups.get(key) ?? []).slice().sort((a, b) => {
+      const created = String(a.created_at || a.appointment_date).localeCompare(
+        String(b.created_at || b.appointment_date),
+      );
+      if (created !== 0) return created;
+      return a.id.localeCompare(b.id);
+    });
+    list.forEach((row, index) => {
+      const token = formatWalkInToken(index + 1);
+      sequenced.push({ ...row, token, token_number: token });
+    });
+  }
+  return sequenced;
 }
 
 function waitMinutes(isoDate: string): number | null {
@@ -656,7 +895,14 @@ function isBillingUnsettled(status?: PatientBillingStatus): boolean {
 function mapQueueRow(row: Record<string, unknown>, sourceTable: string): QueueRow | null {
   const normalized = flattenAppointmentDoctorFields(row);
   const status = String(normalized.status ?? normalized.queue_status ?? 'Waiting');
-  const token = String(normalized.token_number ?? normalized.uhid ?? normalized.token ?? '').trim();
+  const tokenCandidates = [normalized.token_number, normalized.token, normalized.uhid]
+    .map((value) => String(value ?? '').trim())
+    .filter(Boolean);
+  const seriesToken = tokenCandidates.find((value) => walkInSeriesNumber(value) > 0);
+  const seriesValue = walkInSeriesNumber(seriesToken);
+  const token = seriesValue
+    ? `NX-WLK-${String(seriesValue).padStart(3, '0')}`
+    : tokenCandidates.find((value) => !isUuidValue(value)) ?? '';
   const rawId = String(normalized.id ?? '').trim();
   const rawAppointmentId = String(normalized.appointment_id ?? '').trim();
   const id = isUuidValue(rawId) ? rawId : isUuidValue(rawAppointmentId) ? rawAppointmentId : '';
@@ -667,7 +913,7 @@ function mapQueueRow(row: Record<string, unknown>, sourceTable: string): QueueRo
   const department = String(normalized.department ?? 'General Medicine');
   return {
     id,
-    token: token || (isUuidValue(rawId) ? rawId.slice(0, 8) : rawId) || '—',
+    token: token || '—',
     token_number: token,
     uhid: String(normalized.uhid ?? token ?? ''),
     patient_name: patientName || 'Unnamed Patient',
@@ -695,6 +941,39 @@ function mapQueueRow(row: Record<string, unknown>, sourceTable: string): QueueRo
           : null,
     consultation_fee: resolveDoctorConsultationFee(normalized),
   };
+}
+
+const OFFERED_RESCHEDULE_STORAGE_KEY = 'caresync.offered-reschedule-keys';
+
+function readOfferedRescheduleKeys(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(OFFERED_RESCHEDULE_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map((value) => String(value)).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberOfferedRescheduleKeys(keys: string[]) {
+  if (typeof window === 'undefined') return;
+  const next = new Set([...readOfferedRescheduleKeys(), ...keys.filter(Boolean)]);
+  window.localStorage.setItem(OFFERED_RESCHEDULE_STORAGE_KEY, JSON.stringify([...next]));
+}
+
+function rescheduleOfferKeys(item: QueueRow): string[] {
+  const date = String(item.appointment_date ?? '').slice(0, 10);
+  const token = String(item.token_number || item.token || '').trim();
+  return [encounterIdentityKey(item), item.id, token && date ? `${token}:${date}` : token]
+    .map((value) => String(value ?? '').trim())
+    .filter(Boolean);
+}
+
+function rowRescheduleAlreadyOffered(item: QueueRow, remembered: string[]): boolean {
+  if (String(item.reschedule_status ?? '').toLowerCase() === 'offered') return true;
+  const known = new Set(remembered);
+  return rescheduleOfferKeys(item).some((key) => known.has(key));
 }
 
 function patchMasterQueueRow(
@@ -1243,7 +1522,7 @@ function persistHospitalDashboardCache(snapshot: HospitalPlatformCache): void {
 
 function missingInsertColumn(message: string | null | undefined): string | null {
   const text = String(message ?? '');
-  const postgrest = text.match(/Could not find the '([^']+)' column/i);
+  const postgrest = text.match(/Could not find the .([A-Za-z0-9_]+). column/i);
   if (postgrest?.[1]) return postgrest[1];
   const postgres = text.match(/column (?:[\w]+\.)?([a-zA-Z0-9_]+) does not exist/i);
   return postgres?.[1] ?? null;
@@ -1341,7 +1620,7 @@ async function insertWithColumnRetry(
   const row = { ...payload };
   let { error } = await supabase.from(table).insert([row]);
   let attempts = 0;
-  while (error && attempts < 10) {
+  while (error && attempts < 24) {
     const column = missingInsertColumn(error.message);
     if (column && column in row) {
       delete row[column];
@@ -1412,6 +1691,7 @@ function HospitalMasterDashboard() {
     const scope = readCachedHospitalInfo();
     return readCachedPlatform(scope?.id || '')?.opdQueue ?? [];
   });
+  const [offeredRescheduleKeys, setOfferedRescheduleKeys] = useState<string[]>(() => readOfferedRescheduleKeys());
   const [activeDateFilter, setActiveDateFilter] = useState<HospitalAppointmentDateFilter>('today');
   const [patientRegistry, setPatientRegistry] = useState<PatientProfile[]>(() => {
     const scope = readCachedHospitalInfo();
@@ -1452,6 +1732,10 @@ function HospitalMasterDashboard() {
   const [activeEmergencies, setActiveEmergencies] = useState<EmergencyAlertRecord[]>([]);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [isSubmittingEmergency, setIsSubmittingEmergency] = useState(false);
+  const [doctorPanelAlertId, setDoctorPanelAlertId] = useState<string | null>(null);
+  const [emergencyDoctors, setEmergencyDoctors] = useState<EmergencyDoctorOption[]>([]);
+  const [loadingEmergencyDoctors, setLoadingEmergencyDoctors] = useState(false);
+  const [notifyingDoctorId, setNotifyingDoctorId] = useState<string | null>(null);
   const [emPatientInfo, setEmPatientInfo] = useState('');
   const [emSeverity, setEmSeverity] = useState('code_red');
   const [emArrival, setEmArrival] = useState('Ambulance');
@@ -1465,6 +1749,7 @@ function HospitalMasterDashboard() {
   const [onlineBookingAlert, setOnlineBookingAlert] = useState<IncomingBookingAlert | null>(null);
   const [billingCheckoutAlert, setBillingCheckoutAlert] = useState<BillingCheckoutAlert | null>(null);
   const [opdTokenPreview, setOpdTokenPreview] = useState(() => getNextWalkInToken([]));
+  const [opdUhidPreview, setOpdUhidPreview] = useState('');
   const [opdForm, setOpdForm] = useState<{
     patientName: string;
     department: string;
@@ -1520,7 +1805,7 @@ function HospitalMasterDashboard() {
     [masterOpdQueue],
   );
   const opdQueue = useMemo(
-    () => filterHospitalAppointmentsByDate(masterOpdQueue, activeDateFilter),
+    () => sequenceQueueByDoctor(filterHospitalAppointmentsByDate(masterOpdQueue, activeDateFilter)),
     [activeDateFilter, masterOpdQueue],
   );
 
@@ -1564,10 +1849,12 @@ function HospitalMasterDashboard() {
       ]);
 
       const scope = deskScopeRef.current;
-      const scopedStaffRows = filterRowsByDepartmentScope(staffRows || [], scope);
-      const mappedStaff = scopedStaffRows.map((row) =>
-        toDashboardStaffRow(mapHospitalStaffMember(row, activeNode)),
-      );
+      const personnel = await fetchCommandCenterPersonnel(supabase, activeNode);
+      const rosterRows =
+        personnel.length > 0
+          ? personnel.map((member) => toDashboardStaffRow(member))
+          : (staffRows || []).map((row) => toDashboardStaffRow(mapHospitalStaffMember(row, activeNode)));
+      const mappedStaff = filterRowsByDepartmentScope(rosterRows, scope);
       setStaffMembers(mappedStaff);
 
       const bookableDoctors = await fetchActiveHospitalDoctors(supabase, activeNode);
@@ -1588,7 +1875,7 @@ function HospitalMasterDashboard() {
       setMasterOpdQueue(liveQueue);
       setPatientRegistry(buildPatientDirectory(liveQueue, scopedPatients));
 
-      const pharmacySource = (pharmRows || []).length > 0 ? pharmRows : inventoryRows || [];
+      const pharmacySource = [...(pharmRows || []), ...(inventoryRows || [])];
       const scopedPharmacy = filterRowsByDepartmentScope(pharmacySource, scope);
       setPharmacyItems(dedupePharmacyItems(scopedPharmacy.map(mapPharmacyRow)));
 
@@ -1660,8 +1947,8 @@ function HospitalMasterDashboard() {
     const activeHospital = hospitalInfo.id;
     try {
       const pharmRows = await selectScoped('hospital_pharmacy_inventory', activeHospital);
-      const inventoryRows = pharmRows.length > 0 ? [] : await selectScoped('inventory_items', activeHospital);
-      const source = pharmRows.length > 0 ? pharmRows : inventoryRows;
+      const inventoryRows = await selectScoped('inventory_items', activeHospital);
+      const source = [...pharmRows, ...inventoryRows];
       setPharmacyItems(dedupePharmacyItems(source.map(mapPharmacyRow)));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unable to load formulary';
@@ -1712,12 +1999,13 @@ function HospitalMasterDashboard() {
     const activeNode = hospitalInfo.id;
 
     try {
-      const { data, error } = await supabase
+      const request = supabase
         .from('emergency_alerts')
         .select('*')
-        .eq('hospital_id', activeNode)
-        .in('status', ['active', 'Pending', 'Acknowledged', 'ACKNOWLEDGED', 'Dispatched'])
         .order('created_at', { ascending: false });
+      const { data, error } = isUuidValue(activeNode)
+        ? await request.or(`hospital_id.eq.${activeNode},hospital_code.eq.${REGAL_HOSPITAL_CODE}`)
+        : await request.eq('hospital_code', REGAL_HOSPITAL_CODE);
 
       if (error) {
         console.warn('Emergency alerts table empty or not yet seeded:', error.message);
@@ -1726,7 +2014,9 @@ function HospitalMasterDashboard() {
         return;
       }
 
-      const alerts = (data || []).map((row) => mapEmergencyAlert(row as Record<string, unknown>));
+      const alerts = (data || [])
+        .map((row) => mapEmergencyAlert(row as Record<string, unknown>))
+        .filter((alert) => /active|pending|ack|dispatch/i.test(alert.status));
       setActiveEmergencies(alerts);
       setEmergencies(
         alerts.map((alert) => ({
@@ -2170,33 +2460,26 @@ function HospitalMasterDashboard() {
 
   useEffect(() => {
     if (activeModal !== 'opd') return;
-    setOpdTokenPreview(getNextWalkInToken(todayOpdQueue));
-  }, [activeModal, todayOpdQueue]);
-
-  useEffect(() => {
-    if (activeModal !== 'opd' || !supabase || !opdForm.doctorId) {
-      setOpdDynamicSlots([]);
-      setOpdAppointmentTime('');
-      return;
-    }
-
     let cancelled = false;
-    setLoadingOpdSlots(true);
-    const walkInDate = todayIsoDate();
-    void loadDynamicDoctorSchedule(supabase, opdForm.doctorId, walkInDate, 'Walk-in consultation').then(
-      ({ slots }) => {
-        if (cancelled) return;
-        setOpdDynamicSlots(slots);
-        const auto = resolveAutoSelectedSlot(slots, opdAppointmentTime);
-        setOpdAppointmentTime(auto?.time ?? '');
-        setLoadingOpdSlots(false);
-      },
-    );
-
+    const previewDoctor = opdForm.doctorId ? [opdForm.doctorId] : [];
+    setOpdTokenPreview(getNextWalkInToken(todayOpdQueue, previewDoctor));
+    void readNextWalkInToken(todayOpdQueue, previewDoctor).then((token) => {
+      if (!cancelled) setOpdTokenPreview(token);
+    });
+    if (supabase) {
+      const phone = opdForm.phone.trim();
+      const nextUhid = isTenDigitPhone(phone)
+        ? resolvePatientUhidForSave(supabase, { hospitalId: REGAL_HOSPITAL_CODE, phone })
+        : peekNextHospitalUhid(supabase, REGAL_HOSPITAL_CODE);
+      void nextUhid.then((uhid) => {
+        if (!cancelled) setOpdUhidPreview(uhid);
+      });
+    }
     return () => {
       cancelled = true;
     };
-  }, [activeModal, opdForm.doctorId]);
+  }, [activeModal, todayOpdQueue, opdForm.phone, opdForm.doctorId]);
+
 
   useEffect(() => {
     if (!onlineBookingAlert) return;
@@ -2214,9 +2497,6 @@ function HospitalMasterDashboard() {
     }
 
     setIsSubmittingToken(true);
-
-    // Sequential walk-in slot for today - never write this into UUID `id`.
-    const tokenString = getNextWalkInToken(todayOpdQueue);
 
     try {
       const activeHospitalId = hospitalInfo?.id;
@@ -2253,6 +2533,8 @@ function HospitalMasterDashboard() {
           doctorId: bookingDoctorKey,
           appointmentDate: walkInDate,
           slotTime: opdAppointmentTime,
+          doctorIds: [assignedDoctor?.doctor_id, assignedDoctor?.id, opdForm.doctorId],
+          doctorName: assignedDoctor?.full_name,
         });
       } catch (slotErr: unknown) {
         toast.error(slotErr instanceof Error ? slotErr.message : 'Selected slot is no longer available');
@@ -2260,12 +2542,21 @@ function HospitalMasterDashboard() {
       }
 
       const assignedDoctorId = assignedDoctor?.id || null;
+      const tokenString = await readNextWalkInToken(todayOpdQueue, [
+        assignedDoctor?.full_name ?? '',
+        assignedDoctor?.doctor_id ?? '',
+        assignedDoctor?.id ?? '',
+        bookingDoctorKey,
+      ]);
+      const patientUhid = await resolvePatientUhidForSave(supabase, {
+        hospitalId: REGAL_HOSPITAL_CODE,
+        phone: contactMobile,
+      });
 
       const insertPayload: Record<string, unknown> = {
         // DO NOT provide an `id` field here. Postgres will generate the UUID automatically.
-        uhid: tokenString,
+        uhid: patientUhid,
         hospital_id: activeHospitalId,
-        patient_id: tokenString,
         patient_name: patientFullName,
         department: clinicalDepartment,
         doctor_id: assignedDoctorId,
@@ -2297,13 +2588,27 @@ function HospitalMasterDashboard() {
 
       let attempts = 0;
       while (error && attempts < 8) {
-        const column = missingInsertColumn(error.message);
-        if (!column || !(column in insertPayload)) break;
-        delete insertPayload[column];
-        delete insertPayload.id;
-        if (column === 'uhid') {
-          insertPayload.token_number = tokenString;
+        let adjusted = false;
+        if (
+          /invalid input syntax for (?:type )?integer/i.test(error.message) &&
+          typeof insertPayload.token_number === 'string'
+        ) {
+          const numeric = walkInSeriesNumber(insertPayload.token_number);
+          if (numeric > 0) {
+            insertPayload.token_number = numeric;
+            adjusted = true;
+          }
         }
+        const column = missingInsertColumn(error.message);
+        if (column && column in insertPayload) {
+          delete insertPayload[column];
+          delete insertPayload.id;
+          if (column === 'uhid' && insertPayload.token_number == null) {
+            insertPayload.token_number = tokenString;
+          }
+          adjusted = true;
+        }
+        if (!adjusted) break;
         attempts += 1;
         const retry = await supabase.from('appointments').insert([insertPayload]).select();
         data = retry.data;
@@ -2333,7 +2638,7 @@ function HospitalMasterDashboard() {
       const billingResult = await createWalkInBillingRecord(supabase, {
         appointmentId,
         hospitalId: activeHospitalId,
-        patientUhid: tokenString,
+        patientUhid,
         patientName: patientFullName,
         doctorId: assignedDoctorId,
         doctorName: assignedDoctor?.full_name || null,
@@ -2353,7 +2658,7 @@ function HospitalMasterDashboard() {
         await createConsultationFromAppointment(supabase, {
           hospitalId: activeHospitalId,
           appointmentId,
-          uhid: tokenString,
+          uhid: patientUhid,
           patientName: patientFullName,
           doctorId: String(bookingDoctorKey || assignedDoctorId || 'duty-doctor'),
           doctorName: assignedDoctor?.full_name || 'Consulting Physician',
@@ -2370,7 +2675,7 @@ function HospitalMasterDashboard() {
         await supabase.from('hospital_opd_queue').insert({
           hospital_id: activeHospitalId,
           token_number: tokenString,
-          uhid: tokenString,
+          uhid: patientUhid,
           patient_name: patientFullName,
           phone: contactMobile,
           department: clinicalDepartment,
@@ -2385,7 +2690,7 @@ function HospitalMasterDashboard() {
         /* dashboard still reads appointments */
       }
 
-      toast.success(`Token ${tokenString} created for ${patientFullName} · ${opdAppointmentTime}`);
+      toast.success(`Token ${tokenString} · ${patientUhid} created for ${patientFullName} · ${opdAppointmentTime}`);
 
       setOpdForm({
         patientName: '',
@@ -2554,6 +2859,16 @@ function HospitalMasterDashboard() {
       return;
     }
     setAdvancingTokenId(lockKey);
+    const offerKeys = rescheduleOfferKeys(patient);
+    rememberOfferedRescheduleKeys(offerKeys);
+    setOfferedRescheduleKeys((current) => Array.from(new Set([...current, ...offerKeys])));
+    setMasterOpdQueue((current) =>
+      current.map((row) =>
+        rescheduleOfferKeys(row).some((key) => offerKeys.includes(key))
+          ? { ...row, reschedule_status: 'offered' }
+          : row,
+      ),
+    );
     try {
       const result = await offerRescheduleOnLiveRow(patient);
       if (!result.updated) {
@@ -2811,28 +3126,44 @@ function HospitalMasterDashboard() {
     setIsSubmittingEmergency(true);
     try {
       const payload: Record<string, unknown> = {
-        hospital_id: hospitalInfo.id,
-        patient_info: patientInfo,
+        patient_id: crypto.randomUUID(),
         patient_name: patientInfo,
         severity: emSeverity,
         arrival: emArrival,
         status: 'active',
+        hospital_code: REGAL_HOSPITAL_CODE,
+        emergency_location: emArrival || 'Trauma desk',
       };
+      if (isUuidValue(hospitalInfo.id)) {
+        payload.hospital_id = hospitalInfo.id;
+      }
 
       let { error } = await supabase.from('emergency_alerts').insert([payload]).select();
       let attempts = 0;
-      while (error && attempts < 6) {
-        const column = missingInsertColumn(error.message);
-        if (!column || !(column in payload)) break;
-        delete payload[column];
+      while (error && attempts < 8) {
+        if (isUuidColumnError(error.message) && 'hospital_id' in payload) {
+          delete payload.hospital_id;
+        } else {
+          const column = missingInsertColumn(error.message);
+          const required = error.message.match(/null value in column "([^"]+)"/i)?.[1];
+          if (column && column in payload) {
+            delete payload[column];
+          } else if (required && !(required in payload)) {
+            payload[required] = required.includes('id') ? crypto.randomUUID() : patientInfo;
+          } else {
+            break;
+          }
+        }
         attempts += 1;
         const retry = await supabase.from('emergency_alerts').insert([payload]).select();
         error = retry.error;
       }
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.message || 'Could not sound the alarm');
+      }
 
-      toast.error('ðŸš¨ CODE RED INITIATED', { duration: 6000 });
+      toast.success(`${severityLabel(emSeverity)} alarm sounded`, { duration: 6000 });
       setEmPatientInfo('');
       setEmSeverity('code_red');
       setEmArrival('Ambulance');
@@ -2876,6 +3207,101 @@ function HospitalMasterDashboard() {
     } catch (err: unknown) {
       console.error('Failed to resolve emergency:', err);
       toast.error(err instanceof Error ? err.message : 'Could not resolve alert');
+    }
+  };
+
+  const openEmergencyDoctorPanel = async (alertId: string) => {
+    setDoctorPanelAlertId((current) => (current === alertId ? null : alertId));
+    if (doctorPanelAlertId === alertId || emergencyDoctors.length > 0 || !supabase) return;
+    setLoadingEmergencyDoctors(true);
+    try {
+      const selected = await supabase
+        .from('hospital_staff')
+        .select('id, full_name, department, email, employee_id, staff_id_code, shift, role, is_active');
+      const fallback = selected.error
+        ? await supabase.from('hospital_staff').select('*')
+        : null;
+      const data = fallback?.data ?? selected.data;
+      const error = fallback ? fallback.error : selected.error;
+      if (error) throw error;
+      const options = (data ?? [])
+        .map((row) => {
+          const record = row as Record<string, unknown>;
+          const role = String(record.role ?? '');
+          const department = String(record.department ?? '');
+          if (!/doctor/i.test(role) || record.is_active === false || !canTreatEmergency(department)) return null;
+          const timings = String(record.shift ?? record.timings ?? '');
+          return {
+            id: String(record.id ?? record.email ?? record.full_name),
+            name: String(record.full_name ?? 'Doctor'),
+            department,
+            email: String(record.email ?? ''),
+            employeeId: String(record.employee_id ?? record.staff_id_code ?? ''),
+            timings,
+            availability: doctorAvailability(timings),
+          } satisfies EmergencyDoctorOption;
+        })
+        .filter((doctor): doctor is EmergencyDoctorOption => doctor !== null)
+        .sort(
+          (left, right) =>
+            availabilityRank(left.availability) - availabilityRank(right.availability) ||
+            emergencySpecialtyRank(left.department) - emergencySpecialtyRank(right.department) ||
+            left.name.localeCompare(right.name),
+        );
+      setEmergencyDoctors(options);
+    } catch (err: unknown) {
+      console.error('Failed to load emergency doctors:', err);
+      toast.error(err instanceof Error ? err.message : 'Could not load available doctors');
+    } finally {
+      setLoadingEmergencyDoctors(false);
+    }
+  };
+
+  const notifyEmergencyDoctor = async (alert: EmergencyAlertRecord, doctor: EmergencyDoctorOption) => {
+    if (!supabase || notifyingDoctorId) return;
+    setNotifyingDoctorId(doctor.id);
+    const title = `${severityLabel(alert.severity)} — emergency patient`;
+    const message = `${severityLabel(alert.severity)} via ${alert.arrival}. ${alert.patient_info}. Please attend the trauma desk and continue the emergency procedure.`;
+    const assignmentNote = `TO:${doctor.name}|${doctor.email}|${doctor.employeeId}\n${message}`;
+    try {
+      const notifyPayload: Record<string, unknown> = {
+        recipient_id: doctor.email || doctor.employeeId || doctor.id,
+        recipient_type: 'doctor',
+        title,
+        message,
+        category: 'Clinical',
+        priority: 'urgent',
+        sender_role: 'hospital_admin',
+        is_read: false,
+        created_at: new Date().toISOString(),
+      };
+      const sent = await insertWithColumnRetry('system_notifications', notifyPayload);
+      if (!sent.ok) throw new Error(sent.errorMessage || 'Could not send the notification');
+
+      const patch: Record<string, unknown> = {
+        emergency_notes: assignmentNote,
+      };
+      let { error } = await supabase.from('emergency_alerts').update(patch).eq('id', alert.id);
+      let attempts = 0;
+      while (error && attempts < 6) {
+        const column = missingInsertColumn(error.message);
+        if (!column || !(column in patch)) break;
+        delete patch[column];
+        attempts += 1;
+        const retry = await supabase.from('emergency_alerts').update(patch).eq('id', alert.id);
+        error = retry.error;
+      }
+      if (error) throw new Error(error.message || 'The doctor was notified, but the case was not assigned');
+
+      setActiveEmergencies((current) =>
+        current.map((item) => (item.id === alert.id ? { ...item, notified_doctor: doctor.name } : item)),
+      );
+      toast.success(`Notification sent to ${doctor.name}`);
+    } catch (err: unknown) {
+      console.error('Failed to notify emergency doctor:', err);
+      toast.error(err instanceof Error ? err.message : 'Could not send the notification');
+    } finally {
+      setNotifyingDoctorId(null);
     }
   };
 
@@ -3067,9 +3493,70 @@ function HospitalMasterDashboard() {
       }));
     }
   }, [opdForm.doctorId, walkInDoctors]);
+
+  useEffect(() => {
+    if (activeModal !== 'opd' || !supabase || !opdForm.doctorId) {
+      setOpdDynamicSlots([]);
+      setOpdAppointmentTime('');
+      return;
+    }
+
+    const selected = walkInDoctors.find(
+      (doctor) => doctor.doctor_id === opdForm.doctorId || doctor.id === opdForm.doctorId,
+    );
+    let cancelled = false;
+    setLoadingOpdSlots(true);
+    const walkInDate = todayIsoDate();
+    void loadDynamicDoctorSchedule(supabase, opdForm.doctorId, walkInDate, 'Walk-in consultation', {
+      ids: [selected?.doctor_id, selected?.id, opdForm.doctorId],
+      name: selected?.full_name,
+    })
+      .then(({ slots }) => {
+        if (cancelled) return;
+        setOpdDynamicSlots(slots);
+        const auto = resolveAutoSelectedSlot(slots, opdAppointmentTime);
+        setOpdAppointmentTime(auto?.time ?? '');
+        setLoadingOpdSlots(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setOpdDynamicSlots([]);
+        setOpdAppointmentTime('');
+        setLoadingOpdSlots(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeModal, opdForm.doctorId, walkInDoctors]);
+
+  useEffect(() => {
+    if (activeModal !== 'opd') return;
+    const selected = walkInDoctors.find(
+      (doctor) => doctor.doctor_id === opdForm.doctorId || doctor.id === opdForm.doctorId,
+    );
+    const doctorKeys = [
+      selected?.full_name ?? '',
+      selected?.doctor_id ?? '',
+      selected?.id ?? '',
+      opdForm.doctorId,
+    ].filter(Boolean);
+    let cancelled = false;
+    void readNextWalkInToken(todayOpdQueue, doctorKeys).then((token) => {
+      if (!cancelled) setOpdTokenPreview(token);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeModal, todayOpdQueue, opdForm.doctorId, walkInDoctors]);
+
   const canProvisionStaff = canManageStaffCredentials({ staff_type: currentUserRole });
   const occupiedBeds = beds.filter((b) => /occup/i.test(b.status)).length;
+  const availableBeds = beds.filter((b) => /avail|vacant|empty|open/i.test(b.status)).length;
   const occupancyRate = beds.length > 0 ? Math.round((occupiedBeds / beds.length) * 100) : 0;
+  const icuBedRows = beds.filter((bed) => /icu/i.test(`${bed.ward_name} ${bed.bed_type}`));
+  const generalBedRows = beds.filter((bed) => /general/i.test(`${bed.ward_name} ${bed.bed_type}`));
+  const occupiedIn = (rows: BedRow[]) => rows.filter((bed) => /occup/i.test(bed.status)).length;
   const pendingCheckout = pendingInvoices;
   const collectedTotal = invoices
     .filter((inv) => inv.status === 'paid' || /paid|settled/i.test(inv.status))
@@ -3080,7 +3567,6 @@ function HospitalMasterDashboard() {
   const openBillsCount = invoices.filter((inv) => /pending|unpaid|unbilled/i.test(inv.status)).length;
   const showBillingMetrics = canViewBillingModule(deskScope);
   const totalCollections = showBillingMetrics ? collectedTotal : 0;
-  const outstanding = showBillingMetrics ? pendingCheckoutTotal : 0;
   const waitingCount = opdQueue.filter((q) => triageStage(q.status) === 'Waiting').length;
   const inConsultCount = opdQueue.filter((q) => triageStage(q.status) === 'In Consultation').length;
   const waitingMinutes = opdQueue
@@ -3096,6 +3582,12 @@ function HospitalMasterDashboard() {
   const avgWaitLabel = waitingMinutes.length === 0
     ? '-- mins'
     : `~${Math.round(waitingMinutes.reduce((sum, mins) => sum + mins, 0) / waitingMinutes.length)} mins`;
+  const doneCount = opdQueue.filter((row) => triageStage(row.status) === 'Completed').length;
+  const avgWaitMinutes =
+    waitingMinutes.length === 0
+      ? null
+      : Math.round(waitingMinutes.reduce((sum, mins) => sum + mins, 0) / waitingMinutes.length);
+  const triagePreview = opdQueue.filter((row) => triageStage(row.status) !== 'Completed').slice(0, 6);
 
   const filteredPatients = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -3135,7 +3627,7 @@ function HospitalMasterDashboard() {
   const navLinks = useMemo(() => {
     const links: Array<{ id: NavModule; label: string; icon: typeof LayoutGrid; badge?: number }> = [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
-      { id: 'smartq', label: 'SmartQ OPD', icon: ListOrdered, badge: opdQueue.length },
+      { id: 'smartq', label: 'SmartQ OPD', icon: ListOrdered, badge: waitingCount },
       { id: 'patients', label: 'Patients', icon: Users, badge: patientRegistry.length },
       { id: 'ipd', label: 'IPD & Bed Census', icon: BedDouble, badge: beds.length },
       { id: 'emergency', label: 'Emergency Desk', icon: AlertTriangle, badge: activeEmergencies.length },
@@ -3167,7 +3659,7 @@ function HospitalMasterDashboard() {
   const sidebar = (
     <>
       <HospitalOperationsSidebarBrand />
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-none p-5">
         <nav className="space-y-1">
           {navLinks.map((item) => {
             const Icon = item.icon;
@@ -3232,8 +3724,8 @@ function HospitalMasterDashboard() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#f1f5f9] font-sans text-slate-800 select-none">
-      <aside className="z-30 hidden w-64 shrink-0 flex-col justify-between bg-[#0a2e47] text-slate-200 shadow-2xl md:flex">
+    <div className="fixed inset-0 flex w-full overflow-hidden bg-[#f1f5f9] font-sans text-slate-800 select-none">
+      <aside className="z-30 hidden h-full w-64 shrink-0 flex-col justify-between bg-[#0a2e47] text-slate-200 shadow-2xl md:flex">
         {sidebar}
       </aside>
 
@@ -3251,7 +3743,7 @@ function HospitalMasterDashboard() {
         </div>
       )}
 
-      <main className="flex h-screen flex-1 flex-col overflow-hidden">
+      <main className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
         <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white py-3 pl-4 pr-6 shadow-xs sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-4">
             <button
@@ -3263,41 +3755,59 @@ function HospitalMasterDashboard() {
               <Menu className="h-4 w-4" />
             </button>
             <HospitalOperationsHeaderBrand />
-            <HospitalOperationsHeaderTitle
-              title={`${navLinks.find((n) => n.id === activeTab)?.label ?? 'Dashboard'} Command Center`}
-              nodeId={hospitalInfo.id}
-              nodeName={hospitalInfo.name || 'Regal Multispeciality Hospital'}
-            />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="truncate text-base font-black leading-tight text-slate-900">
+                  {hospitalInfo.name || 'Regal Multispeciality Hospital'}
+                </h2>
+                <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-600">
+                  {hospitalInfo.nodeCode || hospitalInfo.id || 'HOSP-01'}
+                </span>
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Node: {hospitalInfo.id || 'HOSP-01'} · Operational
+                </span>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                  Section: {navLinks.find((item) => item.id === activeTab)?.label ?? 'Dashboard'}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {activeTab !== 'smartq' ? (
+              <button
+                type="button"
+                title="Register a walk-in patient and give the next token for the doctor you select. Each doctor has a separate series starting at 001."
+                onClick={() => setActiveModal('opd')}
+                className="flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 hover:bg-cyan-100"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Issue OPD Token
+              </button>
+            ) : null}
             <button
               type="button"
-              onClick={() => setActiveModal('opd')}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500"
+              title="Register an emergency arrival, then send the alert to the doctor who will take the case."
+              onClick={() => setShowEmergencyModal(true)}
+              className="flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-rose-500"
             >
-              <Plus className="h-4 w-4" />
-              Issue OPD Token
+              <Siren className="h-3.5 w-3.5" />
+              Emergency Intake
             </button>
-            {canProvisionStaff && (
-              <Link
-                href="/dashboard/staff-credentials"
-                className="flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-800"
-              >
-                <ShieldCheck className="h-4 w-4" />
-                Staff Credentials Vault
-              </Link>
-            )}
             <button
               type="button"
               onClick={() => void loadPlatformData(hospitalInfo.id)}
               className="rounded-xl border border-slate-200 bg-white p-2 hover:bg-slate-50"
+              aria-label="Refresh dashboard"
             >
               <RefreshCw className={`h-4 w-4 text-cyan-600 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </header>
 
-        <div className="flex-1 space-y-6 overflow-y-auto p-6 sm:p-8">
+        <div className="min-h-0 min-w-0 flex-1 space-y-6 overflow-x-hidden overflow-y-auto overscroll-none p-6 sm:p-8">
           {billingCheckoutAlert && (
             <div className="flex items-start justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 shadow-xs">
               <div className="flex items-start gap-3 min-w-0">
@@ -3393,124 +3903,172 @@ function HospitalMasterDashboard() {
             </div>
           )}
 
-          {activeTab === 'dashboard' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-black text-slate-900">Facility Operations Snapshot</h3>
-                <p className="text-xs text-slate-500">
-                  Live census scoped to {hospitalInfo.id}
-                  {deskScope?.department ? ` · ${deskScope.department}` : ''}. Empty modules stay empty until
-                  real records exist.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <button type="button" onClick={() => navigateToTab('smartq')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">LIVE OPD QUEUE</div>
-                  <div className="text-3xl font-black text-slate-900 mt-2">{opdQueue.length}</div>
-                  <div className="text-xs font-medium text-cyan-700 mt-1">{opdQueue.length} waiting in triage</div>
-                </button>
-                {isPlatformDeskAdmin(deskScope?.staffType) ? (
-                  <button type="button" onClick={() => navigateToTab('staff')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
-                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">PROVISIONED STAFF</div>
-                    <div className="text-3xl font-black text-slate-900 mt-2">{provisionedStaffCount}</div>
-                    <div className="text-xs font-medium text-cyan-700 mt-1">{doctorCount} doctors verified</div>
-                  </button>
-                ) : null}
-                {canViewIpdModule(deskScope) ? (
-                  <button type="button" onClick={() => navigateToTab('ipd')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
-                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">BED OCCUPANCY</div>
-                    <div className="text-3xl font-black text-slate-900 mt-2">{occupancyRate}%</div>
-                    <div className="text-xs font-medium text-cyan-700 mt-1">{occupiedBeds}/{beds.length} occupied</div>
-                  </button>
-                ) : null}
-                {showBillingMetrics ? (
-                  <button type="button" onClick={() => navigateToTab('billing')} className="bg-white rounded-2xl p-5 border border-slate-200 text-left">
-                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Total Collections (₹)
-                    </span>
-                    <div className="text-3xl font-black text-slate-900 mt-2">{inr(totalCollections)}</div>
-                    <div className="text-xs font-medium text-emerald-600 mt-1">{inr(outstanding)} outstanding</div>
-                  </button>
-                ) : null}
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-cyan-700" />
-                      <h4 className="text-sm font-black text-slate-900">Recent Live Outpatients</h4>
-                    </div>
+          {(activeTab === 'dashboard' || activeTab === 'supply') && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <button type="button" onClick={() => navigateToTab('smartq')} className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-xs">
+                  <div className="flex items-start justify-between">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Live OPD Queue</div>
+                    <Clock className="h-4 w-4 text-slate-300" />
                   </div>
-                  {opdQueue.length === 0 ? (
-                    <EmptyState icon={Users} title="No active OPD patients" body={`No appointments for ${hospitalInfo.id}. Issue a walk-in token to start.`} actionLabel="Issue OPD Token" onAction={() => setActiveModal('opd')} />
-                  ) : (
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-slate-100 text-[10px] font-black uppercase text-slate-400">
-                          <th className="py-2.5 px-3">Token</th>
-                          <th className="py-2.5 px-3">Patient</th>
-                          <th className="py-2.5 px-3">Dept</th>
-                          <th className="py-2.5 px-3">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {opdQueue.slice(0, 6).map((q) => (
-                          <tr key={queueIdentityKey(q)}>
-                            <td className="py-2.5 px-3">
-                              <div className="font-mono font-bold text-cyan-800">{q.token}</div>
-                              <div className="mt-1">
-                                <QueueChannelBadge channel={q.channel} />
-                              </div>
-                            </td>
-                            <td className="py-2.5 px-3 font-bold">{q.patient_name}</td>
-                            <td className="py-2.5 px-3">{q.department}</td>
-                            <td className="py-2.5 px-3">
-                              <OutpatientStatusCell
-                                status={q.status}
-                                onSettleBill={() => openBillingModalForPatient(q)}
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-                <div className="lg:col-span-5 space-y-6">
-                  <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-                    <h4 className="text-sm font-black text-slate-900">Emergency Status</h4>
-                    {activeEmergencies.length === 0 ? (
-                      <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
-                        <div className="font-bold flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          Node {hospitalInfo.id} Ready
-                        </div>
-                        <p className="text-[11px] text-emerald-700 mt-1">No active red alerts for this hospital node.</p>
+                  <div className="mt-3 flex items-end gap-2">
+                    <span className="text-3xl font-black text-slate-900">{waitingCount}</span>
+                    <span className="mb-1 text-xs font-semibold">
+                      <span className="text-cyan-600">Waiting</span>
+                      <span className="text-slate-300"> / </span>
+                      <span className="text-emerald-600">{doneCount} Done</span>
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs text-slate-400">
+                    Average wait time: {avgWaitMinutes == null ? '—' : `${avgWaitMinutes} mins`}
+                  </div>
+                </button>
+                <button type="button" onClick={() => navigateToTab('staff')} className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-xs">
+                  <div className="flex items-start justify-between">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Provisioned Staff</div>
+                    <Users className="h-4 w-4 text-violet-300" />
+                  </div>
+                  <div className="mt-3 flex items-end gap-2">
+                    <span className="text-3xl font-black text-slate-900">{provisionedStaffCount}</span>
+                    <span className="mb-1 text-xs font-semibold text-emerald-600">{doctorCount} Clinicians</span>
+                  </div>
+                  <div className="mt-1 text-xs text-slate-400">Synced to Level-0 Root Vault</div>
+                </button>
+                <button type="button" onClick={() => navigateToTab('ipd')} className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-xs">
+                  <div className="flex items-start justify-between">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Bed Occupancy</div>
+                    <BedDouble className="h-4 w-4 text-amber-300" />
+                  </div>
+                  <div className="mt-3 flex items-end gap-2">
+                    <span className="text-3xl font-black text-slate-900">{occupancyRate}%</span>
+                    <span className="mb-1 text-xs font-semibold text-slate-400">{occupiedBeds} / {beds.length} Allocated</span>
+                  </div>
+                  <div className="mt-1 text-xs text-slate-400">
+                    ICU: {occupiedIn(icuBedRows)} / {icuBedRows.length} · General: {occupiedIn(generalBedRows)} / {generalBedRows.length}
+                  </div>
+                </button>
+                <button type="button" onClick={() => navigateToTab('billing')} className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-xs">
+                  <div className="flex items-start justify-between">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Collections</div>
+                    <IndianRupee className="h-4 w-4 text-emerald-300" />
+                  </div>
+                  <div className="mt-3 flex items-end gap-2">
+                    <span className="text-3xl font-black text-slate-900">{inr(totalCollections)}</span>
+                    <span className="mb-1 text-xs font-semibold text-slate-400">Today</span>
+                  </div>
+                  <div className="mt-1 text-xs text-slate-400">Cash, UPI &amp; insurance claims</div>
+                </button>
+              </div>
+          )}
+
+          {activeTab === 'dashboard' && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
+                <div className="space-y-5 xl:col-span-8">
+                  <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900">Active OPD Triage Queue</h3>
+                        <p className="mt-0.5 text-xs text-slate-400">Live tokens currently routed to OPD consultations</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => navigateToTab('smartq')}
+                        className="shrink-0 text-[11px] font-bold text-cyan-700"
+                      >
+                        On Consultation · View All →
+                      </button>
+                    </div>
+                    {triagePreview.length === 0 ? (
+                      <div className="mt-4">
+                        <EmptyState icon={Users} title="No active OPD patients" body={`No appointments for ${hospitalInfo.id}. Issue a walk-in token to start.`} actionLabel="Issue OPD Token" onAction={() => setActiveModal('opd')} />
                       </div>
                     ) : (
-                      activeEmergencies.slice(0, 3).map((alert) => (
-                        <div key={alert.id} className="p-3 rounded-xl border border-rose-200 bg-rose-50 text-xs">
-                          <div className="font-bold text-rose-800">{alert.patient_info}  ·  {severityLabel(alert.severity)}</div>
-                          <p className="text-rose-700">{alert.arrival}</p>
-                        </div>
-                      ))
+                      <div className="mt-4 space-y-2">
+                        {triagePreview.map((row) => {
+                          const stage = triageStage(row.status);
+                          const stageClass =
+                            stage === 'In Consultation'
+                              ? 'bg-sky-100 text-sky-800'
+                              : 'bg-amber-100 text-amber-700';
+                          return (
+                            <div key={queueIdentityKey(row)} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-3">
+                              <div className="flex min-w-0 items-center gap-3">
+                                <span className="rounded-lg bg-sky-100 px-2.5 py-1 font-mono text-xs font-black text-sky-800">
+                                  {row.token}
+                                </span>
+                                <div className="min-w-0">
+                                  <div className="truncate text-sm font-black text-slate-900">{row.patient_name}</div>
+                                  <div className="text-[11px] text-slate-400">{row.department}</div>
+                                </div>
+                              </div>
+                              <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${stageClass}`}>
+                                {stage}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
-                  </div>
-                  <div className="bg-[#FAFBFD] rounded-2xl border border-slate-200 p-6 space-y-3">
-                    <h4 className="text-sm font-black text-slate-900">Vendor Supply</h4>
-                    {supplyOrders.length === 0 ? (
-                      <EmptyState icon={PackageCheck} title="No purchase orders" body="No procurement records for this node." actionLabel="Create Purchase Order" onAction={() => navigateToTab('supply')} />
-                    ) : (
-                      supplyOrders.slice(0, 3).map((po) => (
-                        <div key={po.id} className="p-3 rounded-xl border border-slate-200 text-xs">
-                          <div className="font-mono font-bold text-cyan-800">{po.po_number}</div>
-                          <div className="font-bold text-slate-900">{po.item_description}</div>
-                          <div className="text-slate-500">{po.vendor_name}  ·  {inr(po.total_amount || po.quantity * po.unit_price || 0)}</div>
-                        </div>
-                      ))
-                    )}
+                  </section>
+
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-amber-600">Inpatient Facility Census</div>
+                      <h3 className="mt-2 text-sm font-black text-slate-900">Ward Bed Allocations</h3>
+                      <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                        {occupiedBeds} of {beds.length} beds allocated across ICU, General, Deluxe, and Trauma bays.
+                      </p>
+                      <button type="button" onClick={() => navigateToTab('ipd')} className="mt-4 text-xs font-bold text-cyan-700">
+                        Manage Bed Census →
+                      </button>
+                    </section>
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-rose-600">Emergency Desk</div>
+                      <h3 className="mt-2 text-sm font-black text-slate-900">Resuscitation &amp; Critical Trauma</h3>
+                      <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                        {activeEmergencies.length} active emergency {activeEmergencies.length === 1 ? 'triage' : 'triages'} currently registered in trauma bays.
+                      </p>
+                      <button type="button" onClick={() => navigateToTab('emergency')} className="mt-4 text-xs font-bold text-cyan-700">
+                        Go to Emergency Desk →
+                      </button>
+                    </section>
                   </div>
                 </div>
+
+                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs xl:col-span-4">
+                  <h3 className="text-sm font-black text-slate-900">Hospital Node Telemetry</h3>
+                  <p className="mt-0.5 text-xs text-slate-400">{hospitalInfo.name || 'Regal Multispeciality Hospital'}</p>
+                  <dl className="mt-4 divide-y divide-slate-100 text-sm">
+                    <div className="flex items-center justify-between py-3">
+                      <dt className="text-slate-500">Total Configured Beds</dt>
+                      <dd className="font-bold text-slate-900">{beds.length} Beds</dd>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <dt className="text-slate-500">Available Beds</dt>
+                      <dd className="font-bold text-emerald-600">{availableBeds} Available</dd>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <dt className="text-slate-500">Occupied Beds</dt>
+                      <dd className="font-bold text-amber-600">{occupiedBeds} Occupied</dd>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <dt className="text-slate-500">Bed Occupancy Rate</dt>
+                      <dd className="font-bold text-slate-900">{occupancyRate}%</dd>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <dt className="text-slate-500">Universal Patients</dt>
+                      <dd className="font-bold text-cyan-700">{patientRegistry.length} Registered</dd>
+                    </div>
+                  </dl>
+                  <button
+                    type="button"
+                    onClick={() => setActiveModal('bed')}
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-3 text-xs font-bold text-white hover:bg-slate-800"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Configure / Add New Bed
+                  </button>
+                </section>
               </div>
             </div>
           )}
@@ -3552,6 +4110,7 @@ function HospitalMasterDashboard() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
+                    title="Call the next waiting patient in arrival order."
                     onClick={() => void handleCallNextInterleaved()}
                     disabled={advancingTokenId === 'interleave'}
                     className="px-4 py-2.5 rounded-xl bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition cursor-pointer disabled:opacity-50"
@@ -3561,6 +4120,7 @@ function HospitalMasterDashboard() {
                   </button>
                   <button
                     type="button"
+                    title="Register a walk-in on this queue. Each doctor gets the next number in their own series: 001, then 002, then 003."
                     onClick={() => setActiveModal('opd')}
                     className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition cursor-pointer"
                   >
@@ -3632,9 +4192,17 @@ function HospitalMasterDashboard() {
                           const stage = triageStage(item.status);
                           const waitMins = clinicSessionWaitMinutes(item);
                           const slaBreach = isSlaBreachWaiting(item.status, waitMins);
+                          const offerAlreadySent = rowRescheduleAlreadyOffered(item, offeredRescheduleKeys);
                           return (
                             <tr key={queueIdentityKey(item)} className={`hover:bg-cyan-50/40 transition ${item.channel === 'online' ? 'bg-violet-50/25' : 'bg-emerald-50/20'}`}>
-                              <td className="py-3.5 px-4 font-mono font-black text-cyan-800">{item.token}</td>
+                              <td className="py-3.5 px-4">
+                                <span
+                                  title={`${item.token} is this patient's place in ${item.doctor_name || 'the unassigned'} queue.`}
+                                  className="inline-flex min-w-[6.5rem] justify-center font-mono text-xs font-black tabular-nums tracking-wide text-cyan-800"
+                                >
+                                  {item.token}
+                                </span>
+                              </td>
                               <td className="py-3.5 px-4">
                                 <QueueChannelBadge channel={item.channel} />
                               </td>
@@ -3679,7 +4247,7 @@ function HospitalMasterDashboard() {
                                   <span className="text-[11px] font-bold text-slate-400">Closed</span>
                                 ) : (
                                   <div className="inline-flex flex-wrap justify-end gap-1.5">
-                                    {slaBreach && item.reschedule_status !== 'offered' ? (
+                                    {slaBreach && !offerAlreadySent ? (
                                       <button
                                         type="button"
                                         onClick={() => void handleOfferReschedule(item)}
@@ -3689,11 +4257,13 @@ function HospitalMasterDashboard() {
                                         Offer Reschedule
                                       </button>
                                     ) : null}
-                                    {item.reschedule_status === 'offered' ? (
-                                      <span className="px-2 py-1 text-[10px] font-bold uppercase text-amber-700">Offered</span>
-                                    ) : null}
                                     <button
                                       type="button"
+                                      title={
+                                        stage === 'In Consultation'
+                                          ? 'Mark this consultation complete for this doctor.'
+                                          : 'Call this patient in. Tokens stay in arrival order for each doctor.'
+                                      }
                                       onClick={() => void handleAdvanceTriage(item)}
                                       disabled={advancingTokenId === (item.id || item.token)}
                                       className="px-2.5 py-1 rounded-lg border border-slate-200 hover:border-cyan-600 bg-white text-[11px] font-bold text-slate-700 hover:text-cyan-800 transition cursor-pointer disabled:opacity-50"
@@ -3794,7 +4364,7 @@ function HospitalMasterDashboard() {
                             patient.consulting_doctor_specialty || patient.department;
                           return (
                           <tr key={patientKey(patient.patient_name, patient.phone, patient.uhid)} className="hover:bg-slate-50/70 transition">
-                            <td className="py-3.5 px-4 font-mono font-bold text-cyan-800">{patient.uhid}</td>
+                            <td className="py-3.5 px-4 font-mono text-xs font-bold tabular-nums text-cyan-800">{patient.uhid}</td>
                             <td className="py-3.5 px-4">
                               <div className="font-bold text-slate-900">{patient.patient_name}</div>
                               <div className="text-[10px] text-slate-400">
@@ -3879,6 +4449,16 @@ function HospitalMasterDashboard() {
             <SupplyOrdersCommandCenter
               hospitalId={hospitalInfo.id}
               hospitalName={hospitalInfo.name || 'Regal Hospital'}
+              inventory={pharmacyItems.map((item) => ({
+                id: item.id,
+                sku: item.sku || (item.id ? item.id.slice(0, 8).toUpperCase() : ''),
+                item_name: item.item_name,
+                category: item.category,
+                stock: item.stock,
+                unit_price: item.unit_price,
+                supplier: item.supplier,
+                status: item.status,
+              }))}
               onOrdersChanged={(orders, nextVendors) => {
                 setSupplyOrders(orders);
                 setVendorsList(nextVendors);
@@ -3961,8 +4541,23 @@ function HospitalMasterDashboard() {
                             </span>
                           </div>
                           <div className="text-lg font-black text-slate-900 leading-tight">{alert.patient_info}</div>
+                          {alert.notified_doctor ? (
+                            <p className="text-[11px] font-semibold text-slate-600">
+                              Notified {alert.notified_doctor}
+                            </p>
+                          ) : null}
                         </div>
                         <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void openEmergencyDoctorPanel(alert.id)}
+                            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-[11px] font-bold uppercase text-slate-800 hover:border-cyan-600"
+                          >
+                            <span className="inline-flex items-center gap-1.5">
+                              <Bell className="h-3.5 w-3.5" />
+                              Available doctors
+                            </span>
+                          </button>
                           <button
                             type="button"
                             onClick={() => void handleAcknowledgeEmergency(alert.id)}
@@ -3979,6 +4574,59 @@ function HospitalMasterDashboard() {
                           </button>
                         </div>
                       </div>
+                      {doctorPanelAlertId === alert.id ? (
+                        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                          <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                            Doctors who can treat this emergency
+                          </div>
+                          {loadingEmergencyDoctors ? (
+                            <div className="flex items-center gap-2 py-4 text-xs font-semibold text-slate-500">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Checking who is on duty…
+                            </div>
+                          ) : emergencyDoctors.length === 0 ? (
+                            <p className="py-3 text-xs text-slate-500">No emergency doctors are on the roster.</p>
+                          ) : (
+                            <div className="max-h-72 space-y-2 overflow-y-auto">
+                              {emergencyDoctors.map((doctor) => (
+                                <div
+                                  key={doctor.id}
+                                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2"
+                                >
+                                  <div className="min-w-0">
+                                    <div className="text-xs font-bold text-slate-900">{doctor.name}</div>
+                                    <div className="text-[10px] text-slate-500">{doctor.department}</div>
+                                    {doctor.timings ? (
+                                      <div className="text-[10px] text-slate-400">{doctor.timings}</div>
+                                    ) : null}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                        doctor.availability === 'available'
+                                          ? 'bg-emerald-50 text-emerald-700'
+                                          : doctor.availability === 'off-duty'
+                                            ? 'bg-slate-100 text-slate-500'
+                                            : 'bg-amber-50 text-amber-800'
+                                      }`}
+                                    >
+                                      {availabilityLabel(doctor.availability)}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      disabled={notifyingDoctorId === doctor.id}
+                                      onClick={() => void notifyEmergencyDoctor(alert, doctor)}
+                                      className="rounded-lg bg-rose-600 px-2.5 py-1.5 text-[10px] font-bold uppercase text-white disabled:opacity-50"
+                                    >
+                                      {notifyingDoctorId === doctor.id ? 'Sending…' : 'Notify'}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -3990,7 +4638,7 @@ function HospitalMasterDashboard() {
 
       {activeModal === 'opd' && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600">
@@ -4025,74 +4673,98 @@ function HospitalMasterDashboard() {
                   <span className="text-emerald-600 font-normal normal-case text-[10px]">* Required</span>
                 </label>
                 <div className="relative">
-                  <Users className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Users className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     required
                     placeholder="e.g. Ramesh Gowda"
                     value={opdForm.patientName}
                     onChange={(e) => setOpdForm((p) => ({ ...p, patientName: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-xs font-semibold text-slate-900 placeholder:font-normal placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
-                  Age (years)
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={120}
-                  placeholder="Enter age"
-                  value={opdForm.age}
-                  onChange={(e) => setOpdForm((p) => ({ ...p, age: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
-                  Clinical Department
-                </label>
-                <div className="relative">
-                  <Stethoscope className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-                  <select
-                    value={opdForm.department}
-                    onChange={(e) => {
-                      const department = e.target.value;
-                      const nextDoctors = doctorsForDepartment(rosterDoctors, department);
-                      setOpdForm((p) => ({
-                        ...p,
-                        department,
-                        doctorId: nextDoctors[0]?.doctor_id || nextDoctors[0]?.id || '',
-                      }));
-                    }}
-                    className="w-full pl-10 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition appearance-none cursor-pointer"
-                  >
-                    {walkInDepartmentOptions.map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3.5 top-3.5 pointer-events-none text-slate-400">
-                    <ChevronRight className="w-3.5 h-3.5 rotate-90" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                    Age (years)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={120}
+                    placeholder="Enter age"
+                    value={opdForm.age}
+                    onChange={(e) => setOpdForm((p) => ({ ...p, age: e.target.value.replace(/\D/g, '').slice(0, 3) }))}
+                    inputMode="numeric"
+                    maxLength={3}
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-900 placeholder:font-normal placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                    <span>Contact Mobile</span>
+                    <span className="text-[10px] font-normal normal-case text-slate-400">SMS</span>
+                  </label>
+                  <div className="relative flex items-center">
+                    <div className="pointer-events-none absolute left-3 flex items-center gap-1 font-mono text-xs font-bold text-slate-500">
+                      <Phone className="h-3.5 w-3.5 text-slate-400" />
+                      <span>+91</span>
+                    </div>
+                    <PhoneNumberInput
+                      required
+                      placeholder="10-digit number"
+                      value={opdForm.phone}
+                      onChange={(phone) => setOpdForm((p) => ({ ...p, phone }))}
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-[4.5rem] pr-3 font-mono text-xs font-bold text-slate-900 placeholder:font-normal placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
-                  Consulting doctor
-                </label>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                    Clinical Department
+                  </label>
+                  <div className="relative">
+                    <Stethoscope className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <select
+                      value={opdForm.department}
+                      onChange={(e) => {
+                        const department = e.target.value;
+                        const nextDoctors = doctorsForDepartment(rosterDoctors, department);
+                        setOpdForm((p) => ({
+                          ...p,
+                          department,
+                          doctorId: nextDoctors[0]?.doctor_id || nextDoctors[0]?.id || '',
+                        }));
+                      }}
+                      className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-8 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                    >
+                      {walkInDepartmentOptions.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                      <ChevronRight className="h-3.5 w-3.5 rotate-90" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                    Consulting doctor
+                  </label>
                 <select
                   required={walkInDoctors.length > 0}
                   value={opdForm.doctorId}
                   onChange={(e) => setOpdForm((p) => ({ ...p, doctorId: e.target.value }))}
                   disabled={rosterDoctors.length === 0}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition disabled:opacity-60"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 disabled:opacity-60"
                 >
                   {rosterDoctors.length === 0 ? (
                     <option value="">Loading doctors…</option>
@@ -4108,25 +4780,6 @@ function HospitalMasterDashboard() {
                     ))
                   )}
                 </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
-                  <span>Contact Mobile</span>
-                  <span className="text-slate-400 font-normal normal-case text-[10px]">SMS Updates</span>
-                </label>
-                <div className="relative flex items-center">
-                  <div className="absolute left-3.5 flex items-center gap-1 text-slate-500 font-mono font-bold text-xs pointer-events-none">
-                    <Phone className="w-3.5 h-3.5 text-slate-400" />
-                    <span>+91</span>
-                  </div>
-                  <PhoneNumberInput
-                    required
-                    placeholder="Enter 10-digit mobile number"
-                    value={opdForm.phone}
-                    onChange={(phone) => setOpdForm((p) => ({ ...p, phone }))}
-                    className="w-full pl-[4.75rem] pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition"
-                  />
                 </div>
               </div>
 
@@ -4145,16 +4798,25 @@ function HospitalMasterDashboard() {
                     loading={loadingOpdSlots}
                     clinicalReason="Walk-in consultation"
                     variant="grid"
+                    appearance="hospital"
                     onSelect={(slot) => setOpdAppointmentTime(slot.time)}
                   />
                 )}
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500 font-medium">Queue Token:</span>
-                <span className="font-mono font-black text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
-                  {opdTokenPreview}
-                </span>
+              <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px]">
+                <div className="min-w-0">
+                  <div className="font-medium text-slate-500">Queue token</div>
+                  <div className="mt-1 inline-flex min-w-[6.5rem] justify-center rounded border border-cyan-200 bg-cyan-50 px-2 py-1 font-mono text-xs font-black tabular-nums tracking-wide text-cyan-800">
+                    {opdTokenPreview}
+                  </div>
+                </div>
+                <div className="min-w-0 text-right">
+                  <div className="font-medium text-slate-500">Patient UHID</div>
+                  <div className="mt-1 inline-flex min-w-[8.5rem] justify-center rounded border border-emerald-200 bg-emerald-50 px-2 py-1 font-mono text-xs font-black tabular-nums tracking-wide text-emerald-800">
+                    {opdUhidPreview || 'HOSP-01-P-0001'}
+                  </div>
+                </div>
               </div>
 
               <div className="pt-2 grid grid-cols-2 gap-3">

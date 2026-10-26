@@ -30,7 +30,7 @@ export default function HpWorkspaceModuleHeader({
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-base font-bold text-[#0F172A]">HP Workspace</h1>
-          <p className="text-[9px] text-slate-500">Hospital Professional command center ┬╖ persona-adaptive cockpit ┬╖ clinical suites ┬╖ compliance & AI</p>
+          <p className="text-[9px] text-slate-500">Hospital Professional command center · persona-adaptive cockpit · clinical suites · compliance & AI</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1">
@@ -70,7 +70,7 @@ export default function HpWorkspaceModuleHeader({
           type="search"
           value={lookupValue}
           onChange={(e) => onLookupChange(e.target.value)}
-          placeholder="Universal search ΓÇö Patients, Doctors, Staff, Invoices, Labs, Purchase Orders"
+          placeholder="Universal search — Patients, Doctors, Staff, Invoices, Labs, Purchase Orders"
           aria-label="Universal search"
           className="w-full rounded-md border border-[#E2E8F0] bg-[#F8FAFC] py-1.5 pl-8 pr-3 text-[10px] text-[#0F172A] placeholder:text-slate-400 focus:border-[#2563EB] focus:outline-none focus:ring-2 focus:ring-blue-100"
         />

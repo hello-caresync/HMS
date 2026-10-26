@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
           type="password"
           value={password}
           onChange={setPassword}
-          placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"
+          placeholder="Enter a new password"
           autoComplete="new-password"
         />
 
@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
           type="password"
           value={confirmPassword}
           onChange={setConfirmPassword}
-          placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"
+          placeholder="Re-enter your password"
           autoComplete="new-password"
         />
 
